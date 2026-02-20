@@ -5,12 +5,13 @@ interface User {
   email: string;
   orgId: string | null;
   orgRole: string | null;
+  preferredLanguage: string | null;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (session: string) => void;
+  login: (session: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -18,7 +19,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  login: () => {},
+  login: async () => {},
   logout: () => {},
   refreshUser: async () => {},
 });
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
       } else {
         localStorage.removeItem('session_token');
+        setUser(null);
       }
     } catch {
       // Network error — keep token, try again later
@@ -55,9 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  function login(session: string) {
+  async function login(session: string) {
     localStorage.setItem('session_token', session);
-    checkSession();
+    setLoading(true);
+    await checkSession();
   }
 
   function logout() {

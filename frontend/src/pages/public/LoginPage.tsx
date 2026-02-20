@@ -44,7 +44,7 @@ export default function LoginPage() {
         return;
       }
 
-      login(data.session);
+      await login(data.session);
       navigate('/dashboard');
     } catch {
       setError('Network error. Please try again.');

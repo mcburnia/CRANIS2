@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { Building2, ArrowRight, Globe, Users, Shield, Factory } from 'lucide-react';
 import './OrgSetupPage.css';
 
@@ -38,6 +39,7 @@ const INDUSTRIES = [
 
 export default function OrgSetupPage() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [name, setName] = useState('');
   const [country, setCountry] = useState('');
   const [companySize, setCompanySize] = useState('');
@@ -72,6 +74,7 @@ export default function OrgSetupPage() {
         return;
       }
 
+      await refreshUser();
       navigate('/dashboard');
     } catch {
       setError('Network error. Please try again.');
