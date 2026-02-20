@@ -1,0 +1,207 @@
+/* Back link */
+.pd-back {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.85rem; color: var(--muted); text-decoration: none;
+  margin-bottom: 1rem; transition: color 0.15s;
+}
+.pd-back:hover { color: var(--accent); }
+
+/* Header card */
+.pd-header-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 1.5rem; margin-bottom: 1.25rem;
+}
+.pd-header-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1rem;
+}
+.pd-header-icon { opacity: 0.8; }
+.pd-header-actions { display: flex; gap: 0.5rem; }
+.pd-edit-btn, .pd-cancel-btn {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.4rem 0.85rem; font-size: 0.8rem; border-radius: 6px;
+  cursor: pointer; transition: all 0.15s;
+}
+.pd-edit-btn {
+  background: none; border: 1px solid var(--border); color: var(--text);
+}
+.pd-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+.pd-cancel-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+}
+.pd-cancel-btn:hover { border-color: var(--red); color: var(--red); }
+.pd-save-btn { display: flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.85rem; font-size: 0.8rem; }
+
+.pd-product-name { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.35rem; }
+.pd-product-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.75rem; line-height: 1.5; }
+
+.pd-meta-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.pd-type-badge {
+  font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px;
+  background: rgba(139,141,152,0.15); color: var(--muted);
+}
+.pd-cra-badge {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px;
+  border: 1px solid; font-weight: 600;
+}
+.pd-version { font-size: 0.8rem; color: var(--muted); font-family: monospace; }
+.pd-date { font-size: 0.75rem; color: var(--muted); }
+
+/* Edit form */
+.pd-edit-form { display: flex; flex-direction: column; gap: 0; }
+
+/* Tabs */
+.pd-tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem; overflow-x: auto;
+}
+.pd-tab {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.75rem 1.25rem; font-size: 0.85rem; font-weight: 500;
+  color: var(--muted); background: none; border: none;
+  border-bottom: 2px solid transparent; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+}
+.pd-tab:hover { color: var(--text); }
+.pd-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Tab content */
+.pd-tab-content { min-height: 300px; }
+
+/* Error */
+.pd-error {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 3rem 2rem; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; text-align: center; color: var(--muted);
+}
+.pd-error h3 { color: var(--text); margin: 1rem 0; }
+
+/* Overview grid */
+.pd-overview-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1rem;
+}
+
+/* Cards */
+.pd-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1.25rem;
+}
+.pd-card-header {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 1rem; color: var(--accent);
+}
+.pd-card-header h3 { font-size: 0.95rem; color: var(--text); margin: 0; }
+
+/* Classification */
+.pd-classification { margin-bottom: 1rem; }
+.pd-class-badge-large {
+  display: inline-block; padding: 0.35rem 0.85rem; border: 2px solid;
+  border-radius: 6px; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.75rem;
+}
+.pd-class-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+.pd-class-details { display: flex; flex-direction: column; gap: 0; }
+.pd-detail-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.6rem 0; border-top: 1px solid var(--border);
+}
+.pd-detail-label { font-size: 0.8rem; color: var(--muted); }
+.pd-detail-value { font-size: 0.8rem; font-weight: 500; color: var(--text); text-align: right; }
+.pd-mono { font-family: monospace; font-size: 0.7rem; word-break: break-all; max-width: 200px; }
+
+/* Progress */
+.pd-progress-list { display: flex; flex-direction: column; gap: 0; }
+.pd-progress-item {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 0; border-top: 1px solid var(--border);
+}
+.pd-progress-label { flex: 1; font-size: 0.85rem; }
+.pd-progress-status { font-size: 0.75rem; font-weight: 500; white-space: nowrap; }
+
+/* Next steps */
+.pd-next-steps { display: flex; flex-direction: column; gap: 0.75rem; }
+.pd-step {
+  display: flex; gap: 0.75rem; align-items: flex-start;
+}
+.pd-step-num {
+  min-width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(59,130,246,0.1); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700;
+}
+.pd-step-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.15rem; }
+.pd-step-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+
+/* Section intro */
+.pd-section-intro {
+  display: flex; gap: 0.75rem; align-items: flex-start;
+  padding: 1rem 1.25rem; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; margin-bottom: 1rem; color: var(--accent);
+}
+.pd-section-intro h3 { font-size: 1rem; margin: 0 0 0.25rem; color: var(--text); }
+.pd-section-intro p { font-size: 0.85rem; color: var(--muted); margin: 0; line-height: 1.5; }
+
+/* Obligations */
+.pd-obligations-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.pd-obligation-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+.pd-obligation-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.5rem;
+}
+.pd-obligation-article {
+  font-size: 0.75rem; font-weight: 600; color: var(--accent);
+  padding: 0.15rem 0.5rem; background: rgba(59,130,246,0.08); border-radius: 4px;
+}
+.pd-obligation-status {
+  font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px;
+}
+.pd-obligation-status.status-not_started { background: rgba(139,141,152,0.12); color: var(--muted); }
+.pd-obligation-status.status-in_progress { background: rgba(245,158,11,0.12); color: var(--amber); }
+.pd-obligation-status.status-complete { background: rgba(34,197,94,0.12); color: var(--green); }
+.pd-obligation-card h4 { font-size: 0.9rem; margin-bottom: 0.35rem; }
+.pd-obligation-card p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin: 0; }
+
+/* Technical File */
+.pd-techfile-list { display: flex; flex-direction: column; gap: 0; }
+.pd-techfile-item {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1rem 1.25rem; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; margin-bottom: 0.5rem;
+}
+.pd-techfile-status { flex-shrink: 0; }
+.pd-techfile-content { flex: 1; }
+.pd-techfile-content h4 { font-size: 0.9rem; margin-bottom: 0.2rem; }
+.pd-techfile-content p { font-size: 0.8rem; color: var(--muted); line-height: 1.4; margin: 0; }
+.pd-techfile-action {
+  display: flex; align-items: center; gap: 0.3rem;
+  padding: 0.4rem 0.85rem; font-size: 0.8rem; border-radius: 6px;
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  cursor: pointer; white-space: nowrap; transition: all 0.15s;
+}
+.pd-techfile-action:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pd-techfile-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Placeholder tabs */
+.pd-placeholder {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 3rem 2rem; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; text-align: center; color: var(--muted);
+}
+.pd-placeholder svg { margin-bottom: 1rem; opacity: 0.4; }
+.pd-placeholder h3 { font-size: 1.1rem; color: var(--text); margin-bottom: 0.5rem; }
+.pd-placeholder p { max-width: 500px; font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.6; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pd-overview-grid { grid-template-columns: 1fr; }
+  .pd-header-top { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+  .pd-meta-row { gap: 0.5rem; }
+  .pd-tabs { gap: 0; }
+  .pd-tab { padding: 0.6rem 0.75rem; font-size: 0.8rem; }
+  .pd-techfile-item { flex-direction: column; align-items: flex-start; }
+  .pd-edit-form .form-row { flex-direction: column; }
+}
