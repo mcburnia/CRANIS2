@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Products</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .product-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.5rem; }
+    .product-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+    }
+    .product-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .product-name { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .product-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem; }
+    .product-meta { display: flex; flex-direction: column; gap: 0.75rem; }
+    .meta-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+    .meta-label { color: var(--muted); min-width: 120px; font-size: 0.8rem; }
+    .repo-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .repo-chip {
+      background: rgba(59,130,246,0.1); color: var(--accent); padding: 0.2rem 0.6rem;
+      border-radius: 6px; font-size: 0.75rem; font-weight: 500; font-family: monospace;
+    }
+    .progress-section { margin-top: 0.25rem; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.4rem; }
+    .progress-label span:first-child { color: var(--muted); }
+    .progress-label span:last-child { font-weight: 600; }
+    .card-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .btn-secondary {
+      padding: 0.4rem 1rem; border-radius: 8px; border: 1px solid var(--border);
+      background: none; color: var(--text); font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Modal */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); z-index: 1000;
+      justify-content: center; align-items: center; backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; width: 100%; max-width: 580px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.5rem 1.5rem 0;
+    }
+    .modal-header h2 { font-size: 1.25rem; font-weight: 600; }
+    .modal-close {
+      background: none; border: none; color: var(--muted); font-size: 1.5rem;
+      cursor: pointer; padding: 0; line-height: 1;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer {
+      padding: 1rem 1.5rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;
+    }
+    .btn-cancel {
+      padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.9rem;
+      font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+    }
+    .btn-cancel:hover { color: var(--text); border-color: var(--text); }
+    .btn-save {
+      padding: 0.6rem 1.5rem; border-radius: 8px; font-size: 0.9rem;
+      font-weight: 600; cursor: pointer; border: none;
+      background: var(--accent); color: #fff;
+    }
+    .btn-save:hover { background: var(--accent-hover); }
+
+    .form-label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .form-hint { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem; }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-group:last-child { margin-bottom: 0; }
+
+    /* Reclassify options */
+    .classify-options { display: flex; flex-direction: column; gap: 0.5rem; }
+    .classify-option {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 1rem; border-radius: 8px;
+      background: var(--bg); border: 2px solid var(--border);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .classify-option:hover { border-color: var(--accent); }
+    .classify-option.selected { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+    .classify-radio {
+      width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border);
+      flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center;
+    }
+    .classify-option.selected .classify-radio { border-color: var(--accent); }
+    .classify-option.selected .classify-radio::after {
+      content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+    }
+    .classify-info { flex: 1; }
+    .classify-name { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+    .classify-desc { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+
+    .justify-field { margin-top: 1rem; }
+    .justify-textarea {
+      width: 100%; padding: 0.65rem 0.9rem; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); font-size: 0.85rem; outline: none;
+      font-family: inherit; resize: vertical; min-height: 80px;
+    }
+    .justify-textarea:focus { border-color: var(--accent); }
+
+    .impact-warning {
+      background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 8px; padding: 0.85rem 1rem; font-size: 0.85rem;
+      color: var(--muted); margin-top: 1rem;
+    }
+    .impact-warning strong { color: var(--amber); }
+
+    /* Manage Repos */
+    .repo-manage-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .repo-manage-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.75rem 1rem; border-radius: 8px;
+      background: var(--bg); border: 2px solid var(--border);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .repo-manage-item:hover { border-color: var(--accent); }
+    .repo-manage-item.assigned { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+    .repo-cb {
+      width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--border);
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .repo-manage-item.assigned .repo-cb { background: var(--accent); border-color: var(--accent); }
+    .repo-manage-item.assigned .repo-cb::after { content: '\2713'; color: #fff; font-size: 0.7rem; font-weight: 700; }
+    .repo-manage-info { flex: 1; }
+    .repo-manage-name { font-size: 0.9rem; font-weight: 600; font-family: monospace; }
+    .repo-manage-meta { font-size: 0.8rem; color: var(--muted); }
+    .repo-manage-products { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.85rem 1.25rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      font-size: 0.9rem; z-index: 2000;
+      display: flex; align-items: center; gap: 0.6rem;
+      transform: translateY(100px); opacity: 0; transition: all 0.3s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    /* Add Product steps */
+    .ap-step-ind { flex: 1; height: 3px; border-radius: 2px; background: var(--border); }
+    .ap-step-ind.active { background: var(--accent); }
+    .ap-step-ind.done { background: var(--green); }
+    .ap-step { display: none; }
+    .ap-step.active { display: block; }
+    .form-error { font-size: 0.8rem; color: var(--red); margin-top: 0.3rem; display: none; }
+    .form-error.show { display: block; }
+    .form-input.error { border-color: var(--red); }
+    .step-back { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; padding: 0; }
+    .step-back:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">CRANIS<span>2</span></div>
+      <div class="sidebar-org">Acme Software Ltd</div>
+      <div class="nav-section"><div class="nav-section-label">Overview</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Compliance</div>
+        <a href="app-products.html" class="nav-item active"><span class="nav-icon">📦</span> Products</a>
+        <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+        <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Repositories</div>
+        <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+        <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+        <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+        <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Billing</div>
+        <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Settings</div>
+        <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+        <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+        <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="page-header">
+        <div><h1>Products</h1><div class="timestamp">2 products registered</div></div>
+        <button class="btn btn-primary" onclick="openAddProduct()">+ Add Product</button>
+      </div>
+
+      <div class="product-cards">
+        <!-- Acme Platform -->
+        <div class="product-card" id="card-platform">
+          <div class="product-card-header">
+            <div>
+              <div class="product-name">Acme Platform</div>
+              <div class="product-desc">Core SaaS platform providing identity management, API gateway, and application hosting for enterprise customers.</div>
+            </div>
+            <span class="badge purple" id="badge-platform">Important I</span>
+          </div>
+          <div class="product-meta">
+            <div class="meta-row"><span class="meta-label">Repositories</span><div class="repo-chips" id="repos-platform"><span class="repo-chip">acme-platform</span><span class="repo-chip">acme-auth-service</span></div></div>
+            <div class="meta-row"><span class="meta-label">Stakeholders</span><span>3 assigned (Lead: Sarah Jensen)</span></div>
+            <div class="meta-row"><span class="meta-label">Created</span><span>14 Feb 2026</span></div>
+          </div>
+          <div class="progress-section">
+            <div class="progress-label"><span>Obligation Progress</span><span>6 / 10 complete</span></div>
+            <div class="progress-bar"><div class="progress-fill green" style="width:60%"></div></div>
+          </div>
+          <div class="progress-section">
+            <div class="progress-label"><span>Technical File Completeness</span><span>4 / 6 items</span></div>
+            <div class="progress-bar"><div class="progress-fill amber" style="width:67%"></div></div>
+          </div>
+          <div class="card-actions">
+            <a href="product-detail-platform.html" class="btn btn-primary btn-sm">View Details</a>
+            <button class="btn-secondary" onclick="openReclassify('platform','Acme Platform','important1')">Reclassify</button>
+            <button class="btn-secondary" onclick="openManageRepos('platform','Acme Platform')">Manage Repos</button>
+          </div>
+        </div>
+
+        <!-- Acme Pay -->
+        <div class="product-card" id="card-pay">
+          <div class="product-card-header">
+            <div>
+              <div class="product-name">Acme Pay</div>
+              <div class="product-desc">Payment processing gateway handling PCI-DSS compliant card transactions, SEPA transfers, and merchant settlement.</div>
+            </div>
+            <span class="badge red" id="badge-pay">Critical II</span>
+          </div>
+          <div class="product-meta">
+            <div class="meta-row"><span class="meta-label">Repositories</span><div class="repo-chips" id="repos-pay"><span class="repo-chip">acme-payment-gateway</span></div></div>
+            <div class="meta-row"><span class="meta-label">Stakeholders</span><span>2 assigned (Lead: James Wilson)</span></div>
+            <div class="meta-row"><span class="meta-label">Created</span><span>14 Feb 2026</span></div>
+          </div>
+          <div class="progress-section">
+            <div class="progress-label"><span>Obligation Progress</span><span>3 / 12 complete</span></div>
+            <div class="progress-bar"><div class="progress-fill amber" style="width:25%"></div></div>
+          </div>
+          <div class="progress-section">
+            <div class="progress-label"><span>Technical File Completeness</span><span>2 / 6 items</span></div>
+            <div class="progress-bar"><div class="progress-fill amber" style="width:33%"></div></div>
+          </div>
+          <div class="card-actions">
+            <a href="product-detail-pay.html" class="btn btn-primary btn-sm">View Details</a>
+            <button class="btn-secondary" onclick="openReclassify('pay','Acme Pay','critical')">Reclassify</button>
+            <button class="btn-secondary" onclick="openManageRepos('pay','Acme Pay')">Manage Repos</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== RECLASSIFY MODAL ==================== -->
+  <div class="modal-overlay" id="reclassifyModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Reclassify: <span id="reclassifyProductName"></span></h2>
+        <button class="modal-close" onclick="closeReclassify()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Current classification</label>
+          <div id="reclassifyCurrentBadge" style="margin-bottom:0.5rem"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New classification</label>
+          <div class="form-hint">Select the CRA category that best fits this product. Changing classification will regenerate obligations.</div>
+          <div class="classify-options" id="classifyOptions">
+            <div class="classify-option" data-cat="default" onclick="selectCategory(this)">
+              <div class="classify-radio"></div>
+              <div class="classify-info">
+                <div class="classify-name"><span class="badge green">Default</span> Standard requirements</div>
+                <div class="classify-desc">General-purpose software. Self-assessment conformity. Fewest obligations.</div>
+              </div>
+            </div>
+            <div class="classify-option" data-cat="important1" onclick="selectCategory(this)">
+              <div class="classify-radio"></div>
+              <div class="classify-info">
+                <div class="classify-name"><span class="badge purple">Important — Class I</span></div>
+                <div class="classify-desc">Identity, auth, network monitoring, or encryption software. Enhanced requirements. Self-assessment or harmonised standard.</div>
+              </div>
+            </div>
+            <div class="classify-option" data-cat="important2" onclick="selectCategory(this)">
+              <div class="classify-radio"></div>
+              <div class="classify-info">
+                <div class="classify-name"><span class="badge purple">Important — Class II</span></div>
+                <div class="classify-desc">Firewalls, IDS/IPS, tamper-resistant hardware. Third-party assessment or EU scheme required.</div>
+              </div>
+            </div>
+            <div class="classify-option" data-cat="critical" onclick="selectCategory(this)">
+              <div class="classify-radio"></div>
+              <div class="classify-info">
+                <div class="classify-name"><span class="badge red">Critical — Class II</span></div>
+                <div class="classify-desc">OS, hypervisor, smart meter gateway, HSM. Strictest requirements. Mandatory third-party conformity assessment.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="justify-field">
+          <label class="form-label">Justification</label>
+          <div class="form-hint">Explain why this product's classification is changing. This is recorded in the audit log.</div>
+          <textarea class="justify-textarea" id="reclassifyJustification" placeholder="e.g. Product scope expanded to include identity management functionality, requiring Class I classification..."></textarea>
+        </div>
+        <div class="impact-warning" id="impactWarning" style="display:none">
+          <strong>⚠️ Impact:</strong> Changing classification will regenerate CRA obligations for this product. Existing obligation progress will be preserved where the obligation code matches, but new obligations may be added and some may be removed.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeReclassify()">Cancel</button>
+        <button class="btn-save" onclick="saveReclassify()">Confirm Reclassification</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MANAGE REPOS MODAL ==================== -->
+  <div class="modal-overlay" id="manageReposModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Manage Repos: <span id="manageReposProductName"></span></h2>
+        <button class="modal-close" onclick="closeManageRepos()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Assign repositories to this product</label>
+          <div class="form-hint">Select which repos are part of this product. A repo can belong to multiple products. Changes affect contributor counts and dependency tracking.</div>
+        </div>
+        <div class="repo-manage-list" id="repoManageList">
+          <div class="repo-manage-item" data-repo="acme-platform" onclick="toggleRepoManage(this)">
+            <div class="repo-cb"></div>
+            <div class="repo-manage-info">
+              <div class="repo-manage-name">acme-platform</div>
+              <div class="repo-manage-meta">Private · TypeScript · 14 contributors</div>
+              <div class="repo-manage-products">Also in: —</div>
+            </div>
+          </div>
+          <div class="repo-manage-item" data-repo="acme-auth-service" onclick="toggleRepoManage(this)">
+            <div class="repo-cb"></div>
+            <div class="repo-manage-info">
+              <div class="repo-manage-name">acme-auth-service</div>
+              <div class="repo-manage-meta">Private · Go · 6 contributors</div>
+              <div class="repo-manage-products">Also in: —</div>
+            </div>
+          </div>
+          <div class="repo-manage-item" data-repo="acme-payment-gateway" onclick="toggleRepoManage(this)">
+            <div class="repo-cb"></div>
+            <div class="repo-manage-info">
+              <div class="repo-manage-name">acme-payment-gateway</div>
+              <div class="repo-manage-meta">Private · Java · 4 contributors</div>
+              <div class="repo-manage-products">Also in: —</div>
+            </div>
+          </div>
+        </div>
+        <div id="repoChangeSummary" style="margin-top:1rem;font-size:0.85rem;color:var(--muted);display:none">
+          <strong style="color:var(--text)">Changes:</strong> <span id="repoChangeText"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeManageRepos()">Cancel</button>
+        <button class="btn-save" onclick="saveManageRepos()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+
+  <!-- ==================== ADD PRODUCT MODAL ==================== -->
+  <div class="modal-overlay" id="addProductModal">
+    <div class="modal" style="max-width:620px">
+      <div class="modal-header">
+        <h2>Add Product</h2>
+        <button class="modal-close" onclick="closeAddProduct()">&times;</button>
+      </div>
+      <div style="display:flex;gap:0.5rem;padding:1rem 1.5rem 0">
+        <div class="ap-step-ind active" id="ap-si-1"></div>
+        <div class="ap-step-ind" id="ap-si-2"></div>
+        <div class="ap-step-ind" id="ap-si-3"></div>
+        <div class="ap-step-ind" id="ap-si-4"></div>
+      </div>
+
+      <!-- Step 1: Product Details -->
+      <div class="ap-step active" id="ap-step-1">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Product name</label>
+            <div class="form-hint">The name of the product you place on the EU market.</div>
+            <input type="text" class="form-input" id="apName" placeholder="e.g. Acme Analytics">
+            <div class="form-error" id="apNameError">Please enter a product name</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <div class="form-hint">Brief description of what this product does.</div>
+            <textarea class="justify-textarea" id="apDesc" placeholder="e.g. Real-time analytics dashboard for monitoring business KPIs..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Version <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <input type="text" class="form-input" id="apVersion" placeholder="e.g. 1.0.0">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" onclick="closeAddProduct()">Cancel</button>
+          <button class="btn-save" onclick="apGoTo(2)">Next: Assign repos &rarr;</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Assign Repos -->
+      <div class="ap-step" id="ap-step-2">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Assign repositories</label>
+            <div class="form-hint">Select the repos that build this product. A repo can belong to multiple products.</div>
+            <div class="repo-manage-list" id="apRepoList">
+              <div class="repo-manage-item" data-repo="acme-platform" onclick="toggleRepoAP(this)">
+                <div class="repo-cb"></div>
+                <div class="repo-manage-info">
+                  <div class="repo-manage-name">acme-platform</div>
+                  <div class="repo-manage-meta">Private &middot; TypeScript &middot; 14 contributors</div>
+                </div>
+              </div>
+              <div class="repo-manage-item" data-repo="acme-auth-service" onclick="toggleRepoAP(this)">
+                <div class="repo-cb"></div>
+                <div class="repo-manage-info">
+                  <div class="repo-manage-name">acme-auth-service</div>
+                  <div class="repo-manage-meta">Private &middot; Go &middot; 6 contributors</div>
+                </div>
+              </div>
+              <div class="repo-manage-item" data-repo="acme-payment-gateway" onclick="toggleRepoAP(this)">
+                <div class="repo-cb"></div>
+                <div class="repo-manage-info">
+                  <div class="repo-manage-name">acme-payment-gateway</div>
+                  <div class="repo-manage-meta">Private &middot; Java &middot; 4 contributors</div>
+                </div>
+              </div>
+            </div>
+            <div class="form-error" id="apRepoError">Please select at least one repository</div>
+          </div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between">
+          <button class="step-back" onclick="apGoTo(1)">&larr; Back</button>
+          <button class="btn-save" onclick="apGoTo(3)">Next: Classify &rarr;</button>
+        </div>
+      </div>
+
+      <!-- Step 3: CRA Classification -->
+      <div class="ap-step" id="ap-step-3">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">CRA classification</label>
+            <div class="form-hint">Select the category that best fits this product. This determines which compliance obligations are generated.</div>
+            <div class="classify-options" id="apClassifyOptions">
+              <div class="classify-option selected" data-cat="default" onclick="apSelectCat(this)">
+                <div class="classify-radio"></div>
+                <div class="classify-info">
+                  <div class="classify-name"><span class="badge green">Default</span> Standard requirements</div>
+                  <div class="classify-desc">General-purpose software. Self-assessment conformity. Fewest obligations.</div>
+                </div>
+              </div>
+              <div class="classify-option" data-cat="important1" onclick="apSelectCat(this)">
+                <div class="classify-radio"></div>
+                <div class="classify-info">
+                  <div class="classify-name"><span class="badge purple">Important &mdash; Class I</span></div>
+                  <div class="classify-desc">Identity, auth, network monitoring, or encryption software. Enhanced requirements.</div>
+                </div>
+              </div>
+              <div class="classify-option" data-cat="important2" onclick="apSelectCat(this)">
+                <div class="classify-radio"></div>
+                <div class="classify-info">
+                  <div class="classify-name"><span class="badge purple">Important &mdash; Class II</span></div>
+                  <div class="classify-desc">Firewalls, IDS/IPS, tamper-resistant hardware. Third-party assessment required.</div>
+                </div>
+              </div>
+              <div class="classify-option" data-cat="critical" onclick="apSelectCat(this)">
+                <div class="classify-radio"></div>
+                <div class="classify-info">
+                  <div class="classify-name"><span class="badge red">Critical &mdash; Class II</span></div>
+                  <div class="classify-desc">OS, hypervisor, HSM. Strictest requirements. Mandatory third-party conformity.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="justify-field">
+            <label class="form-label">Classification justification <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <textarea class="justify-textarea" id="apJustification" placeholder="e.g. This is a general-purpose analytics product with no critical infrastructure function..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between">
+          <button class="step-back" onclick="apGoTo(2)">&larr; Back</button>
+          <button class="btn-save" onclick="apGoTo(4)">Next: Review &rarr;</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Review & Confirm -->
+      <div class="ap-step" id="ap-step-4">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Review your new product</label>
+            <div class="form-hint">Confirm the details below. Once created, CRA obligations will be generated automatically based on the classification.</div>
+          </div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem">
+            <div style="font-size:1.1rem;font-weight:700;margin-bottom:0.75rem" id="apReviewName"></div>
+            <div style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem" id="apReviewDesc"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+              <div><div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);letter-spacing:0.04em">Version</div><div style="font-size:0.9rem;margin-top:0.15rem" id="apReviewVersion">—</div></div>
+              <div><div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);letter-spacing:0.04em">Classification</div><div style="margin-top:0.15rem" id="apReviewCat"></div></div>
+              <div style="grid-column:1/-1"><div style="font-size:0.75rem;text-transform:uppercase;color:var(--muted);letter-spacing:0.04em">Repositories</div><div class="repo-chips" style="margin-top:0.3rem" id="apReviewRepos"></div></div>
+            </div>
+          </div>
+          <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:8px;padding:0.85rem 1rem;font-size:0.85rem;color:var(--muted)">
+            <strong style="color:var(--accent)">What happens next:</strong> CRA obligations will be generated based on the <span id="apReviewCatText"></span> classification. A technical file will be created and SBOM generation will start on the next daily run.
+          </div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between">
+          <button class="step-back" onclick="apGoTo(3)">&larr; Back</button>
+          <button class="btn-save" onclick="confirmAddProduct()">Create Product</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"><span id="toastMessage"></span></div>
+
+  <script>
+    const catLabels = {
+      'default': { text: 'Default', badge: 'green' },
+      'important1': { text: 'Important I', badge: 'purple' },
+      'important2': { text: 'Important II', badge: 'purple' },
+      'critical': { text: 'Critical II', badge: 'red' }
+    };
+
+    const productRepos = {
+      'platform': ['acme-platform', 'acme-auth-service'],
+      'pay': ['acme-payment-gateway']
+    };
+
+    let reclassifyTarget = null;
+    let reclassifyOriginalCat = null;
+    let manageReposTarget = null;
+    let manageReposOriginal = [];
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toastMessage').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // ==================== RECLASSIFY ====================
+    function openReclassify(productId, productName, currentCat) {
+      reclassifyTarget = productId;
+      reclassifyOriginalCat = currentCat;
+      document.getElementById('reclassifyProductName').textContent = productName;
+
+      const info = catLabels[currentCat];
+      document.getElementById('reclassifyCurrentBadge').innerHTML =
+        '<span class="badge ' + info.badge + '">' + info.text + '</span>';
+
+      // Pre-select current
+      document.querySelectorAll('#classifyOptions .classify-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.getAttribute('data-cat') === currentCat);
+      });
+
+      document.getElementById('reclassifyJustification').value = '';
+      document.getElementById('impactWarning').style.display = 'none';
+      document.getElementById('reclassifyModal').classList.add('open');
+    }
+
+    function closeReclassify() {
+      document.getElementById('reclassifyModal').classList.remove('open');
+      reclassifyTarget = null;
+    }
+
+    function selectCategory(el) {
+      document.querySelectorAll('#classifyOptions .classify-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+      const newCat = el.getAttribute('data-cat');
+      document.getElementById('impactWarning').style.display = newCat !== reclassifyOriginalCat ? 'block' : 'none';
+    }
+
+    function saveReclassify() {
+      const selected = document.querySelector('#classifyOptions .classify-option.selected');
+      if (!selected) return;
+      const newCat = selected.getAttribute('data-cat');
+      const info = catLabels[newCat];
+
+      // Update badge on the product card
+      const badge = document.getElementById('badge-' + reclassifyTarget);
+      badge.textContent = info.text;
+      badge.className = 'badge ' + info.badge;
+
+      closeReclassify();
+      showToast('Classification updated to ' + info.text);
+    }
+
+    // ==================== MANAGE REPOS ====================
+    function openManageRepos(productId, productName) {
+      manageReposTarget = productId;
+      manageReposOriginal = [...productRepos[productId]];
+      document.getElementById('manageReposProductName').textContent = productName;
+
+      // Set current assignments
+      const currentRepos = productRepos[productId];
+      document.querySelectorAll('#repoManageList .repo-manage-item').forEach(item => {
+        const repo = item.getAttribute('data-repo');
+        item.classList.toggle('assigned', currentRepos.includes(repo));
+
+        // Show "also in" other products
+        const otherProducts = [];
+        for (const [pid, repos] of Object.entries(productRepos)) {
+          if (pid !== productId && repos.includes(repo)) {
+            otherProducts.push(pid === 'platform' ? 'Acme Platform' : 'Acme Pay');
+          }
+        }
+        item.querySelector('.repo-manage-products').textContent =
+          'Also in: ' + (otherProducts.length ? otherProducts.join(', ') : 'No other products');
+      });
+
+      document.getElementById('repoChangeSummary').style.display = 'none';
+      document.getElementById('manageReposModal').classList.add('open');
+    }
+
+    function closeManageRepos() {
+      document.getElementById('manageReposModal').classList.remove('open');
+      manageReposTarget = null;
+    }
+
+    function toggleRepoManage(el) {
+      el.classList.toggle('assigned');
+      updateRepoChangeSummary();
+    }
+
+    function updateRepoChangeSummary() {
+      const newRepos = [];
+      document.querySelectorAll('#repoManageList .repo-manage-item.assigned').forEach(item => {
+        newRepos.push(item.getAttribute('data-repo'));
+      });
+
+      const added = newRepos.filter(r => !manageReposOriginal.includes(r));
+      const removed = manageReposOriginal.filter(r => !newRepos.includes(r));
+
+      const summary = document.getElementById('repoChangeSummary');
+      if (added.length || removed.length) {
+        let text = '';
+        if (added.length) text += 'Adding: ' + added.join(', ');
+        if (added.length && removed.length) text += ' · ';
+        if (removed.length) text += 'Removing: ' + removed.join(', ');
+        document.getElementById('repoChangeText').textContent = text;
+        summary.style.display = 'block';
+      } else {
+        summary.style.display = 'none';
+      }
+    }
+
+    function saveManageRepos() {
+      const newRepos = [];
+      document.querySelectorAll('#repoManageList .repo-manage-item.assigned').forEach(item => {
+        newRepos.push(item.getAttribute('data-repo'));
+      });
+
+      // Update in-memory
+      productRepos[manageReposTarget] = newRepos;
+
+      // Update the repo chips on the product card
+      const chipsContainer = document.getElementById('repos-' + manageReposTarget);
+      chipsContainer.innerHTML = newRepos.map(r =>
+        '<span class="repo-chip">' + r + '</span>'
+      ).join('');
+
+      closeManageRepos();
+      showToast('Repositories updated for ' + document.getElementById('manageReposProductName').textContent);
+    }
+
+    // Close modals on overlay click / Escape
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    });
+    /* ==================== ADD PRODUCT ==================== */
+    let apStep = 1;
+
+    function openAddProduct() {
+      apStep = 1;
+      document.getElementById("apName").value = "";
+      document.getElementById("apDesc").value = "";
+      document.getElementById("apVersion").value = "";
+      document.getElementById("apJustification").value = "";
+      document.getElementById("apNameError").classList.remove("show");
+      document.getElementById("apRepoError").classList.remove("show");
+      document.getElementById("apName").classList.remove("error");
+      document.querySelectorAll("#apRepoList .repo-manage-item").forEach(i => i.classList.remove("assigned"));
+      document.querySelectorAll("#apClassifyOptions .classify-option").forEach((o,idx) => o.classList.toggle("selected", idx===0));
+      updateAPSteps();
+      document.getElementById("addProductModal").classList.add("open");
+    }
+
+    function closeAddProduct() {
+      document.getElementById("addProductModal").classList.remove("open");
+    }
+
+    function apGoTo(step) {
+      if (step === 2 && apStep === 1) {
+        var name = document.getElementById("apName").value.trim();
+        if (!name) {
+          document.getElementById("apName").classList.add("error");
+          document.getElementById("apNameError").classList.add("show");
+          return;
+        }
+        document.getElementById("apName").classList.remove("error");
+        document.getElementById("apNameError").classList.remove("show");
+      }
+      if (step === 3 && apStep === 2) {
+        var repos = document.querySelectorAll("#apRepoList .repo-manage-item.assigned");
+        if (repos.length === 0) { document.getElementById("apRepoError").classList.add("show"); return; }
+        document.getElementById("apRepoError").classList.remove("show");
+      }
+      if (step === 4) { buildAPReview(); }
+      apStep = step;
+      updateAPSteps();
+    }
+
+    function updateAPSteps() {
+      for (var i = 1; i <= 4; i++) {
+        var panel = document.getElementById("ap-step-" + i);
+        panel.classList.toggle("active", i === apStep);
+        var ind = document.getElementById("ap-si-" + i);
+        ind.className = "ap-step-ind";
+        if (i < apStep) ind.classList.add("done");
+        else if (i === apStep) ind.classList.add("active");
+      }
+    }
+
+    function toggleRepoAP(el) {
+      el.classList.toggle("assigned");
+      document.getElementById("apRepoError").classList.remove("show");
+    }
+
+    function apSelectCat(el) {
+      document.querySelectorAll("#apClassifyOptions .classify-option").forEach(o => o.classList.remove("selected"));
+      el.classList.add("selected");
+    }
+
+    function buildAPReview() {
+      document.getElementById("apReviewName").textContent = document.getElementById("apName").value;
+      document.getElementById("apReviewDesc").textContent = document.getElementById("apDesc").value || "No description";
+      document.getElementById("apReviewVersion").textContent = document.getElementById("apVersion").value || "—";
+      var selCat = document.querySelector("#apClassifyOptions .classify-option.selected");
+      var catKey = selCat ? selCat.getAttribute("data-cat") : "default";
+      var ci = catLabels[catKey];
+      document.getElementById("apReviewCat").innerHTML = "<span class=\"badge " + ci.badge + "\">" + ci.text + "</span>";
+      document.getElementById("apReviewCatText").textContent = ci.text;
+      var repoChips = [];
+      document.querySelectorAll("#apRepoList .repo-manage-item.assigned").forEach(function(item) {
+        repoChips.push("<span class=\"repo-chip\">" + item.getAttribute("data-repo") + "</span>");
+      });
+      document.getElementById("apReviewRepos").innerHTML = repoChips.join("");
+    }
+
+    function confirmAddProduct() {
+      var name = document.getElementById("apName").value.trim();
+      var desc = document.getElementById("apDesc").value.trim();
+      var version = document.getElementById("apVersion").value.trim();
+      var selCat = document.querySelector("#apClassifyOptions .classify-option.selected");
+      var catKey = selCat ? selCat.getAttribute("data-cat") : "default";
+      var ci = catLabels[catKey];
+      var repos = [];
+      document.querySelectorAll("#apRepoList .repo-manage-item.assigned").forEach(function(item) {
+        repos.push(item.getAttribute("data-repo"));
+      });
+      var pid = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+      productRepos[pid] = repos;
+      var oblCounts = { "default": "8", "important1": "10", "important2": "11", "critical": "12" };
+      var oblCount = oblCounts[catKey] || "8";
+      var card = document.createElement("div");
+      card.className = "product-card";
+      card.id = "card-" + pid;
+      card.innerHTML =
+        "<div class=\"product-card-header\"><div>" +
+        "<div class=\"product-name\">" + name + "</div>" +
+        "<div class=\"product-desc\">" + (desc || "No description provided.") + "</div>" +
+        "</div><span class=\"badge " + ci.badge + "\" id=\"badge-" + pid + "\">" + ci.text + "</span></div>" +
+        "<div class=\"product-meta\">" +
+        "<div class=\"meta-row\"><span class=\"meta-label\">Repositories</span><div class=\"repo-chips\" id=\"repos-" + pid + "\">" + repos.map(function(r){ return "<span class=\"repo-chip\">" + r + "</span>"; }).join("") + "</div></div>" +
+        "<div class=\"meta-row\"><span class=\"meta-label\">Version</span><span>" + (version || "—") + "</span></div>" +
+        "<div class=\"meta-row\"><span class=\"meta-label\">Created</span><span>Just now</span></div>" +
+        "</div>" +
+        "<div class=\"progress-section\"><div class=\"progress-label\"><span>Obligation Progress</span><span>0 / " + oblCount + " complete</span></div><div class=\"progress-bar\"><div class=\"progress-fill amber\" style=\"width:0%\"></div></div></div>" +
+        "<div class=\"progress-section\"><div class=\"progress-label\"><span>Technical File Completeness</span><span>0 / 6 items</span></div><div class=\"progress-bar\"><div class=\"progress-fill amber\" style=\"width:0%\"></div></div></div>" +
+        "<div class=\"card-actions\">" +
+        "<a href=\"product-detail.html?id=" + encodeURIComponent(pid) + "&name=" + encodeURIComponent(name) + "&cat=" + encodeURIComponent(ci.text) + "&repos=" + encodeURIComponent(repos.join(",")) + "\" class=\"btn btn-primary btn-sm\">View Details</a>" +
+        "<button class=\"btn-secondary\" onclick=\"openReclassify(\x27" + pid + "\x27,\x27" + name + "\x27,\x27" + catKey + "\x27)\">Reclassify</button>" +
+        "<button class=\"btn-secondary\" onclick=\"openManageRepos(\x27" + pid + "\x27,\x27" + name + "\x27)\">Manage Repos</button>" +
+        "</div>";
+      document.querySelector(".product-cards").appendChild(card);
+      closeAddProduct();
+      showToast("Product \x22" + name + "\x22 created with " + oblCount + " obligations");
+    }
+  </script>
+</body>
+</html>

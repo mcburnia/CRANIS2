@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Project Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e4e4e7;
+      --muted: #8b8d98;
+      --accent: #3b82f6;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .logo span { color: var(--accent); }
+
+    .version {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .summary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .stat-card .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-card .value {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .stat-card .value.green { color: var(--green); }
+    .stat-card .value.amber { color: var(--amber); }
+    .stat-card .value.blue { color: var(--accent); }
+    .stat-card .value.red { color: var(--red); }
+
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    .section {
+      margin-bottom: 2rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge.done { background: rgba(34,197,94,0.15); color: var(--green); }
+    .badge.wip { background: rgba(245,158,11,0.15); color: var(--amber); }
+    .badge.todo { background: rgba(139,141,152,0.15); color: var(--muted); }
+    .badge.blocked { background: rgba(239,68,68,0.15); color: var(--red); }
+
+    .infra-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .infra-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .infra-card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .infra-card .detail {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .infra-card .detail span {
+      color: var(--text);
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+      position: relative;
+      top: -1px;
+    }
+
+    .status-dot.online { background: var(--green); }
+    .status-dot.offline { background: var(--red); }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <div class="logo">CRANIS<span>2</span></div>
+        <div class="version">CRA Compliance & Governance Platform</div>
+      </div>
+      <div class="version">Project Dashboard — Dev Build</div>
+    </header>
+
+    <div class="summary">
+      <p>EU Cyber Resilience Act compliance platform. GitHub-integrated contributor tracking, 
+      webhook-driven SBOM generation & dependency risk assessment, and Stripe metered billing 
+      at €6/contributor/month.</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="label">Build Phase</div>
+        <div class="value blue">Week 0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Components Done</div>
+        <div class="value green">0 / 14</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Schema Models</div>
+        <div class="value amber">11</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Infrastructure</div>
+        <div class="value green">Ready</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Build Progress</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Status</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Project scaffolding</td><td><span class="badge todo">Todo</span></td><td>Next.js 14, TypeScript, Prisma, Clerk</td></tr>
+          <tr><td>Database schema</td><td><span class="badge todo">Todo</span></td><td>11 models + new SBOM/webhook models</td></tr>
+          <tr><td>Auth (Clerk)</td><td><span class="badge todo">Todo</span></td><td>GitHub OAuth, org management</td></tr>
+          <tr><td>GitHub integration</td><td><span class="badge todo">Todo</span></td><td>Octokit — org/repo/collaborator read</td></tr>
+          <tr><td>Webhook receiver</td><td><span class="badge todo">Todo</span></td><td>GitHub → event queue</td></tr>
+          <tr><td>Daily batch job</td><td><span class="badge todo">Todo</span></td><td>SBOM + contributors + risk scan</td></tr>
+          <tr><td>SBOM parser</td><td><span class="badge todo">Todo</span></td><td>Generate → parse → store dependencies</td></tr>
+          <tr><td>Risk assessment</td><td><span class="badge todo">Todo</span></td><td>External API integration (OSV/NVD)</td></tr>
+          <tr><td>Contributor snapshots</td><td><span class="badge todo">Todo</span></td><td>Daily access tracking, billing source</td></tr>
+          <tr><td>Stripe billing</td><td><span class="badge todo">Todo</span></td><td>Metered billing, monthly invoicing</td></tr>
+          <tr><td>CRA wizard</td><td><span class="badge todo">Todo</span></td><td>Product classification + obligations</td></tr>
+          <tr><td>Dashboard UI</td><td><span class="badge todo">Todo</span></td><td>Org overview, repo status, compliance</td></tr>
+          <tr><td>Notifications</td><td><span class="badge todo">Todo</span></td><td>Role-based alerts and reports</td></tr>
+          <tr><td>Neo4j graph sync</td><td><span class="badge todo">Todo</span></td><td>Contributor relationship queries</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Infrastructure</h2>
+      <div class="infra-grid">
+        <div class="infra-card">
+          <h3><span class="status-dot online"></span> PostgreSQL 16</h3>
+          <div class="detail">Host: <span>192.168.1.107:5432</span></div>
+          <div class="detail">Database: <span>cranis2</span></div>
+          <div class="detail">Container: <span>archoniq_postgres (shared)</span></div>
+        </div>
+        <div class="infra-card">
+          <h3><span class="status-dot online"></span> Neo4j 5 Community</h3>
+          <div class="detail">Browser: <span>192.168.1.107:7475</span></div>
+          <div class="detail">Bolt: <span>192.168.1.107:7688</span></div>
+          <div class="detail">Container: <span>cranis2_neo4j (dedicated)</span></div>
+        </div>
+        <div class="infra-card">
+          <h3><span class="status-dot online"></span> Dev Server</h3>
+          <div class="detail">Host: <span>192.168.1.107 (Mac Mini)</span></div>
+          <div class="detail">OS: <span>Ubuntu 24.04 / Linux 6.8</span></div>
+          <div class="detail">Project: <span>/home/mcburnia/cranis2</span></div>
+        </div>
+        <div class="infra-card">
+          <h3><span class="status-dot offline"></span> Stripe</h3>
+          <div class="detail">Status: <span>Not configured</span></div>
+          <div class="detail">Mode: <span>Test mode (pending)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Tech Stack</h2>
+      <table>
+        <thead>
+          <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Frontend</td><td>Next.js 14 (App Router)</td><td>UI, SSR, API routes</td></tr>
+          <tr><td>Language</td><td>TypeScript</td><td>Type safety throughout</td></tr>
+          <tr><td>Auth</td><td>Clerk</td><td>GitHub OAuth, org management</td></tr>
+          <tr><td>Database</td><td>PostgreSQL 16 + Prisma</td><td>System of Record</td></tr>
+          <tr><td>Graph</td><td>Neo4j 5</td><td>Contributor relationship queries</td></tr>
+          <tr><td>GitHub API</td><td>Octokit</td><td>Org/repo/collaborator metadata</td></tr>
+          <tr><td>Billing</td><td>Stripe (metered)</td><td>€6/contributor/month</td></tr>
+          <tr><td>Hosting</td><td>GCP (EU regions)</td><td>Data sovereignty</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer>
+      CRANIS2 &copy; 2026 — Andi McBurnie — Build Dashboard v0.1
+    </footer>
+  </div>
+</body>
+</html>

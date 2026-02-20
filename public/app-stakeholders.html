@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Stakeholders</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+    .role-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .notif-badges { display: flex; gap: 0.3rem; }
+    .action-link { color: var(--accent); text-decoration: none; font-size: 0.85rem; cursor: pointer; }
+    .action-link:hover { text-decoration: underline; }
+    .action-link.danger { color: var(--red); }
+
+    /* Modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); z-index: 1000;
+      justify-content: center; align-items: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; width: 100%; max-width: 560px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .modal.small { max-width: 440px; }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.5rem 1.5rem 0;
+    }
+    .modal-header h2 { font-size: 1.25rem; font-weight: 600; }
+    .modal-close {
+      background: none; border: none; color: var(--muted); font-size: 1.5rem;
+      cursor: pointer; padding: 0; line-height: 1;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer {
+      padding: 1rem 1.5rem 1.5rem;
+      display: flex; justify-content: flex-end; gap: 0.75rem;
+    }
+
+    /* Form styles */
+    .form-group { margin-bottom: 1.25rem; }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-label {
+      display: block; font-size: 0.85rem; font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+    .form-hint { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem; }
+    .form-input {
+      width: 100%; padding: 0.65rem 0.9rem; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); font-size: 0.9rem; outline: none;
+      font-family: inherit;
+    }
+    .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+    .form-input::placeholder { color: var(--muted); }
+    .form-input.readonly { opacity: 0.6; cursor: not-allowed; }
+
+    /* Role selector */
+    .role-selector { display: flex; flex-direction: column; gap: 0.5rem; }
+    .role-option {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 0.85rem 1rem; border-radius: 8px;
+      background: var(--bg); border: 2px solid var(--border);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .role-option:hover { border-color: var(--accent); }
+    .role-option.selected { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+    .role-checkbox {
+      width: 18px; height: 18px; border-radius: 4px;
+      border: 2px solid var(--border); flex-shrink: 0; margin-top: 1px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .role-option.selected .role-checkbox { background: var(--accent); border-color: var(--accent); }
+    .role-option.selected .role-checkbox::after { content: '\2713'; color: #fff; font-size: 0.7rem; font-weight: 700; }
+    .role-info { flex: 1; }
+    .role-name { font-size: 0.9rem; font-weight: 600; }
+    .role-desc { font-size: 0.8rem; color: var(--muted); margin-top: 0.1rem; }
+
+    /* Notification prefs */
+    .notif-options { display: flex; flex-direction: column; gap: 0.5rem; }
+    .notif-option {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1rem; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+    }
+    .notif-left { display: flex; align-items: center; gap: 0.6rem; }
+    .notif-icon { font-size: 1.1rem; }
+    .notif-label { font-size: 0.9rem; }
+    .notif-sub { font-size: 0.8rem; color: var(--muted); }
+
+    .toggle {
+      width: 40px; height: 22px; border-radius: 11px;
+      background: var(--border); position: relative;
+      cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+    }
+    .toggle.on { background: var(--accent); }
+    .toggle::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(18px); }
+
+    .webhook-field { margin-top: 0.75rem; display: none; }
+    .webhook-field.show { display: block; }
+
+    /* Preview banner */
+    .invite-preview {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 1rem; margin-top: 0.5rem;
+    }
+    .invite-preview h4 {
+      font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--muted); margin-bottom: 0.5rem;
+    }
+    .preview-line { font-size: 0.85rem; padding: 0.15rem 0; }
+    .preview-line .label { color: var(--muted); }
+    .preview-roles { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
+
+    /* Button variants */
+    .btn-cancel {
+      padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.9rem;
+      font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+    }
+    .btn-cancel:hover { color: var(--text); border-color: var(--text); }
+    .btn-invite, .btn-save {
+      padding: 0.6rem 1.5rem; border-radius: 8px; font-size: 0.9rem;
+      font-weight: 600; cursor: pointer; border: none;
+      background: var(--accent); color: #fff;
+    }
+    .btn-invite:hover, .btn-save:hover { background: var(--accent-hover); }
+    .btn-remove {
+      padding: 0.6rem 1.5rem; border-radius: 8px; font-size: 0.9rem;
+      font-weight: 600; cursor: pointer; border: none;
+      background: var(--red); color: #fff;
+    }
+    .btn-remove:hover { opacity: 0.9; }
+
+    /* Validation */
+    .form-input.error { border-color: var(--red); }
+    .form-error { font-size: 0.8rem; color: var(--red); margin-top: 0.3rem; display: none; }
+    .form-error.show { display: block; }
+
+    /* Step indicator in modal */
+    .modal-steps { display: flex; gap: 0.5rem; padding: 1rem 1.5rem 0; }
+    .modal-step { flex: 1; height: 3px; border-radius: 2px; background: var(--border); }
+    .modal-step.active { background: var(--accent); }
+    .modal-step.done { background: var(--green); }
+
+    /* Step panels */
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+    .step-back {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      font-size: 0.85rem; padding: 0;
+    }
+    .step-back:hover { color: var(--text); }
+
+    /* Remove confirmation */
+    .remove-warning {
+      background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 8px; padding: 1rem; margin-bottom: 1rem;
+    }
+    .remove-warning p { font-size: 0.9rem; color: var(--text); }
+    .remove-warning .warn-detail { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+    .remove-name { font-weight: 700; color: var(--red); }
+
+    /* Toast notification */
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.85rem 1.25rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      font-size: 0.9rem; z-index: 2000;
+      display: flex; align-items: center; gap: 0.6rem;
+      transform: translateY(100px); opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-icon { font-size: 1.2rem; }
+
+    /* Row fade out animation */
+    @keyframes fadeOut {
+      from { opacity: 1; transform: scale(1); }
+      to { opacity: 0; transform: scale(0.95); }
+    }
+    .row-removing { animation: fadeOut 0.3s ease forwards; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">CRANIS<span>2</span></div>
+      <div class="sidebar-org">Acme Software Ltd</div>
+      <div class="nav-section"><div class="nav-section-label">Overview</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Compliance</div>
+        <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+        <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+        <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Repositories</div>
+        <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+        <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+        <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+        <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Billing</div>
+        <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Settings</div>
+        <a href="app-stakeholders.html" class="nav-item active"><span class="nav-icon">👤</span> Stakeholders</a>
+        <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+        <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="page-header">
+        <h1>Stakeholders</h1>
+        <div class="header-actions">
+          <button class="btn btn-primary btn-sm" onclick="openInviteModal()">+ Invite Stakeholder</button>
+        </div>
+      </div>
+      <div class="section">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Roles</th><th>Notifications</th><th>Added</th><th>Actions</th></tr></thead>
+          <tbody id="stakeholderTable">
+            <tr data-name="Andi McBurnie" data-email="andi@acme-software.com" data-roles="Org Admin,Billing Contact,Git Admin" data-notif="email" data-webhook="" data-owner="true">
+              <td><strong>Andi McBurnie</strong></td>
+              <td>andi@acme-software.com</td>
+              <td><div class="role-badges"><span class="badge blue">Org Admin</span><span class="badge green">Billing Contact</span><span class="badge purple">Git Admin</span></div></td>
+              <td><div class="notif-badges"><span class="badge blue">Email</span></div></td>
+              <td>19 Feb 2026</td>
+              <td><a class="action-link" onclick="openEditModal(this.closest('tr'))">Edit</a></td>
+            </tr>
+            <tr data-name="Sarah Jensen" data-email="sarah.jensen@acme-software.com" data-roles="Tech Lead,Git Admin" data-notif="email" data-webhook="">
+              <td><strong>Sarah Jensen</strong></td>
+              <td>sarah.jensen@acme-software.com</td>
+              <td><div class="role-badges"><span class="badge amber">Tech Lead</span><span class="badge purple">Git Admin</span></div></td>
+              <td><div class="notif-badges"><span class="badge blue">Email</span></div></td>
+              <td>19 Feb 2026</td>
+              <td><a class="action-link" onclick="openEditModal(this.closest('tr'))">Edit</a> &nbsp; <a class="action-link danger" onclick="openRemoveModal(this.closest('tr'))">Remove</a></td>
+            </tr>
+            <tr data-name="Maria Kowalski" data-email="maria.k@acme-software.com" data-roles="Compliance Officer" data-notif="email" data-webhook="">
+              <td><strong>Maria Kowalski</strong></td>
+              <td>maria.k@acme-software.com</td>
+              <td><div class="role-badges"><span class="badge red">Compliance Officer</span></div></td>
+              <td><div class="notif-badges"><span class="badge blue">Email</span></div></td>
+              <td>19 Feb 2026</td>
+              <td><a class="action-link" onclick="openEditModal(this.closest('tr'))">Edit</a> &nbsp; <a class="action-link danger" onclick="openRemoveModal(this.closest('tr'))">Remove</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== INVITE MODAL ==================== -->
+  <div class="modal-overlay" id="inviteModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Invite Stakeholder</h2>
+        <button class="modal-close" onclick="closeInviteModal()">&times;</button>
+      </div>
+      <div class="modal-steps">
+        <div class="modal-step active" id="step-ind-1"></div>
+        <div class="modal-step" id="step-ind-2"></div>
+        <div class="modal-step" id="step-ind-3"></div>
+      </div>
+      <div class="step-panel active" id="step1">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Full name</label>
+            <input type="text" class="form-input" id="inviteName" placeholder="e.g. James Carter">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email address</label>
+            <div class="form-hint">An invitation will be sent to this address. They must have a GitHub account to sign in.</div>
+            <input type="email" class="form-input" id="inviteEmail" placeholder="e.g. james.carter@acme-software.com">
+            <div class="form-error" id="emailError">Please enter a valid email address</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" onclick="closeInviteModal()">Cancel</button>
+          <button class="btn-invite" onclick="inviteGoToStep(2)">Next: Assign roles →</button>
+        </div>
+      </div>
+      <div class="step-panel" id="step2">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Assign roles</label>
+            <div class="form-hint">Select one or more roles. Each role determines what this person sees and what notifications they receive.</div>
+            <div class="role-selector" id="inviteRoles">
+              <div class="role-option" onclick="toggleRole(this)" data-role="Org Admin"><div class="role-checkbox"></div><div class="role-info"><div class="role-name">Org Admin</div><div class="role-desc">Full platform access. Manages org setup, repos, products, and stakeholders.</div></div></div>
+              <div class="role-option" onclick="toggleRole(this)" data-role="Billing Contact"><div class="role-checkbox"></div><div class="role-info"><div class="role-name">Billing Contact</div><div class="role-desc">Receives invoices, billing reports, and per-repo contributor cost breakdowns.</div></div></div>
+              <div class="role-option" onclick="toggleRole(this)" data-role="Tech Lead"><div class="role-checkbox"></div><div class="role-info"><div class="role-name">Tech Lead</div><div class="role-desc">Receives contributor activity reports, access change alerts, and dependency risk findings.</div></div></div>
+              <div class="role-option" onclick="toggleRole(this)" data-role="Compliance Officer"><div class="role-checkbox"></div><div class="role-info"><div class="role-name">Compliance Officer</div><div class="role-desc">Receives CRA obligation status updates, deadline alerts, and technical file progress.</div></div></div>
+              <div class="role-option" onclick="toggleRole(this)" data-role="Git Admin"><div class="role-checkbox"></div><div class="role-info"><div class="role-name">Git Admin</div><div class="role-desc">Receives dormant account alerts, unexpected access changes, and webhook status notifications.</div></div></div>
+            </div>
+            <div class="form-error" id="inviteRoleError">Please select at least one role</div>
+          </div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between">
+          <button class="step-back" onclick="inviteGoToStep(1)">&larr; Back</button>
+          <button class="btn-invite" onclick="inviteGoToStep(3)">Next: Notifications →</button>
+        </div>
+      </div>
+      <div class="step-panel" id="step3">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Notification preferences</label>
+            <div class="form-hint">Choose how this stakeholder receives alerts and reports.</div>
+            <div class="notif-options">
+              <div class="notif-option"><div class="notif-left"><div class="notif-icon">📧</div><div><div class="notif-label">Email notifications</div><div class="notif-sub">Role-appropriate alerts sent to their email address</div></div></div><div class="toggle on" id="inviteToggleEmail" onclick="this.classList.toggle('on')"></div></div>
+              <div class="notif-option"><div class="notif-left"><div class="notif-icon">🔗</div><div><div class="notif-label">Webhook notifications</div><div class="notif-sub">Send events to an external endpoint (Slack, Teams, etc.)</div></div></div><div class="toggle" id="inviteToggleWebhook" onclick="toggleWebhookField(this,'inviteWebhookField')"></div></div>
+            </div>
+            <div class="webhook-field" id="inviteWebhookField">
+              <label class="form-label">Webhook URL</label>
+              <input type="url" class="form-input" id="inviteWebhookUrl" placeholder="https://hooks.slack.com/services/...">
+            </div>
+          </div>
+          <div class="invite-preview">
+            <h4>Invitation summary</h4>
+            <div class="preview-line"><span class="label">Name: </span><span id="previewName">—</span></div>
+            <div class="preview-line"><span class="label">Email: </span><span id="previewEmail">—</span></div>
+            <div class="preview-line"><span class="label">Roles:</span></div>
+            <div class="preview-roles" id="previewRoles">—</div>
+            <div class="preview-line" style="margin-top:0.4rem"><span class="label">Notifications: </span><span id="previewNotif">—</span></div>
+          </div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between">
+          <button class="step-back" onclick="inviteGoToStep(2)">&larr; Back</button>
+          <button class="btn-invite" onclick="sendInvite()">Send Invitation</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== EDIT MODAL ==================== -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Edit Stakeholder</h2>
+        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Full name</label>
+          <input type="text" class="form-input" id="editName">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input type="email" class="form-input readonly" id="editEmail" readonly>
+          <div class="form-hint">Email cannot be changed. To use a different email, remove and re-invite.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Roles</label>
+          <div class="form-hint">Select one or more roles for this stakeholder.</div>
+          <div class="role-selector" id="editRoles">
+            <div class="role-option" onclick="toggleRole(this)" data-role="Org Admin"><div class="role-checkbox"></div><div class="role-info"><div class="role-name">Org Admin</div><div class="role-desc">Full platform access. Manages org setup, repos, products, and stakeholders.</div></div></div>
+            <div class="role-option" onclick="toggleRole(this)" data-role="Billing Contact"><div class="role-checkbox"></div><div class="role-info"><div class="role-name">Billing Contact</div><div class="role-desc">Receives invoices, billing reports, and per-repo contributor cost breakdowns.</div></div></div>
+            <div class="role-option" onclick="toggleRole(this)" data-role="Tech Lead"><div class="role-checkbox"></div><div class="role-info"><div class="role-name">Tech Lead</div><div class="role-desc">Receives contributor activity reports, access change alerts, and dependency risk findings.</div></div></div>
+            <div class="role-option" onclick="toggleRole(this)" data-role="Compliance Officer"><div class="role-checkbox"></div><div class="role-info"><div class="role-name">Compliance Officer</div><div class="role-desc">Receives CRA obligation status updates, deadline alerts, and technical file progress.</div></div></div>
+            <div class="role-option" onclick="toggleRole(this)" data-role="Git Admin"><div class="role-checkbox"></div><div class="role-info"><div class="role-name">Git Admin</div><div class="role-desc">Receives dormant account alerts, unexpected access changes, and webhook status notifications.</div></div></div>
+          </div>
+          <div class="form-error" id="editRoleError">Please select at least one role</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notification preferences</label>
+          <div class="notif-options">
+            <div class="notif-option"><div class="notif-left"><div class="notif-icon">📧</div><div><div class="notif-label">Email notifications</div><div class="notif-sub">Role-appropriate alerts sent to their email address</div></div></div><div class="toggle" id="editToggleEmail" onclick="this.classList.toggle('on')"></div></div>
+            <div class="notif-option"><div class="notif-left"><div class="notif-icon">🔗</div><div><div class="notif-label">Webhook notifications</div><div class="notif-sub">Send events to an external endpoint (Slack, Teams, etc.)</div></div></div><div class="toggle" id="editToggleWebhook" onclick="toggleWebhookField(this,'editWebhookField')"></div></div>
+          </div>
+          <div class="webhook-field" id="editWebhookField">
+            <label class="form-label">Webhook URL</label>
+            <input type="url" class="form-input" id="editWebhookUrl" placeholder="https://hooks.slack.com/services/...">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+        <button class="btn-save" onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== REMOVE CONFIRMATION MODAL ==================== -->
+  <div class="modal-overlay" id="removeModal">
+    <div class="modal small">
+      <div class="modal-header">
+        <h2>Remove Stakeholder</h2>
+        <button class="modal-close" onclick="closeRemoveModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="remove-warning">
+          <p>Are you sure you want to remove <span class="remove-name" id="removeName"></span>?</p>
+          <div class="warn-detail">They will immediately lose access to CRANIS2 for this organisation and will stop receiving all notifications. This action is recorded in the audit log.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Their current roles:</label>
+          <div class="role-badges" id="removeRoles" style="margin-top:0.3rem"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeRemoveModal()">Cancel</button>
+        <button class="btn-remove" onclick="confirmRemove()">Remove Stakeholder</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"><span class="toast-icon"></span><span id="toastMessage"></span></div>
+
+  <script>
+    const roleColorMap = { 'Org Admin': 'blue', 'Billing Contact': 'green', 'Tech Lead': 'amber', 'Compliance Officer': 'red', 'Git Admin': 'purple' };
+
+    // ==================== SHARED ====================
+    function toggleRole(el) { el.classList.toggle('selected'); }
+
+    function toggleWebhookField(toggleEl, fieldId) {
+      toggleEl.classList.toggle('on');
+      document.getElementById(fieldId).classList.toggle('show', toggleEl.classList.contains('on'));
+    }
+
+    function showToast(icon, message) {
+      const toast = document.getElementById('toast');
+      document.querySelector('.toast-icon').textContent = icon;
+      document.getElementById('toastMessage').textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function buildRoleBadges(rolesArr) {
+      return rolesArr.map(r => '<span class="badge ' + (roleColorMap[r.trim()] || 'blue') + '">' + r.trim() + '</span>').join('');
+    }
+
+    function buildNotifBadges(hasEmail, hasWebhook) {
+      let html = '';
+      if (hasEmail) html += '<span class="badge blue">Email</span>';
+      if (hasWebhook) html += '<span class="badge purple">Webhook</span>';
+      return html || '<span style="color:var(--muted);font-size:0.8rem">None</span>';
+    }
+
+    // Close any modal on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.remove('open');
+        }
+      });
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+      }
+    });
+
+    // ==================== INVITE MODAL ====================
+    let inviteStep = 1;
+
+    function openInviteModal() {
+      document.getElementById('inviteModal').classList.add('open');
+      inviteStep = 1;
+      updateInviteSteps();
+    }
+    function closeInviteModal() {
+      document.getElementById('inviteModal').classList.remove('open');
+      document.getElementById('inviteName').value = '';
+      document.getElementById('inviteEmail').value = '';
+      document.getElementById('inviteEmail').classList.remove('error');
+      document.getElementById('emailError').classList.remove('show');
+      document.getElementById('inviteRoleError').classList.remove('show');
+      document.querySelectorAll('#inviteRoles .role-option').forEach(r => r.classList.remove('selected'));
+      document.getElementById('inviteToggleEmail').classList.add('on');
+      document.getElementById('inviteToggleWebhook').classList.remove('on');
+      document.getElementById('inviteWebhookField').classList.remove('show');
+      document.getElementById('inviteWebhookUrl').value = '';
+      inviteStep = 1;
+      updateInviteSteps();
+    }
+
+    function inviteGoToStep(step) {
+      if (step === 2 && inviteStep === 1) {
+        const name = document.getElementById('inviteName').value.trim();
+        const email = document.getElementById('inviteEmail').value.trim();
+        if (!name || !email || !email.includes('@')) {
+          document.getElementById('inviteEmail').classList.add('error');
+          document.getElementById('emailError').classList.add('show');
+          return;
+        }
+        document.getElementById('inviteEmail').classList.remove('error');
+        document.getElementById('emailError').classList.remove('show');
+      }
+      if (step === 3 && inviteStep === 2) {
+        const selected = document.querySelectorAll('#inviteRoles .role-option.selected');
+        if (selected.length === 0) { document.getElementById('inviteRoleError').classList.add('show'); return; }
+        document.getElementById('inviteRoleError').classList.remove('show');
+        // Update preview
+        document.getElementById('previewName').textContent = document.getElementById('inviteName').value;
+        document.getElementById('previewEmail').textContent = document.getElementById('inviteEmail').value;
+        const roles = []; selected.forEach(r => roles.push(r.getAttribute('data-role')));
+        document.getElementById('previewRoles').innerHTML = buildRoleBadges(roles);
+        const notifs = [];
+        if (document.getElementById('inviteToggleEmail').classList.contains('on')) notifs.push('Email');
+        if (document.getElementById('inviteToggleWebhook').classList.contains('on')) notifs.push('Webhook');
+        document.getElementById('previewNotif').textContent = notifs.length ? notifs.join(', ') : 'None';
+      }
+      inviteStep = step;
+      updateInviteSteps();
+    }
+
+    function updateInviteSteps() {
+      document.querySelectorAll('#inviteModal .step-panel').forEach((p, i) => p.classList.toggle('active', i === inviteStep - 1));
+      for (let i = 1; i <= 3; i++) {
+        const ind = document.getElementById('step-ind-' + i);
+        ind.className = 'modal-step';
+        if (i < inviteStep) ind.classList.add('done');
+        else if (i === inviteStep) ind.classList.add('active');
+      }
+    }
+
+    function sendInvite() {
+      const name = document.getElementById('inviteName').value;
+      const email = document.getElementById('inviteEmail').value;
+      const roles = []; document.querySelectorAll('#inviteRoles .role-option.selected').forEach(r => roles.push(r.getAttribute('data-role')));
+      const hasEmail = document.getElementById('inviteToggleEmail').classList.contains('on');
+      const hasWebhook = document.getElementById('inviteToggleWebhook').classList.contains('on');
+      const webhookUrl = document.getElementById('inviteWebhookUrl').value;
+      const isOwner = false;
+
+      const tr = document.createElement('tr');
+      tr.setAttribute('data-name', name);
+      tr.setAttribute('data-email', email);
+      tr.setAttribute('data-roles', roles.join(','));
+      tr.setAttribute('data-notif', (hasEmail ? 'email' : '') + (hasWebhook ? ',webhook' : ''));
+      tr.setAttribute('data-webhook', webhookUrl);
+      tr.innerHTML =
+        '<td><strong>' + name + '</strong></td>' +
+        '<td>' + email + '</td>' +
+        '<td><div class="role-badges">' + buildRoleBadges(roles) + '</div></td>' +
+        '<td><div class="notif-badges">' + buildNotifBadges(hasEmail, hasWebhook) + '</div></td>' +
+        '<td>Just now</td>' +
+        '<td><a class="action-link" onclick="openEditModal(this.closest(\'tr\'))">Edit</a> &nbsp; <a class="action-link danger" onclick="openRemoveModal(this.closest(\'tr\'))">Remove</a></td>';
+
+      document.getElementById('stakeholderTable').appendChild(tr);
+      closeInviteModal();
+      showToast('✉️', 'Invitation sent to ' + name);
+    }
+
+    // ==================== EDIT MODAL ====================
+    let editingRow = null;
+
+    function openEditModal(row) {
+      editingRow = row;
+      const name = row.getAttribute('data-name');
+      const email = row.getAttribute('data-email');
+      const roles = row.getAttribute('data-roles').split(',').map(r => r.trim());
+      const notif = row.getAttribute('data-notif') || '';
+      const webhookUrl = row.getAttribute('data-webhook') || '';
+
+      document.getElementById('editName').value = name;
+      document.getElementById('editEmail').value = email;
+
+      // Set roles
+      document.querySelectorAll('#editRoles .role-option').forEach(opt => {
+        const role = opt.getAttribute('data-role');
+        opt.classList.toggle('selected', roles.includes(role));
+      });
+
+      // Set notifications
+      const emailOn = notif.includes('email');
+      const webhookOn = notif.includes('webhook');
+      document.getElementById('editToggleEmail').classList.toggle('on', emailOn);
+      document.getElementById('editToggleWebhook').classList.toggle('on', webhookOn);
+      document.getElementById('editWebhookField').classList.toggle('show', webhookOn);
+      document.getElementById('editWebhookUrl').value = webhookUrl;
+
+      document.getElementById('editRoleError').classList.remove('show');
+      document.getElementById('editModal').classList.add('open');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.remove('open');
+      editingRow = null;
+    }
+
+    function saveEdit() {
+      if (!editingRow) return;
+      const selected = document.querySelectorAll('#editRoles .role-option.selected');
+      if (selected.length === 0) { document.getElementById('editRoleError').classList.add('show'); return; }
+      document.getElementById('editRoleError').classList.remove('show');
+
+      const name = document.getElementById('editName').value.trim();
+      const roles = []; selected.forEach(r => roles.push(r.getAttribute('data-role')));
+      const hasEmail = document.getElementById('editToggleEmail').classList.contains('on');
+      const hasWebhook = document.getElementById('editToggleWebhook').classList.contains('on');
+      const webhookUrl = document.getElementById('editWebhookUrl').value;
+      const isOwner = editingRow.getAttribute('data-owner') === 'true';
+
+      // Update data attributes
+      editingRow.setAttribute('data-name', name);
+      editingRow.setAttribute('data-roles', roles.join(','));
+      editingRow.setAttribute('data-notif', (hasEmail ? 'email' : '') + (hasWebhook ? ',webhook' : ''));
+      editingRow.setAttribute('data-webhook', webhookUrl);
+
+      // Update visible cells
+      const cells = editingRow.querySelectorAll('td');
+      cells[0].innerHTML = '<strong>' + name + '</strong>';
+      cells[2].innerHTML = '<div class="role-badges">' + buildRoleBadges(roles) + '</div>';
+      cells[3].innerHTML = '<div class="notif-badges">' + buildNotifBadges(hasEmail, hasWebhook) + '</div>';
+
+      // Rebuild actions (owner can't be removed)
+      if (isOwner) {
+        cells[5].innerHTML = '<a class="action-link" onclick="openEditModal(this.closest(\'tr\'))">Edit</a>';
+      } else {
+        cells[5].innerHTML = '<a class="action-link" onclick="openEditModal(this.closest(\'tr\'))">Edit</a> &nbsp; <a class="action-link danger" onclick="openRemoveModal(this.closest(\'tr\'))">Remove</a>';
+      }
+
+      closeEditModal();
+      showToast('✅', 'Updated ' + name);
+    }
+
+    // ==================== REMOVE MODAL ====================
+    let removingRow = null;
+
+    function openRemoveModal(row) {
+      removingRow = row;
+      const name = row.getAttribute('data-name');
+      const roles = row.getAttribute('data-roles').split(',').map(r => r.trim());
+
+      document.getElementById('removeName').textContent = name;
+      document.getElementById('removeRoles').innerHTML = buildRoleBadges(roles);
+      document.getElementById('removeModal').classList.add('open');
+    }
+
+    function closeRemoveModal() {
+      document.getElementById('removeModal').classList.remove('open');
+      removingRow = null;
+    }
+
+    function confirmRemove() {
+      if (!removingRow) return;
+      const name = removingRow.getAttribute('data-name');
+      removingRow.classList.add('row-removing');
+      setTimeout(() => {
+        removingRow.remove();
+        removingRow = null;
+      }, 300);
+      closeRemoveModal();
+      showToast('🗑️', name + ' has been removed');
+    }
+  </script>
+</body>
+</html>

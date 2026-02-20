@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Sign Up</title>
+  <style>
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+      --text: #e4e4e7; --muted: #8b8d98; --accent: #3b82f6;
+      --accent-hover: #2563eb; --green: #22c55e;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+      display: flex; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .signup-container { max-width: 440px; width: 100%; padding: 2rem; }
+    .logo { font-size: 1.8rem; font-weight: 700; text-align: center; margin-bottom: 0.5rem; }
+    .logo span { color: var(--accent); }
+    .subtitle { text-align: center; color: var(--muted); font-size: 0.9rem; margin-bottom: 2.5rem; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 2rem;
+    }
+    .card h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.5rem; text-align: center; }
+    .card p { color: var(--muted); font-size: 0.85rem; text-align: center; margin-bottom: 1.5rem; }
+
+    .github-btn {
+      display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+      width: 100%; padding: 0.85rem; border-radius: 8px;
+      background: #24292e; color: #fff; font-size: 1rem; font-weight: 600;
+      border: 1px solid #444; cursor: pointer; text-decoration: none;
+      transition: background 0.2s;
+    }
+    .github-btn:hover { background: #2d3339; }
+    .github-btn svg { width: 20px; height: 20px; fill: #fff; }
+
+    .divider {
+      display: flex; align-items: center; gap: 1rem;
+      margin: 1.5rem 0; color: var(--muted); font-size: 0.8rem;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .info-box {
+      background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;
+    }
+    .info-box p { color: var(--text); font-size: 0.85rem; text-align: left; margin: 0; }
+    .info-box ul { margin: 0.5rem 0 0 1.2rem; }
+    .info-box li { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.2rem; }
+
+    .permissions {
+      margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
+    }
+    .permissions h4 { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+    .perm-item {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.85rem; margin-bottom: 0.4rem;
+    }
+    .perm-check { color: var(--green); }
+    .perm-cross { color: #ef4444; }
+
+    .back-link {
+      display: block; text-align: center; margin-top: 1.5rem;
+      color: var(--muted); font-size: 0.85rem; text-decoration: none;
+    }
+    .back-link:hover { color: var(--text); }
+
+    /* Step indicator */
+    .steps {
+      display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem;
+    }
+    .step {
+      width: 32px; height: 4px; border-radius: 2px; background: var(--border);
+    }
+    .step.active { background: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="signup-container">
+    <div class="logo">CRANIS<span>2</span></div>
+    <div class="subtitle">CRA Compliance & Governance</div>
+
+    <div class="steps">
+      <div class="step active"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+    </div>
+
+    <div class="card">
+      <h2>Create your account</h2>
+      <p>Sign in with GitHub to get started. We'll use this to connect to your repositories.</p>
+
+      <div class="info-box">
+        <p>🔒 CRANIS2 only reads organisation and collaborator metadata. We never access or store your source code.</p>
+      </div>
+
+      <a href="org-setup.html" class="github-btn">
+        <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        Continue with GitHub
+      </a>
+
+      <div class="permissions">
+        <h4>What we access</h4>
+        <div class="perm-item"><span class="perm-check">✓</span> Organisation membership & roles</div>
+        <div class="perm-item"><span class="perm-check">✓</span> Repository collaborator lists</div>
+        <div class="perm-item"><span class="perm-check">✓</span> Repository metadata (names, visibility)</div>
+        <div class="perm-item"><span class="perm-check">✓</span> Webhook events (push notifications)</div>
+        <div class="perm-item"><span class="perm-cross">✗</span> Source code contents</div>
+        <div class="perm-item"><span class="perm-cross">✗</span> Issues, PRs, or comments</div>
+        <div class="perm-item"><span class="perm-cross">✗</span> Actions, secrets, or environments</div>
+      </div>
+    </div>
+
+    <a href="landing.html" class="back-link">← Back to home</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Acme Pay</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .breadcrumb { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .breadcrumb a { color: var(--accent); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .product-header-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+    .ph-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .ph-title { font-size: 1.5rem; font-weight: 700; }
+    .ph-desc { font-size: 0.9rem; color: var(--muted); margin-top: 0.25rem; max-width: 600px; }
+    .ph-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .ph-meta-item .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .ph-meta-item .value { font-size: 0.9rem; font-weight: 500; margin-top: 0.15rem; }
+    .btn-secondary { padding: 0.4rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: none; color: var(--text); font-size: 0.8rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+    .tab-btn { padding: 0.7rem 1.25rem; font-size: 0.9rem; font-weight: 500; color: var(--muted); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .repo-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .repo-chip { background: rgba(59,130,246,0.1); color: var(--accent); padding: 0.25rem 0.7rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500; font-family: monospace; }
+    .checklist-item { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; }
+    .checklist-left { display: flex; align-items: center; gap: 0.75rem; }
+    .check-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0; }
+    .check-icon.done { background: rgba(34,197,94,0.15); color: var(--green); }
+    .check-icon.pending { background: rgba(139,141,152,0.15); color: var(--muted); }
+    .checklist-name { font-size: 0.9rem; }
+    .checklist-date { font-size: 0.8rem; color: var(--muted); }
+    .risk-mini { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .risk-mini-left { display: flex; align-items: center; gap: 0.75rem; }
+    .risk-mini-pkg { font-family: monospace; color: var(--accent); font-size: 0.85rem; }
+    .risk-mini-cve { font-size: 0.85rem; font-weight: 600; }
+    .risk-mini-desc { font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">CRANIS<span>2</span></div>
+      <div class="sidebar-org">Acme Software Ltd</div>
+      <div class="nav-section"><div class="nav-section-label">Overview</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Compliance</div>
+        <a href="app-products.html" class="nav-item active"><span class="nav-icon">📦</span> Products</a>
+        <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+        <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Repositories</div>
+        <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+        <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+        <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+        <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Billing</div>
+        <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Settings</div>
+        <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+        <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+        <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="breadcrumb"><a href="app-products.html">Products</a> → Acme Pay</div>
+
+      <div class="product-header-card">
+        <div class="ph-top">
+          <div>
+            <div class="ph-title">Acme Pay</div>
+            <div class="ph-desc">Payment processing gateway handling PCI-DSS compliant card transactions, SEPA transfers, and merchant settlement.</div>
+          </div>
+          <div><a href="app-products.html" class="btn-secondary">← Back</a></div>
+        </div>
+        <div class="ph-meta">
+          <div class="ph-meta-item"><div class="label">CRA Category</div><div class="value"><span class="badge red">Critical — Class II</span></div></div>
+          <div class="ph-meta-item"><div class="label">Version</div><div class="value">1.4.2</div></div>
+          <div class="ph-meta-item"><div class="label">Repositories</div><div class="value"><div class="repo-chips"><span class="repo-chip">acme-payment-gateway</span></div></div></div>
+          <div class="ph-meta-item"><div class="label">Contributors</div><div class="value">4</div></div>
+          <div class="ph-meta-item"><div class="label">Created</div><div class="value">14 Feb 2026</div></div>
+          <div class="ph-meta-item"><div class="label">Classification</div><div class="value">19 Feb 2026</div></div>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="showTab('obligations')">Obligations (3/12)</button>
+        <button class="tab-btn" onclick="showTab('techfile')">Technical File (2/6)</button>
+        <button class="tab-btn" onclick="showTab('risks')">Risk Findings (1)</button>
+        <button class="tab-btn" onclick="showTab('contributors')">Contributors (4)</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-obligations">
+        <div class="filter-bar" style="margin-bottom:1rem">
+          <button class="filter-btn active">All</button>
+          <button class="filter-btn">Complete</button>
+          <button class="filter-btn">In Progress</button>
+          <button class="filter-btn">Not Started</button>
+          <button class="filter-btn">Overdue</button>
+        </div>
+        <table>
+          <thead><tr><th>Code</th><th>Obligation</th><th>Status</th><th>Due Date</th><th>Evidence</th></tr></thead>
+          <tbody>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-ESR-1</td><td>Design with appropriate level of cybersecurity</td><td><span class="badge green">Complete</span></td><td>—</td><td><span class="badge blue">1 doc</span></td></tr>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-ESR-2</td><td>Deliver without known exploitable vulnerabilities</td><td><span class="badge amber">In Progress</span></td><td>1 Apr 2026</td><td>—</td></tr>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-ESR-3</td><td>Secure default configuration</td><td><span class="badge green">Complete</span></td><td>—</td><td><span class="badge blue">1 doc</span></td></tr>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-VH-1</td><td>Identify and document vulnerabilities and components (SBOM)</td><td><span class="badge green">Complete</span></td><td>—</td><td><span class="badge blue">Auto</span></td></tr>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-VH-2</td><td>Apply effective and regular tests and reviews</td><td><span class="badge red">Not Started</span></td><td>15 Mar 2026</td><td>—</td></tr>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-VH-3</td><td>Address and remediate vulnerabilities without delay</td><td><span class="badge red">Not Started</span></td><td>15 Mar 2026</td><td>—</td></tr>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-VD-24H</td><td>Notify ENISA of actively exploited vulns within 24h</td><td><span class="badge red">Not Started</span></td><td>30 Apr 2026</td><td>—</td></tr>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-TF-1</td><td>Prepare and maintain technical documentation (Annex V)</td><td><span class="badge amber">In Progress</span></td><td>30 Apr 2026</td><td>—</td></tr>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-SUP-1</td><td>Provide security updates for the support period</td><td><span class="badge red">Not Started</span></td><td>30 Jun 2026</td><td>—</td></tr>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-CA-2</td><td>Third-party conformity assessment (mandatory for Critical)</td><td><span class="badge red">Not Started</span></td><td>30 Jun 2026</td><td>—</td></tr>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-IMP-1</td><td>Affix CE marking upon compliance</td><td><span class="badge red">Not Started</span></td><td>30 Jun 2026</td><td>—</td></tr>
+            <tr><td style="font-family:monospace;color:var(--accent)">CRA-IMP-2</td><td>EU Declaration of Conformity</td><td><span class="badge red">Not Started</span></td><td>30 Jun 2026</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tab-panel" id="tab-techfile">
+        <div class="stats" style="margin-bottom:1.5rem">
+          <div class="stat-card"><div class="stat-label">Completeness</div><div class="stat-value amber">33%</div><div class="stat-sub">2 of 6 items</div></div>
+          <div class="stat-card"><div class="stat-label">Last Updated</div><div class="stat-value blue">Today</div><div class="stat-sub">19 Feb 2026</div></div>
+          <div class="stat-card"><div class="stat-label">SBOM Status</div><div class="stat-value green">Current</div><div class="stat-sub">Auto-generated daily</div></div>
+        </div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon done">✓</div><div class="checklist-name">Software Bill of Materials (SBOM)</div></div><div class="checklist-date">Auto-generated 19 Feb 2026, 03:00 UTC</div></div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon done">✓</div><div class="checklist-name">Vulnerability Handling Policy</div></div><div class="checklist-date">Uploaded 17 Feb 2026</div></div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon pending">○</div><div class="checklist-name">Secure Development Lifecycle</div></div><div class="checklist-date" style="color:var(--amber)">Not yet uploaded</div></div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon pending">○</div><div class="checklist-name">Declaration of Conformity</div></div><div class="checklist-date" style="color:var(--amber)">Not yet uploaded</div></div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon pending">○</div><div class="checklist-name">Test Reports</div></div><div class="checklist-date" style="color:var(--amber)">Not yet uploaded</div></div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon pending">○</div><div class="checklist-name">User Documentation</div></div><div class="checklist-date" style="color:var(--amber)">Not yet uploaded</div></div>
+      </div>
+
+      <div class="tab-panel" id="tab-risks">
+        <div class="stats" style="margin-bottom:1.5rem">
+          <div class="stat-card"><div class="stat-label">Open Findings</div><div class="stat-value amber">1</div></div>
+          <div class="stat-card"><div class="stat-label">Critical</div><div class="stat-value green">0</div></div>
+          <div class="stat-card"><div class="stat-label">High</div><div class="stat-value amber">1</div></div>
+          <div class="stat-card"><div class="stat-label">Resolved</div><div class="stat-value green">0</div></div>
+        </div>
+        <div class="risk-mini">
+          <div class="risk-mini-left">
+            <span class="badge amber">High</span>
+            <div><div class="risk-mini-cve">CVE-2026-5678</div><div class="risk-mini-desc">SQL injection in <span class="risk-mini-pkg">pg-query@2.1.0</span> — acme-payment-gateway</div></div>
+          </div>
+          <a href="risk-findings.html" class="btn-secondary" style="font-size:0.75rem">View →</a>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-contributors">
+        <div class="stats" style="margin-bottom:1.5rem">
+          <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value blue">4</div></div>
+          <div class="stat-card"><div class="stat-label">Dormant</div><div class="stat-value green">0</div></div>
+        </div>
+        <table>
+          <thead><tr><th>GitHub Username</th><th>Access</th><th>Repository</th><th>Last Commit</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><strong>jdoe-acme</strong></td><td><span class="badge purple">Admin</span></td><td>acme-payment-gateway</td><td>19 Feb 2026</td><td><span class="badge green">Active</span></td></tr>
+            <tr><td><strong>mwilliams42</strong></td><td><span class="badge blue">Maintain</span></td><td>acme-payment-gateway</td><td>19 Feb 2026</td><td><span class="badge green">Active</span></td></tr>
+            <tr><td><strong>rjohnson-be</strong></td><td><span class="badge green">Write</span></td><td>acme-payment-gateway</td><td>16 Feb 2026</td><td><span class="badge green">Active</span></td></tr>
+            <tr><td><strong>dmarkov-sec</strong></td><td><span class="badge green">Write</span></td><td>acme-payment-gateway</td><td>15 Feb 2026</td><td><span class="badge green">Active</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script>
+    function showTab(name) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

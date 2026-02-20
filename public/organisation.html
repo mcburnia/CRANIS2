@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Organisation Settings</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .settings-card h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .field-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+    .field-row:last-child { border-bottom: none; }
+    .field-label { font-size: 0.85rem; color: var(--muted); }
+    .field-value { font-size: 0.85rem; font-weight: 500; }
+    .danger-zone { border-color: var(--red); }
+    .danger-zone h3 { color: var(--red); }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-danger:hover { opacity: 0.9; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 0.4rem 0.9rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600; }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+    .btn-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+    .danger-actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .danger-note { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
+    .card-actions { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">CRANIS<span>2</span></div>
+      <div class="sidebar-org">Acme Software Ltd</div>
+      <div class="nav-section"><div class="nav-section-label">Overview</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Compliance</div>
+        <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+        <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+        <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Repositories</div>
+        <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+        <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+        <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+        <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Billing</div>
+        <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Settings</div>
+        <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+        <a href="organisation.html" class="nav-item active"><span class="nav-icon">⚙️</span> Organisation</a>
+        <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="page-header"><h1>Organisation Settings</h1></div>
+
+      <div class="settings-card">
+        <h3>🏢 Organisation Details</h3>
+        <div class="field-row"><span class="field-label">Name</span><span class="field-value">Acme Software Ltd</span></div>
+        <div class="field-row"><span class="field-label">GitHub Organisation</span><span class="field-value">acme-software</span></div>
+        <div class="field-row"><span class="field-label">Plan</span><span class="field-value"><span class="badge green">Active</span></span></div>
+        <div class="field-row"><span class="field-label">Member since</span><span class="field-value">19 February 2026</span></div>
+      </div>
+
+      <div class="settings-card">
+        <h3>🔗 GitHub Connection</h3>
+        <div class="field-row"><span class="field-label">Status</span><span class="field-value"><span class="badge green">Connected</span></span></div>
+        <div class="field-row"><span class="field-label">OAuth Scopes</span><span class="field-value">read:org, read:user, repo (metadata)</span></div>
+        <div class="field-row"><span class="field-label">Last Verified</span><span class="field-value">19 Feb 2026, 08:00 UTC</span></div>
+        <div class="card-actions"><button class="btn btn-primary btn-sm">Reconnect GitHub</button></div>
+      </div>
+
+      <div class="settings-card">
+        <h3>💶 Billing Configuration</h3>
+        <div class="field-row"><span class="field-label">Stripe Status</span><span class="field-value"><span class="badge green">Connected</span></span></div>
+        <div class="field-row"><span class="field-label">Customer ID</span><span class="field-value" style="font-family:monospace">cus_****Abcd</span></div>
+        <div class="field-row"><span class="field-label">Subscription</span><span class="field-value"><span class="badge green">Active</span> — Metered billing</span></div>
+        <div class="field-row"><span class="field-label">Billing Email</span><span class="field-value">andi@acme-software.com</span></div>
+        <div class="card-actions"><button class="btn btn-primary btn-sm">Manage in Stripe</button></div>
+      </div>
+
+      <div class="settings-card">
+        <h3>🔒 Data & Privacy</h3>
+        <div class="field-row"><span class="field-label">Data Region</span><span class="field-value">EU — GCP europe-west1</span></div>
+        <div class="field-row"><span class="field-label">Data Retention</span><span class="field-value">Indefinite (compliance requirement)</span></div>
+        <div class="card-actions" style="display:flex;gap:0.75rem">
+          <button class="btn btn-primary btn-sm">Export All Data</button>
+          <button class="btn btn-ghost btn-disabled">Request Data Deletion</button>
+        </div>
+        <div class="danger-note">Compliance data cannot be deleted while obligations are active. Contact support for assistance.</div>
+      </div>
+
+      <div class="settings-card danger-zone">
+        <h3>⚠️ Danger Zone</h3>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">These actions are irreversible. Suspending your organisation will stop all tracking and webhook processing. Cancelling will terminate your subscription.</p>
+        <div class="danger-actions">
+          <button class="btn btn-danger btn-sm">Suspend Organisation</button>
+          <button class="btn btn-danger btn-sm">Cancel Subscription</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Select Organisation</title>
+  <style>
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+      --text: #e4e4e7; --muted: #8b8d98; --accent: #3b82f6;
+      --accent-hover: #2563eb; --green: #22c55e;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+      display: flex; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .container { max-width: 540px; width: 100%; padding: 2rem; }
+    .logo { font-size: 1.8rem; font-weight: 700; text-align: center; margin-bottom: 0.5rem; }
+    .logo span { color: var(--accent); }
+    .subtitle { text-align: center; color: var(--muted); font-size: 0.9rem; margin-bottom: 2.5rem; }
+    .steps { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem; }
+    .step { width: 32px; height: 4px; border-radius: 2px; background: var(--border); }
+    .step.active { background: var(--accent); }
+    .step.done { background: var(--green); }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 2rem;
+    }
+    .card h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .card > p { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+    .user-badge {
+      display: flex; align-items: center; gap: 0.75rem;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.75rem 1rem; margin-bottom: 1.5rem;
+    }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--accent); display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.9rem;
+    }
+    .user-info .name { font-size: 0.9rem; font-weight: 600; }
+    .user-info .handle { font-size: 0.8rem; color: var(--muted); }
+
+    .org-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+
+    .org-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg); border: 2px solid var(--border); border-radius: 10px;
+      padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.2s;
+    }
+    .org-item:hover { border-color: var(--accent); }
+    .org-item.selected { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+
+    .org-left { display: flex; align-items: center; gap: 0.75rem; }
+    .org-avatar {
+      width: 40px; height: 40px; border-radius: 8px;
+      background: var(--border); display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+    .org-name { font-weight: 600; font-size: 0.95rem; }
+    .org-slug { font-size: 0.8rem; color: var(--muted); }
+    .org-meta { font-size: 0.8rem; color: var(--muted); text-align: right; }
+
+    .radio {
+      width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .org-item.selected .radio { border-color: var(--accent); }
+    .org-item.selected .radio::after {
+      content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
+    }
+
+    .btn {
+      display: inline-block; padding: 0.7rem 1.5rem; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600; text-decoration: none;
+      cursor: pointer; border: none; transition: background 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; width: 100%; text-align: center; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled, .btn-primary.disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
+    .back-link { color: var(--muted); font-size: 0.85rem; text-decoration: none; }
+    .back-link:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">CRANIS<span>2</span></div>
+    <div class="subtitle">CRA Compliance & Governance</div>
+
+    <div class="steps">
+      <div class="step done"></div>
+      <div class="step active"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+    </div>
+
+    <div class="card">
+      <h2>Select your organisation</h2>
+      <p>Choose which GitHub organisation to set up for CRA compliance tracking.</p>
+
+      <div class="user-badge">
+        <div class="avatar">AM</div>
+        <div class="user-info">
+          <div class="name">Andi McBurnie</div>
+          <div class="handle">@andimcburnie</div>
+        </div>
+      </div>
+
+      <div class="org-list">
+        <div class="org-item selected" onclick="selectOrg(this)">
+          <div class="org-left">
+            <div class="radio"></div>
+            <div class="org-avatar">🏢</div>
+            <div>
+              <div class="org-name">Acme Software Ltd</div>
+              <div class="org-slug">github.com/acme-software</div>
+            </div>
+          </div>
+          <div class="org-meta">12 repos<br>8 members</div>
+        </div>
+
+        <div class="org-item" onclick="selectOrg(this)">
+          <div class="org-left">
+            <div class="radio"></div>
+            <div class="org-avatar">🚀</div>
+            <div>
+              <div class="org-name">StartupCo</div>
+              <div class="org-slug">github.com/startupco-dev</div>
+            </div>
+          </div>
+          <div class="org-meta">5 repos<br>3 members</div>
+        </div>
+
+        <div class="org-item" onclick="selectOrg(this)">
+          <div class="org-left">
+            <div class="radio"></div>
+            <div class="org-avatar">🔧</div>
+            <div>
+              <div class="org-name">McBurnie Consulting</div>
+              <div class="org-slug">github.com/mcburnie-consulting</div>
+            </div>
+          </div>
+          <div class="org-meta">23 repos<br>15 members</div>
+        </div>
+      </div>
+
+      <a href="repos.html" class="btn btn-primary">Continue with selected org →</a>
+    </div>
+
+    <div class="nav-row">
+      <a href="signup.html" class="back-link">← Back</a>
+    </div>
+  </div>
+
+  <script>
+    function selectOrg(el) {
+      document.querySelectorAll('.org-item').forEach(i => i.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications - CRANIS2</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .notification-list { display: flex; flex-direction: column; gap: 0; }
+    .notification-item {
+      display: flex; align-items: flex-start; gap: 1rem; padding: 1rem 1.25rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-bottom: none; cursor: pointer; transition: background 0.15s;
+    }
+    .notification-item:first-child { border-radius: 10px 10px 0 0; }
+    .notification-item:last-child { border-bottom: 1px solid var(--border); border-radius: 0 0 10px 10px; }
+    .notification-item:only-child { border-radius: 10px; border-bottom: 1px solid var(--border); }
+    .notification-item:hover { background: rgba(255,255,255,0.02); }
+    .notification-item.unread { background: rgba(59,130,246,0.04); }
+    .notification-dot {
+      width: 8px; height: 8px; border-radius: 50%; margin-top: 0.5rem; flex-shrink: 0;
+    }
+    .notification-dot.blue { background: var(--accent); }
+    .notification-dot.green { background: var(--green); }
+    .notification-dot.amber { background: var(--amber); }
+    .notification-dot.red { background: var(--red); }
+    .notification-dot.read { background: var(--border); }
+    .notification-content { flex: 1; }
+    .notification-title { font-size: 0.9rem; font-weight: 500; margin-bottom: 0.15rem; }
+    .notification-desc { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
+    .notification-time { font-size: 0.75rem; color: var(--muted); }
+    .notification-icon { font-size: 1.3rem; margin-top: 0.1rem; }
+    .btn-outline {
+      padding: 0.4rem 1rem; border-radius: 8px; border: 1px solid var(--border);
+      background: none; color: var(--muted); font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--text); }
+    .unread-count {
+      background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700;
+      padding: 0.1rem 0.5rem; border-radius: 9999px; margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">CRANIS<span>2</span></div>
+    <div class="sidebar-org">Acme Software Ltd</div>
+    <div class="nav-section">
+      <div class="nav-section-label">Overview</div>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="notifications.html" class="nav-item active"><span class="nav-icon">🔔</span> Notifications</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Compliance</div>
+      <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+      <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+      <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Repositories</div>
+      <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+      <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+      <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+      <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Billing</div>
+      <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+      <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Settings</div>
+      <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+      <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+      <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <h1>Notifications <span class="unread-count">5</span></h1>
+        <div class="timestamp">Last checked: 19 Feb 2026, 09:41 UTC</div>
+      </div>
+      <button class="btn-outline">Mark all as read</button>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active">All</button>
+      <button class="filter-btn">Unread</button>
+      <button class="filter-btn">Access</button>
+      <button class="filter-btn">Compliance</button>
+      <button class="filter-btn">Billing</button>
+      <button class="filter-btn">Risk</button>
+    </div>
+
+    <div class="notification-list">
+      <!-- Unread: Risk -->
+      <div class="notification-item unread">
+        <span class="notification-dot red"></span>
+        <span class="notification-icon">⚠️</span>
+        <div class="notification-content">
+          <div class="notification-title">Critical vulnerability found in acme-platform</div>
+          <div class="notification-desc">CVE-2026-1847 (CVSS 9.1) detected in dependency <strong>openssl 3.0.12</strong>. Immediate patching recommended.</div>
+          <div class="notification-time">12 minutes ago</div>
+        </div>
+        <span class="badge red">Risk</span>
+      </div>
+
+      <!-- Unread: Compliance -->
+      <div class="notification-item unread">
+        <span class="notification-dot amber"></span>
+        <span class="notification-icon">📋</span>
+        <div class="notification-content">
+          <div class="notification-title">Obligation deadline approaching: CRA-VH-1</div>
+          <div class="notification-desc">Vulnerability Handling Policy for <strong>Acme Platform</strong> is due in 5 days. Current status: In Progress.</div>
+          <div class="notification-time">1 hour ago</div>
+        </div>
+        <span class="badge amber">Compliance</span>
+      </div>
+
+      <!-- Unread: Access -->
+      <div class="notification-item unread">
+        <span class="notification-dot blue"></span>
+        <span class="notification-icon">👤</span>
+        <div class="notification-content">
+          <div class="notification-title">New stakeholder added: Maria Chen</div>
+          <div class="notification-desc">Maria Chen (maria.chen@acme.io) was added as <strong>Security Lead</strong> by Admin.</div>
+          <div class="notification-time">2 hours ago</div>
+        </div>
+        <span class="badge blue">Access</span>
+      </div>
+
+      <!-- Unread: Risk -->
+      <div class="notification-item unread">
+        <span class="notification-dot amber"></span>
+        <span class="notification-icon">⚠️</span>
+        <div class="notification-content">
+          <div class="notification-title">3 medium-severity findings in acme-auth-service</div>
+          <div class="notification-desc">New scan completed. Found 3 medium vulnerabilities across 2 dependencies. Review recommended within 30 days.</div>
+          <div class="notification-time">4 hours ago</div>
+        </div>
+        <span class="badge amber">Risk</span>
+      </div>
+
+      <!-- Unread: Billing -->
+      <div class="notification-item unread">
+        <span class="notification-dot green"></span>
+        <span class="notification-icon">💶</span>
+        <div class="notification-content">
+          <div class="notification-title">Invoice #INV-2026-002 generated</div>
+          <div class="notification-desc">Monthly invoice for February 2026 has been generated. Amount: <strong>&euro;249.00</strong>. Due date: 1 Mar 2026.</div>
+          <div class="notification-time">6 hours ago</div>
+        </div>
+        <span class="badge green">Billing</span>
+      </div>
+
+      <!-- Read: Compliance -->
+      <div class="notification-item">
+        <span class="notification-dot read"></span>
+        <span class="notification-icon">📄</span>
+        <div class="notification-content">
+          <div class="notification-title">SBOM auto-generated for acme-platform</div>
+          <div class="notification-desc">Daily SBOM generation completed successfully. 142 components catalogued across 3 repositories.</div>
+          <div class="notification-time">Yesterday at 03:00 UTC</div>
+        </div>
+        <span class="badge blue">Compliance</span>
+      </div>
+
+      <!-- Read: Access -->
+      <div class="notification-item">
+        <span class="notification-dot read"></span>
+        <span class="notification-icon">👤</span>
+        <div class="notification-content">
+          <div class="notification-title">Role changed: James Wilson</div>
+          <div class="notification-desc">James Wilson's role was changed from <strong>Viewer</strong> to <strong>Compliance Manager</strong> by Admin.</div>
+          <div class="notification-time">2 days ago</div>
+        </div>
+        <span class="badge blue">Access</span>
+      </div>
+
+      <!-- Read: Risk -->
+      <div class="notification-item">
+        <span class="notification-dot read"></span>
+        <span class="notification-icon">⚠️</span>
+        <div class="notification-content">
+          <div class="notification-title">Vulnerability resolved: CVE-2026-0934</div>
+          <div class="notification-desc">The high-severity vulnerability in <strong>lodash 4.17.20</strong> has been patched in acme-payment-gateway.</div>
+          <div class="notification-time">3 days ago</div>
+        </div>
+        <span class="badge green">Risk</span>
+      </div>
+
+      <!-- Read: Compliance -->
+      <div class="notification-item">
+        <span class="notification-dot read"></span>
+        <span class="notification-icon">📋</span>
+        <div class="notification-content">
+          <div class="notification-title">Obligation completed: CRA-ESR-1</div>
+          <div class="notification-desc">Essential Security Requirements obligation for <strong>Acme Pay</strong> has been marked as complete by Maria Chen.</div>
+          <div class="notification-time">4 days ago</div>
+        </div>
+        <span class="badge green">Compliance</span>
+      </div>
+
+      <!-- Read: Billing -->
+      <div class="notification-item">
+        <span class="notification-dot read"></span>
+        <span class="notification-icon">💶</span>
+        <div class="notification-content">
+          <div class="notification-title">Payment received for Invoice #INV-2026-001</div>
+          <div class="notification-desc">Payment of <strong>&euro;249.00</strong> received via SEPA Direct Debit. Thank you.</div>
+          <div class="notification-time">5 days ago</div>
+        </div>
+        <span class="badge green">Billing</span>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

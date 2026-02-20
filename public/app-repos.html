@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repositories - CRANIS2</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .webhook-dot {
+      display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+      margin-right: 0.3rem; vertical-align: middle;
+    }
+    .webhook-dot.active { background: var(--green); }
+    .webhook-dot.inactive { background: var(--muted); }
+    .repo-name-link {
+      color: var(--accent); text-decoration: none; font-weight: 600;
+    }
+    .repo-name-link:hover { text-decoration: underline; }
+    .product-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+    .product-tag {
+      background: rgba(168,85,247,0.1); color: var(--purple);
+      padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;
+    }
+    .sync-ok { color: var(--green); }
+    .sync-warn { color: var(--amber); }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">CRANIS<span>2</span></div>
+    <div class="sidebar-org">Acme Software Ltd</div>
+    <div class="nav-section">
+      <div class="nav-section-label">Overview</div>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Compliance</div>
+      <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+      <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+      <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Repositories</div>
+      <a href="app-repos.html" class="nav-item active"><span class="nav-icon">🗂️</span> Repos</a>
+      <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+      <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+      <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Billing</div>
+      <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+      <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Settings</div>
+      <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+      <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+      <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <h1>Repositories</h1>
+        <div class="timestamp">Manage your registered source code repositories</div>
+      </div>
+      <button class="btn btn-primary">+ Register New Repo</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Repos</div>
+        <div class="stat-value blue">3</div>
+        <div class="stat-sub">across 2 products</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active</div>
+        <div class="stat-value green">2</div>
+        <div class="stat-sub">syncing &amp; monitored</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pending</div>
+        <div class="stat-value amber">1</div>
+        <div class="stat-sub">awaiting webhook setup</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Archived</div>
+        <div class="stat-value">0</div>
+        <div class="stat-sub">no archived repos</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Repository</th>
+          <th>Status</th>
+          <th>Product(s)</th>
+          <th>Contributors</th>
+          <th>Last Sync</th>
+          <th>Webhook</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <a href="#" class="repo-name-link">acme-platform</a>
+            <div style="font-size: 0.75rem; color: var(--muted);">github.com/acme-software/acme-platform</div>
+          </td>
+          <td><span class="badge green">Active</span></td>
+          <td>
+            <div class="product-tags">
+              <span class="product-tag">Acme Platform</span>
+            </div>
+          </td>
+          <td>8</td>
+          <td>
+            <span class="sync-ok">19 Feb 2026, 09:30</span>
+          </td>
+          <td>
+            <span class="webhook-dot active"></span>
+            <span style="font-size: 0.85rem;">Active</span>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="#" class="repo-name-link">acme-auth-service</a>
+            <div style="font-size: 0.75rem; color: var(--muted);">github.com/acme-software/acme-auth-service</div>
+          </td>
+          <td><span class="badge green">Active</span></td>
+          <td>
+            <div class="product-tags">
+              <span class="product-tag">Acme Platform</span>
+            </div>
+          </td>
+          <td>4</td>
+          <td>
+            <span class="sync-ok">19 Feb 2026, 09:28</span>
+          </td>
+          <td>
+            <span class="webhook-dot active"></span>
+            <span style="font-size: 0.85rem;">Active</span>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="#" class="repo-name-link">acme-payment-gateway</a>
+            <div style="font-size: 0.75rem; color: var(--muted);">github.com/acme-software/acme-payment-gateway</div>
+          </td>
+          <td><span class="badge amber">Pending</span></td>
+          <td>
+            <div class="product-tags">
+              <span class="product-tag">Acme Pay</span>
+            </div>
+          </td>
+          <td>5</td>
+          <td>
+            <span class="sync-warn">18 Feb 2026, 14:12</span>
+          </td>
+          <td>
+            <span class="webhook-dot inactive"></span>
+            <span style="font-size: 0.85rem; color: var(--muted);">Inactive</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+</div>
+</body>
+</html>

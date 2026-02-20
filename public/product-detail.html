@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Product Detail</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .breadcrumb { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .breadcrumb a { color: var(--accent); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+
+    .product-header-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.5rem; margin-bottom: 2rem;
+    }
+    .ph-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .ph-title { font-size: 1.5rem; font-weight: 700; }
+    .ph-desc { font-size: 0.9rem; color: var(--muted); margin-top: 0.25rem; max-width: 600px; }
+    .ph-actions { display: flex; gap: 0.5rem; }
+    .ph-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .ph-meta-item .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .ph-meta-item .value { font-size: 0.9rem; font-weight: 500; margin-top: 0.15rem; }
+
+    .btn-secondary {
+      padding: 0.4rem 1rem; border-radius: 8px; border: 1px solid var(--border);
+      background: none; color: var(--text); font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+    .tab-btn {
+      padding: 0.7rem 1.25rem; font-size: 0.9rem; font-weight: 500;
+      color: var(--muted); background: none; border: none; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .repo-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .repo-chip {
+      background: rgba(59,130,246,0.1); color: var(--accent); padding: 0.25rem 0.7rem;
+      border-radius: 6px; font-size: 0.8rem; font-weight: 500; font-family: monospace;
+    }
+
+    .checklist-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1rem; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; margin-bottom: 0.5rem;
+    }
+    .checklist-left { display: flex; align-items: center; gap: 0.75rem; }
+    .check-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0; }
+    .check-icon.done { background: rgba(34,197,94,0.15); color: var(--green); }
+    .check-icon.pending { background: rgba(139,141,152,0.15); color: var(--muted); }
+    .checklist-name { font-size: 0.9rem; }
+    .checklist-date { font-size: 0.8rem; color: var(--muted); }
+
+    .risk-mini { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .risk-mini-left { display: flex; align-items: center; gap: 0.75rem; }
+    .risk-mini-pkg { font-family: monospace; color: var(--accent); font-size: 0.85rem; }
+    .risk-mini-cve { font-size: 0.85rem; font-weight: 600; }
+    .risk-mini-desc { font-size: 0.8rem; color: var(--muted); }
+
+    .empty-state {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 2.5rem; text-align: center; color: var(--muted); font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .empty-state .icon { font-size: 2rem; margin-bottom: 0.75rem; }
+    .empty-state .title { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; }
+
+    .filter-bar { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 0.35rem 0.85rem; border-radius: 6px; border: 1px solid var(--border);
+      background: none; color: var(--muted); font-size: 0.8rem; cursor: pointer;
+    }
+    .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">CRANIS<span>2</span></div>
+      <div class="sidebar-org">Acme Software Ltd</div>
+      <div class="nav-section"><div class="nav-section-label">Overview</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">&#x1F4CA;</span> Dashboard</a>
+        <a href="notifications.html" class="nav-item"><span class="nav-icon">&#x1F514;</span> Notifications</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Compliance</div>
+        <a href="app-products.html" class="nav-item active"><span class="nav-icon">&#x1F4E6;</span> Products</a>
+        <a href="obligations.html" class="nav-item"><span class="nav-icon">&#x1F4CB;</span> Obligations</a>
+        <a href="technical-files.html" class="nav-item"><span class="nav-icon">&#x1F4C4;</span> Technical Files</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Repositories</div>
+        <a href="app-repos.html" class="nav-item"><span class="nav-icon">&#x1F5C2;&#xFE0F;</span> Repos</a>
+        <a href="contributors.html" class="nav-item"><span class="nav-icon">&#x1F465;</span> Contributors</a>
+        <a href="dependencies.html" class="nav-item"><span class="nav-icon">&#x1F4E6;</span> Dependencies</a>
+        <a href="risk-findings.html" class="nav-item"><span class="nav-icon">&#x26A0;&#xFE0F;</span> Risk Findings</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Billing</div>
+        <a href="billing.html" class="nav-item"><span class="nav-icon">&#x1F4B6;</span> Billing</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">&#x1F4C8;</span> Reports</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Settings</div>
+        <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">&#x1F464;</span> Stakeholders</a>
+        <a href="organisation.html" class="nav-item"><span class="nav-icon">&#x2699;&#xFE0F;</span> Organisation</a>
+        <a href="audit-log.html" class="nav-item"><span class="nav-icon">&#x1F4DC;</span> Audit Log</a>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="breadcrumb"><a href="app-products.html">Products</a> &rarr; <span id="breadcrumb-name">Loading...</span></div>
+
+      <div class="product-header-card">
+        <div class="ph-top">
+          <div>
+            <div class="ph-title" id="product-name">Loading...</div>
+            <div class="ph-desc" id="product-desc"></div>
+          </div>
+          <div class="ph-actions">
+            <a href="app-products.html" class="btn-secondary">&larr; Back to Products</a>
+          </div>
+        </div>
+        <div class="ph-meta">
+          <div class="ph-meta-item"><div class="label">CRA Category</div><div class="value" id="meta-category"><span class="badge purple">—</span></div></div>
+          <div class="ph-meta-item"><div class="label">Version</div><div class="value" id="meta-version">1.0.0</div></div>
+          <div class="ph-meta-item"><div class="label">Repositories</div><div class="value"><div class="repo-chips" id="meta-repos"></div></div></div>
+          <div class="ph-meta-item"><div class="label">Contributors</div><div class="value" id="meta-contributors">—</div></div>
+          <div class="ph-meta-item"><div class="label">Created</div><div class="value" id="meta-created">—</div></div>
+          <div class="ph-meta-item"><div class="label">Classification</div><div class="value" id="meta-classification">Pending</div></div>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="showTab('obligations')">Obligations (0/0)</button>
+        <button class="tab-btn" onclick="showTab('techfile')">Technical File (0/6)</button>
+        <button class="tab-btn" onclick="showTab('risks')">Risk Findings (0)</button>
+        <button class="tab-btn" onclick="showTab('contributors')">Contributors (0)</button>
+      </div>
+
+      <!-- Obligations Tab -->
+      <div class="tab-panel active" id="tab-obligations">
+        <div class="empty-state">
+          <div class="icon">&#x1F4CB;</div>
+          <div class="title">Obligations Pending Generation</div>
+          <p id="obligations-message">CRA obligations are being generated. Check back after the next daily run.</p>
+        </div>
+      </div>
+
+      <!-- Technical File Tab -->
+      <div class="tab-panel" id="tab-techfile">
+        <div class="stats" style="margin-bottom:1.5rem">
+          <div class="stat-card"><div class="stat-label">Completeness</div><div class="stat-value amber">0%</div><div class="stat-sub">0 of 6 items</div></div>
+          <div class="stat-card"><div class="stat-label">Last Updated</div><div class="stat-value blue">—</div><div class="stat-sub">Awaiting first run</div></div>
+          <div class="stat-card"><div class="stat-label">SBOM Status</div><div class="stat-value amber">Pending</div><div class="stat-sub">Will generate on next run</div></div>
+        </div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon pending">&#x25CB;</div><div class="checklist-name">Software Bill of Materials (SBOM)</div></div><div class="checklist-date" style="color:var(--amber)">Not started</div></div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon pending">&#x25CB;</div><div class="checklist-name">Vulnerability Handling Policy</div></div><div class="checklist-date" style="color:var(--amber)">Not started</div></div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon pending">&#x25CB;</div><div class="checklist-name">Secure Development Lifecycle</div></div><div class="checklist-date" style="color:var(--amber)">Not started</div></div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon pending">&#x25CB;</div><div class="checklist-name">User Documentation</div></div><div class="checklist-date" style="color:var(--amber)">Not started</div></div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon pending">&#x25CB;</div><div class="checklist-name">Declaration of Conformity</div></div><div class="checklist-date" style="color:var(--amber)">Not started</div></div>
+        <div class="checklist-item"><div class="checklist-left"><div class="check-icon pending">&#x25CB;</div><div class="checklist-name">Test Reports</div></div><div class="checklist-date" style="color:var(--amber)">Not started</div></div>
+      </div>
+
+      <!-- Risk Findings Tab -->
+      <div class="tab-panel" id="tab-risks">
+        <div class="stats" style="margin-bottom:1.5rem">
+          <div class="stat-card"><div class="stat-label">Open Findings</div><div class="stat-value green">0</div></div>
+          <div class="stat-card"><div class="stat-label">Critical</div><div class="stat-value green">0</div></div>
+          <div class="stat-card"><div class="stat-label">High</div><div class="stat-value green">0</div></div>
+          <div class="stat-card"><div class="stat-label">Resolved</div><div class="stat-value green">0</div></div>
+        </div>
+        <div class="empty-state">
+          <div class="icon">&#x2705;</div>
+          <div class="title">No Risk Findings Yet</div>
+          <p>No risk findings yet. SBOM generation will begin on the next daily run.</p>
+        </div>
+      </div>
+
+      <!-- Contributors Tab -->
+      <div class="tab-panel" id="tab-contributors">
+        <div class="stats" style="margin-bottom:1.5rem">
+          <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value blue">0</div><div class="stat-sub">Awaiting first snapshot</div></div>
+          <div class="stat-card"><div class="stat-label">Dormant</div><div class="stat-value green">0</div><div class="stat-sub">90+ days inactive</div></div>
+        </div>
+        <div class="empty-state">
+          <div class="icon">&#x1F465;</div>
+          <div class="title">No Contributor Data Yet</div>
+          <p>Contributor data will be populated after the first daily snapshot.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var id = params.get('id');
+
+      // Redirect known products to their dedicated pages
+      if (id === 'platform') {
+        window.location.replace('product-detail-platform.html');
+        return;
+      }
+      if (id === 'pay') {
+        window.location.replace('product-detail-pay.html');
+        return;
+      }
+
+      // If no id provided, redirect to products list
+      if (!id) {
+        window.location.replace('app-products.html');
+        return;
+      }
+
+      // Dynamic product: read params
+      var name = params.get('name') || id;
+      var cat  = params.get('cat')  || 'Default';
+      var reposRaw = params.get('repos') || '';
+      var repos = reposRaw ? reposRaw.split(',').map(function(r){ return r.trim(); }) : [];
+
+      // Determine badge colour for category
+      var catBadgeClass = 'purple';
+      var catLower = cat.toLowerCase();
+      if (catLower.indexOf('critical') !== -1) { catBadgeClass = 'red'; }
+      else if (catLower.indexOf('class ii') !== -1) { catBadgeClass = 'red'; }
+      else if (catLower.indexOf('class i') !== -1) { catBadgeClass = 'purple'; }
+      else if (catLower.indexOf('important') !== -1) { catBadgeClass = 'purple'; }
+      else if (catLower === 'default') { catBadgeClass = 'green'; }
+
+      // Update page title
+      document.title = 'CRANIS2 — ' + name;
+
+      // Breadcrumb
+      document.getElementById('breadcrumb-name').textContent = name;
+
+      // Header
+      document.getElementById('product-name').textContent = name;
+      document.getElementById('product-desc').textContent = 'Product registered via CRANIS2. Compliance tracking and SBOM generation will begin on the next daily run.';
+
+      // Meta
+      document.getElementById('meta-category').innerHTML = '<span class="badge ' + catBadgeClass + '">' + escapeHtml(cat) + '</span>';
+
+      // Repos
+      var repoContainer = document.getElementById('meta-repos');
+      if (repos.length > 0) {
+        repoContainer.innerHTML = repos.map(function(r){
+          return '<span class="repo-chip">' + escapeHtml(r) + '</span>';
+        }).join('');
+      } else {
+        repoContainer.innerHTML = '<span style="color:var(--muted);font-size:0.85rem">None assigned</span>';
+      }
+
+      // Created date — use today
+      var today = new Date();
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var dateStr = today.getDate() + ' ' + months[today.getMonth()] + ' ' + today.getFullYear();
+      document.getElementById('meta-created').textContent = dateStr;
+
+      // Obligations message with classification
+      document.getElementById('obligations-message').textContent =
+        'CRA obligations are being generated based on the \u201c' + cat + '\u201d classification. Check back after the next daily run.';
+
+      function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+      }
+    })();
+
+    function showTab(name) {
+      document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      document.getElementById('tab-' + name).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

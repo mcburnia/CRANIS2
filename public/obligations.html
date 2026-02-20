@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obligations - CRANIS2</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .tab-bar {
+      display: flex; gap: 0; margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 600;
+      color: var(--muted); background: none; border: none; cursor: pointer;
+      border-bottom: 2px solid transparent; transition: all 0.15s;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-btn:hover { color: var(--text); }
+    .evidence-link { color: var(--accent); font-size: 0.8rem; text-decoration: none; }
+    .evidence-link:hover { text-decoration: underline; }
+    .evidence-none { color: var(--muted); font-size: 0.8rem; font-style: italic; }
+    .overdue-text { color: var(--red); font-weight: 500; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">CRANIS<span>2</span></div>
+    <div class="sidebar-org">Acme Software Ltd</div>
+    <div class="nav-section">
+      <div class="nav-section-label">Overview</div>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Compliance</div>
+      <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+      <a href="obligations.html" class="nav-item active"><span class="nav-icon">📋</span> Obligations</a>
+      <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Repositories</div>
+      <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+      <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+      <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+      <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Billing</div>
+      <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+      <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Settings</div>
+      <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+      <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+      <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <h1>Compliance Obligations</h1>
+        <div class="timestamp">22 obligations tracked across 2 products</div>
+      </div>
+      <button class="btn btn-primary">+ Add Obligation</button>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active">All</button>
+      <button class="tab-btn">Acme Platform</button>
+      <button class="tab-btn">Acme Pay</button>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active">All</button>
+      <button class="filter-btn">Not Started</button>
+      <button class="filter-btn">In Progress</button>
+      <button class="filter-btn">Complete</button>
+      <button class="filter-btn">Overdue</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Title</th>
+          <th>Product</th>
+          <th>Status</th>
+          <th>Due Date</th>
+          <th>Evidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>CRA-ESR-1</strong></td>
+          <td>Essential Security Requirements</td>
+          <td>Acme Platform</td>
+          <td><span class="badge green">Complete</span></td>
+          <td>1 Mar 2026</td>
+          <td><a href="#" class="evidence-link">3 files attached</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-ESR-1</strong></td>
+          <td>Essential Security Requirements</td>
+          <td>Acme Pay</td>
+          <td><span class="badge green">Complete</span></td>
+          <td>1 Mar 2026</td>
+          <td><a href="#" class="evidence-link">2 files attached</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-VH-1</strong></td>
+          <td>Vulnerability Handling Policy</td>
+          <td>Acme Platform</td>
+          <td><span class="badge amber">In Progress</span></td>
+          <td>24 Feb 2026</td>
+          <td><a href="#" class="evidence-link">1 file attached</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-VH-1</strong></td>
+          <td>Vulnerability Handling Policy</td>
+          <td>Acme Pay</td>
+          <td><span class="badge blue">Not Started</span></td>
+          <td>24 Feb 2026</td>
+          <td><span class="evidence-none">No evidence</span></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-VD-24H</strong></td>
+          <td>Vulnerability Disclosure within 24 hours</td>
+          <td>Acme Platform</td>
+          <td><span class="badge green">Complete</span></td>
+          <td>Ongoing</td>
+          <td><a href="#" class="evidence-link">Process doc</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-VD-24H</strong></td>
+          <td>Vulnerability Disclosure within 24 hours</td>
+          <td>Acme Pay</td>
+          <td><span class="badge amber">In Progress</span></td>
+          <td>Ongoing</td>
+          <td><span class="evidence-none">No evidence</span></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-TF-1</strong></td>
+          <td>Technical File Documentation</td>
+          <td>Acme Platform</td>
+          <td><span class="badge amber">In Progress</span></td>
+          <td>15 Mar 2026</td>
+          <td><a href="#" class="evidence-link">4 files attached</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-TF-1</strong></td>
+          <td>Technical File Documentation</td>
+          <td>Acme Pay</td>
+          <td><span class="badge blue">Not Started</span></td>
+          <td>15 Mar 2026</td>
+          <td><span class="evidence-none">No evidence</span></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-SUP-1</strong></td>
+          <td>Security Update Support Period</td>
+          <td>Acme Platform</td>
+          <td><span class="badge green">Complete</span></td>
+          <td>1 Mar 2026</td>
+          <td><a href="#" class="evidence-link">Policy doc</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-SUP-1</strong></td>
+          <td>Security Update Support Period</td>
+          <td>Acme Pay</td>
+          <td><span class="badge green">Complete</span></td>
+          <td>1 Mar 2026</td>
+          <td><a href="#" class="evidence-link">Policy doc</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-SBOM-1</strong></td>
+          <td>Software Bill of Materials</td>
+          <td>Acme Platform</td>
+          <td><span class="badge green">Complete</span></td>
+          <td>Ongoing</td>
+          <td><a href="#" class="evidence-link">Auto-generated</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-SBOM-1</strong></td>
+          <td>Software Bill of Materials</td>
+          <td>Acme Pay</td>
+          <td><span class="badge green">Complete</span></td>
+          <td>Ongoing</td>
+          <td><a href="#" class="evidence-link">Auto-generated</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-SDL-1</strong></td>
+          <td>Secure Development Lifecycle</td>
+          <td>Acme Platform</td>
+          <td><span class="badge amber">In Progress</span></td>
+          <td>1 Apr 2026</td>
+          <td><a href="#" class="evidence-link">2 files attached</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-SDL-1</strong></td>
+          <td>Secure Development Lifecycle</td>
+          <td>Acme Pay</td>
+          <td><span class="badge blue">Not Started</span></td>
+          <td>1 Apr 2026</td>
+          <td><span class="evidence-none">No evidence</span></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-DOC-1</strong></td>
+          <td>User Documentation &amp; Instructions</td>
+          <td>Acme Platform</td>
+          <td><span class="badge green">Complete</span></td>
+          <td>1 Mar 2026</td>
+          <td><a href="#" class="evidence-link">Docs link</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-DOC-1</strong></td>
+          <td>User Documentation &amp; Instructions</td>
+          <td>Acme Pay</td>
+          <td><span class="badge amber">In Progress</span></td>
+          <td>1 Mar 2026</td>
+          <td><a href="#" class="evidence-link">Draft uploaded</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-INC-1</strong></td>
+          <td>Incident Response Procedure</td>
+          <td>Acme Platform</td>
+          <td><span class="badge red">Overdue</span></td>
+          <td class="overdue-text">10 Feb 2026</td>
+          <td><span class="evidence-none">No evidence</span></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-INC-1</strong></td>
+          <td>Incident Response Procedure</td>
+          <td>Acme Pay</td>
+          <td><span class="badge red">Overdue</span></td>
+          <td class="overdue-text">10 Feb 2026</td>
+          <td><span class="evidence-none">No evidence</span></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-CE-1</strong></td>
+          <td>CE Marking &amp; Declaration of Conformity</td>
+          <td>Acme Platform</td>
+          <td><span class="badge blue">Not Started</span></td>
+          <td>1 Jun 2026</td>
+          <td><span class="evidence-none">No evidence</span></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-CE-1</strong></td>
+          <td>CE Marking &amp; Declaration of Conformity</td>
+          <td>Acme Pay</td>
+          <td><span class="badge blue">Not Started</span></td>
+          <td>1 Jun 2026</td>
+          <td><span class="evidence-none">No evidence</span></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-PEN-1</strong></td>
+          <td>Penetration Testing &amp; Security Assessment</td>
+          <td>Acme Platform</td>
+          <td><span class="badge amber">In Progress</span></td>
+          <td>30 Mar 2026</td>
+          <td><a href="#" class="evidence-link">Scope doc</a></td>
+        </tr>
+        <tr>
+          <td><strong>CRA-PEN-1</strong></td>
+          <td>Penetration Testing &amp; Security Assessment</td>
+          <td>Acme Pay</td>
+          <td><span class="badge blue">Not Started</span></td>
+          <td>30 Mar 2026</td>
+          <td><span class="evidence-none">No evidence</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+</div>
+</body>
+</html>

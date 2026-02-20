@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Risk Findings</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .risk-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; }
+    .risk-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .risk-title { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; }
+    .risk-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+    .risk-meta-item { font-size: 0.85rem; }
+    .risk-meta-item .label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    .risk-meta-item .value { margin-top: 0.15rem; }
+    .risk-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem; padding: 0.75rem; background: var(--bg); border-radius: 6px; }
+    .risk-actions { display: flex; gap: 0.5rem; }
+    .risk-actions .btn { font-size: 0.8rem; }
+    .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 0.4rem 0.9rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; text-decoration: none; font-weight: 600; }
+    .btn-outline:hover { background: rgba(59,130,246,0.1); }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 0.4rem 0.9rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600; }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">CRANIS<span>2</span></div>
+      <div class="sidebar-org">Acme Software Ltd</div>
+      <div class="nav-section"><div class="nav-section-label">Overview</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Compliance</div>
+        <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+        <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+        <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Repositories</div>
+        <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+        <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+        <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+        <a href="risk-findings.html" class="nav-item active"><span class="nav-icon">⚠️</span> Risk Findings</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Billing</div>
+        <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Settings</div>
+        <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+        <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+        <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="page-header">
+        <h1>Risk Findings</h1>
+        <div class="timestamp">Last scan: 19 Feb 2026, 03:00 UTC</div>
+      </div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-label">Total Findings</div><div class="stat-value red">3</div></div>
+        <div class="stat-card"><div class="stat-label">Critical</div><div class="stat-value red">1</div></div>
+        <div class="stat-card"><div class="stat-label">High</div><div class="stat-value amber">2</div></div>
+        <div class="stat-card"><div class="stat-label">Resolved</div><div class="stat-value green">0</div></div>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active">All</button>
+        <button class="filter-btn">Critical</button>
+        <button class="filter-btn">High</button>
+        <button class="filter-btn">Medium</button>
+        <button class="filter-btn">Low</button>
+        <button class="filter-btn">Resolved</button>
+      </div>
+      <div class="section">
+        <div class="risk-card">
+          <div class="risk-header">
+            <div class="risk-title"><span class="badge red">Critical</span> CVE-2026-1234</div>
+            <span class="badge red">Open</span>
+          </div>
+          <div class="risk-desc">Remote code execution vulnerability in lodash's template function allows attackers to execute arbitrary code via crafted template strings when user input is passed directly to the template method.</div>
+          <div class="risk-meta">
+            <div class="risk-meta-item"><div class="label">Package</div><div class="value" style="font-family:monospace;color:var(--accent)">lodash@4.17.20</div></div>
+            <div class="risk-meta-item"><div class="label">Repository</div><div class="value">acme-platform</div></div>
+            <div class="risk-meta-item"><div class="label">Ecosystem</div><div class="value">npm</div></div>
+            <div class="risk-meta-item"><div class="label">Found</div><div class="value">19 Feb 2026</div></div>
+            <div class="risk-meta-item"><div class="label">Fix Available</div><div class="value" style="color:var(--green)">Yes — upgrade to 4.17.22+</div></div>
+            <div class="risk-meta-item"><div class="label">CVSS Score</div><div class="value" style="color:var(--red)">9.8</div></div>
+          </div>
+          <div class="risk-actions">
+            <button class="btn-outline">Investigate</button>
+            <button class="btn-ghost">Dismiss</button>
+            <button class="btn-ghost">View in NVD</button>
+          </div>
+        </div>
+
+        <div class="risk-card">
+          <div class="risk-header">
+            <div class="risk-title"><span class="badge amber">High</span> CVE-2026-5678</div>
+            <span class="badge amber">Open</span>
+          </div>
+          <div class="risk-desc">SQL injection vulnerability in pg-query allows attackers to manipulate database queries when parameterised queries are not used correctly, potentially exposing or modifying sensitive data.</div>
+          <div class="risk-meta">
+            <div class="risk-meta-item"><div class="label">Package</div><div class="value" style="font-family:monospace;color:var(--accent)">pg-query@2.1.0</div></div>
+            <div class="risk-meta-item"><div class="label">Repository</div><div class="value">acme-payment-gateway</div></div>
+            <div class="risk-meta-item"><div class="label">Ecosystem</div><div class="value">npm</div></div>
+            <div class="risk-meta-item"><div class="label">Found</div><div class="value">18 Feb 2026</div></div>
+            <div class="risk-meta-item"><div class="label">Fix Available</div><div class="value" style="color:var(--green)">Yes — upgrade to 2.2.0+</div></div>
+            <div class="risk-meta-item"><div class="label">CVSS Score</div><div class="value" style="color:var(--amber)">8.1</div></div>
+          </div>
+          <div class="risk-actions">
+            <button class="btn-outline">Investigate</button>
+            <button class="btn-ghost">Dismiss</button>
+            <button class="btn-ghost">View in NVD</button>
+          </div>
+        </div>
+
+        <div class="risk-card">
+          <div class="risk-header">
+            <div class="risk-title"><span class="badge amber">High</span> CVE-2026-9012</div>
+            <span class="badge amber">Open</span>
+          </div>
+          <div class="risk-desc">Authentication bypass in the jose JWT library allows attackers to forge valid tokens by exploiting a flaw in the signature verification when using specific algorithm configurations.</div>
+          <div class="risk-meta">
+            <div class="risk-meta-item"><div class="label">Package</div><div class="value" style="font-family:monospace;color:var(--accent)">jose@4.11.1</div></div>
+            <div class="risk-meta-item"><div class="label">Repository</div><div class="value">acme-auth-service</div></div>
+            <div class="risk-meta-item"><div class="label">Ecosystem</div><div class="value">npm</div></div>
+            <div class="risk-meta-item"><div class="label">Found</div><div class="value">16 Feb 2026</div></div>
+            <div class="risk-meta-item"><div class="label">Fix Available</div><div class="value" style="color:var(--amber)">Pending — monitor for update</div></div>
+            <div class="risk-meta-item"><div class="label">CVSS Score</div><div class="value" style="color:var(--amber)">7.5</div></div>
+          </div>
+          <div class="risk-actions">
+            <button class="btn-outline">Investigate</button>
+            <button class="btn-ghost">Dismiss</button>
+            <button class="btn-ghost">View in NVD</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

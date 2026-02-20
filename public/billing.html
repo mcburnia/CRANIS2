@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Billing</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .stripe-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .stripe-info { display: flex; align-items: center; gap: 1rem; }
+    .stripe-logo { font-size: 1.5rem; font-weight: 700; color: #635bff; }
+    .stripe-details { font-size: 0.85rem; }
+    .stripe-details .label { color: var(--muted); }
+    .dedup-row { background: rgba(59,130,246,0.05); font-weight: 600; }
+    .dedup-row td { border-top: 2px solid var(--accent); }
+    .invoice-link { color: var(--accent); text-decoration: none; font-size: 0.85rem; }
+    .invoice-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">CRANIS<span>2</span></div>
+      <div class="sidebar-org">Acme Software Ltd</div>
+      <div class="nav-section"><div class="nav-section-label">Overview</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Compliance</div>
+        <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+        <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+        <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Repositories</div>
+        <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+        <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+        <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+        <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Billing</div>
+        <a href="billing.html" class="nav-item active"><span class="nav-icon">💶</span> Billing</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Settings</div>
+        <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+        <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+        <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="page-header"><h1>Billing</h1></div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-label">Current Month Est.</div><div class="stat-value green">€108</div><div class="stat-sub">Feb 2026</div></div>
+        <div class="stat-card"><div class="stat-label">Billable Contributors</div><div class="stat-value blue">18</div><div class="stat-sub">Unique across all repos</div></div>
+        <div class="stat-card"><div class="stat-label">Price / Contributor</div><div class="stat-value blue">€6.00</div><div class="stat-sub">Per month ex. VAT</div></div>
+        <div class="stat-card"><div class="stat-label">Next Invoice</div><div class="stat-value amber">1 Mar</div><div class="stat-sub">2026</div></div>
+      </div>
+      <div class="stripe-card">
+        <div class="stripe-info">
+          <div class="stripe-logo">stripe</div>
+          <div class="stripe-details">
+            <div>Status: <span class="badge green">Connected</span></div>
+            <div class="label">Customer: cus_****Abcd &nbsp;|&nbsp; Subscription: <span class="badge green">Active</span></div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm">Manage in Stripe</button>
+      </div>
+      <div class="section">
+        <h3>💶 Current Period Breakdown — Feb 2026</h3>
+        <table>
+          <thead><tr><th>Repository</th><th>Contributors (write+)</th><th>Amount</th></tr></thead>
+          <tbody>
+            <tr><td>acme-platform</td><td>14</td><td>€84.00</td></tr>
+            <tr><td>acme-auth-service</td><td>6</td><td>€36.00</td></tr>
+            <tr><td>acme-payment-gateway</td><td>4</td><td>€24.00</td></tr>
+            <tr class="dedup-row"><td><strong>Unique after deduplication</strong></td><td><strong>18 contributors</strong></td><td><strong>€108.00</strong></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:0.8rem;color:var(--muted);margin-top:0.75rem">Contributors appearing in multiple repos are only counted once. Total is based on unique GitHub accounts with write, maintain, or admin access.</p>
+      </div>
+      <div class="section">
+        <h3>📄 Invoice History</h3>
+        <table>
+          <thead><tr><th>Date</th><th>Period</th><th>Contributors</th><th>Amount</th><th>Status</th><th>Invoice</th></tr></thead>
+          <tbody>
+            <tr><td>1 Feb 2026</td><td>Jan 2026</td><td>17</td><td>€102.00</td><td><span class="badge green">Paid</span></td><td><a class="invoice-link" href="#">INV-2026-001 ↗</a></td></tr>
+            <tr><td>1 Jan 2026</td><td>Dec 2025</td><td>15</td><td>€90.00</td><td><span class="badge green">Paid</span></td><td><a class="invoice-link" href="#">INV-2025-012 ↗</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

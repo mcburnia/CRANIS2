@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — CRA Classification Wizard</title>
+  <style>
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+      --text: #e4e4e7; --muted: #8b8d98; --accent: #3b82f6;
+      --accent-hover: #2563eb; --green: #22c55e; --amber: #f59e0b; --red: #ef4444;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+      display: flex; min-height: 100vh; flex-direction: column; align-items: center;
+      padding: 2rem;
+    }
+    .container { max-width: 700px; width: 100%; }
+    .logo { font-size: 1.8rem; font-weight: 700; text-align: center; margin-bottom: 0.5rem; }
+    .logo span { color: var(--accent); }
+    .subtitle { text-align: center; color: var(--muted); font-size: 0.9rem; margin-bottom: 2.5rem; }
+    .steps { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem; }
+    .step { width: 32px; height: 4px; border-radius: 2px; background: var(--border); }
+    .step.active { background: var(--accent); }
+    .step.done { background: var(--green); }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .card > p { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+    .product-tab {
+      display: flex; gap: 0.5rem; margin-bottom: 1.5rem;
+    }
+    .tab-btn {
+      padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border);
+      background: none; color: var(--muted); font-size: 0.85rem; cursor: pointer;
+    }
+    .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .question-group { margin-bottom: 1.5rem; }
+    .question {
+      font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;
+    }
+    .question-help { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem; }
+
+    .options { display: flex; flex-direction: column; gap: 0.5rem; }
+    .option {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 0.85rem 1rem; border-radius: 8px;
+      background: var(--bg); border: 2px solid var(--border);
+      cursor: pointer; transition: border-color 0.2s;
+    }
+    .option:hover { border-color: var(--accent); }
+    .option.selected { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+
+    .option-radio {
+      width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border);
+      flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center;
+    }
+    .option.selected .option-radio { border-color: var(--accent); }
+    .option.selected .option-radio::after {
+      content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+    }
+    .option-text .option-label { font-size: 0.9rem; font-weight: 500; }
+    .option-text .option-desc { font-size: 0.8rem; color: var(--muted); margin-top: 0.15rem; }
+
+    /* Classification result */
+    .result-banner {
+      padding: 1.25rem; border-radius: 10px; margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .result-banner.default { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); }
+    .result-banner.important { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+    .result-banner.critical { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); }
+
+    .result-icon { font-size: 2rem; }
+    .result-text h3 { font-size: 1rem; font-weight: 600; }
+    .result-text p { font-size: 0.85rem; color: var(--muted); }
+
+    .obligations-preview {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 1rem; margin-bottom: 1.5rem;
+    }
+    .obligations-preview h4 {
+      font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--muted); margin-bottom: 0.75rem;
+    }
+    .obligation-item {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.85rem; padding: 0.3rem 0;
+    }
+    .obl-code { color: var(--accent); font-family: monospace; font-size: 0.8rem; min-width: 100px; }
+
+    .btn {
+      display: inline-block; padding: 0.7rem 1.5rem; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600; text-decoration: none;
+      cursor: pointer; border: none; transition: background 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; width: 100%; text-align: center; }
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
+    .back-link { color: var(--muted); font-size: 0.85rem; text-decoration: none; }
+    .back-link:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">CRANIS<span>2</span></div>
+    <div class="subtitle">CRA Compliance & Governance</div>
+
+    <div class="steps">
+      <div class="step done"></div>
+      <div class="step done"></div>
+      <div class="step done"></div>
+      <div class="step done"></div>
+      <div class="step active"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+    </div>
+
+    <div class="card">
+      <h2>CRA product classification</h2>
+      <p>Answer these questions for each product to determine its CRA category. This determines which compliance obligations apply.</p>
+
+      <div class="product-tab">
+        <button class="tab-btn active">Acme Platform</button>
+        <button class="tab-btn">Acme Pay</button>
+      </div>
+
+      <div class="question-group">
+        <div class="question">1. Is this product placed on the EU market as a commercial offering?</div>
+        <div class="question-help">Products sold, licensed, or provided as SaaS to EU customers fall under CRA scope.</div>
+        <div class="options">
+          <div class="option selected" onclick="selectOption(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">
+              <div class="option-label">Yes — it is a commercial product available in the EU</div>
+            </div>
+          </div>
+          <div class="option" onclick="selectOption(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">
+              <div class="option-label">No — it is internal-only or not available in the EU</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="question-group">
+        <div class="question">2. Does this product perform any of the following critical functions?</div>
+        <div class="question-help">Select the option that best describes the product's primary function.</div>
+        <div class="options">
+          <div class="option" onclick="selectOption(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">
+              <div class="option-label">Identity management, authentication, or access control</div>
+              <div class="option-desc">Password managers, SSO, PKI, privilege management → Important (Class I)</div>
+            </div>
+          </div>
+          <div class="option" onclick="selectOption(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">
+              <div class="option-label">Network monitoring, security, or intrusion detection</div>
+              <div class="option-desc">Firewalls, SIEM, IDS/IPS → Important (Class I or II)</div>
+            </div>
+          </div>
+          <div class="option selected" onclick="selectOption(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">
+              <div class="option-label">General-purpose software with no specific critical function</div>
+              <div class="option-desc">Business apps, productivity tools, standard SaaS → Default category</div>
+            </div>
+          </div>
+          <div class="option" onclick="selectOption(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">
+              <div class="option-label">Operating system, hypervisor, or container runtime</div>
+              <div class="option-desc">System-level software → Critical (Class II)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="question-group">
+        <div class="question">3. Does this product process or store sensitive personal data at scale?</div>
+        <div class="options">
+          <div class="option" onclick="selectOption(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">
+              <div class="option-label">Yes — processes health, financial, or biometric data at scale</div>
+            </div>
+          </div>
+          <div class="option selected" onclick="selectOption(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">
+              <div class="option-label">No — standard business data only</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-banner default">
+      <div class="result-icon">🟢</div>
+      <div class="result-text">
+        <h3>Classification: Default</h3>
+        <p>Standard CRA requirements apply. Self-assessment conformity is sufficient — no third-party audit required.</p>
+      </div>
+    </div>
+
+    <div class="obligations-preview">
+      <h4>Generated obligations for Acme Platform (8 total)</h4>
+      <div class="obligation-item"><span class="obl-code">CRA-ESR-1</span> Design with appropriate level of cybersecurity</div>
+      <div class="obligation-item"><span class="obl-code">CRA-ESR-2</span> Deliver without known exploitable vulnerabilities</div>
+      <div class="obligation-item"><span class="obl-code">CRA-ESR-3</span> Secure default configuration</div>
+      <div class="obligation-item"><span class="obl-code">CRA-VH-1</span> Identify and document vulnerabilities and components (SBOM)</div>
+      <div class="obligation-item"><span class="obl-code">CRA-VH-2</span> Apply effective and regular tests and reviews</div>
+      <div class="obligation-item"><span class="obl-code">CRA-VD-24H</span> Notify ENISA of actively exploited vulnerabilities within 24 hours</div>
+      <div class="obligation-item"><span class="obl-code">CRA-TF-1</span> Prepare and maintain technical documentation (Annex V)</div>
+      <div class="obligation-item"><span class="obl-code">CRA-SUP-1</span> Provide security updates for the support period</div>
+    </div>
+
+    <a href="stakeholders.html" class="btn btn-primary">Confirm classification & continue →</a>
+
+    <div class="nav-row">
+      <a href="products.html" class="back-link">← Back</a>
+    </div>
+  </div>
+
+  <script>
+    function selectOption(el) {
+      const group = el.closest('.options');
+      group.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+  </script>
+</body>
+</html>

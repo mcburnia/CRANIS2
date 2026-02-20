@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Audit Log</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+    .filter-row { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+    .filter-select {
+      background: var(--bg); border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 0.45rem 0.7rem; font-size: 0.85rem;
+    }
+    .event-detail { font-size: 0.8rem; color: var(--muted); }
+    .entity-link { color: var(--accent); font-family: monospace; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">CRANIS<span>2</span></div>
+      <div class="sidebar-org">Acme Software Ltd</div>
+      <div class="nav-section"><div class="nav-section-label">Overview</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Compliance</div>
+        <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+        <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+        <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Repositories</div>
+        <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+        <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+        <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+        <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Billing</div>
+        <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Settings</div>
+        <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+        <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+        <a href="audit-log.html" class="nav-item active"><span class="nav-icon">📜</span> Audit Log</a>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="page-header">
+        <h1>Audit Log</h1>
+        <div class="header-actions"><button class="btn btn-primary btn-sm">Export Log</button></div>
+      </div>
+
+      <div class="filter-row">
+        <select class="filter-select">
+          <option>All Event Types</option>
+          <option>Organisation</option>
+          <option>Repository</option>
+          <option>Product</option>
+          <option>Stakeholder</option>
+          <option>Compliance</option>
+          <option>Risk</option>
+        </select>
+        <select class="filter-select">
+          <option>All Actors</option>
+          <option>Andi McBurnie</option>
+          <option>System</option>
+        </select>
+        <select class="filter-select">
+          <option>Last 7 days</option>
+          <option>Last 30 days</option>
+          <option>Last 90 days</option>
+          <option>All time</option>
+        </select>
+        <input type="text" class="search-input" placeholder="Search events..." style="max-width:220px">
+      </div>
+
+      <div class="section">
+        <table>
+          <thead><tr><th>Timestamp</th><th>Event</th><th>Actor</th><th>Entity</th><th>Details</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:06</td>
+              <td><span class="badge red">RISK_FINDING_DETECTED</span></td>
+              <td>System</td>
+              <td><span class="entity-link">CVE-2026-1234</span></td>
+              <td class="event-detail">Critical vulnerability found in lodash@4.17.20 — acme-platform</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:05</td>
+              <td><span class="badge blue">CONTRIBUTOR_SNAPSHOT_TAKEN</span></td>
+              <td>System</td>
+              <td><span class="entity-link">3 repos</span></td>
+              <td class="event-detail">Daily snapshot: 18 unique contributors across all repos</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:04</td>
+              <td><span class="badge green">STAKEHOLDER_ADDED</span></td>
+              <td>Andi McBurnie</td>
+              <td><span class="entity-link">Maria Kowalski</span></td>
+              <td class="event-detail">Role: Compliance Officer — maria.k@acme-software.com</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:04</td>
+              <td><span class="badge green">STAKEHOLDER_ADDED</span></td>
+              <td>Andi McBurnie</td>
+              <td><span class="entity-link">Sarah Jensen</span></td>
+              <td class="event-detail">Roles: Tech Lead, Git Admin — sarah.jensen@acme-software.com</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:03</td>
+              <td><span class="badge amber">PRODUCT_CLASSIFIED</span></td>
+              <td>Andi McBurnie</td>
+              <td><span class="entity-link">Acme Pay</span></td>
+              <td class="event-detail">Classification: Important (Class I) — 12 obligations generated</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:03</td>
+              <td><span class="badge amber">PRODUCT_CLASSIFIED</span></td>
+              <td>Andi McBurnie</td>
+              <td><span class="entity-link">Acme Platform</span></td>
+              <td class="event-detail">Classification: Default — 8 obligations generated</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:02</td>
+              <td><span class="badge green">PRODUCT_CREATED</span></td>
+              <td>Andi McBurnie</td>
+              <td><span class="entity-link">Acme Pay</span></td>
+              <td class="event-detail">Repos: acme-payment-gateway</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:02</td>
+              <td><span class="badge green">PRODUCT_CREATED</span></td>
+              <td>Andi McBurnie</td>
+              <td><span class="entity-link">Acme Platform</span></td>
+              <td class="event-detail">Repos: acme-platform, acme-auth-service</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:01</td>
+              <td><span class="badge blue">WEBHOOK_INSTALLED</span></td>
+              <td>System</td>
+              <td><span class="entity-link">acme-payment-gateway</span></td>
+              <td class="event-detail">GitHub webhook active — push, release events</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:01</td>
+              <td><span class="badge blue">WEBHOOK_INSTALLED</span></td>
+              <td>System</td>
+              <td><span class="entity-link">acme-auth-service</span></td>
+              <td class="event-detail">GitHub webhook active — push, release events</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:01</td>
+              <td><span class="badge blue">WEBHOOK_INSTALLED</span></td>
+              <td>System</td>
+              <td><span class="entity-link">acme-platform</span></td>
+              <td class="event-detail">GitHub webhook active — push, release events</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:01</td>
+              <td><span class="badge green">REPO_REGISTERED</span></td>
+              <td>Andi McBurnie</td>
+              <td><span class="entity-link">acme-payment-gateway</span></td>
+              <td class="event-detail">Private repo — 4 contributors with write access</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:01</td>
+              <td><span class="badge green">REPO_REGISTERED</span></td>
+              <td>Andi McBurnie</td>
+              <td><span class="entity-link">acme-auth-service</span></td>
+              <td class="event-detail">Private repo — 6 contributors with write access</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:01</td>
+              <td><span class="badge green">REPO_REGISTERED</span></td>
+              <td>Andi McBurnie</td>
+              <td><span class="entity-link">acme-platform</span></td>
+              <td class="event-detail">Private repo — 14 contributors with write access</td>
+            </tr>
+            <tr>
+              <td style="white-space:nowrap">19 Feb 09:00</td>
+              <td><span class="badge green">ORGANISATION_CREATED</span></td>
+              <td>Andi McBurnie</td>
+              <td><span class="entity-link">Acme Software Ltd</span></td>
+              <td class="event-detail">GitHub org: acme-software — Plan: Active</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

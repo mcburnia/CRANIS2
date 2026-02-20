@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — CRA Compliance Made Simple</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e4e4e7;
+      --muted: #8b8d98;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --green: #22c55e;
+      --amber: #f59e0b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* Nav */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .nav-logo { font-size: 1.4rem; font-weight: 700; }
+    .nav-logo span { color: var(--accent); }
+    .nav-links { display: flex; gap: 2rem; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+    .nav-links a:hover { color: var(--text); }
+
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn-outline:hover { background: rgba(59,130,246,0.1); }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--muted);
+      margin-bottom: 2.5rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-ctas { display: flex; gap: 1rem; justify-content: center; }
+
+    /* Price badge */
+    .price-badge {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 0.5rem 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .price-badge strong { color: var(--green); }
+
+    /* Features */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+    }
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    /* Who it's for */
+    .audience {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+    .audience h2 {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+    }
+    .audience-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .audience-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+    }
+    .audience-card h4 {
+      font-size: 1rem;
+      margin-bottom: 0.4rem;
+    }
+    .audience-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    /* CTA section */
+    .cta-section {
+      text-align: center;
+      padding: 4rem 2rem;
+      margin: 2rem auto;
+      max-width: 700px;
+    }
+    .cta-section h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .cta-section p {
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-logo">CRANIS<span>2</span></div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#who">Who It's For</a>
+      <a href="#pricing">Pricing</a>
+      <a href="signup.html" class="btn btn-primary">Get Started</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <h1>CRA compliance<br><span>without the chaos</span></h1>
+    <p>Continuous, defensible evidence of who's building your software and what's in it. GitHub-integrated. Affordable at any scale.</p>
+    <div class="hero-ctas">
+      <a href="signup.html" class="btn btn-primary">Get Started Free</a>
+      <a href="#features" class="btn btn-outline">See How It Works</a>
+    </div>
+    <div class="price-badge">From <strong>€6</strong> / contributor / month</div>
+  </section>
+
+  <section id="features" class="features">
+    <div class="feature-card">
+      <div class="feature-icon">👥</div>
+      <h3>Contributor Tracking</h3>
+      <p>Know exactly who has write access to every CRA-relevant repo, every day. Dormant accounts are surfaced automatically.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📦</div>
+      <h3>Automated SBOM & Risk Scanning</h3>
+      <p>Every code change triggers dependency analysis. Libraries are checked against vulnerability databases daily — no manual effort.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🛡️</div>
+      <h3>CRA Obligation Management</h3>
+      <p>Classify your products, generate obligations automatically, and track progress toward Annex V technical file completion.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Outsourcing Governance</h3>
+      <p>Independent evidence of who's actually working on your code — not just what the supplier invoice says.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔔</div>
+      <h3>Role-Based Notifications</h3>
+      <p>Finance sees billing. Compliance sees obligations. Tech leads see access changes. Everyone gets exactly what they need.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3>Immutable Audit Trail</h3>
+      <p>Every snapshot, every change, every action — preserved immutably as your evidence for CRA audit discussions.</p>
+    </div>
+  </section>
+
+  <section id="who" class="audience">
+    <h2>Built for software organisations of every size</h2>
+    <div class="audience-grid">
+      <div class="audience-card">
+        <h4>🧑‍💻 Indie developers & micro-ISVs</h4>
+        <p>Affordable compliance for solo and small teams shipping CRA-relevant products.</p>
+      </div>
+      <div class="audience-card">
+        <h4>🏢 Software agencies</h4>
+        <p>Auditable evidence of good practice to satisfy regulated clients.</p>
+      </div>
+      <div class="audience-card">
+        <h4>🏗️ Enterprise development orgs</h4>
+        <p>Access governance and compliance reporting across internal teams and outsourced suppliers.</p>
+      </div>
+      <div class="audience-card">
+        <h4>📋 Compliance officers</h4>
+        <p>Obligation tracking, deadline alerts, and technical file completeness at a glance.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" class="cta-section">
+    <h2>Simple, transparent pricing</h2>
+    <p>€6.00 per contributor per month. A contributor is anyone with write access to a registered repo. No hidden fees. No per-repo charges. One invoice per organisation.</p>
+    <a href="signup.html" class="btn btn-primary">Start Your Free Trial</a>
+  </section>
+
+  <footer>
+    CRANIS2 &copy; 2026 — CRA Compliance & Governance Platform — EU hosted, customer-owned evidence
+  </footer>
+</body>
+</html>

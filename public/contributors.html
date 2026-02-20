@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Contributors</title>
+  <link rel="stylesheet" href="app-shell.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">CRANIS<span>2</span></div>
+      <div class="sidebar-org">Acme Software Ltd</div>
+      <div class="nav-section"><div class="nav-section-label">Overview</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Compliance</div>
+        <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+        <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+        <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Repositories</div>
+        <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+        <a href="contributors.html" class="nav-item active"><span class="nav-icon">👥</span> Contributors</a>
+        <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+        <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Billing</div>
+        <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Settings</div>
+        <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+        <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+        <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="page-header">
+        <h1>Contributors</h1>
+        <div class="timestamp">Last snapshot: 19 Feb 2026</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card"><div class="stat-label">Total Contributors</div><div class="stat-value blue">18</div><div class="stat-sub">Across all repos</div></div>
+        <div class="stat-card"><div class="stat-label">Billable</div><div class="stat-value green">18</div><div class="stat-sub">Write access or above</div></div>
+        <div class="stat-card"><div class="stat-label">Dormant</div><div class="stat-value amber">2</div><div class="stat-sub">No commits in 90+ days</div></div>
+        <div class="stat-card"><div class="stat-label">New This Month</div><div class="stat-value blue">1</div><div class="stat-sub">Since 1 Feb 2026</div></div>
+      </div>
+
+      <div class="filter-bar">
+        <button class="filter-btn active">All</button>
+        <button class="filter-btn">Write</button>
+        <button class="filter-btn">Admin</button>
+        <button class="filter-btn">Maintain</button>
+        <button class="filter-btn">Dormant</button>
+        <input type="text" class="search-input" placeholder="Search contributors..." style="margin-left:auto">
+      </div>
+
+      <div class="section">
+        <table>
+          <thead>
+            <tr><th>GitHub Username</th><th>Access Level</th><th>Repositories</th><th>Last Commit</th><th>Billable</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>jdoe-acme</strong></td>
+              <td><span class="badge purple">Admin</span></td>
+              <td>acme-platform, acme-auth-service, acme-payment-gateway</td>
+              <td>19 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>schen-dev</strong></td>
+              <td><span class="badge purple">Admin</span></td>
+              <td>acme-platform, acme-auth-service</td>
+              <td>18 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>mwilliams42</strong></td>
+              <td><span class="badge blue">Maintain</span></td>
+              <td>acme-platform, acme-payment-gateway</td>
+              <td>19 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>agarcia-eng</strong></td>
+              <td><span class="badge blue">Maintain</span></td>
+              <td>acme-auth-service</td>
+              <td>17 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>kpatel-ops</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-platform</td>
+              <td>18 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>lnguyen-fe</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-platform</td>
+              <td>19 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>rjohnson-be</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-platform, acme-payment-gateway</td>
+              <td>16 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>etan-qa</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-platform, acme-auth-service</td>
+              <td>14 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>tmueller-ext</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-platform</td>
+              <td>19 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge blue">New</span></td>
+            </tr>
+            <tr>
+              <td><strong>dmarkov-sec</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-auth-service, acme-payment-gateway</td>
+              <td>15 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>hpark-data</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-platform</td>
+              <td>13 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>jrivera-api</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-platform</td>
+              <td>17 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>czhang-infra</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-platform, acme-auth-service</td>
+              <td>18 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>nsingh-mobile</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-platform</td>
+              <td>12 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>awright-test</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-platform</td>
+              <td>16 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>mlee-devops</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-auth-service</td>
+              <td>11 Feb 2026</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge green">Active</span></td>
+            </tr>
+            <tr style="background:rgba(245,158,11,0.03)">
+              <td><strong>bkowalski-dev</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-payment-gateway</td>
+              <td style="color:var(--amber)">12 Nov 2025</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge amber">Dormant</span></td>
+            </tr>
+            <tr style="background:rgba(245,158,11,0.03)">
+              <td><strong>ofarrell-old</strong></td>
+              <td><span class="badge green">Write</span></td>
+              <td>acme-platform</td>
+              <td style="color:var(--amber)">28 Oct 2025</td>
+              <td><span class="badge green">Yes</span></td>
+              <td><span class="badge amber">Dormant</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

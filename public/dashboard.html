@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+      --text: #e4e4e7; --muted: #8b8d98; --accent: #3b82f6;
+      --accent-hover: #2563eb; --green: #22c55e; --amber: #f59e0b;
+      --red: #ef4444; --purple: #a855f7;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+    }
+
+    /* Sidebar */
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 240px; background: var(--surface); border-right: 1px solid var(--border);
+      padding: 1.5rem 0; flex-shrink: 0;
+    }
+    .sidebar-logo {
+      font-size: 1.3rem; font-weight: 700; padding: 0 1.25rem; margin-bottom: 0.25rem;
+    }
+    .sidebar-logo span { color: var(--accent); }
+    .sidebar-org { font-size: 0.8rem; color: var(--muted); padding: 0 1.25rem; margin-bottom: 1.5rem; }
+
+    .nav-section { margin-bottom: 1.5rem; }
+    .nav-section-label {
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--muted); padding: 0 1.25rem; margin-bottom: 0.5rem;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.5rem 1.25rem; font-size: 0.9rem; color: var(--muted);
+      text-decoration: none; cursor: pointer; transition: all 0.15s;
+    }
+    .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+    .nav-item.active { color: var(--accent); background: rgba(59,130,246,0.08); border-right: 2px solid var(--accent); }
+    .nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+
+    /* Main */
+    .main { flex: 1; padding: 2rem; overflow-y: auto; }
+
+    .page-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 2rem;
+    }
+    .page-header h1 { font-size: 1.6rem; font-weight: 700; }
+    .page-header .timestamp { font-size: 0.8rem; color: var(--muted); }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(168,85,247,0.1));
+      border: 1px solid rgba(59,130,246,0.2); border-radius: 12px;
+      padding: 1.5rem; margin-bottom: 2rem;
+    }
+    .welcome-banner h2 { font-size: 1.1rem; margin-bottom: 0.4rem; }
+    .welcome-banner p { font-size: 0.9rem; color: var(--muted); }
+
+    /* Stats */
+    .stats {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1.25rem;
+    }
+    .stat-label {
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--muted); margin-bottom: 0.25rem;
+    }
+    .stat-value { font-size: 1.8rem; font-weight: 700; }
+    .stat-value.green { color: var(--green); }
+    .stat-value.amber { color: var(--amber); }
+    .stat-value.blue { color: var(--accent); }
+    .stat-value.red { color: var(--red); }
+    .stat-sub { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+
+    /* Sections */
+    .section { margin-bottom: 2rem; }
+    .section h3 {
+      font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    table {
+      width: 100%; border-collapse: collapse; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    }
+    th {
+      text-align: left; padding: 0.65rem 1rem; font-size: 0.75rem;
+      text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+      background: var(--bg); border-bottom: 1px solid var(--border);
+    }
+    td { padding: 0.65rem 1rem; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+
+    .badge {
+      display: inline-block; padding: 0.15rem 0.6rem; border-radius: 9999px;
+      font-size: 0.75rem; font-weight: 600;
+    }
+    .badge.green { background: rgba(34,197,94,0.15); color: var(--green); }
+    .badge.amber { background: rgba(245,158,11,0.15); color: var(--amber); }
+    .badge.red { background: rgba(239,68,68,0.15); color: var(--red); }
+    .badge.blue { background: rgba(59,130,246,0.15); color: var(--accent); }
+
+    .progress-bar {
+      width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+    }
+    .progress-fill { height: 100%; border-radius: 3px; }
+    .progress-fill.green { background: var(--green); }
+    .progress-fill.amber { background: var(--amber); }
+
+    /* Activity feed */
+    .activity-feed { display: flex; flex-direction: column; gap: 0.5rem; }
+    .activity-item {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.75rem 1rem;
+    }
+    .activity-dot {
+      width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0;
+    }
+    .activity-dot.blue { background: var(--accent); }
+    .activity-dot.green { background: var(--green); }
+    .activity-dot.amber { background: var(--amber); }
+    .activity-dot.red { background: var(--red); }
+    .activity-content { flex: 1; }
+    .activity-text { font-size: 0.85rem; }
+    .activity-time { font-size: 0.75rem; color: var(--muted); }
+
+    /* Risk alerts */
+    .risk-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem;
+    }
+    .risk-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .risk-title { font-size: 0.9rem; font-weight: 600; }
+    .risk-detail { font-size: 0.8rem; color: var(--muted); }
+    .risk-pkg { font-family: monospace; color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">CRANIS<span>2</span></div>
+      <div class="sidebar-org">Acme Software Ltd</div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Overview</div>
+        <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Compliance</div>
+        <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+        <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+        <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Repositories</div>
+        <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+        <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+        <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+        <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Billing</div>
+        <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+        <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Settings</div>
+        <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+        <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+        <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <div class="timestamp">Last sync: 19 Feb 2026, 08:15 UTC</div>
+      </div>
+
+      <div class="welcome-banner">
+        <h2>Setup complete ✓</h2>
+        <p>CRANIS2 is now tracking 3 repositories across 2 products for Acme Software Ltd. Your first contributor snapshot and dependency scan will run within 24 hours.</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-label">Products</div>
+          <div class="stat-value blue">2</div>
+          <div class="stat-sub">2 classified</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Registered Repos</div>
+          <div class="stat-value blue">3</div>
+          <div class="stat-sub">3 active, 0 pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Contributors</div>
+          <div class="stat-value amber">18</div>
+          <div class="stat-sub">2 dormant (no commits 90d+)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Est. Monthly Cost</div>
+          <div class="stat-value green">€108</div>
+          <div class="stat-sub">18 × €6.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Risk Findings</div>
+          <div class="stat-value red">3</div>
+          <div class="stat-sub">1 critical, 2 high</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>📦 Products & Compliance</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>CRA Category</th>
+              <th>Obligations</th>
+              <th>Technical File</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Acme Platform</strong></td>
+              <td><span class="badge green">Default</span></td>
+              <td>2 / 8 complete</td>
+              <td>
+                <div class="progress-bar"><div class="progress-fill amber" style="width:25%"></div></div>
+                <span style="font-size:0.75rem;color:var(--muted)">25%</span>
+              </td>
+              <td><span class="badge amber">In Progress</span></td>
+            </tr>
+            <tr>
+              <td><strong>Acme Pay</strong></td>
+              <td><span class="badge amber">Important I</span></td>
+              <td>0 / 12 complete</td>
+              <td>
+                <div class="progress-bar"><div class="progress-fill amber" style="width:8%"></div></div>
+                <span style="font-size:0.75rem;color:var(--muted)">8%</span>
+              </td>
+              <td><span class="badge red">Not Started</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h3>⚠️ Dependency Risk Findings</h3>
+        <div class="risk-card">
+          <div class="risk-header">
+            <div class="risk-title"><span class="badge red">Critical</span>&nbsp; CVE-2026-1234</div>
+            <div class="risk-detail">Found today</div>
+          </div>
+          <div class="risk-detail">
+            Remote code execution in <span class="risk-pkg">lodash@4.17.20</span> — acme-platform
+          </div>
+        </div>
+        <div class="risk-card">
+          <div class="risk-header">
+            <div class="risk-title"><span class="badge amber">High</span>&nbsp; CVE-2026-5678</div>
+            <div class="risk-detail">Found yesterday</div>
+          </div>
+          <div class="risk-detail">
+            SQL injection in <span class="risk-pkg">pg-query@2.1.0</span> — acme-payment-gateway
+          </div>
+        </div>
+        <div class="risk-card">
+          <div class="risk-header">
+            <div class="risk-title"><span class="badge amber">High</span>&nbsp; CVE-2026-9012</div>
+            <div class="risk-detail">Found 3 days ago</div>
+          </div>
+          <div class="risk-detail">
+            Authentication bypass in <span class="risk-pkg">jose@4.11.1</span> — acme-auth-service
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>👥 Contributor Overview</h3>
+        <table>
+          <thead>
+            <tr><th>Repository</th><th>Contributors</th><th>Dormant</th><th>Last Snapshot</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>acme-platform</td><td>14</td>
+              <td><span class="badge amber">2</span></td>
+              <td>19 Feb 2026</td>
+            </tr>
+            <tr>
+              <td>acme-auth-service</td><td>6</td>
+              <td><span class="badge green">0</span></td>
+              <td>19 Feb 2026</td>
+            </tr>
+            <tr>
+              <td>acme-payment-gateway</td><td>4</td>
+              <td><span class="badge green">0</span></td>
+              <td>19 Feb 2026</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h3>📜 Recent Activity</h3>
+        <div class="activity-feed">
+          <div class="activity-item">
+            <div class="activity-dot green"></div>
+            <div class="activity-content">
+              <div class="activity-text">Organisation <strong>Acme Software Ltd</strong> onboarded successfully</div>
+              <div class="activity-time">19 Feb 2026, 09:00</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot blue"></div>
+            <div class="activity-content">
+              <div class="activity-text">3 repositories registered — webhooks installed</div>
+              <div class="activity-time">19 Feb 2026, 09:02</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot blue"></div>
+            <div class="activity-content">
+              <div class="activity-text"><strong>Acme Platform</strong> classified as Default — 8 obligations generated</div>
+              <div class="activity-time">19 Feb 2026, 09:05</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot amber"></div>
+            <div class="activity-content">
+              <div class="activity-text"><strong>Acme Pay</strong> classified as Important (Class I) — 12 obligations generated</div>
+              <div class="activity-time">19 Feb 2026, 09:06</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot red"></div>
+            <div class="activity-content">
+              <div class="activity-text">Critical vulnerability found: CVE-2026-1234 in <strong>lodash@4.17.20</strong></div>
+              <div class="activity-time">19 Feb 2026, 08:15</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot amber"></div>
+            <div class="activity-content">
+              <div class="activity-text">2 dormant contributors detected in <strong>acme-platform</strong> (no activity 90d+)</div>
+              <div class="activity-time">19 Feb 2026, 08:15</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

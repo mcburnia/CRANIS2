@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Technical Files - CRANIS2</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .tf-cards { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+    .tf-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem;
+    }
+    .tf-card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+    }
+    .tf-card-title { font-size: 1.15rem; font-weight: 700; }
+    .tf-completeness {
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .completeness-ring {
+      width: 52px; height: 52px; position: relative;
+    }
+    .completeness-ring svg { transform: rotate(-90deg); }
+    .completeness-ring .ring-bg { stroke: var(--border); }
+    .completeness-ring .ring-fill { transition: stroke-dashoffset 0.5s; }
+    .completeness-pct {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 0.8rem; font-weight: 700;
+    }
+    .checklist { display: flex; flex-direction: column; gap: 0; }
+    .checklist-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.85rem 0; border-bottom: 1px solid var(--border);
+    }
+    .checklist-item:last-child { border-bottom: none; }
+    .check-box {
+      width: 20px; height: 20px; border-radius: 4px; border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      font-size: 0.7rem;
+    }
+    .check-box.checked { background: var(--green); border-color: var(--green); color: #fff; }
+    .check-box.unchecked { background: none; }
+    .checklist-info { flex: 1; }
+    .checklist-name { font-size: 0.9rem; font-weight: 500; }
+    .checklist-name.done { color: var(--text); }
+    .checklist-name.pending { color: var(--muted); }
+    .checklist-meta { font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem; }
+    .checklist-status { font-size: 0.75rem; }
+    .auto-badge {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      background: rgba(34,197,94,0.1); color: var(--green);
+      padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">CRANIS<span>2</span></div>
+    <div class="sidebar-org">Acme Software Ltd</div>
+    <div class="nav-section">
+      <div class="nav-section-label">Overview</div>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Compliance</div>
+      <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+      <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+      <a href="technical-files.html" class="nav-item active"><span class="nav-icon">📄</span> Technical Files</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Repositories</div>
+      <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+      <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+      <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+      <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Billing</div>
+      <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+      <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Settings</div>
+      <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+      <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+      <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <h1>Technical Files</h1>
+        <div class="timestamp">Annex V checklist items per product</div>
+      </div>
+    </div>
+
+    <div class="tf-cards">
+      <!-- Acme Platform Technical File -->
+      <div class="tf-card">
+        <div class="tf-card-header">
+          <div>
+            <div class="tf-card-title">Acme Platform</div>
+            <span class="badge purple" style="margin-top: 0.25rem;">Class I</span>
+          </div>
+          <div class="tf-completeness">
+            <div class="completeness-ring">
+              <svg width="52" height="52" viewBox="0 0 52 52">
+                <circle class="ring-bg" cx="26" cy="26" r="22" fill="none" stroke-width="4"/>
+                <circle class="ring-fill" cx="26" cy="26" r="22" fill="none" stroke="var(--amber)" stroke-width="4"
+                  stroke-dasharray="138.23" stroke-dashoffset="46.08" stroke-linecap="round"/>
+              </svg>
+              <div class="completeness-pct">67%</div>
+            </div>
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 600;">4 of 6</div>
+              <div style="font-size: 0.75rem; color: var(--muted);">items complete</div>
+            </div>
+          </div>
+        </div>
+        <div class="checklist">
+          <div class="checklist-item">
+            <div class="check-box checked">&#10003;</div>
+            <div class="checklist-info">
+              <div class="checklist-name done">SBOM (Software Bill of Materials)</div>
+              <div class="checklist-meta">
+                <span class="auto-badge">Auto-generated daily</span>
+                &nbsp; Last generated: 19 Feb 2026, 03:00 UTC &bull; 142 components
+              </div>
+            </div>
+          </div>
+          <div class="checklist-item">
+            <div class="check-box checked">&#10003;</div>
+            <div class="checklist-info">
+              <div class="checklist-name done">Vulnerability Handling Policy</div>
+              <div class="checklist-meta">Uploaded by Sarah Connor &bull; Last updated: 17 Feb 2026</div>
+            </div>
+          </div>
+          <div class="checklist-item">
+            <div class="check-box checked">&#10003;</div>
+            <div class="checklist-info">
+              <div class="checklist-name done">Secure Development Lifecycle</div>
+              <div class="checklist-meta">Uploaded by Maria Chen &bull; Last updated: 15 Feb 2026</div>
+            </div>
+          </div>
+          <div class="checklist-item">
+            <div class="check-box unchecked"></div>
+            <div class="checklist-info">
+              <div class="checklist-name pending">Declaration of Conformity</div>
+              <div class="checklist-meta">Not yet uploaded</div>
+            </div>
+          </div>
+          <div class="checklist-item">
+            <div class="check-box checked">&#10003;</div>
+            <div class="checklist-info">
+              <div class="checklist-name done">Test Reports</div>
+              <div class="checklist-meta">Uploaded by Sarah Connor &bull; Last updated: 16 Feb 2026</div>
+            </div>
+          </div>
+          <div class="checklist-item">
+            <div class="check-box unchecked"></div>
+            <div class="checklist-info">
+              <div class="checklist-name pending">User Documentation</div>
+              <div class="checklist-meta">Not yet uploaded</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acme Pay Technical File -->
+      <div class="tf-card">
+        <div class="tf-card-header">
+          <div>
+            <div class="tf-card-title">Acme Pay</div>
+            <span class="badge red" style="margin-top: 0.25rem;">Critical</span>
+          </div>
+          <div class="tf-completeness">
+            <div class="completeness-ring">
+              <svg width="52" height="52" viewBox="0 0 52 52">
+                <circle class="ring-bg" cx="26" cy="26" r="22" fill="none" stroke-width="4"/>
+                <circle class="ring-fill" cx="26" cy="26" r="22" fill="none" stroke="var(--amber)" stroke-width="4"
+                  stroke-dasharray="138.23" stroke-dashoffset="92.15" stroke-linecap="round"/>
+              </svg>
+              <div class="completeness-pct">33%</div>
+            </div>
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 600;">2 of 6</div>
+              <div style="font-size: 0.75rem; color: var(--muted);">items complete</div>
+            </div>
+          </div>
+        </div>
+        <div class="checklist">
+          <div class="checklist-item">
+            <div class="check-box checked">&#10003;</div>
+            <div class="checklist-info">
+              <div class="checklist-name done">SBOM (Software Bill of Materials)</div>
+              <div class="checklist-meta">
+                <span class="auto-badge">Auto-generated daily</span>
+                &nbsp; Last generated: 19 Feb 2026, 03:00 UTC &bull; 87 components
+              </div>
+            </div>
+          </div>
+          <div class="checklist-item">
+            <div class="check-box unchecked"></div>
+            <div class="checklist-info">
+              <div class="checklist-name pending">Vulnerability Handling Policy</div>
+              <div class="checklist-meta">Not yet uploaded</div>
+            </div>
+          </div>
+          <div class="checklist-item">
+            <div class="check-box unchecked"></div>
+            <div class="checklist-info">
+              <div class="checklist-name pending">Secure Development Lifecycle</div>
+              <div class="checklist-meta">Not yet uploaded</div>
+            </div>
+          </div>
+          <div class="checklist-item">
+            <div class="check-box unchecked"></div>
+            <div class="checklist-info">
+              <div class="checklist-name pending">Declaration of Conformity</div>
+              <div class="checklist-meta">Not yet uploaded</div>
+            </div>
+          </div>
+          <div class="checklist-item">
+            <div class="check-box checked">&#10003;</div>
+            <div class="checklist-info">
+              <div class="checklist-name done">Test Reports</div>
+              <div class="checklist-meta">Uploaded by James Wilson &bull; Last updated: 18 Feb 2026</div>
+            </div>
+          </div>
+          <div class="checklist-item">
+            <div class="check-box unchecked"></div>
+            <div class="checklist-info">
+              <div class="checklist-name pending">User Documentation</div>
+              <div class="checklist-meta">Not yet uploaded</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

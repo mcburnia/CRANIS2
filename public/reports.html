@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRANIS2 — Reports</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <style>
+    .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1rem; }
+    .report-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; display: flex; flex-direction: column; }
+    .report-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+    .report-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .report-card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; flex: 1; }
+    .report-footer { display: flex; justify-content: space-between; align-items: center; }
+    .report-period { font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 0.4rem; }
+    .period-select { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 0.2rem 0.4rem; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">CRANIS<span>2</span></div>
+      <div class="sidebar-org">Acme Software Ltd</div>
+      <div class="nav-section"><div class="nav-section-label">Overview</div>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Compliance</div>
+        <a href="app-products.html" class="nav-item"><span class="nav-icon">📦</span> Products</a>
+        <a href="obligations.html" class="nav-item"><span class="nav-icon">📋</span> Obligations</a>
+        <a href="technical-files.html" class="nav-item"><span class="nav-icon">📄</span> Technical Files</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Repositories</div>
+        <a href="app-repos.html" class="nav-item"><span class="nav-icon">🗂️</span> Repos</a>
+        <a href="contributors.html" class="nav-item"><span class="nav-icon">👥</span> Contributors</a>
+        <a href="dependencies.html" class="nav-item"><span class="nav-icon">📦</span> Dependencies</a>
+        <a href="risk-findings.html" class="nav-item"><span class="nav-icon">⚠️</span> Risk Findings</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Billing</div>
+        <a href="billing.html" class="nav-item"><span class="nav-icon">💶</span> Billing</a>
+        <a href="reports.html" class="nav-item active"><span class="nav-icon">📈</span> Reports</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">Settings</div>
+        <a href="app-stakeholders.html" class="nav-item"><span class="nav-icon">👤</span> Stakeholders</a>
+        <a href="organisation.html" class="nav-item"><span class="nav-icon">⚙️</span> Organisation</a>
+        <a href="audit-log.html" class="nav-item"><span class="nav-icon">📜</span> Audit Log</a>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="page-header"><h1>Reports</h1></div>
+      <div class="report-grid">
+        <div class="report-card">
+          <div class="report-icon">💶</div>
+          <h3>Monthly Billing Report</h3>
+          <p>Contributor counts and costs per repo for the billing period. Includes deduplication breakdown.</p>
+          <div class="report-footer">
+            <div class="report-period">Period: <select class="period-select"><option>Feb 2026</option><option>Jan 2026</option><option>Dec 2025</option></select></div>
+            <button class="btn btn-primary btn-sm">Generate Report</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <div class="report-icon">👥</div>
+          <h3>Contributor Access Report</h3>
+          <p>Full list of contributors with access levels across all registered repositories, including dormant account flags.</p>
+          <div class="report-footer">
+            <div class="report-period">Period: <select class="period-select"><option>Feb 2026</option><option>Jan 2026</option><option>Dec 2025</option></select></div>
+            <button class="btn btn-primary btn-sm">Generate Report</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <div class="report-icon">🏢</div>
+          <h3>Outsourcing Governance Report</h3>
+          <p>Third-party contributor activity and access changes. Independent evidence of who is working on your code.</p>
+          <div class="report-footer">
+            <div class="report-period">Period: <select class="period-select"><option>Feb 2026</option><option>Jan 2026</option><option>Dec 2025</option></select></div>
+            <button class="btn btn-primary btn-sm">Generate Report</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <div class="report-icon">🛡️</div>
+          <h3>Compliance Status Report</h3>
+          <p>CRA obligation progress and technical file completeness across all products. Suitable for audit discussions.</p>
+          <div class="report-footer">
+            <div class="report-period">As of: <select class="period-select"><option>19 Feb 2026</option></select></div>
+            <button class="btn btn-primary btn-sm">Generate Report</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <div class="report-icon">⚠️</div>
+          <h3>Dependency Risk Report</h3>
+          <p>All dependencies with known vulnerabilities and risk scores. Covers all registered repos and ecosystems.</p>
+          <div class="report-footer">
+            <div class="report-period">As of: <select class="period-select"><option>19 Feb 2026</option></select></div>
+            <button class="btn btn-primary btn-sm">Generate Report</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <div class="report-icon">📜</div>
+          <h3>Audit Trail Export</h3>
+          <p>Complete audit log for the selected period. Immutable record of all compliance-relevant events.</p>
+          <div class="report-footer">
+            <div class="report-period">Period: <select class="period-select"><option>Feb 2026</option><option>Jan 2026</option><option>Dec 2025</option></select></div>
+            <button class="btn btn-primary btn-sm">Generate Report</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
