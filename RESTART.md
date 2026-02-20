@@ -43,8 +43,8 @@ Expected containers:
 |-----------|-------|------|---------|
 | cranis2_nginx | nginx:alpine | 3002 → 80 | Serves React build + reverse proxy to API |
 | cranis2_backend | cranis2-backend | 3001 → 3001 | Express API server |
-| cranis2_postgres | postgres:16-alpine | 5433 → 5432 | Application database (users, auth) |
-| cranis2_neo4j | neo4j:5-community | 7475 → 7474, 7688 → 7687 | Graph database (organisations, products, dependencies) |
+| cranis2_postgres | postgres:16-alpine | 5433 → 5432 | Application database (users, auth, GitHub connections) |
+| cranis2_neo4j | neo4j:5-community | 7475 → 7474, 7688 → 7687 | Graph database (organisations, products, contributors, dependencies) |
 
 If containers are down, start them:
 
@@ -100,8 +100,8 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at `http://192.
 | Backend | Express (Node.js/TypeScript) | API server in Docker, port 3001 |
 | Email | Resend | Verification emails from info@cranis2.com (or poste.cranis2.com) |
 | Auth | bcrypt + JWT | Password hashing (12 rounds) + session tokens (7-day expiry) |
-| Database | PostgreSQL 16 | Port 5433, users table with auth + org linking |
-| Graph DB | Neo4j 5 Community | Ports 7475/7688, Organisation nodes + future product/dependency graph |
+| Database | PostgreSQL 16 | Port 5433, users + user_events + github_connections tables |
+| Graph DB | Neo4j 5 Community | Ports 7475/7688, Organisation + Product + GitHubRepo + Contributor nodes |
 | Containerisation | Docker Compose | All services in cranis2_net network |
 
 ## Technical Mandates
@@ -114,13 +114,16 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at `http://192.
 
 **Postgres** (relational data):
 - Users, authentication, sessions
-- Billing, subscriptions
-- Audit logs
-- User-to-organisation linking (org_id on users table)
+- User events (passive telemetry — logins, page views, actions)
+- GitHub connections (encrypted OAuth tokens)
+- Billing, subscriptions (future)
 
 **Neo4j** (graph data — supply chain relationships):
 - Organisation nodes (name, country, size, CRA role, industry)
-- Product nodes (future)
+- Product nodes (name, version, category, description, repoUrl, lifecycle status)
+- GitHubRepo nodes (owner, name, description, stars, forks, language, visibility)
+- Contributor nodes (githubLogin, avatarUrl, contributions count)
+- Relationships: (Organisation)-[:BELONGS_TO]-(Product), (Product)-[:HAS_REPO]->(GitHubRepo), (GitHubRepo)-[:HAS_CONTRIBUTOR]->(Contributor)
 - Dependency nodes + DEPENDS_ON relationships (future)
 - Vulnerability/CVE nodes (future)
 - Supply chain traversal queries (e.g. "which products are affected by this CVE through any depth of dependency?")
@@ -144,19 +147,26 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at `http://192.
   backend/                 ← Express API service
     Dockerfile             ← Multi-stage build (builder for TS compile, production for runtime)
     src/
-      index.ts             ← Express server entry (port 3001), inits Postgres + Neo4j
+      index.ts             ← Express server entry (port 3001), inits Postgres + Neo4j, mounts all routes
       routes/
         auth.ts            ← POST /register, POST /login, GET /verify-email, GET /me
-        org.ts             ← POST /org (create org), GET /org (get user's org)
+        org.ts             ← POST /org (create org), GET /org (get org), PUT /org (update org)
+        products.ts        ← Full CRUD for products (Neo4j nodes linked to Organisation)
+        github.ts          ← GitHub OAuth flow, repo sync, connection status
+        audit.ts           ← GET /audit/events (paginated audit log)
+        dev.ts             ← Dev-only routes (nuke button — MUST REMOVE BEFORE PRODUCTION)
       db/
-        pool.ts            ← Postgres connection pool + schema init (users table with org_id)
-        neo4j.ts           ← Neo4j driver connection + graph schema init (constraints/indexes)
+        pool.ts            ← Postgres pool + schema init (users, user_events, github_connections)
+        neo4j.ts           ← Neo4j driver + graph schema init (constraints/indexes)
         schema.sql         ← Users table DDL (reference)
       services/
         email.ts           ← Resend email integration
+        telemetry.ts       ← Passive telemetry — dual-write to Postgres + Neo4j
+        github.ts          ← GitHub API client (READ-ONLY — only GET requests to GitHub)
       utils/
         password.ts        ← bcrypt hashing (12 salt rounds)
         token.ts           ← JWT generation/verification + email verification tokens
+        encryption.ts      ← AES-256-GCM encrypt/decrypt for GitHub OAuth tokens
   frontend/                ← React application
     index.html
     package.json
@@ -171,7 +181,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at `http://192.
       layouts/
         RootLayout.tsx     ← Wraps AuthProvider around all routes
         PublicLayout.tsx    ← No sidebar (landing, login, signup)
-        AuthenticatedLayout.tsx ← Sidebar + auth guard + org guard (redirects to /login or /setup/org)
+        AuthenticatedLayout.tsx ← Sidebar + auth guard + org guard
       components/
         Sidebar.tsx        ← Navigation with lucide-react icons (5 sections)
         PageHeader.tsx     ← Page title + timestamp
@@ -180,11 +190,11 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at `http://192.
         public/            ← LandingPage, LoginPage, SignupPage, CheckEmailPage, VerifyEmailPage
         setup/             ← WelcomePage, OrgSetupPage (wizard with CRA role selection)
         dashboard/         ← DashboardPage (fully migrated)
-        products/          ← ProductsPage, ProductDetailPage (stubs)
+        products/          ← ProductsPage (list + add modal), ProductDetailPage (tabs + GitHub UI)
         compliance/        ← ObligationsPage, TechnicalFilesPage (stubs)
         repositories/      ← ReposPage, ContributorsPage, DependenciesPage, RiskFindingsPage (stubs)
         billing/           ← BillingPage, ReportsPage (stubs)
-        settings/          ← StakeholdersPage, OrganisationPage, AuditLogPage (stubs)
+        settings/          ← StakeholdersPage (stub), OrganisationPage (live), AuditLogPage (live)
         notifications/     ← NotificationsPage (stub)
 ```
 
@@ -201,20 +211,20 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at `http://192.
 
 **Authenticated (with sidebar, requires JWT + org):**
 - `/dashboard` → Dashboard (fully migrated with stats, tables, activity feed)
-- `/notifications` → Notifications
-- `/products` → Products list
-- `/products/:productId` → Product detail
-- `/obligations` → CRA obligations
-- `/technical-files` → Technical documentation
-- `/repos` → Repository management
-- `/contributors` → Contributor tracking
-- `/dependencies` → Dependency/SBOM management
-- `/risk-findings` → Vulnerability findings
-- `/billing` → Billing (Stripe metered)
-- `/reports` → Compliance reports
-- `/stakeholders` → Team management
-- `/organisation` → Organisation settings
-- `/audit-log` → Audit trail
+- `/notifications` → Notifications (stub)
+- `/products` → Products list with add modal (live — CRUD backed by Neo4j)
+- `/products/:productId` → Product detail with tabs + GitHub integration
+- `/obligations` → CRA obligations (stub)
+- `/technical-files` → Technical documentation (stub)
+- `/repos` → Repository management (stub)
+- `/contributors` → Contributor tracking (stub)
+- `/dependencies` → Dependency/SBOM management (stub)
+- `/risk-findings` → Vulnerability findings (stub)
+- `/billing` → Billing (stub)
+- `/reports` → Compliance reports (stub)
+- `/stakeholders` → Team management (stub)
+- `/organisation` → Organisation settings (live — editable)
+- `/audit-log` → Audit trail (live — paginated event log)
 
 ## API Endpoints
 
@@ -226,13 +236,27 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at `http://192.
 | GET | /api/auth/me | Check session, returns user info + orgId + orgRole |
 | POST | /api/org | Create organisation (Neo4j node + Postgres link) |
 | GET | /api/org | Get current user's organisation from Neo4j |
+| PUT | /api/org | Update organisation details |
+| GET | /api/products | List all products for user's organisation |
+| GET | /api/products/:id | Get single product details |
+| POST | /api/products | Create new product (Neo4j node linked to Organisation) |
+| PUT | /api/products/:id | Update product details |
+| DELETE | /api/products/:id | Delete product |
+| GET | /api/github/connect | Initiate GitHub OAuth flow (redirects to GitHub) |
+| GET | /api/github/callback | Handle GitHub OAuth callback, store encrypted token |
+| GET | /api/github/status | Check if current user has GitHub connected |
+| POST | /api/github/sync/:productId | Sync repo data from GitHub (metadata + contributors + languages) |
+| GET | /api/github/repo/:productId | Get cached repo data from Neo4j (no GitHub API call) |
+| DELETE | /api/github/disconnect | Remove GitHub connection |
+| GET | /api/audit/events | Paginated audit log (telemetry events) |
 | GET | /api/health | Health check |
 
 ## Database Schema
 
-### Postgres — Users Table
+### Postgres — Tables
 
 ```sql
+-- Users table
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
@@ -240,10 +264,39 @@ CREATE TABLE users (
   email_verified BOOLEAN DEFAULT FALSE,
   verification_token VARCHAR(255),
   token_expires_at TIMESTAMPTZ,
-  org_id UUID,                          -- Links to Neo4j Organisation node
-  org_role VARCHAR(50) DEFAULT 'admin', -- User's role within the org
+  org_id UUID,
+  org_role VARCHAR(50) DEFAULT 'admin',
+  preferred_language VARCHAR(10),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- User events (passive telemetry)
+CREATE TABLE user_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id),
+  event_type VARCHAR(50) NOT NULL,
+  ip_address INET,
+  user_agent TEXT,
+  accept_language TEXT,
+  browser_language VARCHAR(10),
+  browser_timezone VARCHAR(100),
+  referrer TEXT,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- GitHub connections (encrypted OAuth tokens)
+CREATE TABLE github_connections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) NOT NULL,
+  github_user_id BIGINT NOT NULL,
+  github_username VARCHAR(255) NOT NULL,
+  github_avatar_url TEXT,
+  access_token_encrypted TEXT NOT NULL,
+  token_scope VARCHAR(255),
+  connected_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id)
 );
 ```
 
@@ -256,18 +309,67 @@ CREATE CONSTRAINT product_id_unique IF NOT EXISTS FOR (p:Product) REQUIRE p.id I
 CREATE CONSTRAINT dependency_id_unique IF NOT EXISTS FOR (d:Dependency) REQUIRE d.id IS UNIQUE;
 CREATE CONSTRAINT vulnerability_cve_unique IF NOT EXISTS FOR (v:Vulnerability) REQUIRE v.cve IS UNIQUE;
 
--- Organisation node properties
-(:Organisation {
-  id: UUID,
-  name: String,
-  country: String,         -- e.g. "Germany", "France"
-  companySize: String,     -- "micro", "small", "medium", "large"
-  craRole: String,         -- "manufacturer", "importer", "distributor", "open_source_steward"
-  industry: String,        -- e.g. "Software & SaaS", "IoT & Smart Devices"
-  createdAt: DateTime,
-  updatedAt: DateTime
-})
+-- Organisation node
+(:Organisation {id, name, country, companySize, craRole, industry, createdAt, updatedAt})
+
+-- Product node
+(:Product {id, name, version, category, description, repoUrl, lifecycleStatus, createdAt, updatedAt})
+-- Relationships: (Product)-[:BELONGS_TO]->(Organisation)
+
+-- GitHubRepo node (created on repo sync)
+(:GitHubRepo {url, owner, name, fullName, description, language, stars, forks, openIssues, visibility, lastPush, defaultBranch, syncedAt})
+-- Relationships: (Product)-[:HAS_REPO]->(GitHubRepo), (User)-[:GITHUB_CONNECTED]->(GitHubRepo)
+
+-- Contributor node (created on repo sync)
+(:Contributor {githubLogin, githubId, avatarUrl, contributions})
+-- Relationships: (GitHubRepo)-[:HAS_CONTRIBUTOR]->(Contributor)
 ```
+
+## Passive Telemetry System
+
+Every significant user action is recorded as a dual-write event:
+- **Postgres `user_events`**: Stores event with IP, user agent, browser language, timezone, referrer, metadata JSONB
+- **Neo4j**: Creates `(:UserEvent)` node linked to `(:User)` via `[:PERFORMED]` relationship
+
+Event types tracked: `login`, `register`, `org_created`, `org_updated`, `product_created`, `product_updated`, `product_deleted`, `github_connected`, `github_disconnected`, `github_repo_synced`, `page_view`, etc.
+
+The audit log page (`/audit-log`) displays these events in a paginated, filterable table.
+
+## GitHub Integration
+
+**Architecture**: GitHub OAuth App flow. The product/project admin connects their GitHub account once. Contributors are discovered from the repo and stored as Neo4j nodes — they don't need CRANIS2 accounts.
+
+**Security constraints**:
+- OAuth scope: `read:user,repo` (read-only — `repo` scope gives read access to private repos the user can access)
+- All GitHub API calls are GET-only — no write endpoints exposed
+- Token stored AES-256-GCM encrypted in Postgres (iv:tag:ciphertext hex format)
+- Token can be disconnected/revoked at any time
+
+**Data pulled on sync**:
+- Repo metadata: name, description, stars, forks, language, visibility, last push, open issues
+- Contributors: login, avatar, commit count
+- Languages: breakdown with percentages
+
+**⚠️ KNOWN ISSUE**: The GitHub OAuth connect flow doesn't work properly and needs a rethink. The current approach passes the session token as a query parameter to `/api/github/connect`, which generates a state token and redirects to GitHub. The callback then exchanges the code for a token and redirects back to the frontend. This flow needs debugging/redesign in the next session.
+
+**Setup required**: User must create a GitHub OAuth App at https://github.com/settings/developers:
+- Application name: `CRANIS2`
+- Homepage URL: `http://192.168.1.107:3002`
+- Authorization callback URL: `http://192.168.1.107:3002/api/github/callback`
+- Copy Client ID and Client Secret to `.env`
+
+## Products Feature
+
+Products represent software products that need CRA compliance tracking. Each product is a Neo4j node linked to an Organisation via `BELONGS_TO`.
+
+**Product properties**: name, version, category (default/class_i/class_ii), description, repoUrl, lifecycleStatus (development/production/maintenance/end_of_life)
+
+**CRA categories**:
+- `default` — Standard products, self-assessment possible
+- `class_i` (Important) — Products with digital element requiring third-party assessment
+- `class_ii` (Critical) — Critical products requiring EU-level assessment
+
+**ProductDetailPage tabs**: Overview (product info + GitHub repo card + compliance progress), Obligations (stub), Technical File (stub), Risk Findings (stub), Dependencies (language breakdown + contributors from GitHub)
 
 ## User Registration + Org Setup Flow
 
@@ -294,13 +396,18 @@ RESEND_API_KEY=re_tZ1swTMo_4yB2pTde1Lm6KMxFpA7hZtNU
 JWT_SECRET=<auto-generated>
 FRONTEND_URL=http://192.168.1.107:3002
 EMAIL_FROM=info@cranis2.com
-DEV_SKIP_EMAIL=true   ← Set to false when email DNS is confirmed
+DEV_SKIP_EMAIL=true
+
+GITHUB_CLIENT_ID=PLACEHOLDER          ← Needs real OAuth App credentials
+GITHUB_CLIENT_SECRET=PLACEHOLDER      ← Needs real OAuth App credentials
+GITHUB_ENCRYPTION_KEY=<32-byte hex>   ← Generated, used for AES-256-GCM token encryption
 ```
 
 **Docker-compose passes to backend:**
 - `DATABASE_URL` (Postgres connection string)
 - `NEO4J_URI=bolt://neo4j:7687`
 - `NEO4J_USER`, `NEO4J_PASSWORD`
+- `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_ENCRYPTION_KEY`
 - All Resend/JWT/Email vars
 
 ## Dev Mode
@@ -309,6 +416,8 @@ DEV_SKIP_EMAIL=true   ← Set to false when email DNS is confirmed
 - Registration auto-verifies accounts immediately (skips email)
 - Returns session token directly so user goes straight to /welcome
 - Set to `false` once Resend domain (poste.cranis2.com) DNS is propagated
+
+**Dev nuke button** (`/api/dev/nuke`) — accessible from Organisation page. Wipes all user data for testing. **MUST BE REMOVED before production deployment.**
 
 ## Design System
 
@@ -347,6 +456,7 @@ Responsive breakpoints:
 - The `nginx/default.conf` file uses plain `$uri` / `$host` variables — **do NOT escape with `\$`** as it causes redirect loops (this was a bug we fixed)
 - SPA routing: `try_files $uri $uri/ /index.html`
 - API proxy: `location /api/` → `proxy_pass http://backend:3001/api/`
+- GitHub callback URL `/api/github/callback` is proxied through NGINX to the backend
 
 ## Other Projects on This Server
 
@@ -379,18 +489,32 @@ The `public/` directory contains the original HTML prototypes from the design ph
 - Landing page fully migrated from HTML prototype
 - Dashboard page fully migrated (stats, tables, risk cards, activity feed)
 - Responsive sidebar with 5 navigation sections
-- **Neo4j integration** — Organisation nodes stored in graph database
-- **Org setup wizard** — collects name, country, company size, CRA role, industry
-- **Postgres ↔ Neo4j linking** — users.org_id references Organisation node in Neo4j
+- Neo4j integration — Organisation nodes stored in graph database
+- Org setup wizard — collects name, country, company size, CRA role, industry
+- Postgres ↔ Neo4j linking — users.org_id references Organisation node in Neo4j
 - NGINX config fix (escaped dollar signs bug resolved)
+- **Passive telemetry system** — dual-write events to Postgres + Neo4j, audit log page
+- **Organisation page** — live data, editable fields, dev nuke button
+- **Audit log page** — paginated event viewer with filtering
+- **Products page** — full CRUD with Neo4j backend, category badges, lifecycle status
+- **Product detail page** — 5 tabs (Overview, Obligations, Technical File, Risk Findings, Dependencies)
+- **Repository URL field** — full-stack support for repoUrl on products
+- **GitHub integration (backend)** — OAuth flow, encrypted token storage, repo sync, contributor discovery
+- **GitHub integration (frontend)** — Connect/Sync/Disconnect UI, repo info card, contributor grid, language chart
 
-**In Progress:**
-- Awaiting DNS propagation for poste.cranis2.com (Resend email domain)
+**Known Issues:**
+- **GitHub OAuth connect flow doesn't work properly** — needs rethink/debugging. Current approach passes session token as query param. No real GitHub OAuth App created yet (.env has PLACEHOLDER values).
+- DNS for poste.cranis2.com still pending (DEV_SKIP_EMAIL remains true)
+- Dev routes (`/api/dev/*`) must be removed before production
 
 **Next Steps:**
-- Test full registration + org setup flow end-to-end in browser
+- **Fix GitHub OAuth flow** — debug/redesign the connect flow so it works end-to-end
+- Create GitHub OAuth App on github.com and add real credentials to .env
 - Switch DEV_SKIP_EMAIL to false once email domain is verified
-- Migrate remaining stub pages from HTML prototypes (products, obligations, repos, etc.)
-- Build product management CRUD (Neo4j Product nodes linked to Organisation)
+- Remove dev routes before production deployment
+- Migrate remaining stub pages from HTML prototypes:
+  - Obligations, Technical Files, Repos, Contributors, Dependencies, Risk Findings
+  - Billing, Reports, Stakeholders
+- Connect dashboard to real data from Postgres + Neo4j (currently prototype data)
 - Build dependency/SBOM tracking (Neo4j DEPENDS_ON relationships)
-- Connect dashboard to real data from Postgres + Neo4j
+- Full dependency scanning from GitHub (future phase)
