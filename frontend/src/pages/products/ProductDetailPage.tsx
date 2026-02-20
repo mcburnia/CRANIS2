@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 
 import PageHeader from '../../components/PageHeader';
 import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
-  CheckCircle2, Clock, ChevronRight, Plus, ExternalLink
+  CheckCircle2, Clock, ChevronRight, ExternalLink, Github, Star,
+  GitFork, Eye, RefreshCw, Users, Unplug, Loader2
 } from 'lucide-react';
 import './ProductDetailPage.css';
 
@@ -20,6 +21,49 @@ interface Product {
   status: string;
   createdAt: string;
   updatedAt: string;
+}
+
+interface GitHubStatus {
+  connected: boolean;
+  githubUsername?: string;
+  githubAvatarUrl?: string;
+}
+
+interface RepoData {
+  name: string;
+  fullName: string;
+  description: string;
+  url: string;
+  language: string;
+  stars: number;
+  forks: number;
+  openIssues: number;
+  visibility: string;
+  defaultBranch: string;
+  lastPush: string;
+  isPrivate: boolean;
+  syncedAt?: string;
+}
+
+interface ContributorData {
+  login: string;
+  githubId: number;
+  avatarUrl: string;
+  profileUrl: string;
+  contributions: number;
+}
+
+interface LanguageData {
+  language: string;
+  bytes: number;
+  percentage: number;
+}
+
+interface GitHubData {
+  synced: boolean;
+  repo?: RepoData;
+  contributors?: ContributorData[];
+  languages?: LanguageData[];
 }
 
 const PRODUCT_TYPES = [
@@ -40,6 +84,13 @@ const CATEGORY_INFO: Record<string, { label: string; color: string; desc: string
   class_ii: { label: 'Class II (Critical)', color: 'var(--red)', desc: 'Critical product. Third-party conformity assessment required.' },
 };
 
+const LANGUAGE_COLORS: Record<string, string> = {
+  TypeScript: '#3178c6', JavaScript: '#f1e05a', Python: '#3572A5', Java: '#b07219',
+  Go: '#00ADD8', Rust: '#dea584', Ruby: '#701516', 'C++': '#f34b7d', C: '#555555',
+  'C#': '#178600', PHP: '#4F5D95', Swift: '#F05138', Kotlin: '#A97BFF', Dart: '#00B4AB',
+  HTML: '#e34c26', CSS: '#563d7c', Shell: '#89e051', Dockerfile: '#384d54',
+};
+
 function getTypeIcon(type: string) {
   const found = PRODUCT_TYPES.find(t => t.value === type);
   return found?.icon || Box;
@@ -58,6 +109,18 @@ function formatDateTime(iso: string): string {
   });
 }
 
+function timeAgo(iso: string): string {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return formatDate(iso);
+}
+
 type TabKey = 'overview' | 'obligations' | 'technical-file' | 'risk-findings' | 'dependencies';
 
 const TABS: { key: TabKey; label: string; icon: typeof Package }[] = [
@@ -70,6 +133,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Package }[] = [
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
+  const [searchParams] = useSearchParams();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,7 +143,28 @@ export default function ProductDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => { fetchProduct(); }, [productId]);
+  // GitHub state
+  const [ghStatus, setGhStatus] = useState<GitHubStatus>({ connected: false });
+  const [ghData, setGhData] = useState<GitHubData>({ synced: false });
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState('');
+
+  useEffect(() => {
+    fetchProduct();
+    fetchGitHubStatus();
+  }, [productId]);
+
+  // After product loads, fetch cached repo data
+  useEffect(() => {
+    if (product?.id) fetchCachedRepoData();
+  }, [product?.id]);
+
+  // Auto-sync if just connected via OAuth
+  useEffect(() => {
+    if (searchParams.get('github_connected') === 'true' && product?.repoUrl && ghStatus.connected) {
+      handleSync();
+    }
+  }, [searchParams, product, ghStatus.connected]);
 
   async function fetchProduct() {
     try {
@@ -91,11 +176,8 @@ export default function ProductDetailPage() {
         const data = await res.json();
         setProduct(data);
         setEditForm({
-          name: data.name,
-          description: data.description || '',
-          version: data.version || '',
-          productType: data.productType || 'other',
-          craCategory: data.craCategory || 'default',
+          name: data.name, description: data.description || '', version: data.version || '',
+          productType: data.productType || 'other', craCategory: data.craCategory || 'default',
           repoUrl: data.repoUrl || '',
         });
       } else {
@@ -106,6 +188,66 @@ export default function ProductDetailPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function fetchGitHubStatus() {
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch('/api/github/status', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setGhStatus(data);
+      }
+    } catch { /* silent */ }
+  }
+
+  async function fetchCachedRepoData() {
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/github/repo/${productId}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setGhData(data);
+      }
+    } catch { /* silent */ }
+  }
+
+  async function handleSync() {
+    if (!product?.repoUrl) return;
+    setSyncing(true);
+    setSyncError('');
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/github/sync/${productId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setGhData({ synced: true, repo: data.repo, contributors: data.contributors, languages: data.languages });
+      } else {
+        const err = await res.json();
+        setSyncError(err.error || 'Sync failed');
+      }
+    } catch {
+      setSyncError('Network error during sync');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  function handleConnectGitHub() {
+    const token = localStorage.getItem('session_token');
+    const returnTo = `/products/${productId}`;
+    window.location.href = `/api/github/connect?token=${token}&returnTo=${encodeURIComponent(returnTo)}`;
+  }
+
+  async function handleDisconnectGitHub() {
+    if (!confirm('Disconnect GitHub? You can reconnect at any time.')) return;
+    const token = localStorage.getItem('session_token');
+    await fetch('/api/github/disconnect', { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    setGhStatus({ connected: false });
+    setGhData({ synced: false });
   }
 
   async function handleSave() {
@@ -165,6 +307,18 @@ export default function ProductDetailPage() {
             <TypeIcon size={28} />
           </div>
           <div className="pd-header-actions">
+            {/* GitHub connection buttons */}
+            {product.repoUrl && !ghStatus.connected && (
+              <button className="pd-github-btn" onClick={handleConnectGitHub}>
+                <Github size={14} /> Connect GitHub
+              </button>
+            )}
+            {ghStatus.connected && product.repoUrl && (
+              <button className="pd-sync-btn" onClick={handleSync} disabled={syncing}>
+                {syncing ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
+                {syncing ? 'Syncing...' : 'Sync'}
+              </button>
+            )}
             {!editing ? (
               <button className="pd-edit-btn" onClick={() => setEditing(true)}>
                 <Edit3 size={14} /> Edit
@@ -197,11 +351,21 @@ export default function ProductDetailPage() {
                   <GitBranch size={12} /> Repository <ExternalLink size={10} />
                 </a>
               )}
-              <span className="pd-date">Created {formatDate(product.createdAt)}</span>
-              {product.updatedAt && product.updatedAt !== product.createdAt && (
-                <span className="pd-date">Updated {formatDate(product.updatedAt)}</span>
+              {ghStatus.connected && (
+                <span className="pd-github-connected-badge">
+                  <Github size={12} /> {ghStatus.githubUsername}
+                </span>
               )}
+              {ghData.synced && ghData.repo && (
+                <>
+                  <span className="pd-stat-badge"><Star size={11} /> {ghData.repo.stars}</span>
+                  <span className="pd-stat-badge"><GitFork size={11} /> {ghData.repo.forks}</span>
+                  {ghData.repo.language && <span className="pd-stat-badge">{ghData.repo.language}</span>}
+                </>
+              )}
+              <span className="pd-date">Created {formatDate(product.createdAt)}</span>
             </div>
+            {syncError && <div className="pd-sync-error">{syncError}</div>}
           </>
         ) : (
           <div className="pd-edit-form">
@@ -251,26 +415,121 @@ export default function ProductDetailPage() {
           >
             <tab.icon size={16} />
             {tab.label}
+            {tab.key === 'dependencies' && ghData.contributors && ghData.contributors.length > 0 && (
+              <span className="pd-tab-count">{ghData.contributors.length}</span>
+            )}
           </button>
         ))}
       </div>
 
       {/* Tab content */}
       <div className="pd-tab-content">
-        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} />}
+        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} />}
         {activeTab === 'obligations' && <ObligationsTab product={product} />}
         {activeTab === 'technical-file' && <TechnicalFileTab />}
         {activeTab === 'risk-findings' && <RiskFindingsTab />}
-        {activeTab === 'dependencies' && <DependenciesTab />}
+        {activeTab === 'dependencies' && <DependenciesTab ghStatus={ghStatus} ghData={ghData} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} />}
       </div>
     </>
   );
 }
 
 /* ── Overview Tab ─────────────────────────────────────── */
-function OverviewTab({ product, catInfo }: { product: Product; catInfo: { label: string; color: string; desc: string } }) {
+function OverviewTab({ product, catInfo, ghStatus, ghData, onConnect, onSync, syncing, onDisconnect }: {
+  product: Product; catInfo: { label: string; color: string; desc: string };
+  ghStatus: GitHubStatus; ghData: GitHubData;
+  onConnect: () => void; onSync: () => void; syncing: boolean; onDisconnect: () => void;
+}) {
   return (
     <div className="pd-overview-grid">
+      {/* GitHub Repo Card — only if synced */}
+      {ghData.synced && ghData.repo && (
+        <div className="pd-card pd-card-github">
+          <div className="pd-card-header">
+            <Github size={18} />
+            <h3>Repository</h3>
+            <a href={ghData.repo.url} target="_blank" rel="noopener noreferrer" className="pd-card-external">
+              <ExternalLink size={14} />
+            </a>
+          </div>
+          <div className="gh-repo-name">{ghData.repo.fullName}</div>
+          {ghData.repo.description && <div className="gh-repo-desc">{ghData.repo.description}</div>}
+          <div className="gh-repo-stats">
+            <span className="gh-stat"><Star size={14} /> {ghData.repo.stars}</span>
+            <span className="gh-stat"><GitFork size={14} /> {ghData.repo.forks}</span>
+            <span className="gh-stat"><AlertTriangle size={14} /> {ghData.repo.openIssues} issues</span>
+            <span className={`gh-visibility ${ghData.repo.isPrivate ? 'private' : 'public'}`}>
+              <Eye size={12} /> {ghData.repo.visibility}
+            </span>
+          </div>
+          <div className="pd-class-details">
+            {ghData.repo.language && (
+              <div className="pd-detail-row">
+                <span className="pd-detail-label">Primary Language</span>
+                <span className="pd-detail-value">
+                  <span className="gh-lang-dot" style={{ background: LANGUAGE_COLORS[ghData.repo.language] || '#8b8d98' }}></span>
+                  {ghData.repo.language}
+                </span>
+              </div>
+            )}
+            <div className="pd-detail-row">
+              <span className="pd-detail-label">Default Branch</span>
+              <span className="pd-detail-value">{ghData.repo.defaultBranch}</span>
+            </div>
+            <div className="pd-detail-row">
+              <span className="pd-detail-label">Last Push</span>
+              <span className="pd-detail-value">{timeAgo(ghData.repo.lastPush)}</span>
+            </div>
+            {ghData.repo.syncedAt && (
+              <div className="pd-detail-row">
+                <span className="pd-detail-label">Last Synced</span>
+                <span className="pd-detail-value">{formatDateTime(ghData.repo.syncedAt)}</span>
+              </div>
+            )}
+          </div>
+          {/* GitHub account info */}
+          {ghStatus.connected && (
+            <div className="gh-account-row">
+              {ghStatus.githubAvatarUrl && <img src={ghStatus.githubAvatarUrl} alt="" className="gh-account-avatar" />}
+              <span className="gh-account-name">Connected as {ghStatus.githubUsername}</span>
+              <button className="gh-disconnect-btn" onClick={onDisconnect} title="Disconnect GitHub">
+                <Unplug size={12} />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* GitHub Connect Card — if not connected and has repoUrl */}
+      {!ghStatus.connected && product.repoUrl && (
+        <div className="pd-card pd-card-connect">
+          <div className="pd-card-header">
+            <Github size={18} />
+            <h3>Connect GitHub</h3>
+          </div>
+          <p className="gh-connect-desc">Connect your GitHub account to sync repository data, discover contributors, and analyse dependencies.</p>
+          <button className="btn btn-primary gh-connect-btn" onClick={onConnect}>
+            <Github size={16} /> Connect GitHub
+          </button>
+          <p className="gh-connect-note">Read-only access — CRANIS2 will never write to your repositories.</p>
+        </div>
+      )}
+
+      {/* GitHub Sync Prompt — if connected but not synced */}
+      {ghStatus.connected && !ghData.synced && product.repoUrl && (
+        <div className="pd-card pd-card-connect">
+          <div className="pd-card-header">
+            <Github size={18} />
+            <h3>Sync Repository</h3>
+          </div>
+          <p className="gh-connect-desc">Your GitHub account is connected. Sync to pull repository metadata, contributors, and language data.</p>
+          <button className="btn btn-primary gh-connect-btn" onClick={onSync} disabled={syncing}>
+            {syncing ? <Loader2 size={16} className="spin" /> : <RefreshCw size={16} />}
+            {syncing ? 'Syncing...' : 'Sync Now'}
+          </button>
+        </div>
+      )}
+
       {/* CRA Classification Card */}
       <div className="pd-card">
         <div className="pd-card-header">
@@ -316,47 +575,9 @@ function OverviewTab({ product, catInfo }: { product: Product; catInfo: { label:
           <ProgressItem label="Essential Requirements" status="not_started" />
           <ProgressItem label="Vulnerability Handling" status="not_started" />
           <ProgressItem label="Technical Documentation" status="not_started" />
-          <ProgressItem label="SBOM Generation" status="not_started" />
+          <ProgressItem label="SBOM Generation" status={ghData.synced ? 'in_progress' : 'not_started'} />
           <ProgressItem label="Conformity Assessment" status="not_started" />
           <ProgressItem label="EU Declaration of Conformity" status="not_started" />
-        </div>
-      </div>
-
-      {/* Quick Actions Card */}
-      <div className="pd-card">
-        <div className="pd-card-header">
-          <ChevronRight size={18} />
-          <h3>Next Steps</h3>
-        </div>
-        <div className="pd-next-steps">
-          <div className="pd-step">
-            <div className="pd-step-num">1</div>
-            <div>
-              <div className="pd-step-title">Map CRA Obligations</div>
-              <div className="pd-step-desc">Identify which CRA articles apply to this product based on its classification.</div>
-            </div>
-          </div>
-          <div className="pd-step">
-            <div className="pd-step-num">2</div>
-            <div>
-              <div className="pd-step-title">Connect Repositories</div>
-              <div className="pd-step-desc">Link source code repositories to auto-discover dependencies and generate SBOMs.</div>
-            </div>
-          </div>
-          <div className="pd-step">
-            <div className="pd-step-num">3</div>
-            <div>
-              <div className="pd-step-title">Run Risk Assessment</div>
-              <div className="pd-step-desc">Assess cybersecurity risks and document them as required by the CRA.</div>
-            </div>
-          </div>
-          <div className="pd-step">
-            <div className="pd-step-num">4</div>
-            <div>
-              <div className="pd-step-title">Prepare Technical File</div>
-              <div className="pd-step-desc">Compile the technical documentation needed for conformity assessment.</div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -465,40 +686,26 @@ function getCRAObligations(category: string) {
     { article: 'Annex I, Part I', title: 'Security by Design', description: 'Products shall be designed and developed with appropriate level of cybersecurity based on risks.', status: 'not_started' as const },
     { article: 'Annex I, Part II', title: 'Vulnerability Handling Requirements', description: 'Implement vulnerability handling processes including coordinated disclosure policy.', status: 'not_started' as const },
   ];
-
   if (category === 'class_i' || category === 'class_ii') {
-    base.push({
-      article: 'Art. 32',
-      title: 'Harmonised Standards',
-      description: 'Where harmonised standards exist, conformity assessment shall reference them.',
-      status: 'not_started',
-    });
+    base.push({ article: 'Art. 32', title: 'Harmonised Standards', description: 'Where harmonised standards exist, conformity assessment shall reference them.', status: 'not_started' });
   }
-
   if (category === 'class_ii') {
-    base.push({
-      article: 'Art. 32(3)',
-      title: 'Third-Party Assessment',
-      description: 'Critical products require third-party conformity assessment by a notified body.',
-      status: 'not_started',
-    });
+    base.push({ article: 'Art. 32(3)', title: 'Third-Party Assessment', description: 'Critical products require third-party conformity assessment by a notified body.', status: 'not_started' });
   }
-
   return base;
 }
 
 /* ── Technical File Tab ─────────────────────────────────────── */
 function TechnicalFileTab() {
   const sections = [
-    { title: 'General Description', desc: 'Description of the product including its intended purpose, version, and how it is made available on the market.', status: 'not_started' },
-    { title: 'Design & Development Information', desc: 'Information on the design and development process of the product, including cybersecurity risk assessment.', status: 'not_started' },
-    { title: 'Cybersecurity Risk Assessment', desc: 'Assessment of cybersecurity risks against which the product is designed, developed and produced.', status: 'not_started' },
-    { title: 'Vulnerability Handling Documentation', desc: 'Description of the vulnerability handling process and evidence it will be ensured for the support period.', status: 'not_started' },
-    { title: 'SBOM', desc: 'Software bill of materials documenting all components, libraries and dependencies used.', status: 'not_started' },
-    { title: 'Test Reports', desc: 'Results of tests carried out to verify conformity with essential requirements.', status: 'not_started' },
-    { title: 'EU Declaration of Conformity', desc: 'The formal declaration that the product meets all applicable CRA requirements.', status: 'not_started' },
+    { title: 'General Description', desc: 'Description of the product including its intended purpose, version, and how it is made available on the market.' },
+    { title: 'Design & Development Information', desc: 'Information on the design and development process of the product, including cybersecurity risk assessment.' },
+    { title: 'Cybersecurity Risk Assessment', desc: 'Assessment of cybersecurity risks against which the product is designed, developed and produced.' },
+    { title: 'Vulnerability Handling Documentation', desc: 'Description of the vulnerability handling process and evidence it will be ensured for the support period.' },
+    { title: 'SBOM', desc: 'Software bill of materials documenting all components, libraries and dependencies used.' },
+    { title: 'Test Reports', desc: 'Results of tests carried out to verify conformity with essential requirements.' },
+    { title: 'EU Declaration of Conformity', desc: 'The formal declaration that the product meets all applicable CRA requirements.' },
   ];
-
   return (
     <div className="pd-techfile">
       <div className="pd-section-intro">
@@ -511,16 +718,9 @@ function TechnicalFileTab() {
       <div className="pd-techfile-list">
         {sections.map((s, i) => (
           <div key={i} className="pd-techfile-item">
-            <div className="pd-techfile-status">
-              <Clock size={16} style={{ color: 'var(--muted)' }} />
-            </div>
-            <div className="pd-techfile-content">
-              <h4>{s.title}</h4>
-              <p>{s.desc}</p>
-            </div>
-            <button className="pd-techfile-action" disabled>
-              Start <ChevronRight size={14} />
-            </button>
+            <div className="pd-techfile-status"><Clock size={16} style={{ color: 'var(--muted)' }} /></div>
+            <div className="pd-techfile-content"><h4>{s.title}</h4><p>{s.desc}</p></div>
+            <button className="pd-techfile-action" disabled>Start <ChevronRight size={14} /></button>
           </div>
         ))}
       </div>
@@ -535,23 +735,99 @@ function RiskFindingsTab() {
       <AlertTriangle size={48} strokeWidth={1} />
       <h3>No Risk Findings Yet</h3>
       <p>Once repositories are connected and scanned, vulnerability and risk findings will appear here. This includes CVEs from dependencies, code analysis results, and CRA risk assessments.</p>
-      <button className="btn btn-primary" disabled>
-        <Plus size={18} /> Connect Repository
-      </button>
     </div>
   );
 }
 
-/* ── Dependencies Tab ─────────────────────────────────────── */
-function DependenciesTab() {
+/* ── Dependencies Tab (with Contributors + Languages) ───────── */
+function DependenciesTab({ ghStatus, ghData, onConnect, onSync, syncing }: {
+  ghStatus: GitHubStatus; ghData: GitHubData; onConnect: () => void; onSync: () => void; syncing: boolean;
+}) {
+  if (!ghStatus.connected) {
+    return (
+      <div className="pd-placeholder">
+        <Github size={48} strokeWidth={1} />
+        <h3>Connect GitHub to Discover Dependencies</h3>
+        <p>Connect your GitHub account to scan the repository for dependencies, generate SBOMs, and identify contributors. The CRA requires a machine-readable SBOM.</p>
+        <button className="btn btn-primary" onClick={onConnect}>
+          <Github size={18} /> Connect GitHub
+        </button>
+      </div>
+    );
+  }
+
+  if (!ghData.synced) {
+    return (
+      <div className="pd-placeholder">
+        <RefreshCw size={48} strokeWidth={1} />
+        <h3>Sync Repository</h3>
+        <p>Your GitHub account is connected. Sync the repository to discover languages, contributors, and prepare for dependency analysis.</p>
+        <button className="btn btn-primary" onClick={onSync} disabled={syncing}>
+          {syncing ? <Loader2 size={18} className="spin" /> : <RefreshCw size={18} />}
+          {syncing ? 'Syncing...' : 'Sync Repository'}
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="pd-placeholder">
-      <GitBranch size={48} strokeWidth={1} />
-      <h3>No Dependencies Mapped</h3>
-      <p>Connect a source code repository to auto-discover dependencies and generate an SBOM. The CRA requires a machine-readable SBOM covering at minimum the top-level dependencies.</p>
-      <button className="btn btn-primary" disabled>
-        <Plus size={18} /> Connect Repository
-      </button>
+    <div className="deps-content">
+      {/* Languages */}
+      {ghData.languages && ghData.languages.length > 0 && (
+        <div className="pd-card">
+          <div className="pd-card-header">
+            <GitBranch size={18} />
+            <h3>Languages</h3>
+          </div>
+          <div className="gh-lang-bar">
+            {ghData.languages.map(l => (
+              <div
+                key={l.language}
+                className="gh-lang-segment"
+                style={{ width: `${l.percentage}%`, background: LANGUAGE_COLORS[l.language] || '#8b8d98' }}
+                title={`${l.language}: ${l.percentage}%`}
+              />
+            ))}
+          </div>
+          <div className="gh-lang-legend">
+            {ghData.languages.map(l => (
+              <span key={l.language} className="gh-lang-item">
+                <span className="gh-lang-dot" style={{ background: LANGUAGE_COLORS[l.language] || '#8b8d98' }}></span>
+                {l.language} <span className="gh-lang-pct">{l.percentage}%</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Contributors */}
+      {ghData.contributors && ghData.contributors.length > 0 && (
+        <div className="pd-card">
+          <div className="pd-card-header">
+            <Users size={18} />
+            <h3>Contributors ({ghData.contributors.length})</h3>
+          </div>
+          <div className="gh-contributors-grid">
+            {ghData.contributors.map(c => (
+              <a key={c.githubId} href={c.profileUrl} target="_blank" rel="noopener noreferrer" className="gh-contributor">
+                <img src={c.avatarUrl} alt={c.login} className="gh-contributor-avatar" />
+                <div className="gh-contributor-info">
+                  <span className="gh-contributor-name">{c.login}</span>
+                  <span className="gh-contributor-commits">{c.contributions} commit{c.contributions !== 1 ? 's' : ''}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="pd-section-intro" style={{ marginTop: '0.5rem' }}>
+        <AlertTriangle size={20} />
+        <div>
+          <h3>Dependency Scanning — Coming Soon</h3>
+          <p>Full dependency tree analysis and SBOM generation from package manifests (package.json, requirements.txt, go.mod, etc.) will be available in a future update.</p>
+        </div>
+      </div>
     </div>
   );
 }

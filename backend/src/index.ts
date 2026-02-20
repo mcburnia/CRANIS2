@@ -7,6 +7,7 @@ import orgRoutes from './routes/org.js';
 import auditRoutes from './routes/audit.js';
 import productRoutes from './routes/products.js';
 import devRoutes from './routes/dev.js';  // DEV ONLY — REMOVE BEFORE PRODUCTION
+import githubRoutes from './routes/github.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,6 +21,7 @@ app.use('/api/org', orgRoutes);
 app.use('/api/audit-log', auditRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/dev', devRoutes);  // DEV ONLY — REMOVE BEFORE PRODUCTION
+app.use('/api/github', githubRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
