@@ -49,3 +49,32 @@
   width: 20px;
   flex-shrink: 0;
 }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-user {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0 1.25rem;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: inherit;
+  color: var(--muted);
+  transition: color 0.15s;
+}
+.logout-btn:hover {
+  color: var(--red);
+  background: rgba(239, 68, 68, 0.08);
+}

@@ -1,13 +1,15 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
   FolderGit2, Users, Box, AlertTriangle, CreditCard,
-  BarChart3, UserCircle, Settings, ScrollText
+  BarChart3, UserCircle, Settings, ScrollText, LogOut
 } from 'lucide-react';
 import './Sidebar.css';
 
 interface SidebarProps {
   onNavigate?: () => void;
+  orgName?: string;
 }
 
 const navSections = [
@@ -52,11 +54,20 @@ const navSections = [
   },
 ];
 
-export default function Sidebar({ onNavigate }: SidebarProps) {
+export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    if (onNavigate) onNavigate();
+    navigate('/');
+  }
+
   return (
     <>
       <div className="sidebar-logo">CRANIS<span>2</span></div>
-      <div className="sidebar-org">Acme Software Ltd</div>
+      <div className="sidebar-org">{orgName || 'My Organisation'}</div>
       {navSections.map((section) => (
         <div className="nav-section" key={section.label}>
           <div className="nav-section-label">{section.label}</div>
@@ -73,6 +84,13 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
           ))}
         </div>
       ))}
+      <div className="sidebar-footer">
+        <div className="sidebar-user">{user?.email}</div>
+        <button className="nav-item logout-btn" onClick={handleLogout}>
+          <LogOut size={18} className="nav-icon" />
+          Sign Out
+        </button>
+      </div>
     </>
   );
 }

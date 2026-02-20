@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
@@ -8,6 +8,28 @@ import './AuthenticatedLayout.css';
 export default function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [orgName, setOrgName] = useState('');
+
+  useEffect(() => {
+    if (user?.orgId) {
+      fetchOrgName();
+    }
+  }, [user?.orgId]);
+
+  async function fetchOrgName() {
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch('/api/org', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOrgName(data.name);
+      }
+    } catch {
+      // Silently fail — org name is cosmetic
+    }
+  }
 
   if (loading) {
     return (
@@ -40,7 +62,7 @@ export default function AuthenticatedLayout() {
       </div>
       <div className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <Sidebar onNavigate={() => setSidebarOpen(false)} />
+        <Sidebar onNavigate={() => setSidebarOpen(false)} orgName={orgName} />
       </aside>
       <main className="main">
         <Outlet />
