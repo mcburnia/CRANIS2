@@ -167,4 +167,38 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/org/members — Get all members of the current user's organisation
+router.get('/members', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+
+  try {
+    const userResult = await pool.query('SELECT org_id FROM users WHERE id = $1', [userId]);
+    const orgId = userResult.rows[0]?.org_id;
+
+    if (!orgId) {
+      res.status(404).json({ error: 'No organisation found' });
+      return;
+    }
+
+    const members = await pool.query(
+      `SELECT id, email, org_role, preferred_language, created_at
+       FROM users WHERE org_id = $1 ORDER BY created_at`,
+      [orgId]
+    );
+
+    res.json({
+      members: members.rows.map(m => ({
+        id: m.id,
+        email: m.email,
+        orgRole: m.org_role,
+        preferredLanguage: m.preferred_language,
+        createdAt: m.created_at,
+      })),
+    });
+  } catch (err) {
+    console.error('Failed to fetch org members:', err);
+    res.status(500).json({ error: 'Failed to fetch org members' });
+  }
+});
+
 export default router;
