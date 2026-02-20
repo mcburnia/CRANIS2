@@ -1,0 +1,17 @@
+Issue Type,Summary,Epic Name,Epic Summary
+Epic,Platform Foundation & Architecture,Platform Foundation & Architecture,Establish core platform foundations including runtime architecture, configuration model, environment separation, and baseline project structure.
+Epic,Identity, Organisation & Tenant Model,Identity, Organisation & Tenant Model,Implement multi-tenant hierarchy including Organisation, Teams, Contributors, roles, and isolation boundaries.
+Epic,Repository Coverage & Enablement,Repository Coverage & Enablement,Enable repository registration and coverage rules at organisation, team, and contributor scope without source code custody.
+Epic,GitHub Observer Integration,GitHub Observer Integration,Implement observer-only GitHub integration for webhook ingestion and metadata capture.
+Epic,Evidence Ledger & Lineage Core,Evidence Ledger & Lineage Core,Build append-only, tamper-evident evidence ledger with deterministic hashing and lineage tracking.
+Epic,SBOM Intake & Artefact Management,SBOM Intake & Artefact Management,Support ingestion, storage, and lifecycle tracking of SBOM snapshots and related compliance artefacts.
+Epic,Vulnerability State Recording,Vulnerability State Recording,Record vulnerability states and summaries as evidence without performing vulnerability scanning.
+Epic,Compliance Evidence Export & Verification,Compliance Evidence Export & Verification,Provide verifiable compliance evidence exports with integrity validation and third-party verification support.
+Epic,Optional Blockchain Evidence Anchoring,Optional Blockchain Evidence Anchoring,Provide optional public blockchain anchoring of evidence hashes using Solana or Ethereum via pluggable adapters.
+Epic,Subscription, Billing & Entitlements,Subscription, Billing & Entitlements,Implement contributor-centric subscription model, entitlements, and billing integration.
+Epic,Web Application & User Experience,Web Application & User Experience,Develop web UI including registration, dashboard, coverage views, and compliance evidence access.
+Epic,Background Processing & Queues,Background Processing & Queues,Implement asynchronous processing for webhook handling, evidence generation, anchoring, and notifications.
+Epic,Security, Privacy & Data Sovereignty,Security, Privacy & Data Sovereignty,Ensure EU data residency, secure configuration, key management, and privacy controls.
+Epic,Observability, Audit & Operations,Observability, Audit & Operations,Provide logging, health checks, auditability, and operational diagnostics.
+Epic,CI/CD, Deployment & Environment Management,CI/CD, Deployment & Environment Management,Implement build pipelines, containerisation, deployment workflows, and environment promotion.
+Epic,Documentation, Runbooks & Compliance Mapping,Documentation, Runbooks & Compliance Mapping,Produce engineering runbooks, operational documentation, and CRA/NIS2 evidence mapping guidance.

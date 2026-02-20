@@ -1,0 +1,60 @@
+Work Type,Summary,Description,Epic Link
+Story,Initial project bootstrap,"Set up CRANIS2 repository with TypeScript, Fastify, linting, testing, Docker baseline and environment configuration.",CRN-1
+Story,Environment configuration model,"Implement environment-based configuration (local, staging, prod) using environment variables only.",CRN-1
+Story,Health and readiness endpoints,"Provide /health and /ready endpoints for operational verification.",CRN-1
+Story,Application startup and shutdown lifecycle,"Implement clean startup, shutdown hooks, and signal handling for Fastify services.",CRN-1
+Spike,Select persistence and migration tooling,"Research and confirm database, migration, and ORM strategy suitable for metadata-heavy workloads.",CRN-1
+Story,Organisation entity model,"Implement Organisation domain entity with EU jurisdiction enforcement and isolation.",CRN-2
+Story,Team entity model,"Implement Team entity and association to Organisation.",CRN-2
+Story,Contributor entity model,"Implement Contributor entity with type (internal, contractor, outsourced) and activation lifecycle.",CRN-2
+Story,Role and access model,"Define and enforce basic role model for organisation administrators and read-only users.",CRN-2
+Story,Organisation registration API,"Provide API endpoint to create a new organisation and baseline data.",CRN-2
+Story,Repository registration model,"Implement repository entity representing GitHub repositories without code custody.",CRN-3
+Story,Enablement rule model,"Implement repository enablement rules at organisation, team, and contributor scope.",CRN-3
+Story,Repository coverage evaluation,"Evaluate effective repository coverage based on enablement rules.",CRN-3
+Story,Repository listing API,"Provide API to list repositories and coverage status for an organisation.",CRN-3
+Story,GitHub App integration setup,"Register and configure GitHub App for observer-only access.",CRN-4
+Story,GitHub webhook ingestion,"Implement webhook endpoint to receive GitHub events securely.",CRN-4
+Story,Webhook event normalisation,"Normalise GitHub webhook payloads into internal event format.",CRN-4
+Story,Event scheduling for background processing,"Enqueue relevant GitHub events for asynchronous processing.",CRN-4
+Spike,GitHub event coverage assessment,"Assess which GitHub events are required to support lineage evidence.",CRN-4
+Story,Lineage event model,"Define lineage event domain model with deterministic serialisation.",CRN-5
+Story,Append-only evidence ledger,"Implement append-only evidence ledger with hash chaining.",CRN-5
+Story,Ledger integrity verification,"Provide internal verification of ledger integrity and hash chain.",CRN-5
+Story,Ledger query APIs,"Expose APIs to retrieve lineage events by organisation and subject.",CRN-5
+Story,SBOM snapshot intake,"Provide API to ingest SBOM snapshots (CycloneDX/SPDX) as artefacts.",CRN-6
+Story,SBOM metadata storage,"Store SBOM metadata, hashes, and references without storing source code.",CRN-6
+Story,SBOM lifecycle tracking,"Track SBOM versions over time per repository.",CRN-6
+Spike,SBOM format normalisation,"Assess normalisation rules for CycloneDX and SPDX metadata.",CRN-6
+Story,Vulnerability state model,"Define vulnerability state and finding summary domain model.",CRN-7
+Story,Vulnerability state intake,"Provide API to record vulnerability states from external scanners.",CRN-7
+Story,Vulnerability evidence linkage,"Link vulnerability states to SBOM snapshots and repositories.",CRN-7
+Story,Compliance evidence pack generation,"Generate compliance evidence packs for CRA/NIS2 support.",CRN-8
+Story,Evidence export API,"Provide API to export evidence packs with integrity metadata.",CRN-8
+Story,Export verification tooling,"Provide hash-based verification instructions and artefacts.",CRN-8
+Spike,Blockchain anchoring chain selection,"Evaluate Solana vs Ethereum for cost and operational fit.",CRN-9
+Story,Evidence hash generation,"Generate deterministic hashes for registration compliance evidence.",CRN-9
+Story,Blockchain anchor abstraction,"Implement EvidenceAnchorPort with pluggable chain adapters.",CRN-9
+Story,Solana anchor adapter,"Implement Solana-based evidence anchoring adapter.",CRN-9
+Story,Ethereum anchor adapter,"Implement Ethereum-based evidence anchoring adapter.",CRN-9
+Story,Subscription model definition,"Define contributor-centric subscription and entitlement model.",CRN-10
+Story,Stripe customer creation,"Integrate Stripe for customer and subscription creation.",CRN-10
+Story,Contributor entitlement enforcement,"Enforce contributor limits and entitlement checks.",CRN-10
+Story,Public landing pages,"Implement HTML/CSS public pages for product and onboarding.",CRN-11
+Story,User dashboard,"Provide dashboard view for coverage, evidence, and status.",CRN-11
+Story,Organisation administration UI,"Provide UI for managing teams, contributors, and repositories.",CRN-11
+Story,Background job queue,"Implement background job queue for async processing.",CRN-12
+Story,Worker service,"Implement worker service to process queued jobs.",CRN-12
+Story,Retry and failure handling,"Implement retry, dead-letter, and failure tracking.",CRN-12
+Story,EU data residency enforcement,"Ensure all persistent data is stored in EU-hosted infrastructure.",CRN-13
+Story,Secrets management,"Implement secure secrets handling and key management.",CRN-13
+Story,Access logging and audit trail,"Provide audit logs for security-relevant actions.",CRN-13
+Story,Structured logging,"Implement structured logging across services.",CRN-14
+Story,Operational metrics,"Expose basic operational metrics and health indicators.",CRN-14
+Story,Operational runbooks,"Document operational procedures and incident handling.",CRN-14
+Story,CI pipeline setup,"Implement CI pipeline for build, lint, and test.",CRN-15
+Story,Container build and publish,"Build and publish Docker images for CRANIS2 services.",CRN-15
+Story,EU deployment workflow,"Implement deployment workflow for EU hosting.",CRN-15
+Story,Architecture documentation,"Document system architecture and design decisions.",CRN-16
+Story,CRA/NIS2 mapping guide,"Provide documentation mapping CRANIS2 evidence to CRA and NIS2 expectations.",CRN-16
+Story,Developer onboarding guide,"Provide developer setup and contribution documentation.",CRN-16
