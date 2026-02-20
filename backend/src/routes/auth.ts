@@ -3,6 +3,7 @@ import pool from '../db/pool.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { generateVerificationToken, generateSessionToken } from '../utils/token.js';
 import { sendVerificationEmail } from '../services/email.js';
+import { recordEvent, extractRequestData } from '../services/telemetry.js';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const DEV_MODE = process.env.DEV_SKIP_EMAIL === 'true';
 // POST /api/auth/register
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, browserLanguage, browserTimezone, referrer: clientReferrer } = req.body;
 
     if (!email || !password) {
       res.status(400).json({ error: 'Email and password are required' });
@@ -30,21 +31,39 @@ router.post('/register', async (req: Request, res: Response) => {
       return;
     }
 
+    // Extract server-side telemetry
+    const reqData = extractRequestData(req);
+
+    // Derive preferred language from browser
+    const preferredLang = (browserLanguage || reqData.acceptLanguage.split(',')[0]?.split('-')[0]?.split(';')[0] || '').toLowerCase().trim();
+
     // Check if user already exists
     const existing = await pool.query('SELECT id, email_verified FROM users WHERE email = $1', [email.toLowerCase()]);
     if (existing.rows.length > 0) {
       if (!existing.rows[0].email_verified) {
         if (DEV_MODE) {
-          // Dev mode: auto-verify existing unverified account
           await pool.query(
             'UPDATE users SET email_verified = TRUE, verification_token = NULL, token_expires_at = NULL, updated_at = NOW() WHERE email = $1',
             [email.toLowerCase()]
           );
           const sessionToken = generateSessionToken(existing.rows[0].id, email.toLowerCase());
+
+          // Record telemetry
+          await recordEvent({
+            userId: existing.rows[0].id,
+            email: email.toLowerCase(),
+            eventType: 'register_reverify_dev',
+            ipAddress: reqData.ipAddress,
+            userAgent: reqData.userAgent,
+            acceptLanguage: reqData.acceptLanguage,
+            browserLanguage,
+            browserTimezone,
+            referrer: clientReferrer || reqData.referrer,
+          });
+
           res.json({ message: 'Account verified (dev mode)', devMode: true, session: sessionToken });
           return;
         }
-        // Re-send verification email for unverified accounts
         const token = generateVerificationToken();
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
         await pool.query(
@@ -52,6 +71,19 @@ router.post('/register', async (req: Request, res: Response) => {
           [token, expiresAt, email.toLowerCase()]
         );
         await sendVerificationEmail(email.toLowerCase(), token);
+
+        await recordEvent({
+          userId: existing.rows[0].id,
+          email: email.toLowerCase(),
+          eventType: 'register_resend_verification',
+          ipAddress: reqData.ipAddress,
+          userAgent: reqData.userAgent,
+          acceptLanguage: reqData.acceptLanguage,
+          browserLanguage,
+          browserTimezone,
+          referrer: clientReferrer || reqData.referrer,
+        });
+
         res.json({ message: 'Verification email sent' });
         return;
       }
@@ -63,29 +95,56 @@ router.post('/register', async (req: Request, res: Response) => {
     const passwordHash = await hashPassword(password);
 
     if (DEV_MODE) {
-      // Dev mode: create account and auto-verify immediately
       const result = await pool.query(
-        `INSERT INTO users (email, password_hash, email_verified)
-         VALUES ($1, $2, TRUE) RETURNING id`,
-        [email.toLowerCase(), passwordHash]
+        `INSERT INTO users (email, password_hash, email_verified, preferred_language)
+         VALUES ($1, $2, TRUE, $3) RETURNING id`,
+        [email.toLowerCase(), passwordHash, preferredLang || null]
       );
       const sessionToken = generateSessionToken(result.rows[0].id, email.toLowerCase());
       console.log(`[DEV MODE] Account auto-verified for ${email}`);
+
+      // Record registration event
+      await recordEvent({
+        userId: result.rows[0].id,
+        email: email.toLowerCase(),
+        eventType: 'register',
+        ipAddress: reqData.ipAddress,
+        userAgent: reqData.userAgent,
+        acceptLanguage: reqData.acceptLanguage,
+        browserLanguage,
+        browserTimezone,
+        referrer: clientReferrer || reqData.referrer,
+        metadata: { devMode: true },
+      });
+
       res.status(201).json({ message: 'Account created and verified (dev mode)', devMode: true, session: sessionToken });
       return;
     }
 
-    // Production mode: create with verification token
+    // Production mode
     const token = generateVerificationToken();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    await pool.query(
-      `INSERT INTO users (email, password_hash, verification_token, token_expires_at)
-       VALUES ($1, $2, $3, $4)`,
-      [email.toLowerCase(), passwordHash, token, expiresAt]
+    const result = await pool.query(
+      `INSERT INTO users (email, password_hash, verification_token, token_expires_at, preferred_language)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [email.toLowerCase(), passwordHash, token, expiresAt, preferredLang || null]
     );
 
     await sendVerificationEmail(email.toLowerCase(), token);
+
+    // Record registration event
+    await recordEvent({
+      userId: result.rows[0].id,
+      email: email.toLowerCase(),
+      eventType: 'register',
+      ipAddress: reqData.ipAddress,
+      userAgent: reqData.userAgent,
+      acceptLanguage: reqData.acceptLanguage,
+      browserLanguage,
+      browserTimezone,
+      referrer: clientReferrer || reqData.referrer,
+    });
 
     res.status(201).json({ message: 'Verification email sent' });
   } catch (err) {
@@ -97,12 +156,14 @@ router.post('/register', async (req: Request, res: Response) => {
 // POST /api/auth/login
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, browserLanguage, browserTimezone } = req.body;
 
     if (!email || !password) {
       res.status(400).json({ error: 'Email and password are required' });
       return;
     }
+
+    const reqData = extractRequestData(req);
 
     // Find user
     const result = await pool.query(
@@ -111,6 +172,18 @@ router.post('/login', async (req: Request, res: Response) => {
     );
 
     if (result.rows.length === 0) {
+      // Record failed login attempt (no user found) — use email as identifier
+      await recordEvent({
+        userId: '00000000-0000-0000-0000-000000000000',
+        email: email.toLowerCase(),
+        eventType: 'login_failed_no_user',
+        ipAddress: reqData.ipAddress,
+        userAgent: reqData.userAgent,
+        acceptLanguage: reqData.acceptLanguage,
+        browserLanguage,
+        browserTimezone,
+      });
+
       res.status(401).json({ error: 'Invalid email or password' });
       return;
     }
@@ -120,6 +193,18 @@ router.post('/login', async (req: Request, res: Response) => {
     // Check password
     const valid = await verifyPassword(password, user.password_hash);
     if (!valid) {
+      // Record failed login (wrong password)
+      await recordEvent({
+        userId: user.id,
+        email: user.email,
+        eventType: 'login_failed_bad_password',
+        ipAddress: reqData.ipAddress,
+        userAgent: reqData.userAgent,
+        acceptLanguage: reqData.acceptLanguage,
+        browserLanguage,
+        browserTimezone,
+      });
+
       res.status(401).json({ error: 'Invalid email or password' });
       return;
     }
@@ -132,6 +217,24 @@ router.post('/login', async (req: Request, res: Response) => {
 
     // Generate session token
     const sessionToken = generateSessionToken(user.id, user.email);
+
+    // Record successful login
+    await recordEvent({
+      userId: user.id,
+      email: user.email,
+      eventType: 'login',
+      ipAddress: reqData.ipAddress,
+      userAgent: reqData.userAgent,
+      acceptLanguage: reqData.acceptLanguage,
+      browserLanguage,
+      browserTimezone,
+    });
+
+    // Update preferred language if provided
+    if (browserLanguage) {
+      const lang = browserLanguage.split('-')[0].toLowerCase();
+      await pool.query('UPDATE users SET preferred_language = COALESCE(preferred_language, $1), updated_at = NOW() WHERE id = $2', [lang, user.id]);
+    }
 
     res.json({ session: sessionToken, email: user.email });
   } catch (err) {
@@ -153,7 +256,7 @@ router.get('/me', async (req: Request, res: Response) => {
     const { verifySessionToken } = await import('../utils/token.js');
     const payload = verifySessionToken(token);
 
-    const result = await pool.query('SELECT id, email, email_verified, org_id, org_role FROM users WHERE id = $1', [payload.userId]);
+    const result = await pool.query('SELECT id, email, email_verified, org_id, org_role, preferred_language FROM users WHERE id = $1', [payload.userId]);
     if (result.rows.length === 0) {
       res.status(401).json({ error: 'User not found' });
       return;
@@ -166,6 +269,7 @@ router.get('/me', async (req: Request, res: Response) => {
         email: user.email,
         orgId: user.org_id || null,
         orgRole: user.org_role || null,
+        preferredLanguage: user.preferred_language || null,
       },
     });
   } catch {
@@ -206,6 +310,21 @@ router.get('/verify-email', async (req: Request, res: Response) => {
     );
 
     const sessionToken = generateSessionToken(user.id, user.email);
+
+    // Record email verification event
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: user.id,
+      email: user.email,
+      eventType: 'email_verified',
+      ipAddress: reqData.ipAddress,
+      userAgent: reqData.userAgent,
+      acceptLanguage: reqData.acceptLanguage,
+      metadata: {
+        verificationIpMatchesRegistration: true, // Can be enriched later by comparing IPs
+      },
+    });
+
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
     res.redirect(`${frontendUrl}/welcome?session=${sessionToken}`);
   } catch (err) {

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
+import { recordEvent, extractRequestData } from '../services/telemetry.js';
 
 const router = Router();
 
@@ -30,6 +31,7 @@ async function requireAuth(req: Request, res: Response, next: Function) {
 router.post('/', requireAuth, async (req: Request, res: Response) => {
   const { name, country, companySize, craRole, industry } = req.body;
   const userId = (req as any).userId;
+  const userEmail = (req as any).email;
 
   // Validation
   if (!name || !country || !companySize || !craRole) {
@@ -59,10 +61,10 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
 
     const orgId = uuidv4();
 
-    // Create Organisation node in Neo4j
-    const session = getDriver().session();
+    // Create Organisation node in Neo4j and link to User
+    const neo4jSession = getDriver().session();
     try {
-      await session.run(
+      await neo4jSession.run(
         `CREATE (o:Organisation {
           id: $id,
           name: $name,
@@ -72,11 +74,16 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
           industry: $industry,
           createdAt: datetime(),
           updatedAt: datetime()
-        }) RETURN o`,
-        { id: orgId, name, country, companySize, craRole, industry: industry || '' }
+        })
+        WITH o
+        MATCH (u:User {id: $userId})
+        MERGE (u)-[:ADMIN_OF]->(o)
+        MERGE (u)-[:BELONGS_TO]->(o)
+        RETURN o`,
+        { id: orgId, name, country, companySize, craRole, industry: industry || '', userId }
       );
     } finally {
-      await session.close();
+      await neo4jSession.close();
     }
 
     // Link user to org in Postgres
@@ -84,6 +91,18 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       'UPDATE users SET org_id = $1, org_role = $2, updated_at = NOW() WHERE id = $3',
       [orgId, 'admin', userId]
     );
+
+    // Record org creation event
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId,
+      email: userEmail,
+      eventType: 'org_created',
+      ipAddress: reqData.ipAddress,
+      userAgent: reqData.userAgent,
+      acceptLanguage: reqData.acceptLanguage,
+      metadata: { orgId, orgName: name, country, companySize, craRole, industry: industry || '' },
+    });
 
     res.status(201).json({
       id: orgId,
@@ -117,9 +136,9 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
     }
 
     // Fetch org from Neo4j
-    const session = getDriver().session();
+    const neo4jSession = getDriver().session();
     try {
-      const result = await session.run(
+      const result = await neo4jSession.run(
         'MATCH (o:Organisation {id: $id}) RETURN o',
         { id: orgId }
       );
@@ -140,7 +159,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         userRole: userResult.rows[0].org_role,
       });
     } finally {
-      await session.close();
+      await neo4jSession.close();
     }
   } catch (err) {
     console.error('Failed to fetch organisation:', err);

@@ -27,6 +27,15 @@ function getStrengthLabel(score: number): { text: string; color: string } {
   return { text: 'Very strong', color: 'var(--green)' };
 }
 
+/** Collect browser telemetry silently — no user interaction required */
+function getBrowserTelemetry() {
+  return {
+    browserLanguage: navigator.language || '',
+    browserTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    referrer: document.referrer || '',
+  };
+}
+
 export default function SignupPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -61,10 +70,11 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
+      const telemetry = getBrowserTelemetry();
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, ...telemetry }),
       });
 
       const data = await res.json();

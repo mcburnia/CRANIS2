@@ -15,35 +15,24 @@ export function getDriver(): Driver {
 export async function initGraph() {
   const session = getDriver().session();
   try {
-    // Unique constraint on Organisation name per tenant
-    await session.run(`
-      CREATE CONSTRAINT org_id_unique IF NOT EXISTS
-      FOR (o:Organisation) REQUIRE o.id IS UNIQUE
-    `);
+    // --- Core business nodes ---
+    await session.run(`CREATE CONSTRAINT org_id_unique IF NOT EXISTS FOR (o:Organisation) REQUIRE o.id IS UNIQUE`);
+    await session.run(`CREATE INDEX org_name_idx IF NOT EXISTS FOR (o:Organisation) ON (o.name)`);
+    await session.run(`CREATE CONSTRAINT product_id_unique IF NOT EXISTS FOR (p:Product) REQUIRE p.id IS UNIQUE`);
+    await session.run(`CREATE CONSTRAINT dependency_id_unique IF NOT EXISTS FOR (d:Dependency) REQUIRE d.id IS UNIQUE`);
+    await session.run(`CREATE CONSTRAINT vulnerability_cve_unique IF NOT EXISTS FOR (v:Vulnerability) REQUIRE v.cve IS UNIQUE`);
 
-    // Index on Organisation name for lookups
-    await session.run(`
-      CREATE INDEX org_name_idx IF NOT EXISTS
-      FOR (o:Organisation) ON (o.name)
-    `);
+    // --- Telemetry nodes ---
+    await session.run(`CREATE CONSTRAINT user_id_unique IF NOT EXISTS FOR (u:User) REQUIRE u.id IS UNIQUE`);
+    await session.run(`CREATE CONSTRAINT email_domain_unique IF NOT EXISTS FOR (d:EmailDomain) REQUIRE d.domain IS UNIQUE`);
+    await session.run(`CREATE CONSTRAINT ip_address_unique IF NOT EXISTS FOR (ip:IPAddress) REQUIRE ip.ip IS UNIQUE`);
+    await session.run(`CREATE CONSTRAINT device_fp_unique IF NOT EXISTS FOR (dev:Device) REQUIRE dev.fingerprint IS UNIQUE`);
+    await session.run(`CREATE CONSTRAINT language_code_unique IF NOT EXISTS FOR (l:Language) REQUIRE l.code IS UNIQUE`);
 
-    // Future-proofing: Product node constraint
-    await session.run(`
-      CREATE CONSTRAINT product_id_unique IF NOT EXISTS
-      FOR (p:Product) REQUIRE p.id IS UNIQUE
-    `);
-
-    // Dependency node constraint
-    await session.run(`
-      CREATE CONSTRAINT dependency_id_unique IF NOT EXISTS
-      FOR (d:Dependency) REQUIRE d.id IS UNIQUE
-    `);
-
-    // Vulnerability node constraint
-    await session.run(`
-      CREATE CONSTRAINT vulnerability_cve_unique IF NOT EXISTS
-      FOR (v:Vulnerability) REQUIRE v.cve IS UNIQUE
-    `);
+    // --- Indexes for querying ---
+    await session.run(`CREATE INDEX event_type_idx IF NOT EXISTS FOR (e:Event) ON (e.type)`);
+    await session.run(`CREATE INDEX event_created_idx IF NOT EXISTS FOR (e:Event) ON (e.createdAt)`);
+    await session.run(`CREATE INDEX user_email_idx IF NOT EXISTS FOR (u:User) ON (u.email)`);
 
     console.log('Neo4j graph schema initialized');
   } finally {

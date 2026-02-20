@@ -3,6 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './LoginPage.css';
 
+/** Collect browser telemetry silently — no user interaction required */
+function getBrowserTelemetry() {
+  return {
+    browserLanguage: navigator.language || '',
+    browserTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+  };
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -22,10 +30,11 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
+      const telemetry = getBrowserTelemetry();
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, ...telemetry }),
       });
 
       const data = await res.json();
