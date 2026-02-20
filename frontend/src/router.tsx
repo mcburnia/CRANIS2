@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom';
+import RootLayout from './layouts/RootLayout';
 import PublicLayout from './layouts/PublicLayout';
 import AuthenticatedLayout from './layouts/AuthenticatedLayout';
 
@@ -28,35 +29,40 @@ import AuditLogPage from './pages/settings/AuditLogPage';
 
 const router = createBrowserRouter([
   {
-    element: <PublicLayout />,
+    element: <RootLayout />,
     children: [
-      { path: '/', element: <LandingPage /> },
-      { path: '/login', element: <LoginPage /> },
-      { path: '/signup', element: <SignupPage /> },
-      { path: '/check-email', element: <CheckEmailPage /> },
-      { path: '/verify-email', element: <VerifyEmailPage /> },
-      { path: '/welcome', element: <WelcomePage /> },
-      { path: '/setup/org', element: <OrgSetupPage /> },
-    ],
-  },
-  {
-    element: <AuthenticatedLayout />,
-    children: [
-      { path: '/dashboard', element: <DashboardPage /> },
-      { path: '/notifications', element: <NotificationsPage /> },
-      { path: '/products', element: <ProductsPage /> },
-      { path: '/products/:productId', element: <ProductDetailPage /> },
-      { path: '/obligations', element: <ObligationsPage /> },
-      { path: '/technical-files', element: <TechnicalFilesPage /> },
-      { path: '/repos', element: <ReposPage /> },
-      { path: '/contributors', element: <ContributorsPage /> },
-      { path: '/dependencies', element: <DependenciesPage /> },
-      { path: '/risk-findings', element: <RiskFindingsPage /> },
-      { path: '/billing', element: <BillingPage /> },
-      { path: '/reports', element: <ReportsPage /> },
-      { path: '/stakeholders', element: <StakeholdersPage /> },
-      { path: '/organisation', element: <OrganisationPage /> },
-      { path: '/audit-log', element: <AuditLogPage /> },
+      {
+        element: <PublicLayout />,
+        children: [
+          { path: '/', element: <LandingPage /> },
+          { path: '/login', element: <LoginPage /> },
+          { path: '/signup', element: <SignupPage /> },
+          { path: '/check-email', element: <CheckEmailPage /> },
+          { path: '/verify-email', element: <VerifyEmailPage /> },
+          { path: '/welcome', element: <WelcomePage /> },
+          { path: '/setup/org', element: <OrgSetupPage /> },
+        ],
+      },
+      {
+        element: <AuthenticatedLayout />,
+        children: [
+          { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/notifications', element: <NotificationsPage /> },
+          { path: '/products', element: <ProductsPage /> },
+          { path: '/products/:productId', element: <ProductDetailPage /> },
+          { path: '/obligations', element: <ObligationsPage /> },
+          { path: '/technical-files', element: <TechnicalFilesPage /> },
+          { path: '/repos', element: <ReposPage /> },
+          { path: '/contributors', element: <ContributorsPage /> },
+          { path: '/dependencies', element: <DependenciesPage /> },
+          { path: '/risk-findings', element: <RiskFindingsPage /> },
+          { path: '/billing', element: <BillingPage /> },
+          { path: '/reports', element: <ReportsPage /> },
+          { path: '/stakeholders', element: <StakeholdersPage /> },
+          { path: '/organisation', element: <OrganisationPage /> },
+          { path: '/audit-log', element: <AuditLogPage /> },
+        ],
+      },
     ],
   },
 ]);

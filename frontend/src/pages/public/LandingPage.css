@@ -5,6 +5,9 @@
   padding: 1rem 2rem;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 .nav-logo {
   font-size: 1.4rem;
@@ -13,27 +16,55 @@
 .nav-logo span { color: var(--accent); }
 .nav-links {
   display: flex;
-  gap: 0.75rem;
+  gap: 2rem;
   align-items: center;
 }
+.nav-links a:not(.btn) {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.nav-links a:not(.btn):hover { color: var(--text); }
 
+.mobile-menu-btn {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+.mobile-menu-btn span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+}
+
+/* Hero */
 .hero {
   text-align: center;
-  padding: 5rem 2rem 4rem;
-  max-width: 700px;
+  padding: 6rem 2rem 4rem;
+  max-width: 800px;
   margin: 0 auto;
 }
 .hero h1 {
-  font-size: 2.8rem;
+  font-size: 3rem;
   font-weight: 800;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   margin-bottom: 1.5rem;
 }
 .hero h1 span { color: var(--accent); }
 .hero p {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--muted);
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
   line-height: 1.7;
 }
 .hero-actions {
@@ -45,20 +76,36 @@
   padding: 0.75rem 2rem;
   font-size: 1rem;
 }
+.price-badge {
+  display: inline-block;
+  margin-top: 2rem;
+  padding: 0.5rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.price-badge strong { color: var(--green); }
 
+/* Features */
 .features {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
-  padding: 0 2rem 4rem;
   max-width: 1000px;
   margin: 0 auto;
+  padding: 3rem 2rem;
 }
 .feature-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 2rem;
+}
+.feature-icon-wrapper {
+  color: var(--accent);
+  margin-bottom: 1rem;
 }
 .feature-card h3 {
   font-size: 1.1rem;
@@ -68,17 +115,97 @@
 .feature-card p {
   color: var(--muted);
   font-size: 0.9rem;
+  line-height: 1.6;
 }
 
+/* Audience */
+.audience {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+.audience h2 {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+.audience-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.audience-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+.audience-card h4 {
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+}
+.audience-card p {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* CTA */
+.cta-section {
+  text-align: center;
+  padding: 4rem 2rem;
+  margin: 2rem auto;
+  max-width: 700px;
+}
+.cta-section h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+.cta-section p {
+  color: var(--muted);
+  margin-bottom: 2rem;
+  line-height: 1.7;
+}
+
+/* Footer */
+.landing-footer {
+  border-top: 1px solid var(--border);
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* Mobile responsive */
 @media (max-width: 768px) {
   .hero h1 { font-size: 2rem; }
   .hero { padding: 3rem 1.5rem 2rem; }
+  .hero p { font-size: 1rem; }
   .hero-actions { flex-direction: column; align-items: center; }
-  .features { padding: 0 1.5rem 3rem; }
+  .features { padding: 2rem 1.5rem; }
+  .audience { padding: 2rem 1.5rem; }
+  .audience h2 { font-size: 1.5rem; }
+  .cta-section h2 { font-size: 1.5rem; }
   .landing-nav { padding: 1rem 1.5rem; }
+
+  .mobile-menu-btn { display: flex; }
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-direction: column;
+    padding: 1rem 2rem;
+    gap: 1rem;
+  }
+  .nav-links.open { display: flex; }
 }
 
 @media (max-width: 480px) {
   .hero h1 { font-size: 1.6rem; }
-  .nav-links .btn-outline { display: none; }
+  .features { grid-template-columns: 1fr; }
 }

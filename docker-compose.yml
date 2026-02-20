@@ -26,6 +26,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       FRONTEND_URL: ${FRONTEND_URL}
       EMAIL_FROM: ${EMAIL_FROM}
+      DEV_SKIP_EMAIL: ${DEV_SKIP_EMAIL}
     depends_on:
       postgres:
         condition: service_healthy

@@ -74,6 +74,14 @@ export default function SignupPage() {
         return;
       }
 
+      // Dev mode: account is auto-verified, redirect to welcome
+      if (data.devMode && data.session) {
+        localStorage.setItem('session_token', data.session);
+        navigate('/welcome');
+        return;
+      }
+
+      // Production mode: redirect to check-email page
       navigate('/check-email', { state: { email } });
     } catch {
       setError('Network error. Please try again.');
