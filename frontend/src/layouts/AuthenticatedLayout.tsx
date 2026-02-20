@@ -21,6 +21,11 @@ export default function AuthenticatedLayout() {
     return <Navigate to="/login" replace />;
   }
 
+  // Redirect to org setup if user has no organisation
+  if (!user.orgId) {
+    return <Navigate to="/setup/org" replace />;
+  }
+
   return (
     <div className="app-layout">
       <div className="mobile-topbar">

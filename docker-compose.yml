@@ -27,8 +27,13 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       EMAIL_FROM: ${EMAIL_FROM}
       DEV_SKIP_EMAIL: ${DEV_SKIP_EMAIL}
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: ${NEO4J_USER}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
     depends_on:
       postgres:
+        condition: service_healthy
+      neo4j:
         condition: service_healthy
     networks:
       - cranis2_net

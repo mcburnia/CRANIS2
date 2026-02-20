@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import { initDb } from './db/pool.js';
+import { initGraph, closeDriver } from './db/neo4j.js';
 import authRoutes from './routes/auth.js';
+import orgRoutes from './routes/org.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -11,6 +13,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/org', orgRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -21,6 +24,7 @@ app.get('/api/health', (_req, res) => {
 async function start() {
   try {
     await initDb();
+    await initGraph();
     app.listen(PORT, () => {
       console.log(`CRANIS2 backend listening on port ${PORT}`);
     });
@@ -29,5 +33,11 @@ async function start() {
     process.exit(1);
   }
 }
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  await closeDriver();
+  process.exit(0);
+});
 
 start();

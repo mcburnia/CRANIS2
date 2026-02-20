@@ -153,13 +153,21 @@ router.get('/me', async (req: Request, res: Response) => {
     const { verifySessionToken } = await import('../utils/token.js');
     const payload = verifySessionToken(token);
 
-    const result = await pool.query('SELECT id, email, email_verified FROM users WHERE id = $1', [payload.userId]);
+    const result = await pool.query('SELECT id, email, email_verified, org_id, org_role FROM users WHERE id = $1', [payload.userId]);
     if (result.rows.length === 0) {
       res.status(401).json({ error: 'User not found' });
       return;
     }
 
-    res.json({ user: { id: result.rows[0].id, email: result.rows[0].email } });
+    const user = result.rows[0];
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        orgId: user.org_id || null,
+        orgRole: user.org_role || null,
+      },
+    });
   } catch {
     res.status(401).json({ error: 'Invalid or expired session' });
   }

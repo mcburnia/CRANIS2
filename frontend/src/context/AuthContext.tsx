@@ -3,6 +3,8 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 interface User {
   id: string;
   email: string;
+  orgId: string | null;
+  orgRole: string | null;
 }
 
 interface AuthContextType {
@@ -10,6 +12,7 @@ interface AuthContextType {
   loading: boolean;
   login: (session: string) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -17,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   login: () => {},
   logout: () => {},
+  refreshUser: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -53,7 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function login(session: string) {
     localStorage.setItem('session_token', session);
-    // Decode user from session check
     checkSession();
   }
 
@@ -62,8 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  async function refreshUser() {
+    await checkSession();
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
