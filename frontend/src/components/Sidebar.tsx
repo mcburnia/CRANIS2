@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -123,7 +124,7 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
       </div>
 
       {/* DEV ONLY: Delete confirmation modal */}
-      {showDeleteConfirm && (
+      {showDeleteConfirm && createPortal(
         <div className="dev-modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
           <div className="dev-modal" onClick={(e) => e.stopPropagation()}>
             <div className="dev-modal-badge">DEV ONLY</div>
@@ -143,7 +144,8 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
