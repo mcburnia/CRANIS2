@@ -4,6 +4,7 @@ import { initDb } from './db/pool.js';
 import { initGraph, closeDriver } from './db/neo4j.js';
 import authRoutes from './routes/auth.js';
 import orgRoutes from './routes/org.js';
+import auditRoutes from './routes/audit.js';
 import devRoutes from './routes/dev.js';  // DEV ONLY — REMOVE BEFORE PRODUCTION
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/org', orgRoutes);
+app.use('/api/audit-log', auditRoutes);
 app.use('/api/dev', devRoutes);  // DEV ONLY — REMOVE BEFORE PRODUCTION
 
 // Health check
