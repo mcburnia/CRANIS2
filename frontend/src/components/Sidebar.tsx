@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
   FolderGit2, Users, Box, AlertTriangle, CreditCard,
-  BarChart3, UserCircle, Settings, ScrollText, LogOut
+  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -57,11 +58,37 @@ const navSections = [
 export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function handleLogout() {
     logout();
     if (onNavigate) onNavigate();
     navigate('/');
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch('/api/dev/nuke-account', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        logout();
+        if (onNavigate) onNavigate();
+        navigate('/');
+      } else {
+        const data = await res.json();
+        alert('Failed to delete: ' + (data.error || 'Unknown error'));
+      }
+    } catch {
+      alert('Network error');
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
   }
 
   return (
@@ -85,12 +112,39 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
         </div>
       ))}
       <div className="sidebar-footer">
-        <div className="sidebar-user">{user?.email}</div>
+        <button className="sidebar-user-btn" onClick={() => setShowDeleteConfirm(true)} title="DEV: Delete account & org data">
+          <Trash2 size={14} className="dev-trash-icon" />
+          {user?.email}
+        </button>
         <button className="nav-item logout-btn" onClick={handleLogout}>
           <LogOut size={18} className="nav-icon" />
           Sign Out
         </button>
       </div>
+
+      {/* DEV ONLY: Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div className="dev-modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="dev-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="dev-modal-badge">DEV ONLY</div>
+            <h3>Delete Account & Organisation</h3>
+            <p>This will permanently remove:</p>
+            <ul>
+              <li>Your user account ({user?.email})</li>
+              <li>All event/telemetry data</li>
+              <li>Your organisation and all its graph data</li>
+            </ul>
+            <div className="dev-modal-actions">
+              <button className="btn-cancel" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
+                Cancel
+              </button>
+              <button className="btn-delete" onClick={handleDeleteAccount} disabled={deleting}>
+                {deleting ? 'Deleting...' : 'Delete Everything'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

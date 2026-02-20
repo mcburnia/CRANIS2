@@ -4,6 +4,7 @@ import { initDb } from './db/pool.js';
 import { initGraph, closeDriver } from './db/neo4j.js';
 import authRoutes from './routes/auth.js';
 import orgRoutes from './routes/org.js';
+import devRoutes from './routes/dev.js';  // DEV ONLY — REMOVE BEFORE PRODUCTION
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -14,6 +15,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/org', orgRoutes);
+app.use('/api/dev', devRoutes);  // DEV ONLY — REMOVE BEFORE PRODUCTION
 
 // Health check
 app.get('/api/health', (_req, res) => {
