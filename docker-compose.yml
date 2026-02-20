@@ -1,0 +1,65 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: cranis2_nginx
+    ports:
+      - "3002:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - postgres
+      - neo4j
+    networks:
+      - cranis2_net
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: cranis2_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - cranis2_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - cranis2_net
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: cranis2_neo4j
+    environment:
+      NEO4J_AUTH: "${NEO4J_USER}/${NEO4J_PASSWORD}"
+    ports:
+      - "7475:7474"
+      - "7688:7687"
+    volumes:
+      - cranis2_neo4j_data:/data
+      - cranis2_neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - cranis2_net
+    restart: unless-stopped
+
+volumes:
+  cranis2_pg_data:
+  cranis2_neo4j_data:
+    external: true
+  cranis2_neo4j_logs:
+
+networks:
+  cranis2_net:
+    driver: bridge
