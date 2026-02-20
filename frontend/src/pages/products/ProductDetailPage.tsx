@@ -5,7 +5,7 @@ import PageHeader from '../../components/PageHeader';
 import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
-  CheckCircle2, Clock, ChevronRight, Plus
+  CheckCircle2, Clock, ChevronRight, Plus, ExternalLink
 } from 'lucide-react';
 import './ProductDetailPage.css';
 
@@ -16,6 +16,7 @@ interface Product {
   version: string;
   productType: string;
   craCategory: string;
+  repoUrl: string;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -74,7 +75,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '' });
+  const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -95,6 +96,7 @@ export default function ProductDetailPage() {
           version: data.version || '',
           productType: data.productType || 'other',
           craCategory: data.craCategory || 'default',
+          repoUrl: data.repoUrl || '',
         });
       } else {
         setError('Product not found');
@@ -169,7 +171,7 @@ export default function ProductDetailPage() {
               </button>
             ) : (
               <>
-                <button className="pd-cancel-btn" onClick={() => { setEditing(false); setEditForm({ name: product.name, description: product.description, version: product.version, productType: product.productType, craCategory: product.craCategory }); }}>
+                <button className="pd-cancel-btn" onClick={() => { setEditing(false); setEditForm({ name: product.name, description: product.description, version: product.version, productType: product.productType, craCategory: product.craCategory, repoUrl: product.repoUrl }); }}>
                   <X size={14} /> Cancel
                 </button>
                 <button className="btn btn-primary pd-save-btn" onClick={handleSave} disabled={saving || !editForm.name.trim()}>
@@ -190,6 +192,11 @@ export default function ProductDetailPage() {
                 <Shield size={12} /> {catInfo.label}
               </span>
               {product.version && <span className="pd-version">v{product.version}</span>}
+              {product.repoUrl && (
+                <a href={product.repoUrl} target="_blank" rel="noopener noreferrer" className="pd-repo-link" onClick={e => e.stopPropagation()}>
+                  <GitBranch size={12} /> Repository <ExternalLink size={10} />
+                </a>
+              )}
               <span className="pd-date">Created {formatDate(product.createdAt)}</span>
               {product.updatedAt && product.updatedAt !== product.createdAt && (
                 <span className="pd-date">Updated {formatDate(product.updatedAt)}</span>
@@ -205,6 +212,10 @@ export default function ProductDetailPage() {
             <div className="form-group">
               <label className="form-label">Description</label>
               <textarea className="form-input" rows={2} value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Repository URL</label>
+              <input className="form-input" type="url" placeholder="e.g. https://github.com/your-org/your-repo" value={editForm.repoUrl} onChange={e => setEditForm({ ...editForm, repoUrl: e.target.value })} />
             </div>
             <div className="form-row">
               <div className="form-group" style={{ flex: 1 }}>
@@ -367,6 +378,16 @@ function OverviewTab({ product, catInfo }: { product: Product; catInfo: { label:
           <div className="pd-detail-row">
             <span className="pd-detail-label">Version</span>
             <span className="pd-detail-value">{product.version || '—'}</span>
+          </div>
+          <div className="pd-detail-row">
+            <span className="pd-detail-label">Repository</span>
+            <span className="pd-detail-value">
+              {product.repoUrl ? (
+                <a href={product.repoUrl} target="_blank" rel="noopener noreferrer" className="pd-repo-detail-link">
+                  {product.repoUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\.git$/, '')} <ExternalLink size={10} />
+                </a>
+              ) : '—'}
+            </span>
           </div>
           <div className="pd-detail-row">
             <span className="pd-detail-label">Status</span>

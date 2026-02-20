@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import {
   Package, Plus, Trash2, ChevronRight, Cpu, Cloud,
-  BookOpen, Smartphone, Monitor, Radio, Box
+  BookOpen, Smartphone, Monitor, Radio, Box, GitBranch
 } from 'lucide-react';
 import './ProductsPage.css';
 
@@ -15,6 +15,7 @@ interface Product {
   version: string;
   productType: string;
   craCategory: string;
+  repoUrl: string;
   status: string;
   createdAt: string;
 }
@@ -62,6 +63,7 @@ export default function ProductsPage() {
   const [formVersion, setFormVersion] = useState('');
   const [formType, setFormType] = useState('saas');
   const [formCategory, setFormCategory] = useState('default');
+  const [formRepoUrl, setFormRepoUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -89,7 +91,7 @@ export default function ProductsPage() {
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: formName, description: formDesc, version: formVersion, productType: formType, craCategory: formCategory }),
+        body: JSON.stringify({ name: formName, description: formDesc, version: formVersion, productType: formType, craCategory: formCategory, repoUrl: formRepoUrl }),
       });
 
       if (!res.ok) {
@@ -100,7 +102,7 @@ export default function ProductsPage() {
       }
 
       setShowAdd(false);
-      setFormName(''); setFormDesc(''); setFormVersion(''); setFormType('saas'); setFormCategory('default');
+      setFormName(''); setFormDesc(''); setFormVersion(''); setFormType('saas'); setFormCategory('default'); setFormRepoUrl('');
       await fetchProducts();
     } catch {
       setError('Network error');
@@ -161,6 +163,11 @@ export default function ProductsPage() {
                   <span className="product-type-badge">{TYPE_LABELS[p.productType] || p.productType}</span>
                   <span className="product-cra-badge" style={{ color: catInfo.color, borderColor: catInfo.color }}>{catInfo.label}</span>
                   {p.version && <span className="product-version">v{p.version}</span>}
+                  {p.repoUrl && (
+                    <span className="product-repo-badge" title={p.repoUrl}>
+                      <GitBranch size={12} /> Repo
+                    </span>
+                  )}
                 </div>
                 <div className="product-card-footer">
                   <span className="product-card-date">Created {formatDate(p.createdAt)}</span>
@@ -195,6 +202,12 @@ export default function ProductsPage() {
               <div className="form-group">
                 <label className="form-label">Description</label>
                 <textarea className="form-input" placeholder="What does this product do?" rows={3} value={formDesc} onChange={e => setFormDesc(e.target.value)} />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Repository URL</label>
+                <input className="form-input" type="url" placeholder="e.g. https://github.com/your-org/your-repo" value={formRepoUrl} onChange={e => setFormRepoUrl(e.target.value)} />
+                <span className="form-hint">Used to scan dependencies, generate SBOMs, and track risk findings.</span>
               </div>
 
               <div className="form-row">

@@ -50,6 +50,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         version: p.version || '',
         productType: p.productType || '',
         craCategory: p.craCategory || 'default',
+        repoUrl: p.repoUrl || '',
         status: p.status || 'active',
         createdAt: p.createdAt?.toString() || '',
       };
@@ -87,6 +88,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       version: p.version || '',
       productType: p.productType || '',
       craCategory: p.craCategory || 'default',
+      repoUrl: p.repoUrl || '',
       status: p.status || 'active',
       createdAt: p.createdAt?.toString() || '',
       updatedAt: p.updatedAt?.toString() || '',
@@ -103,7 +105,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId(userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-  const { name, description, version, productType, craCategory } = req.body;
+  const { name, description, version, productType, craCategory, repoUrl } = req.body;
 
   if (!name?.trim()) {
     res.status(400).json({ error: 'Product name is required' });
@@ -125,6 +127,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
          version: $version,
          productType: $productType,
          craCategory: $craCategory,
+         repoUrl: $repoUrl,
          status: 'active',
          createdAt: datetime(),
          updatedAt: datetime()
@@ -139,6 +142,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         version: version?.trim() || '',
         productType: validTypes.includes(productType) ? productType : 'other',
         craCategory: validCategories.includes(craCategory) ? craCategory : 'default',
+        repoUrl: repoUrl?.trim() || '',
       }
     );
 
@@ -151,7 +155,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       ipAddress: reqData.ipAddress,
       userAgent: reqData.userAgent,
       acceptLanguage: reqData.acceptLanguage,
-      metadata: { productId, productName: name.trim(), productType, craCategory },
+      metadata: { productId, productName: name.trim(), productType, craCategory, repoUrl: repoUrl?.trim() || '' },
     });
 
     res.status(201).json({
@@ -161,6 +165,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       version: version?.trim() || '',
       productType: validTypes.includes(productType) ? productType : 'other',
       craCategory: validCategories.includes(craCategory) ? craCategory : 'default',
+      repoUrl: repoUrl?.trim() || '',
       status: 'active',
     });
   } catch (err) {
@@ -176,7 +181,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId((req as any).userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-  const { name, description, version, productType, craCategory } = req.body;
+  const { name, description, version, productType, craCategory, repoUrl } = req.body;
   if (!name?.trim()) { res.status(400).json({ error: 'Product name is required' }); return; }
 
   const session = getDriver().session();
@@ -184,7 +189,8 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     const result = await session.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
        SET p.name = $name, p.description = $description, p.version = $version,
-           p.productType = $productType, p.craCategory = $craCategory, p.updatedAt = datetime()
+           p.productType = $productType, p.craCategory = $craCategory,
+           p.repoUrl = $repoUrl, p.updatedAt = datetime()
        RETURN p`,
       {
         orgId,
@@ -194,6 +200,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
         version: version?.trim() || '',
         productType: productType || 'other',
         craCategory: craCategory || 'default',
+        repoUrl: repoUrl?.trim() || '',
       }
     );
 
@@ -203,7 +210,15 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     }
 
     const p = result.records[0].get('p').properties;
-    res.json({ id: p.id, name: p.name, description: p.description, version: p.version, productType: p.productType, craCategory: p.craCategory });
+    res.json({
+      id: p.id,
+      name: p.name,
+      description: p.description || '',
+      version: p.version || '',
+      productType: p.productType || '',
+      craCategory: p.craCategory || 'default',
+      repoUrl: p.repoUrl || '',
+    });
   } finally {
     await session.close();
   }
