@@ -34,6 +34,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showChecks, setShowChecks] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const { score, checks } = useMemo(() => getPasswordStrength(password), [password]);
   const strengthInfo = useMemo(() => getStrengthLabel(score), [score]);
@@ -41,7 +42,7 @@ export default function SignupPage() {
   const passwordsMatch = password === confirmPassword;
   const confirmTouched = confirmPassword.length > 0;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -58,8 +59,27 @@ export default function SignupPage() {
       return;
     }
 
-    // TODO: call registration API
-    navigate('/setup/org');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Registration failed');
+        return;
+      }
+
+      navigate('/check-email', { state: { email } });
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -149,9 +169,9 @@ export default function SignupPage() {
               type="submit"
               className="btn btn-primary"
               style={{ width: '100%' }}
-              disabled={!email || score < 4 || !passwordsMatch || !confirmTouched}
+              disabled={!email || score < 4 || !passwordsMatch || !confirmTouched || loading}
             >
-              Create Account
+              {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
 

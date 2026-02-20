@@ -10,6 +10,25 @@ services:
     depends_on:
       - postgres
       - neo4j
+      - backend
+    networks:
+      - cranis2_net
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: cranis2_backend
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      EMAIL_FROM: ${EMAIL_FROM}
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - cranis2_net
     restart: unless-stopped

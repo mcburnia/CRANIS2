@@ -5,6 +5,9 @@ import AuthenticatedLayout from './layouts/AuthenticatedLayout';
 import LandingPage from './pages/public/LandingPage';
 import LoginPage from './pages/public/LoginPage';
 import SignupPage from './pages/public/SignupPage';
+import CheckEmailPage from './pages/public/CheckEmailPage';
+import VerifyEmailPage from './pages/public/VerifyEmailPage';
+import WelcomePage from './pages/setup/WelcomePage';
 import OrgSetupPage from './pages/setup/OrgSetupPage';
 
 import DashboardPage from './pages/dashboard/DashboardPage';
@@ -30,6 +33,9 @@ const router = createBrowserRouter([
       { path: '/', element: <LandingPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/signup', element: <SignupPage /> },
+      { path: '/check-email', element: <CheckEmailPage /> },
+      { path: '/verify-email', element: <VerifyEmailPage /> },
+      { path: '/welcome', element: <WelcomePage /> },
       { path: '/setup/org', element: <OrgSetupPage /> },
     ],
   },
