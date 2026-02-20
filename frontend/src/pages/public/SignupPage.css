@@ -10,3 +10,93 @@
   text-align: center;
   margin-bottom: 1.5rem;
 }
+
+.form-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--red);
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.password-strength {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.strength-bar {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+}
+
+.strength-segment {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+
+.strength-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.password-checks {
+  list-style: none;
+  margin-top: 0.5rem;
+  padding: 0;
+}
+
+.password-checks li {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0.15rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.password-checks li.met {
+  color: var(--green);
+}
+
+.check-icon {
+  font-size: 0.75rem;
+  width: 14px;
+  text-align: center;
+}
+
+.password-checks li:not(.met) .check-icon {
+  color: var(--red);
+}
+
+.form-input.input-error {
+  border-color: var(--red);
+}
+
+.form-input.input-success {
+  border-color: var(--green);
+}
+
+.field-error {
+  font-size: 0.8rem;
+  color: var(--red);
+  margin-top: 0.35rem;
+}
+
+.field-success {
+  font-size: 0.8rem;
+  color: var(--green);
+  margin-top: 0.35rem;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
