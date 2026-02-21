@@ -224,9 +224,4 @@ export function startScheduler(): void {
   setInterval(() => {
     runDailySync().catch(err => console.error('[SCHEDULER] Uncaught error:', err));
   }, CHECK_INTERVAL_MS);
-
-  // Also run once at startup (after a short delay to let DB connections settle)
-  setTimeout(() => {
-    runDailySync().catch(err => console.error('[SCHEDULER] Startup check error:', err));
-  }, 10000);
 }
