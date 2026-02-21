@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 
 import PageHeader from '../../components/PageHeader';
 import {
@@ -133,7 +133,6 @@ const TABS: { key: TabKey; label: string; icon: typeof Package }[] = [
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
-  const [searchParams] = useSearchParams();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -159,12 +158,18 @@ export default function ProductDetailPage() {
     if (product?.id) fetchCachedRepoData();
   }, [product?.id]);
 
-  // Auto-sync if just connected via OAuth
+  // Listen for OAuth popup completion via postMessage
   useEffect(() => {
-    if (searchParams.get('github_connected') === 'true' && product?.repoUrl && ghStatus.connected) {
-      handleSync();
+    function onMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === 'github-oauth-success') {
+        fetchGitHubStatus();
+        if (product?.repoUrl) handleSync();
+      }
     }
-  }, [searchParams, product, ghStatus.connected]);
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [product?.repoUrl]);
 
   async function fetchProduct() {
     try {
@@ -236,10 +241,30 @@ export default function ProductDetailPage() {
     }
   }
 
-  function handleConnectGitHub() {
-    const token = localStorage.getItem('session_token');
-    const returnTo = `/products/${productId}`;
-    window.location.href = `/api/github/connect?token=${token}&returnTo=${encodeURIComponent(returnTo)}`;
+  async function handleConnectGitHub() {
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch('/api/github/connect-init', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setSyncError(err.error || 'Failed to initiate GitHub connection');
+        return;
+      }
+      const { connectionToken } = await res.json();
+      const w = 600, h = 700;
+      const left = window.screenX + (window.outerWidth - w) / 2;
+      const top = window.screenY + (window.outerHeight - h) / 2;
+      window.open(
+        `/api/github/connect?connectionToken=${connectionToken}`,
+        'github-oauth',
+        `width=${w},height=${h},left=${left},top=${top}`
+      );
+    } catch {
+      setSyncError('Failed to initiate GitHub connection');
+    }
   }
 
   async function handleDisconnectGitHub() {
