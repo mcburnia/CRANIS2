@@ -56,10 +56,10 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         e.referrer,
         e.metadata,
         e.created_at,
-        u.email as user_email
+        COALESCE(u.email, 'system') as user_email
       FROM user_events e
-      JOIN users u ON e.user_id = u.id
-      WHERE u.org_id = $1
+      LEFT JOIN users u ON e.user_id = u.id
+      WHERE (u.org_id = $1 OR e.user_id IS NULL)
     `;
     const params: unknown[] = [orgId];
     let paramIdx = 2;
@@ -79,8 +79,8 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
     let countQuery = `
       SELECT COUNT(*) as total
       FROM user_events e
-      JOIN users u ON e.user_id = u.id
-      WHERE u.org_id = $1
+      LEFT JOIN users u ON e.user_id = u.id
+      WHERE (u.org_id = $1 OR e.user_id IS NULL)
     `;
     const countParams: unknown[] = [orgId];
 
@@ -95,8 +95,8 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
     const typesResult = await pool.query(`
       SELECT DISTINCT e.event_type
       FROM user_events e
-      JOIN users u ON e.user_id = u.id
-      WHERE u.org_id = $1
+      LEFT JOIN users u ON e.user_id = u.id
+      WHERE (u.org_id = $1 OR e.user_id IS NULL)
       ORDER BY e.event_type
     `, [orgId]);
 
