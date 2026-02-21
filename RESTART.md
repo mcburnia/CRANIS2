@@ -648,6 +648,7 @@ sudo systemctl restart cloudflared
 - SBOM debug logging still in `services/github.ts` (console.log statements) — remove before production
 
 **Next Steps:**
+- **Add sync duration tracking** — timestamp before each repo sync, measure elapsed seconds, store in DB for workload balancing at scale (3600+ repo contributors)
 - Connect dashboard to real data from Postgres + Neo4j (currently prototype data)
 - Switch DEV_SKIP_EMAIL to false once email domain is verified
 - Remove dev routes before production deployment
