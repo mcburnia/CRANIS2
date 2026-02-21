@@ -20,7 +20,10 @@ export async function initGraph() {
     await session.run(`CREATE INDEX org_name_idx IF NOT EXISTS FOR (o:Organisation) ON (o.name)`);
     await session.run(`CREATE CONSTRAINT product_id_unique IF NOT EXISTS FOR (p:Product) REQUIRE p.id IS UNIQUE`);
     await session.run(`CREATE CONSTRAINT dependency_id_unique IF NOT EXISTS FOR (d:Dependency) REQUIRE d.id IS UNIQUE`);
+    await session.run(`CREATE CONSTRAINT dependency_purl_unique IF NOT EXISTS FOR (d:Dependency) REQUIRE d.purl IS UNIQUE`);
     await session.run(`CREATE CONSTRAINT vulnerability_cve_unique IF NOT EXISTS FOR (v:Vulnerability) REQUIRE v.cve IS UNIQUE`);
+
+    await session.run(`CREATE CONSTRAINT techfile_product_unique IF NOT EXISTS FOR (tf:TechnicalFile) REQUIRE tf.productId IS UNIQUE`);
 
     // --- Telemetry nodes ---
     await session.run(`CREATE CONSTRAINT user_id_unique IF NOT EXISTS FOR (u:User) REQUIRE u.id IS UNIQUE`);

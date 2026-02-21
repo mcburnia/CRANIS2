@@ -59,6 +59,52 @@ interface LanguageData {
   percentage: number;
 }
 
+
+interface SBOMPackage {
+  purl: string;
+  name: string;
+  version: string;
+  ecosystem: string;
+  license: string;
+  supplier: string;
+}
+
+interface SBOMData {
+  hasSBOM: boolean;
+  spdxVersion?: string;
+  packageCount?: number;
+  isStale?: boolean;
+  syncedAt?: string;
+  packages?: SBOMPackage[];
+}
+
+interface TechFileSection {
+  sectionKey: string;
+  title: string;
+  content: any;
+  notes: string;
+  status: 'not_started' | 'in_progress' | 'completed';
+  craReference: string;
+  updatedBy: string | null;
+  updatedAt: string | null;
+}
+
+interface TechFileData {
+  sections: TechFileSection[];
+  progress: { total: number; completed: number; inProgress: number; notStarted: number };
+}
+
+interface VersionEntry {
+  cranisVersion: string;
+  githubTag: string | null;
+  releaseName: string | null;
+  source: 'sync' | 'github_release' | 'manual';
+  createdAt: string;
+  isPrerelease: boolean;
+}
+
+
+
 interface GitHubData {
   synced: boolean;
   repo?: RepoData;
@@ -147,6 +193,11 @@ export default function ProductDetailPage() {
   const [ghData, setGhData] = useState<GitHubData>({ synced: false });
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState('');
+  const [sbomData, setSbomData] = useState<SBOMData>({ hasSBOM: false });
+  const [sbomLoading, setSbomLoading] = useState(false);
+  const [techFileData, setTechFileData] = useState<TechFileData>({ sections: [], progress: { total: 0, completed: 0, inProgress: 0, notStarted: 0 } });
+  const [techFileLoading, setTechFileLoading] = useState(false);
+  const [versionHistory, setVersionHistory] = useState<VersionEntry[]>([]);
 
   useEffect(() => {
     fetchProduct();
@@ -155,7 +206,12 @@ export default function ProductDetailPage() {
 
   // After product loads, fetch cached repo data
   useEffect(() => {
-    if (product?.id) fetchCachedRepoData();
+    if (product?.id) {
+      fetchCachedRepoData();
+      fetchSBOMData();
+      fetchTechFileData();
+      fetchVersionHistory();
+    }
   }, [product?.id]);
 
   // Listen for OAuth popup completion via postMessage
@@ -217,6 +273,68 @@ export default function ProductDetailPage() {
     } catch { /* silent */ }
   }
 
+
+  async function fetchSBOMData() {
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/github/sbom/${productId}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setSbomData(data);
+      }
+    } catch { /* silent */ }
+  }
+
+
+  async function fetchTechFileData() {
+    if (!productId) return;
+    try {
+      setTechFileLoading(true);
+      const res = await fetch(`/api/technical-file/${productId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTechFileData(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch technical file:', err);
+    } finally {
+      setTechFileLoading(false);
+    }
+  }
+
+
+  async function fetchVersionHistory() {
+    if (!productId) return;
+    try {
+      const res = await fetch(`/api/github/versions/${productId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVersionHistory(data.versions || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch version history:', err);
+    }
+  }
+
+  async function handleRefreshSBOM() {
+    setSbomLoading(true);
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/github/sbom/${productId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSbomData(data);
+      }
+    } catch { /* silent */ } finally { setSbomLoading(false); }
+  }
+
   async function handleSync() {
     if (!product?.repoUrl) return;
     setSyncing(true);
@@ -230,6 +348,9 @@ export default function ProductDetailPage() {
       if (res.ok) {
         const data = await res.json();
         setGhData({ synced: true, repo: data.repo, contributors: data.contributors, languages: data.languages });
+        if (data.version) setProduct(prev => prev ? { ...prev, version: data.version } : prev);
+        fetchSBOMData();
+        fetchVersionHistory();
       } else {
         const err = await res.json();
         setSyncError(err.error || 'Sync failed');
@@ -339,9 +460,9 @@ export default function ProductDetailPage() {
               </button>
             )}
             {ghStatus.connected && product.repoUrl && (
-              <button className="pd-sync-btn" onClick={handleSync} disabled={syncing}>
+              <button className={`pd-sync-btn ${sbomData.isStale ? 'pd-sync-stale' : 'pd-sync-fresh'}`} onClick={handleSync} disabled={syncing}>
                 {syncing ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
-                {syncing ? 'Syncing...' : 'Sync'}
+                {syncing ? 'Syncing...' : sbomData.isStale ? 'Update Available' : 'Sync'}
               </button>
             )}
             {!editing ? (
@@ -440,8 +561,8 @@ export default function ProductDetailPage() {
           >
             <tab.icon size={16} />
             {tab.label}
-            {tab.key === 'dependencies' && ghData.contributors && ghData.contributors.length > 0 && (
-              <span className="pd-tab-count">{ghData.contributors.length}</span>
+            {tab.key === 'dependencies' && sbomData.packageCount && sbomData.packageCount > 0 && (
+              <span className="pd-tab-count">{sbomData.packageCount}</span>
             )}
           </button>
         ))}
@@ -449,20 +570,22 @@ export default function ProductDetailPage() {
 
       {/* Tab content */}
       <div className="pd-tab-content">
-        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} />}
+        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} />}
         {activeTab === 'obligations' && <ObligationsTab product={product} />}
-        {activeTab === 'technical-file' && <TechnicalFileTab />}
+        {activeTab === 'technical-file' && <TechnicalFileTab productId={productId!} techFileData={techFileData} loading={techFileLoading} onUpdate={fetchTechFileData} />}
         {activeTab === 'risk-findings' && <RiskFindingsTab />}
-        {activeTab === 'dependencies' && <DependenciesTab ghStatus={ghStatus} ghData={ghData} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} />}
+        {activeTab === 'dependencies' && <DependenciesTab ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} sbomLoading={sbomLoading} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onRefreshSBOM={handleRefreshSBOM} />}
       </div>
     </>
   );
 }
 
 /* ── Overview Tab ─────────────────────────────────────── */
-function OverviewTab({ product, catInfo, ghStatus, ghData, onConnect, onSync, syncing, onDisconnect }: {
+function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFileProgress, versionHistory, onConnect, onSync, syncing, onDisconnect }: {
   product: Product; catInfo: { label: string; color: string; desc: string };
-  ghStatus: GitHubStatus; ghData: GitHubData;
+  ghStatus: GitHubStatus; ghData: GitHubData; sbomData: SBOMData;
+  techFileProgress: { total: number; completed: number; inProgress: number; notStarted: number };
+  versionHistory: VersionEntry[];
   onConnect: () => void; onSync: () => void; syncing: boolean; onDisconnect: () => void;
 }) {
   return (
@@ -590,7 +713,32 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, onConnect, onSync, sy
         </div>
       </div>
 
-      {/* Compliance Progress Card */}
+      {/* Version History Card */}
+      {versionHistory.length > 0 && (
+        <div className="pd-card">
+          <div className="pd-card-header">
+            <GitBranch size={18} />
+            <h3>Version History</h3>
+          </div>
+          <div className="vh-list">
+            {versionHistory.slice(0, 8).map((v, i) => (
+              <div key={i} className={`vh-item ${i === 0 ? 'vh-latest' : ''}`}>
+                <div className="vh-version">
+                  <span className="vh-cranis">{v.cranisVersion}</span>
+                  {v.githubTag && <span className="vh-tag">{v.githubTag}</span>}
+                  {v.isPrerelease && <span className="vh-prerelease">pre-release</span>}
+                </div>
+                <div className="vh-meta">
+                  <span className={`vh-source vh-source-${v.source}`}>{v.source === 'sync' ? 'Sync' : v.source === 'github_release' ? 'Release' : 'Manual'}</span>
+                  <span className="vh-date">{new Date(v.createdAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+            {/* Compliance Progress Card */}
       <div className="pd-card">
         <div className="pd-card-header">
           <CheckCircle2 size={18} />
@@ -599,8 +747,8 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, onConnect, onSync, sy
         <div className="pd-progress-list">
           <ProgressItem label="Essential Requirements" status="not_started" />
           <ProgressItem label="Vulnerability Handling" status="not_started" />
-          <ProgressItem label="Technical Documentation" status="not_started" />
-          <ProgressItem label="SBOM Generation" status={ghData.synced ? 'in_progress' : 'not_started'} />
+          <ProgressItem label="Technical Documentation" status={techFileProgress.completed === techFileProgress.total && techFileProgress.total > 0 ? 'completed' : techFileProgress.completed > 0 || techFileProgress.inProgress > 0 ? 'in_progress' : 'not_started'} />
+          <ProgressItem label="SBOM Generation" status={sbomData.hasSBOM ? 'completed' : ghData.synced ? 'in_progress' : 'not_started'} />
           <ProgressItem label="Conformity Assessment" status="not_started" />
           <ProgressItem label="EU Declaration of Conformity" status="not_started" />
         </div>
@@ -721,33 +869,297 @@ function getCRAObligations(category: string) {
 }
 
 /* ── Technical File Tab ─────────────────────────────────────── */
-function TechnicalFileTab() {
-  const sections = [
-    { title: 'General Description', desc: 'Description of the product including its intended purpose, version, and how it is made available on the market.' },
-    { title: 'Design & Development Information', desc: 'Information on the design and development process of the product, including cybersecurity risk assessment.' },
-    { title: 'Cybersecurity Risk Assessment', desc: 'Assessment of cybersecurity risks against which the product is designed, developed and produced.' },
-    { title: 'Vulnerability Handling Documentation', desc: 'Description of the vulnerability handling process and evidence it will be ensured for the support period.' },
-    { title: 'SBOM', desc: 'Software bill of materials documenting all components, libraries and dependencies used.' },
-    { title: 'Test Reports', desc: 'Results of tests carried out to verify conformity with essential requirements.' },
-    { title: 'EU Declaration of Conformity', desc: 'The formal declaration that the product meets all applicable CRA requirements.' },
-  ];
+function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
+  productId: string; techFileData: TechFileData; loading: boolean; onUpdate: () => void;
+}) {
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState<Record<string, any>>({});
+  const [editNotes, setEditNotes] = useState<Record<string, string>>({});
+  const [editStatus, setEditStatus] = useState<Record<string, string>>({});
+
+  const statusConfig = {
+    completed: { icon: CheckCircle2, color: 'var(--green)', text: 'Complete' },
+    in_progress: { icon: Clock, color: 'var(--amber)', text: 'In Progress' },
+    not_started: { icon: Clock, color: 'var(--muted)', text: 'Not Started' },
+  };
+
+  function toggleSection(key: string, section: TechFileSection) {
+    if (expandedSection === key) {
+      setExpandedSection(null);
+    } else {
+      setExpandedSection(key);
+      if (!editContent[key]) {
+        setEditContent(prev => ({ ...prev, [key]: section.content }));
+        setEditNotes(prev => ({ ...prev, [key]: section.notes || '' }));
+        setEditStatus(prev => ({ ...prev, [key]: section.status }));
+      }
+    }
+  }
+
+  async function handleSave(sectionKey: string) {
+    setSaving(sectionKey);
+    try {
+      const res = await fetch(`/api/technical-file/${productId}/${sectionKey}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          content: editContent[sectionKey],
+          notes: editNotes[sectionKey],
+          status: editStatus[sectionKey],
+        }),
+      });
+      if (res.ok) {
+        onUpdate();
+      }
+    } catch (err) {
+      console.error('Failed to save section:', err);
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  function renderFieldEditor(sectionKey: string, fields: Record<string, string>, fieldLabels?: Record<string, string>) {
+    const labels: Record<string, string> = fieldLabels || {
+      intended_purpose: 'Intended Purpose',
+      versions_affecting_compliance: 'Software Versions Affecting Compliance',
+      market_availability: 'Market Availability',
+      user_instructions_reference: 'User Information & Instructions (Annex II)',
+      architecture_description: 'System Architecture Description',
+      component_interactions: 'Component Interactions & Integration',
+      sdlc_process: 'Secure Development Lifecycle (SDLC)',
+      production_monitoring: 'Production & Monitoring Processes',
+      disclosure_policy_url: 'Coordinated Vulnerability Disclosure Policy URL',
+      reporting_contact: 'Vulnerability Reporting Contact',
+      update_distribution_mechanism: 'Secure Update Distribution Mechanism',
+      security_update_policy: 'Security Update Policy',
+      sbom_reference: 'SBOM Reference',
+      methodology: 'Risk Assessment Methodology',
+      threat_model: 'Threat Model / Attack Surface Analysis',
+      risk_register: 'Risk Register',
+      start_date: 'Support Period Start Date',
+      end_date: 'Support Period End Date',
+      rationale: 'Rationale for Support Period',
+      communication_plan: 'End-of-Support Communication Plan',
+      assessment_module: 'Conformity Assessment Module (A / B+C / H)',
+      notified_body: 'Notified Body (if applicable)',
+      certificate_reference: 'Certificate Reference',
+      ce_marking_date: 'CE Marking Date',
+      declaration_text: 'Declaration Text',
+    };
+
+    return Object.entries(fields).map(([fieldKey, _]) => {
+      const currentContent = editContent[sectionKey] || {};
+      const currentFields = currentContent.fields || {};
+      const value = currentFields[fieldKey] || '';
+      const isDateField = fieldKey.includes('date') && !fieldKey.includes('update');
+      const isUrlField = fieldKey.includes('url');
+      const isReadOnly = fieldKey === 'sbom_reference';
+
+      return (
+        <div key={fieldKey} className="tf-field">
+          <label className="tf-field-label">{labels[fieldKey] || fieldKey}</label>
+          {isReadOnly ? (
+            <div className="tf-field-readonly">{value}</div>
+          ) : isDateField ? (
+            <input
+              type="date"
+              className="tf-field-input"
+              value={value}
+              onChange={(e) => {
+                const updated = { ...currentContent, fields: { ...currentFields, [fieldKey]: e.target.value } };
+                setEditContent(prev => ({ ...prev, [sectionKey]: updated }));
+              }}
+            />
+          ) : (
+            <textarea
+              className={`tf-field-textarea ${isUrlField ? 'tf-field-url' : ''}`}
+              rows={isUrlField ? 1 : 4}
+              placeholder={isUrlField ? 'https://...' : `Enter ${(labels[fieldKey] || fieldKey).toLowerCase()}...`}
+              value={value}
+              onChange={(e) => {
+                const updated = { ...currentContent, fields: { ...currentFields, [fieldKey]: e.target.value } };
+                setEditContent(prev => ({ ...prev, [sectionKey]: updated }));
+              }}
+            />
+          )}
+        </div>
+      );
+    });
+  }
+
+  function renderAnnexIChecklist(sectionKey: string) {
+    const currentContent = editContent[sectionKey] || {};
+    const reqs = currentContent.annex_i_requirements || [];
+    if (!reqs.length) return null;
+
+    return (
+      <div className="tf-annex-checklist">
+        <h4 className="tf-subsection-title">Annex I Part I — Essential Requirements Checklist</h4>
+        <p className="tf-subsection-desc">For each requirement, indicate whether it is applicable and provide evidence or justification.</p>
+        <div className="tf-annex-list">
+          {reqs.map((req: any, idx: number) => (
+            <div key={req.ref} className={`tf-annex-item ${req.applicable ? '' : 'tf-annex-na'}`}>
+              <div className="tf-annex-header">
+                <span className="tf-annex-ref">{req.ref}</span>
+                <span className="tf-annex-title">{req.title}</span>
+                <label className="tf-annex-toggle">
+                  <input
+                    type="checkbox"
+                    checked={req.applicable}
+                    onChange={(e) => {
+                      const updated = [...reqs];
+                      updated[idx] = { ...updated[idx], applicable: e.target.checked };
+                      setEditContent(prev => ({
+                        ...prev,
+                        [sectionKey]: { ...currentContent, annex_i_requirements: updated }
+                      }));
+                    }}
+                  />
+                  Applicable
+                </label>
+              </div>
+              {req.applicable ? (
+                <textarea
+                  className="tf-field-textarea"
+                  rows={2}
+                  placeholder="Describe how this requirement is met..."
+                  value={req.evidence || ''}
+                  onChange={(e) => {
+                    const updated = [...reqs];
+                    updated[idx] = { ...updated[idx], evidence: e.target.value };
+                    setEditContent(prev => ({
+                      ...prev,
+                      [sectionKey]: { ...currentContent, annex_i_requirements: updated }
+                    }));
+                  }}
+                />
+              ) : (
+                <textarea
+                  className="tf-field-textarea"
+                  rows={2}
+                  placeholder="Justify why this requirement is not applicable..."
+                  value={req.justification || ''}
+                  onChange={(e) => {
+                    const updated = [...reqs];
+                    updated[idx] = { ...updated[idx], justification: e.target.value };
+                    setEditContent(prev => ({
+                      ...prev,
+                      [sectionKey]: { ...currentContent, annex_i_requirements: updated }
+                    }));
+                  }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (loading && techFileData.sections.length === 0) {
+    return (
+      <div className="pd-placeholder">
+        <Loader2 size={48} strokeWidth={1} className="spin" />
+        <h3>Loading Technical File...</h3>
+      </div>
+    );
+  }
+
   return (
     <div className="pd-techfile">
       <div className="pd-section-intro">
         <FileText size={20} />
         <div>
           <h3>Technical Documentation</h3>
-          <p>The technical file must be compiled before placing the product on the EU market (Annex VII of the CRA).</p>
+          <p>The technical file must be compiled before placing the product on the EU market (CRA Annex VII, Article 31). Click each section to expand and edit.</p>
+        </div>
+        <div className="tf-progress-summary">
+          <span className="tf-progress-count">{techFileData.progress.completed}/{techFileData.progress.total} complete</span>
         </div>
       </div>
       <div className="pd-techfile-list">
-        {sections.map((s, i) => (
-          <div key={i} className="pd-techfile-item">
-            <div className="pd-techfile-status"><Clock size={16} style={{ color: 'var(--muted)' }} /></div>
-            <div className="pd-techfile-content"><h4>{s.title}</h4><p>{s.desc}</p></div>
-            <button className="pd-techfile-action" disabled>Start <ChevronRight size={14} /></button>
-          </div>
-        ))}
+        {techFileData.sections.map((section) => {
+          const isExpanded = expandedSection === section.sectionKey;
+          const cfg = statusConfig[section.status];
+          const StatusIcon = cfg.icon;
+          const currentStatus = editStatus[section.sectionKey] || section.status;
+
+          return (
+            <div key={section.sectionKey} className={`pd-techfile-item ${isExpanded ? 'tf-expanded' : ''}`}>
+              <div className="tf-item-header" onClick={() => toggleSection(section.sectionKey, section)}>
+                <div className="pd-techfile-status">
+                  <StatusIcon size={16} style={{ color: cfg.color }} />
+                </div>
+                <div className="pd-techfile-content">
+                  <h4>{section.title}</h4>
+                  <p>{section.craReference}{section.updatedAt ? ` · Updated ${timeAgo(section.updatedAt)}` : ''}</p>
+                </div>
+                <ChevronRight size={16} className={`tf-chevron ${isExpanded ? 'tf-chevron-open' : ''}`} />
+              </div>
+
+              {isExpanded && (
+                <div className="tf-editor">
+                  <div className="tf-guidance">
+                    <Shield size={14} />
+                    <span>{section.content?.guidance || 'Complete this section per the CRA requirements.'}</span>
+                  </div>
+
+                  {/* Status selector */}
+                  <div className="tf-status-row">
+                    <label className="tf-field-label">Section Status</label>
+                    <select
+                      className="tf-status-select"
+                      value={currentStatus}
+                      onChange={(e) => setEditStatus(prev => ({ ...prev, [section.sectionKey]: e.target.value }))}
+                    >
+                      <option value="not_started">Not Started</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="completed">Complete</option>
+                    </select>
+                  </div>
+
+                  {/* Field editors */}
+                  {section.content?.fields && (
+                    <div className="tf-fields">
+                      {renderFieldEditor(section.sectionKey, section.content.fields)}
+                    </div>
+                  )}
+
+                  {/* Annex I checklist for risk assessment */}
+                  {section.sectionKey === 'risk_assessment' && renderAnnexIChecklist(section.sectionKey)}
+
+                  {/* Notes */}
+                  <div className="tf-field">
+                    <label className="tf-field-label">Internal Notes</label>
+                    <textarea
+                      className="tf-field-textarea"
+                      rows={3}
+                      placeholder="Add any internal notes or comments..."
+                      value={editNotes[section.sectionKey] || ''}
+                      onChange={(e) => setEditNotes(prev => ({ ...prev, [section.sectionKey]: e.target.value }))}
+                    />
+                  </div>
+
+                  {/* Save button */}
+                  <div className="tf-actions">
+                    <button
+                      className="btn btn-primary tf-save-btn"
+                      onClick={() => handleSave(section.sectionKey)}
+                      disabled={saving === section.sectionKey}
+                    >
+                      {saving === section.sectionKey ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+                      {saving === section.sectionKey ? 'Saving...' : 'Save Section'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -764,16 +1176,17 @@ function RiskFindingsTab() {
   );
 }
 
-/* ── Dependencies Tab (with Contributors + Languages) ───────── */
-function DependenciesTab({ ghStatus, ghData, onConnect, onSync, syncing }: {
-  ghStatus: GitHubStatus; ghData: GitHubData; onConnect: () => void; onSync: () => void; syncing: boolean;
+/* ── Dependencies Tab (with SBOM + Contributors + Languages) ───────── */
+function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, onSync, syncing, onRefreshSBOM }: {
+  ghStatus: GitHubStatus; ghData: GitHubData; sbomData: SBOMData; sbomLoading: boolean;
+  onConnect: () => void; onSync: () => void; syncing: boolean; onRefreshSBOM: () => void;
 }) {
   if (!ghStatus.connected) {
     return (
       <div className="pd-placeholder">
         <Github size={48} strokeWidth={1} />
         <h3>Connect GitHub to Discover Dependencies</h3>
-        <p>Connect your GitHub account to scan the repository for dependencies, generate SBOMs, and identify contributors. The CRA requires a machine-readable SBOM.</p>
+        <p>Connect your GitHub account to scan the repository for dependencies, generate SBOMs, and identify contributors. The CRA requires a machine-readable SBOM (Article 13(11)).</p>
         <button className="btn btn-primary" onClick={onConnect}>
           <Github size={18} /> Connect GitHub
         </button>
@@ -786,7 +1199,7 @@ function DependenciesTab({ ghStatus, ghData, onConnect, onSync, syncing }: {
       <div className="pd-placeholder">
         <RefreshCw size={48} strokeWidth={1} />
         <h3>Sync Repository</h3>
-        <p>Your GitHub account is connected. Sync the repository to discover languages, contributors, and prepare for dependency analysis.</p>
+        <p>Your GitHub account is connected. Sync the repository to generate the SBOM, discover languages, and identify contributors.</p>
         <button className="btn btn-primary" onClick={onSync} disabled={syncing}>
           {syncing ? <Loader2 size={18} className="spin" /> : <RefreshCw size={18} />}
           {syncing ? 'Syncing...' : 'Sync Repository'}
@@ -797,6 +1210,66 @@ function DependenciesTab({ ghStatus, ghData, onConnect, onSync, syncing }: {
 
   return (
     <div className="deps-content">
+      {/* SBOM Section */}
+      {sbomData.hasSBOM && sbomData.packages && sbomData.packages.length > 0 && (
+        <div className="pd-card">
+          <div className="pd-card-header">
+            <Package size={18} />
+            <h3>Software Bill of Materials ({sbomData.packageCount} packages)</h3>
+            <div className="sbom-header-actions">
+              {sbomData.isStale && <span className="sbom-stale-badge">Outdated</span>}
+              <button className="pd-sync-btn" onClick={onRefreshSBOM} disabled={sbomLoading}>
+                {sbomLoading ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
+                {sbomLoading ? 'Refreshing...' : 'Refresh SBOM'}
+              </button>
+            </div>
+          </div>
+          {sbomData.syncedAt && (
+            <div className="sbom-meta">
+              <span>SPDX {sbomData.spdxVersion}</span>
+              <span>Last synced: {new Date(sbomData.syncedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          )}
+          <div className="sbom-table-wrapper">
+            <table className="sbom-table">
+              <thead>
+                <tr>
+                  <th>Package</th>
+                  <th>Version</th>
+                  <th>Ecosystem</th>
+                  <th>License</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sbomData.packages.map((pkg, i) => (
+                  <tr key={i}>
+                    <td className="sbom-pkg-name">{pkg.name}</td>
+                    <td className="sbom-pkg-version">{pkg.version || '—'}</td>
+                    <td><span className={`sbom-ecosystem sbom-eco-${pkg.ecosystem}`}>{pkg.ecosystem}</span></td>
+                    <td className="sbom-pkg-license">{pkg.license === 'NOASSERTION' ? '—' : pkg.license}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* No SBOM yet but synced */}
+      {!sbomData.hasSBOM && ghData.synced && (
+        <div className="pd-card pd-card-connect">
+          <div className="pd-card-header">
+            <Package size={18} />
+            <h3>No SBOM Available</h3>
+          </div>
+          <p className="gh-connect-desc">No dependency data was found for this repository. Ensure the repository contains dependency manifests (package.json, requirements.txt, go.mod, etc.).</p>
+          <button className="pd-sync-btn" onClick={onRefreshSBOM} disabled={sbomLoading}>
+            {sbomLoading ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
+            Try Again
+          </button>
+        </div>
+      )}
+
       {/* Languages */}
       {ghData.languages && ghData.languages.length > 0 && (
         <div className="pd-card">
@@ -845,14 +1318,6 @@ function DependenciesTab({ ghStatus, ghData, onConnect, onSync, syncing }: {
           </div>
         </div>
       )}
-
-      <div className="pd-section-intro" style={{ marginTop: '0.5rem' }}>
-        <AlertTriangle size={20} />
-        <div>
-          <h3>Dependency Scanning — Coming Soon</h3>
-          <p>Full dependency tree analysis and SBOM generation from package manifests (package.json, requirements.txt, go.mod, etc.) will be available in a future update.</p>
-        </div>
-      </div>
     </div>
   );
 }

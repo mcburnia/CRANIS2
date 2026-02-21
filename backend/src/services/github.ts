@@ -149,3 +149,97 @@ export async function exchangeCodeForToken(code: string): Promise<{ access_token
     scope: data.scope,
   };
 }
+
+/**
+ * SPDX SBOM response from GitHub's dependency graph API
+ */
+export interface SpdxPackage {
+  SPDXID: string;
+  name: string;
+  versionInfo?: string;
+  downloadLocation?: string;
+  licenseConcluded?: string;
+  licenseDeclared?: string;
+  supplier?: string;
+  externalRefs?: Array<{
+    referenceCategory: string;
+    referenceType: string;
+    referenceLocator: string;
+  }>;
+}
+
+export interface GitHubSBOMResponse {
+  sbom: {
+    spdxVersion: string;
+    dataLicense: string;
+    SPDXID: string;
+    name: string;
+    documentNamespace: string;
+    creationInfo: {
+      created: string;
+      creators: string[];
+    };
+    packages: SpdxPackage[];
+    relationships?: Array<{
+      spdxElementId: string;
+      relatedSpdxElement: string;
+      relationshipType: string;
+    }>;
+  };
+}
+
+/**
+ * Get the SPDX SBOM from GitHub's dependency graph (READ-ONLY)
+ * Returns null if the repo has no dependency data (404)
+ */
+export async function getSBOM(token: string, owner: string, repo: string): Promise<GitHubSBOMResponse | null> {
+  try {
+    console.log(`[SBOM] Fetching from /repos/${owner}/${repo}/dependency-graph/sbom`);
+    const result = await githubGet<GitHubSBOMResponse>(`/repos/${owner}/${repo}/dependency-graph/sbom`, token);
+    console.log(`[SBOM] Success - got ${result?.sbom?.packages?.length || 0} packages`);
+    return result;
+  } catch (err: any) {
+    console.log(`[SBOM] Error: ${err.message}`);
+    // 404 means no dependency data available — not an error
+    if (err.message?.includes('404')) return null;
+    // 403 can mean dependency graph not enabled
+    if (err.message?.includes('403')) return null;
+    throw err;
+  }
+}
+
+// ─── GitHub Releases & Tags ─────────────────────────────────
+export interface GitHubRelease {
+  id: number;
+  tag_name: string;
+  name: string;
+  body: string;
+  draft: boolean;
+  prerelease: boolean;
+  published_at: string;
+  target_commitish: string;
+  html_url: string;
+}
+
+export interface GitHubTag {
+  name: string;
+  commit: { sha: string; url: string };
+}
+
+export async function getReleases(token: string, owner: string, repo: string): Promise<GitHubRelease[]> {
+  try {
+    return await githubGet<GitHubRelease[]>(`/repos/${owner}/${repo}/releases?per_page=100`, token);
+  } catch (err: any) {
+    console.log(`[RELEASES] Error fetching releases: ${err.message}`);
+    return [];
+  }
+}
+
+export async function getTags(token: string, owner: string, repo: string): Promise<GitHubTag[]> {
+  try {
+    return await githubGet<GitHubTag[]>(`/repos/${owner}/${repo}/tags?per_page=100`, token);
+  } catch (err: any) {
+    console.log(`[TAGS] Error fetching tags: ${err.message}`);
+    return [];
+  }
+}

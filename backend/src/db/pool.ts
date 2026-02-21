@@ -65,6 +65,59 @@ export async function initDb() {
       );
     `);
 
+
+    // Product SBOMs — cached SPDX documents from GitHub
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS product_sboms (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id VARCHAR(255) NOT NULL UNIQUE,
+        spdx_json JSONB NOT NULL,
+        spdx_version VARCHAR(20),
+        package_count INT DEFAULT 0,
+        is_stale BOOLEAN DEFAULT FALSE,
+        synced_at TIMESTAMPTZ DEFAULT NOW(),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
+
+    // Technical File sections — CRA Annex VII structured documentation
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS technical_file_sections (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id VARCHAR(255) NOT NULL,
+        section_key VARCHAR(50) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        content JSONB DEFAULT '{}',
+        notes TEXT DEFAULT '',
+        status VARCHAR(20) DEFAULT 'not_started',
+        cra_reference VARCHAR(100),
+        updated_by VARCHAR(255),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(product_id, section_key)
+      );
+    `);
+
+
+    // Product versions — dual versioning (CRANIS2 auto + GitHub releases)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS product_versions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id VARCHAR(255) NOT NULL,
+        cranis_version VARCHAR(20) NOT NULL,
+        github_tag VARCHAR(100),
+        github_release_name VARCHAR(255),
+        github_release_body TEXT,
+        github_commit_sha VARCHAR(40),
+        is_prerelease BOOLEAN DEFAULT FALSE,
+        source VARCHAR(20) NOT NULL DEFAULT 'sync',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_product_versions_product ON product_versions(product_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_product_versions_cranis ON product_versions(product_id, cranis_version)`);
+
     // Index for querying events by user and type
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_user_events_user_id ON user_events(user_id);
