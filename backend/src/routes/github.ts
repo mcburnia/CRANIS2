@@ -851,6 +851,13 @@ router.post('/webhook', async (req: Request, res: Response) => {
       );
 
       console.log(`[WEBHOOK] Marked SBOM stale for product: ${productId}`);
+
+      // Record telemetry (system event — no user, insert directly)
+      await pool.query(
+        `INSERT INTO user_events (event_type, ip_address, user_agent, metadata)
+         VALUES ($1, $2, $3, $4)`,
+        ['webhook_sbom_stale', req.ip || null, req.headers['user-agent'] || 'GitHub-Hookshot', JSON.stringify({ productId, repoUrl, event: 'push' })]
+      );
     }
 
     res.json({ status: 'ok', productsUpdated: result.records.length });
