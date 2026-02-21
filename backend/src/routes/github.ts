@@ -853,11 +853,16 @@ router.post('/webhook', async (req: Request, res: Response) => {
       console.log(`[WEBHOOK] Marked SBOM stale for product: ${productId}`);
 
       // Record telemetry (system event — no user, insert directly)
-      await pool.query(
-        `INSERT INTO user_events (event_type, ip_address, user_agent, metadata)
-         VALUES ($1, $2, $3, $4)`,
-        ['webhook_sbom_stale', req.ip || null, req.headers['user-agent'] || 'GitHub-Hookshot', JSON.stringify({ productId, repoUrl, event: 'push' })]
-      );
+      try {
+        await pool.query(
+          `INSERT INTO user_events (event_type, ip_address, user_agent, metadata)
+           VALUES ($1, $2, $3, $4)`,
+          ['webhook_sbom_stale', req.ip || null, req.headers['user-agent'] || 'GitHub-Hookshot', JSON.stringify({ productId, repoUrl, event: 'push' })]
+        );
+        console.log(`[WEBHOOK] Audit event recorded for product: ${productId}`);
+      } catch (telErr: any) {
+        console.error('[WEBHOOK] Failed to record audit event:', telErr.message);
+      }
     }
 
     res.json({ status: 'ok', productsUpdated: result.records.length });
