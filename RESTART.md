@@ -178,7 +178,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         telemetry.ts       ← Passive telemetry — dual-write to Postgres + Neo4j
         github.ts          ← GitHub API client (READ-ONLY — GET requests + SBOM + releases/tags)
         scheduler.ts       ← Daily auto-sync scheduler (stale SBOMs at 2 AM)
-        vulnerability-scanner.ts ← Multi-source CVE scanner (OSV.dev + GitHub Advisory + NVD)
+        vulnerability-scanner.ts ← Platform-wide CVE scanner (OSV + GitHub Advisory + NVD, deduplication)
       middleware/
         requirePlatformAdmin.ts ← Platform admin auth middleware (JWT + DB check)
       utils/
@@ -194,6 +194,8 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
       App.tsx              ← RouterProvider wrapper
       index.css            ← Global CSS (design system variables + utilities)
       router.tsx           ← All route definitions with RootLayout
+      hooks/
+        useNotifications.ts <- Unread notification count polling (60s interval)
       context/
         AuthContext.tsx     ← Auth state (user + orgId), login/logout/refreshUser, session check
       layouts/
@@ -214,7 +216,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         repositories/      ← ReposPage (live), ContributorsPage (live), DependenciesPage (live), RiskFindingsPage (live)
         billing/           ← BillingPage, ReportsPage (stubs)
         settings/          ← StakeholdersPage (live), OrganisationPage (live), AuditLogPage (live)
-        notifications/     ← NotificationsPage (stub)
+        notifications/     ← NotificationsPage (live — filters, mark-read, severity badges)
         admin/             ← AdminDashboardPage, AdminOrgsPage, AdminUsersPage, AdminAuditLogPage, AdminSystemPage
 ```
 
@@ -240,7 +242,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 
 **Authenticated (with sidebar, requires JWT + org):**
 - `/dashboard` → Dashboard (live — real data from Neo4j + Postgres, vulnerability summary)
-- `/notifications` → Notifications (stub)
+- `/notifications` → Notifications (live — type/severity filters, mark-all-read, navigation links)
 - `/products` → Products list with add modal (live — CRUD backed by Neo4j)
 - `/products/:productId` → Product detail with tabs + GitHub integration
 - `/obligations` → CRA obligations tracker (live — cross-product status tracking)
@@ -298,7 +300,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 | GET | /api/dependencies/overview | Cross-product dependency + license overview |
 | GET | /api/risk-findings/overview | Cross-product vulnerability findings overview |
 | GET | /api/risk-findings/:productId | Per-product vulnerability findings |
-| POST | /api/risk-findings/:productId/scan | Trigger vulnerability scan (OSV + GitHub + NVD) |
+| GET | /api/risk-findings/platform-scan/latest | Latest platform-wide scan summary |
 | GET | /api/risk-findings/scan/:scanId | Poll scan status + performance data |
 | GET | /api/risk-findings/:productId/scan-history | Scan performance history with aggregate stats |
 | PUT | /api/risk-findings/:findingId | Dismiss/acknowledge a vulnerability finding |
@@ -310,6 +312,13 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 | POST | /api/admin/invite | Invite new user via email (optional org assignment + admin flag) |
 | GET | /api/admin/audit-log | Cross-org paginated audit log with event type/email filters |
 | GET | /api/admin/system | System health (scan perf, DB row counts, error rates) |
+| GET | /api/notifications | List notifications (type/read filters, pagination) |
+| GET | /api/notifications/unread-count | Unread notification count for sidebar badge |
+| PUT | /api/notifications/read-all | Mark all notifications as read |
+| PUT | /api/notifications/:id/read | Mark single notification as read |
+| POST | /api/admin/vulnerability-scan | Trigger platform-wide vulnerability scan (admin only) |
+| GET | /api/admin/vulnerability-scan/status | Latest scan status with per-product breakdown |
+| GET | /api/admin/vulnerability-scan/history | Paginated scan run history |
 | POST | /api/auth/accept-invite | Accept invitation — set password, activate account |
 
 ## Database Schema
@@ -754,7 +763,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-02-22 (session 2)
+**Last updated:** 2026-02-22 (session 3)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -804,6 +813,11 @@ sudo systemctl restart cloudflared
 - **Admin Audit Log** — Cross-org paginated event table with event type and email filters
 - **Admin System Health** — Scan performance metrics, DB row counts, error rates, recent scan history
 - **User Invite System** — Platform admins invite users via email (Resend), optional org pre-assignment, set-password flow, re-invite support
+- **Notifications system** -- Backend API (list/unread-count/mark-read), notifications service, sidebar unread badge with 60s polling, full notifications page with type/severity filters and mark-all-read
+- **Platform-wide vulnerability scanning** -- Admin-only, deduplicates all SBOM components across all products, scans OSV + GitHub Advisory + NVD once, attributes findings to all affected products, sends targeted notifications to stakeholders (security contacts, compliance officers) and platform admins
+- **Admin Vulnerability Scan page** -- Manual scan trigger, current scan summary with per-source timing, per-product findings breakdown table, paginated scan history
+- **Daily scheduled vulnerability scan** -- Runs at 3 AM (after 2 AM SBOM sync), uses same platform-wide deduplication approach
+- **platform_scan_runs table** -- Tracks platform-wide scan operations with per-source timing (OSV/GitHub/NVD), aggregate severity metrics, new findings count
 - **Accept Invite Page** — `/accept-invite` page with password strength validation, auto-login on completion, org-aware redirect
 
 **Known Issues:**
@@ -814,7 +828,7 @@ sudo systemctl restart cloudflared
 
 **Next Steps:**
 - **Phase 2: Automated vulnerability scanning** — Daily SBOM update + vulnerability checks + stakeholder notifications
-- Stub pages remaining: Billing, Reports, Notifications
+- Stub pages remaining: Billing, Reports
 - Verify poste.cranis2.com DKIM in Resend, then confirm invite emails deliver
 - Remove dev routes before production deployment
 - Remove SBOM debug logging from services/github.ts
