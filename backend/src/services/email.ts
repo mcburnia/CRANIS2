@@ -33,3 +33,39 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
     `,
   });
 }
+
+
+export async function sendInviteEmail(to: string, token: string, inviterEmail: string): Promise<void> {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
+  const from = process.env.EMAIL_FROM || 'info@cranis2.com';
+  const inviteUrl = `${frontendUrl}/accept-invite?token=${token}`;
+
+  await resend.emails.send({
+    from: `CRANIS2 <${from}>`,
+    to,
+    subject: "You've been invited to CRANIS2",
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 2rem;">
+        <h1 style="font-size: 1.5rem; color: #e4e4e7; margin-bottom: 1rem;">
+          Welcome to <span style="color: #3b82f6;">CRANIS2</span>
+        </h1>
+        <p style="color: #8b8d98; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem;">
+          <strong style="color: #e4e4e7;">${inviterEmail}</strong> has invited you to join CRANIS2 — the CRA compliance platform for software organisations.
+        </p>
+        <p style="color: #8b8d98; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+          Click the button below to set up your password and activate your account.
+        </p>
+        <a href="${inviteUrl}" style="display: inline-block; background: #3b82f6; color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.95rem;">
+          Set Up Your Account
+        </a>
+        <p style="color: #8b8d98; font-size: 0.8rem; margin-top: 1.5rem;">
+          This link expires in 7 days. If you weren't expecting this invite, you can safely ignore this email.
+        </p>
+        <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 2rem 0;" />
+        <p style="color: #8b8d98; font-size: 0.75rem;">
+          CRANIS2 — CRA Compliance Made Simple
+        </p>
+      </div>
+    `,
+  });
+}

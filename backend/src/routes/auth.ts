@@ -4,6 +4,7 @@ import { hashPassword, verifyPassword } from '../utils/password.js';
 import { generateVerificationToken, generateSessionToken } from '../utils/token.js';
 import { sendVerificationEmail } from '../services/email.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
+import { getDriver } from '../db/neo4j.js';
 
 const router = Router();
 
@@ -331,6 +332,95 @@ router.get('/verify-email', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Verification error:', err);
     res.status(500).json({ error: 'Verification failed. Please try again.' });
+  }
+});
+
+
+// POST /api/auth/accept-invite — Accept an invitation and set password
+router.post('/accept-invite', async (req: Request, res: Response) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      res.status(400).json({ error: 'Token and password are required' });
+      return;
+    }
+
+    // Validate password strength (same rules as registration)
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[^A-Za-z0-9]/.test(password);
+    const isLongEnough = password.length >= 8;
+
+    if (!hasUpper || !hasLower || !hasNumber || !hasSpecial || !isLongEnough) {
+      res.status(400).json({ error: 'Password does not meet strength requirements' });
+      return;
+    }
+
+    // Look up invited user by token
+    const result = await pool.query(
+      `SELECT id, email, org_id, token_expires_at FROM users
+       WHERE verification_token = $1 AND email_verified = FALSE AND invited_by IS NOT NULL`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(400).json({ error: 'Invalid or expired invitation link' });
+      return;
+    }
+
+    const user = result.rows[0];
+
+    // Check expiry
+    if (new Date() > new Date(user.token_expires_at)) {
+      res.status(400).json({ error: 'Invitation link has expired. Please ask your admin to resend the invite.' });
+      return;
+    }
+
+    // Hash password and activate account
+    const passwordHash = await hashPassword(password);
+    await pool.query(
+      `UPDATE users SET password_hash = $1, email_verified = TRUE,
+       verification_token = NULL, token_expires_at = NULL, updated_at = NOW()
+       WHERE id = $2`,
+      [passwordHash, user.id]
+    );
+
+    // If user has an org, create Neo4j User node and BELONGS_TO relationship
+    if (user.org_id) {
+      const neo4jSession = getDriver().session();
+      try {
+        await neo4jSession.run(
+          `MATCH (o:Organisation {id: $orgId})
+           MERGE (u:User {id: $userId})
+           ON CREATE SET u.email = $email, u.createdAt = datetime()
+           MERGE (u)-[:BELONGS_TO]->(o)`,
+          { orgId: user.org_id, userId: user.id, email: user.email }
+        );
+      } finally {
+        await neo4jSession.close();
+      }
+    }
+
+    // Generate session token
+    const sessionToken = generateSessionToken(user.id, user.email);
+
+    // Record telemetry
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: user.id,
+      email: user.email,
+      eventType: 'invite_accepted',
+      ipAddress: reqData.ipAddress,
+      userAgent: reqData.userAgent,
+      acceptLanguage: reqData.acceptLanguage,
+    });
+
+    res.json({ session: sessionToken, email: user.email, hasOrg: !!user.org_id });
+  } catch (err) {
+    console.error('Accept invite error:', err);
+    res.status(500).json({ error: 'Failed to activate account. Please try again.' });
   }
 });
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, CheckCircle, Search, Loader, Clock, Mail, Building2, XCircle } from 'lucide-react';
+import { Shield, CheckCircle, Search, Loader, Clock, Mail, Building2, XCircle, UserPlus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
@@ -16,6 +16,11 @@ interface AdminUser {
   preferredLanguage: string | null;
   lastLogin: string | null;
   createdAt: string;
+}
+
+interface OrgOption {
+  id: string;
+  name: string;
 }
 
 type FilterType = 'all' | 'admins' | 'unverified' | 'active';
@@ -42,7 +47,17 @@ export default function AdminUsersPage() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [confirmToggle, setConfirmToggle] = useState<{ userId: string; email: string; newStatus: boolean } | null>(null);
 
-  useEffect(() => { fetchUsers(); }, []);
+  // Invite state
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteOrgId, setInviteOrgId] = useState('');
+  const [inviteAdmin, setInviteAdmin] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState('');
+  const [inviteSuccess, setInviteSuccess] = useState('');
+  const [orgs, setOrgs] = useState<OrgOption[]>([]);
+
+  useEffect(() => { fetchUsers(); fetchOrgs(); }, []);
 
   async function fetchUsers() {
     try {
@@ -56,6 +71,18 @@ export default function AdminUsersPage() {
       setError('Failed to load users');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchOrgs() {
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch('/api/admin/orgs', { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return;
+      const data = await res.json();
+      setOrgs(data.orgs.map((o: any) => ({ id: o.id, name: o.name })));
+    } catch {
+      // Non-critical — invite will still work without org selection
     }
   }
 
@@ -79,6 +106,38 @@ export default function AdminUsersPage() {
       alert('Network error');
     } finally {
       setToggling(null);
+    }
+  }
+
+  async function handleInvite() {
+    setInviting(true);
+    setInviteError('');
+    setInviteSuccess('');
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch('/api/admin/invite', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: inviteEmail,
+          orgId: inviteOrgId || undefined,
+          isPlatformAdmin: inviteAdmin,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setInviteError(data.error || 'Failed to send invite');
+        return;
+      }
+      setInviteSuccess(`Invitation sent to ${inviteEmail}${data.reinvite ? ' (re-sent)' : ''}`);
+      setInviteEmail('');
+      setInviteOrgId('');
+      setInviteAdmin(false);
+      await fetchUsers();
+    } catch {
+      setInviteError('Network error');
+    } finally {
+      setInviting(false);
     }
   }
 
@@ -117,16 +176,21 @@ export default function AdminUsersPage() {
             className="au-search-input"
           />
         </div>
-        <div className="au-filters">
-          {(['all', 'admins', 'unverified', 'active'] as FilterType[]).map(f => (
-            <button
-              key={f}
-              className={`au-filter-btn ${filter === f ? 'au-filter-active' : ''}`}
-              onClick={() => setFilter(f)}
-            >
-              {f === 'all' ? 'All' : f === 'admins' ? 'Admins' : f === 'unverified' ? 'Unverified' : 'Active'}
-            </button>
-          ))}
+        <div className="au-controls-right">
+          <div className="au-filters">
+            {(['all', 'admins', 'unverified', 'active'] as FilterType[]).map(f => (
+              <button
+                key={f}
+                className={`au-filter-btn ${filter === f ? 'au-filter-active' : ''}`}
+                onClick={() => setFilter(f)}
+              >
+                {f === 'all' ? 'All' : f === 'admins' ? 'Admins' : f === 'unverified' ? 'Unverified' : 'Active'}
+              </button>
+            ))}
+          </div>
+          <button className="au-invite-btn" onClick={() => { setShowInviteModal(true); setInviteError(''); setInviteSuccess(''); }}>
+            <UserPlus size={16} /> Invite User
+          </button>
         </div>
       </div>
 
@@ -163,7 +227,7 @@ export default function AdminUsersPage() {
               {u.emailVerified ? (
                 <span className="au-status-badge au-verified"><CheckCircle size={12} /> Verified</span>
               ) : (
-                <span className="au-status-badge au-unverified"><XCircle size={12} /> Unverified</span>
+                <span className="au-status-badge au-unverified"><XCircle size={12} /> Invited</span>
               )}
             </div>
             <div className="au-col-login">
@@ -190,7 +254,7 @@ export default function AdminUsersPage() {
         ))}
       </div>
 
-      {/* Confirmation modal */}
+      {/* Admin toggle confirmation modal */}
       {confirmToggle && (
         <div className="au-modal-overlay" onClick={() => setConfirmToggle(null)}>
           <div className="au-modal" onClick={e => e.stopPropagation()}>
@@ -209,6 +273,70 @@ export default function AdminUsersPage() {
                 {confirmToggle.newStatus ? 'Grant Admin' : 'Revoke Admin'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite user modal */}
+      {showInviteModal && (
+        <div className="au-modal-overlay" onClick={() => setShowInviteModal(false)}>
+          <div className="au-modal au-invite-modal" onClick={e => e.stopPropagation()}>
+            <h3><UserPlus size={18} /> Invite User</h3>
+            {inviteSuccess ? (
+              <>
+                <p className="au-invite-success">{inviteSuccess}</p>
+                <div className="au-modal-actions">
+                  <button className="au-btn-cancel" onClick={() => { setShowInviteModal(false); setInviteSuccess(''); }}>Close</button>
+                  <button className="au-btn-confirm au-btn-grant" onClick={() => setInviteSuccess('')}>Invite Another</button>
+                </div>
+              </>
+            ) : (
+              <>
+                {inviteError && <div className="au-invite-error">{inviteError}</div>}
+                <div className="au-invite-form">
+                  <div className="au-invite-field">
+                    <label>Email address</label>
+                    <input
+                      type="email"
+                      className="au-invite-input"
+                      placeholder="user@company.com"
+                      value={inviteEmail}
+                      onChange={e => setInviteEmail(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="au-invite-field">
+                    <label>Organisation <span className="au-optional">(optional)</span></label>
+                    <select
+                      className="au-invite-input"
+                      value={inviteOrgId}
+                      onChange={e => setInviteOrgId(e.target.value)}
+                    >
+                      <option value="">No organisation — user will create their own</option>
+                      {orgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                    </select>
+                  </div>
+                  <label className="au-invite-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={inviteAdmin}
+                      onChange={e => setInviteAdmin(e.target.checked)}
+                    />
+                    <span>Grant platform admin access</span>
+                  </label>
+                </div>
+                <div className="au-modal-actions">
+                  <button className="au-btn-cancel" onClick={() => setShowInviteModal(false)}>Cancel</button>
+                  <button
+                    className="au-btn-confirm au-btn-grant"
+                    onClick={handleInvite}
+                    disabled={!inviteEmail || inviting}
+                  >
+                    {inviting ? 'Sending...' : 'Send Invite'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

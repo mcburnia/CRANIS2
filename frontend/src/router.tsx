@@ -8,6 +8,7 @@ import LoginPage from './pages/public/LoginPage';
 import SignupPage from './pages/public/SignupPage';
 import CheckEmailPage from './pages/public/CheckEmailPage';
 import VerifyEmailPage from './pages/public/VerifyEmailPage';
+import AcceptInvitePage from './pages/public/AcceptInvitePage';
 import WelcomePage from './pages/setup/WelcomePage';
 import OrgSetupPage from './pages/setup/OrgSetupPage';
 
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
           { path: '/signup', element: <SignupPage /> },
           { path: '/check-email', element: <CheckEmailPage /> },
           { path: '/verify-email', element: <VerifyEmailPage /> },
+          { path: '/accept-invite', element: <AcceptInvitePage /> },
           { path: '/welcome', element: <WelcomePage /> },
           { path: '/setup/org', element: <OrgSetupPage /> },
         ],

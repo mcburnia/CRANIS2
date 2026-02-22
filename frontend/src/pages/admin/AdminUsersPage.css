@@ -151,6 +151,58 @@
 .au-btn-revoke { background: var(--red); }
 .au-btn-revoke:hover { background: #dc2626; }
 
+
+/* Controls right group */
+.au-controls-right {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+}
+
+/* Invite button */
+.au-invite-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 1rem; background: var(--purple); color: #fff;
+  border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: background 0.2s; white-space: nowrap;
+}
+.au-invite-btn:hover { background: #9333ea; }
+
+/* Invite modal */
+.au-invite-modal h3 {
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.au-invite-form { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.25rem; }
+.au-invite-field label {
+  display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted);
+  margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.au-optional { font-weight: 400; text-transform: none; letter-spacing: normal; }
+.au-invite-input {
+  width: 100%; padding: 0.55rem 0.75rem; background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border); border-radius: 6px; color: var(--text);
+  font-size: 0.85rem; outline: none; box-sizing: border-box;
+}
+.au-invite-input:focus { border-color: var(--purple); }
+select.au-invite-input { cursor: pointer; }
+select.au-invite-input option { background: var(--surface); color: var(--text); }
+
+.au-invite-checkbox {
+  display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;
+  color: var(--text); cursor: pointer;
+}
+.au-invite-checkbox input[type="checkbox"] {
+  accent-color: var(--purple); width: 16px; height: 16px; cursor: pointer;
+}
+
+.au-invite-error {
+  background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--red); padding: 0.5rem 0.75rem; border-radius: 6px;
+  font-size: 0.85rem; margin-bottom: 1rem;
+}
+.au-invite-success {
+  color: var(--green); font-size: 0.9rem; margin: 0 0 1.25rem; line-height: 1.5;
+}
+.au-btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
 @media (max-width: 768px) {
   .au-stat-cards { grid-template-columns: repeat(2, 1fr); }
   .au-table-header { display: none; }

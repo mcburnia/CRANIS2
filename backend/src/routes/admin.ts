@@ -2,6 +2,9 @@ import { Router, Request, Response } from 'express';
 import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { requirePlatformAdmin } from '../middleware/requirePlatformAdmin.js';
+import { generateVerificationToken } from '../utils/token.js';
+import { sendInviteEmail } from '../services/email.js';
+import { recordEvent, extractRequestData } from '../services/telemetry.js';
 
 const router = Router();
 
@@ -840,6 +843,132 @@ router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) 
   } catch (err) {
     console.error('Admin system health error:', err);
     res.status(500).json({ error: 'Failed to fetch system health data' });
+  }
+});
+
+
+const DEV_MODE = process.env.DEV_SKIP_EMAIL === 'true';
+
+// POST /admin/invite — Invite a new user via email
+router.post('/invite', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const { email, orgId, isPlatformAdmin } = req.body;
+    const adminUserId = (req as any).userId;
+    const adminEmail = (req as any).email;
+
+    if (!email || typeof email !== 'string') {
+      res.status(400).json({ error: 'Email is required' });
+      return;
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Basic email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      res.status(400).json({ error: 'Invalid email address' });
+      return;
+    }
+
+    // Check if user already exists
+    const existing = await pool.query(
+      'SELECT id, email_verified, invited_by FROM users WHERE email = $1',
+      [normalizedEmail]
+    );
+
+    if (existing.rows.length > 0) {
+      const existingUser = existing.rows[0];
+
+      // Allow re-invite for unaccepted invitations
+      if (!existingUser.email_verified && existingUser.invited_by) {
+        const token = generateVerificationToken();
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        await pool.query(
+          `UPDATE users SET verification_token = $1, token_expires_at = $2, org_id = $3,
+           is_platform_admin = $4, invited_by = $5, updated_at = NOW() WHERE id = $6`,
+          [token, expiresAt, orgId || null, isPlatformAdmin || false, adminUserId, existingUser.id]
+        );
+
+        if (DEV_MODE) {
+          const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
+          console.log(`[DEV MODE] Re-invite URL for ${normalizedEmail}: ${frontendUrl}/accept-invite?token=${token}`);
+        } else {
+          await sendInviteEmail(normalizedEmail, token, adminEmail);
+        }
+
+        const reqData = extractRequestData(req);
+        await recordEvent({
+          userId: adminUserId,
+          email: adminEmail,
+          eventType: 'user_reinvited',
+          ipAddress: reqData.ipAddress,
+          userAgent: reqData.userAgent,
+          acceptLanguage: reqData.acceptLanguage,
+          metadata: { invitedEmail: normalizedEmail, orgId: orgId || null, isPlatformAdmin: isPlatformAdmin || false },
+        });
+
+        res.json({ success: true, userId: existingUser.id, email: normalizedEmail, reinvite: true });
+        return;
+      }
+
+      res.status(409).json({ error: 'A user with this email already exists' });
+      return;
+    }
+
+    // Validate org exists if provided
+    if (orgId) {
+      const neo4jSession = getDriver().session();
+      try {
+        const orgResult = await neo4jSession.run(
+          'MATCH (o:Organisation {id: $orgId}) RETURN o.id AS id',
+          { orgId }
+        );
+        if (orgResult.records.length === 0) {
+          res.status(400).json({ error: 'Organisation not found' });
+          return;
+        }
+      } finally {
+        await neo4jSession.close();
+      }
+    }
+
+    // Generate invite token (7-day expiry)
+    const token = generateVerificationToken();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    // Create user record (no usable password)
+    const result = await pool.query(
+      `INSERT INTO users (email, password_hash, email_verified, verification_token, token_expires_at,
+       org_id, org_role, is_platform_admin, invited_by)
+       VALUES ($1, '', FALSE, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [normalizedEmail, token, expiresAt, orgId || null, orgId ? 'member' : 'admin',
+       isPlatformAdmin || false, adminUserId]
+    );
+
+    // Send invite email (or log in dev mode)
+    if (DEV_MODE) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
+      console.log(`[DEV MODE] Invite URL for ${normalizedEmail}: ${frontendUrl}/accept-invite?token=${token}`);
+    } else {
+      await sendInviteEmail(normalizedEmail, token, adminEmail);
+    }
+
+    // Record telemetry
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: adminUserId,
+      email: adminEmail,
+      eventType: 'user_invited',
+      ipAddress: reqData.ipAddress,
+      userAgent: reqData.userAgent,
+      acceptLanguage: reqData.acceptLanguage,
+      metadata: { invitedEmail: normalizedEmail, orgId: orgId || null, isPlatformAdmin: isPlatformAdmin || false },
+    });
+
+    res.status(201).json({ success: true, userId: result.rows[0].id, email: normalizedEmail });
+  } catch (err) {
+    console.error('Admin invite error:', err);
+    res.status(500).json({ error: 'Failed to send invitation' });
   }
 });
 
