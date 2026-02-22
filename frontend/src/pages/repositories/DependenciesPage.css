@@ -1,0 +1,99 @@
+.dp-stats { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.dp-filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+.dp-filter-btn {
+  padding: 0.4rem 1rem; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--muted); cursor: pointer; font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+.dp-filter-btn:hover { border-color: var(--accent); color: var(--text); }
+.dp-filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.dp-product-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 1rem; overflow: hidden;
+}
+.dp-card-header {
+  display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.dp-card-header h3 { margin: 0; font-size: 1rem; }
+.dp-card-header h3 a { color: var(--text); text-decoration: none; }
+.dp-card-header h3 a:hover { color: var(--accent); }
+
+.dp-sbom-info {
+  display: flex; gap: 1rem; align-items: center; margin-left: auto;
+  font-size: 0.8rem; color: var(--muted); flex-wrap: wrap;
+}
+.dp-sbom-badge {
+  font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600;
+}
+.dp-sbom-badge.fresh { background: rgba(76, 175, 80, 0.15); color: var(--green); }
+.dp-sbom-badge.stale { background: rgba(255, 152, 0, 0.15); color: var(--amber); }
+.dp-sbom-badge.none { background: rgba(255, 255, 255, 0.08); color: var(--muted); }
+
+.dp-count-badge {
+  font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px;
+  background: rgba(100, 149, 237, 0.15); color: var(--accent); font-weight: 600;
+}
+
+.dp-license-bar {
+  display: flex; height: 6px; border-radius: 3px; overflow: hidden;
+  margin: 0 1.25rem 0.75rem; background: var(--border);
+}
+.dp-license-bar-segment { height: 100%; min-width: 2px; }
+
+.dp-license-legend {
+  display: flex; gap: 1rem; padding: 0 1.25rem 0.75rem; flex-wrap: wrap;
+  font-size: 0.75rem; color: var(--muted);
+}
+.dp-legend-item { display: flex; align-items: center; gap: 0.3rem; }
+.dp-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.dp-search-bar {
+  padding: 0 1.25rem 0.75rem;
+}
+.dp-search-input {
+  width: 100%; padding: 0.4rem 0.75rem; border: 1px solid var(--border);
+  border-radius: 6px; background: rgba(255,255,255,0.04); color: var(--text);
+  font-size: 0.85rem; box-sizing: border-box;
+}
+.dp-search-input:focus { outline: none; border-color: var(--accent); }
+.dp-search-input::placeholder { color: var(--muted); }
+
+.dp-deps-table {
+  width: 100%; border-collapse: collapse; font-size: 0.82rem;
+}
+.dp-deps-table th {
+  text-align: left; padding: 0.5rem 1.25rem; color: var(--muted);
+  font-weight: 500; font-size: 0.75rem; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.dp-deps-table td {
+  padding: 0.4rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text);
+}
+.dp-deps-table tr:hover td { background: rgba(255,255,255,0.02); }
+.dp-deps-table .license { color: var(--muted); }
+.dp-deps-table .ecosystem { color: var(--muted); font-size: 0.75rem; }
+
+.dp-show-more {
+  padding: 0.5rem 1.25rem; text-align: center;
+}
+.dp-show-more button {
+  background: none; border: 1px solid var(--border); color: var(--accent);
+  padding: 0.35rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+}
+.dp-show-more button:hover { border-color: var(--accent); }
+
+.dp-no-sbom {
+  padding: 1.5rem 1.25rem; color: var(--muted); font-size: 0.85rem; text-align: center;
+}
+.dp-no-sbom a { color: var(--accent); text-decoration: none; }
+
+.dp-empty { color: var(--muted); text-align: center; padding: 3rem 1rem; }
+.dp-empty a { color: var(--accent); text-decoration: none; }
+
+@media (max-width: 768px) {
+  .dp-card-header { flex-direction: column; align-items: flex-start; }
+  .dp-sbom-info { margin-left: 0; }
+}

@@ -616,7 +616,7 @@ export default function ProductDetailPage() {
         {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} syncHistory={syncHistory} syncStats={syncStats} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} />}
         {activeTab === 'obligations' && <ObligationsTab product={product} />}
         {activeTab === 'technical-file' && <TechnicalFileTab productId={productId!} techFileData={techFileData} loading={techFileLoading} onUpdate={fetchTechFileData} />}
-        {activeTab === 'risk-findings' && <RiskFindingsTab />}
+        {activeTab === 'risk-findings' && <RiskFindingsTab productId={product.id} />}
         {activeTab === 'dependencies' && <DependenciesTab ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} sbomLoading={sbomLoading} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onRefreshSBOM={handleRefreshSBOM} />}
       </div>
     </>
@@ -1286,12 +1286,137 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
 }
 
 /* ── Risk Findings Tab ─────────────────────────────────────── */
-function RiskFindingsTab() {
+function RiskFindingsTab({ productId }: { productId: string }) {
+  const [findings, setFindings] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
+  const [lastScan, setLastScan] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [scanning, setScanning] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const token = localStorage.getItem('session_token');
+
+  const fetchFindings = () => {
+    fetch(`/api/risk-findings/${productId}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { setFindings(d.findings || []); setSummary(d.summary || null); setLastScan(d.lastScan || null); setLoading(false); })
+      .catch(() => setLoading(false));
+  };
+
+  useEffect(() => { fetchFindings(); }, [productId]);
+
+  const handleScan = async () => {
+    setScanning(true);
+    try {
+      const resp = await fetch(`/api/risk-findings/${productId}/scan`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      const result = await resp.json();
+      if (result.scanId) {
+        let done = false; let attempts = 0;
+        while (!done && attempts < 60) {
+          await new Promise(r => setTimeout(r, 3000));
+          const poll = await fetch(`/api/risk-findings/scan/${result.scanId}`, { headers: { Authorization: `Bearer ${token}` } });
+          const pollData = await poll.json();
+          if (pollData.status === 'completed' || pollData.status === 'failed') done = true;
+          attempts++;
+        }
+      }
+    } catch (err) { console.error('Scan failed', err); }
+    setScanning(false);
+    fetchFindings();
+  };
+
+  const handleDismiss = async (findingId: string) => {
+    const reason = prompt('Reason for dismissing (optional):');
+    await fetch(`/api/risk-findings/${findingId}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'dismissed', reason: reason || '' }),
+    });
+    fetchFindings();
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  };
+
+  if (loading) return <div className="pd-placeholder"><p>Loading risk findings...</p></div>;
+
+  const severityColor: Record<string, string> = { critical: '#dc2626', high: '#f97316', medium: 'var(--amber)', low: '#3b82f6' };
+
   return (
-    <div className="pd-placeholder">
-      <AlertTriangle size={48} strokeWidth={1} />
-      <h3>No Risk Findings Yet</h3>
-      <p>Once repositories are connected and scanned, vulnerability and risk findings will appear here. This includes CVEs from dependencies, code analysis results, and CRA risk assessments.</p>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div>
+          {summary && (
+            <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+              {summary.total} findings ({summary.open} open) &mdash;
+              {summary.critical > 0 && <span style={{ color: '#dc2626', fontWeight: 600 }}> {summary.critical} critical</span>}
+              {summary.high > 0 && <span style={{ color: '#f97316', fontWeight: 600 }}> {summary.high} high</span>}
+              {summary.medium > 0 && <span style={{ color: 'var(--amber)' }}> {summary.medium} medium</span>}
+              {summary.low > 0 && <span style={{ color: '#3b82f6' }}> {summary.low} low</span>}
+            </span>
+          )}
+          {lastScan && <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '1rem' }}>Last scan: {new Date(lastScan.completed_at).toLocaleString()}</span>}
+        </div>
+        <button onClick={handleScan} disabled={scanning}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 1rem', borderRadius: '6px', border: '1px solid var(--accent)', background: 'var(--accent)', color: '#fff', cursor: scanning ? 'not-allowed' : 'pointer', fontSize: '0.85rem', opacity: scanning ? 0.6 : 1 }}>
+          {scanning ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={14} />}
+          {scanning ? 'Scanning...' : 'Scan Now'}
+        </button>
+      </div>
+
+      {findings.length === 0 && !lastScan && (
+        <div className="pd-placeholder">
+          <Shield size={48} strokeWidth={1} />
+          <h3>No Risk Findings Yet</h3>
+          <p>Click "Scan Now" to check dependencies against OSV.dev, GitHub Advisories, and NVD.</p>
+        </div>
+      )}
+
+      {findings.length === 0 && lastScan && (
+        <div className="pd-placeholder" style={{ color: 'var(--green)' }}>
+          <Shield size={48} strokeWidth={1} />
+          <h3>No Vulnerabilities Found</h3>
+          <p>The last scan found no known vulnerabilities in your dependencies.</p>
+        </div>
+      )}
+
+      {findings.map(f => (
+        <div key={f.id} style={{ borderBottom: '1px solid var(--border)', padding: '0.6rem 0' }}>
+          <div onClick={() => toggleExpand(f.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
+            <span style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', borderRadius: '3px', fontWeight: 700, textTransform: 'uppercase' as const, background: `${severityColor[f.severity]}33`, color: severityColor[f.severity], minWidth: '55px', textAlign: 'center' as const }}>{f.severity}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{f.title.substring(0, 120)}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--muted)', display: 'flex', gap: '1rem', flexWrap: 'wrap' as const }}>
+                <span>{f.source_id}</span>
+                <span>{f.dependency_name}@{f.dependency_version}</span>
+                {f.fixed_version && <span>Fix: {f.fixed_version}</span>}
+              </div>
+            </div>
+            <span style={{ fontSize: '0.75rem', color: f.status === 'open' ? 'var(--amber)' : 'var(--muted)' }}>{f.status}</span>
+          </div>
+          {expandedIds.has(f.id) && (
+            <div style={{ paddingLeft: '4rem', paddingTop: '0.5rem', fontSize: '0.8rem', color: 'var(--muted)' }}>
+              {f.mitigation && (
+                <div style={{ background: 'rgba(100, 149, 237, 0.08)', border: '1px solid rgba(100, 149, 237, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)', marginBottom: '0.3rem', textTransform: 'uppercase' as const }}>Recommended Action</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text)', lineHeight: 1.5 }}>{f.mitigation}</div>
+                </div>
+              )}
+              {!f.mitigation && f.fixed_version && (
+                <div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--green)', marginBottom: '0.3rem', textTransform: 'uppercase' as const }}>Fix Available</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text)' }}>Upgrade {f.dependency_name} to version {f.fixed_version} or later.</div>
+                </div>
+              )}
+              <p>{f.description?.substring(0, 500)}</p>
+              {f.status === 'open' && <button onClick={() => handleDismiss(f.id)} style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--muted)', padding: '0.2rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', marginTop: '0.5rem' }}>Dismiss</button>}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

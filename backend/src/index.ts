@@ -13,6 +13,10 @@ import dashboardRoutes from './routes/dashboard.js';
 import stakeholderRoutes from './routes/stakeholders.js';
 import technicalFilesOverviewRoutes from './routes/technical-files-overview.js';
 import obligationRoutes from './routes/obligations.js';
+import reposOverviewRoutes from "./routes/repos-overview.js";
+import contributorsOverviewRoutes from "./routes/contributors-overview.js";
+import dependenciesOverviewRoutes from "./routes/dependencies-overview.js";
+import riskFindingsRoutes from "./routes/risk-findings.js";
 import { startScheduler } from './services/scheduler.js';
 
 const app = express();
@@ -37,6 +41,10 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/stakeholders', stakeholderRoutes);
 app.use('/api/technical-files', technicalFilesOverviewRoutes);
 app.use('/api/obligations', obligationRoutes);
+app.use('/api/repos', reposOverviewRoutes);
+app.use('/api/contributors', contributorsOverviewRoutes);
+app.use('/api/dependencies', dependenciesOverviewRoutes);
+app.use('/api/risk-findings', riskFindingsRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

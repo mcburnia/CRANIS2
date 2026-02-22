@@ -1,0 +1,60 @@
+.cp-stats { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.cp-filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+.cp-filter-btn {
+  padding: 0.4rem 1rem; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--muted); cursor: pointer; font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+.cp-filter-btn:hover { border-color: var(--accent); color: var(--text); }
+.cp-filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.cp-product-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 1rem; overflow: hidden;
+}
+.cp-card-header {
+  display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.cp-card-header h3 { margin: 0; font-size: 1rem; }
+.cp-card-header h3 a { color: var(--text); text-decoration: none; }
+.cp-card-header h3 a:hover { color: var(--accent); }
+.cp-repo-name { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+.cp-count-badge {
+  font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px;
+  background: rgba(76, 175, 80, 0.15); color: var(--green); font-weight: 600;
+}
+
+.cp-contributors-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem; padding: 1rem 1.25rem;
+}
+
+.cp-contributor {
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem;
+  border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.02);
+  transition: border-color 0.15s;
+}
+.cp-contributor:hover { border-color: var(--accent); }
+.cp-contributor a { text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem; width: 100%; }
+
+.cp-avatar {
+  width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--border);
+}
+.cp-contributor-info { flex: 1; min-width: 0; }
+.cp-contributor-login { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+.cp-contributor-commits { font-size: 0.75rem; color: var(--muted); }
+
+.cp-no-repo {
+  padding: 1.5rem 1.25rem; color: var(--muted); font-size: 0.85rem; text-align: center;
+}
+.cp-no-repo a { color: var(--accent); text-decoration: none; }
+
+.cp-empty { color: var(--muted); text-align: center; padding: 3rem 1rem; }
+.cp-empty a { color: var(--accent); text-decoration: none; }
+
+@media (max-width: 768px) {
+  .cp-contributors-grid { grid-template-columns: 1fr; }
+  .cp-card-header { flex-direction: column; align-items: flex-start; }
+}

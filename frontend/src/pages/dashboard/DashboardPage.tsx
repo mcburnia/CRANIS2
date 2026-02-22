@@ -17,6 +17,7 @@ interface DashboardProduct {
   techFileProgress: number;
   techFileSections: { total: number; completed: number };
   lastSync: string | null;
+  riskFindings: { total: number; critical: number; high: number; open: number };
 }
 
 interface DashboardStats {
@@ -34,9 +35,21 @@ interface ActivityItem {
   metadata: Record<string, any> | null;
 }
 
+interface RiskFindingsSummary {
+  total: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  open: number;
+  dismissed: number;
+  lastScanAt: string | null;
+}
+
 interface DashboardData {
   products: DashboardProduct[];
   stats: DashboardStats;
+  riskFindings: RiskFindingsSummary;
   recentActivity: ActivityItem[];
 }
 
@@ -72,6 +85,8 @@ function getActivityDotColor(eventType: string): string {
   if (eventType === 'login' || eventType === 'register') return 'blue';
   if (['github_repo_synced', 'sbom_refreshed', 'github_connected'].includes(eventType)) return 'green';
   if (eventType === 'webhook_sbom_stale') return 'amber';
+  if (eventType === 'vulnerability_scan_triggered') return 'amber';
+  if (eventType === 'vulnerability_finding_updated') return 'green';
   if (eventType.startsWith('login_failed')) return 'red';
   return 'blue';
 }
@@ -88,6 +103,8 @@ function getActivityText(item: ActivityItem): string {
     case 'github_connected': return 'GitHub connected';
     case 'org_created': return 'Organisation created';
     case 'login_failed_bad_password': return 'Failed login attempt';
+    case 'vulnerability_scan_triggered': return `Vulnerability scan started for ${item.metadata?.productId ? 'product' : 'all products'}`;
+    case 'vulnerability_finding_updated': return `Vulnerability finding ${item.metadata?.status || 'updated'}`;
     default: return item.eventType.replace(/_/g, ' ');
   }
 }
@@ -139,7 +156,7 @@ export default function DashboardPage() {
     );
   }
 
-  const { products, stats, recentActivity } = data;
+  const { products, stats, riskFindings, recentActivity } = data;
 
   // Find most recent sync across all products
   const lastSyncDates = products.map(p => p.lastSync).filter(Boolean) as string[];
@@ -178,7 +195,7 @@ export default function DashboardPage() {
         <StatCard label="Connected Repos" value={stats.connectedRepos} color="blue" sub={stats.staleSboms > 0 ? `${stats.staleSboms} stale` : 'all fresh'} />
         <StatCard label="Contributors" value={stats.totalContributors} color="amber" />
         <StatCard label="Dependencies" value={stats.totalDependencies} color="green" sub={`across ${stats.connectedRepos} repo${stats.connectedRepos !== 1 ? 's' : ''}`} />
-        <StatCard label="Risk Findings" value="\u2014" color="red" sub="coming soon" />
+        <StatCard label="Risk Findings" value={riskFindings.total} color={riskFindings.critical > 0 ? 'red' : riskFindings.high > 0 ? 'amber' : 'green'} sub={riskFindings.total > 0 ? `${riskFindings.open} open` : riskFindings.lastScanAt ? 'none found' : 'not scanned yet'} />
       </div>
 
       <div className="section">
@@ -219,12 +236,51 @@ export default function DashboardPage() {
 
       <div className="section">
         <h3><ShieldAlert size={18} /> Dependency Risk Findings</h3>
-        <div className="risk-card">
-          <div className="risk-header">
-            <div className="risk-title">Coming Soon</div>
+        {riskFindings.total === 0 && !riskFindings.lastScanAt ? (
+          <div className="risk-card">
+            <div className="risk-header">
+              <div className="risk-title">No Scans Yet</div>
+            </div>
+            <div className="risk-detail">Go to <Link to="/risk-findings">Risk Findings</Link> and click "Scan All Products" to check your dependencies for known vulnerabilities.</div>
           </div>
-          <div className="risk-detail">Automated vulnerability scanning for your dependencies will be available in a future release.</div>
-        </div>
+        ) : riskFindings.total === 0 ? (
+          <div className="risk-card" style={{ borderColor: 'var(--green)' }}>
+            <div className="risk-header">
+              <div className="risk-title" style={{ color: 'var(--green)' }}>All Clear</div>
+            </div>
+            <div className="risk-detail">No known vulnerabilities found across your dependencies. Last scan: {riskFindings.lastScanAt ? new Date(riskFindings.lastScanAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'never'}.</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+              {riskFindings.critical > 0 && <div className="risk-card" style={{ flex: 1, minWidth: '120px', borderColor: '#dc2626' }}><div className="risk-header"><div className="risk-title" style={{ color: '#dc2626', fontSize: '1.5rem', fontWeight: 700 }}>{riskFindings.critical}</div></div><div className="risk-detail" style={{ color: '#dc2626' }}>Critical</div></div>}
+              {riskFindings.high > 0 && <div className="risk-card" style={{ flex: 1, minWidth: '120px', borderColor: '#f97316' }}><div className="risk-header"><div className="risk-title" style={{ color: '#f97316', fontSize: '1.5rem', fontWeight: 700 }}>{riskFindings.high}</div></div><div className="risk-detail" style={{ color: '#f97316' }}>High</div></div>}
+              {riskFindings.medium > 0 && <div className="risk-card" style={{ flex: 1, minWidth: '120px' }}><div className="risk-header"><div className="risk-title" style={{ fontSize: '1.5rem', fontWeight: 700 }}>{riskFindings.medium}</div></div><div className="risk-detail">Medium</div></div>}
+              {riskFindings.low > 0 && <div className="risk-card" style={{ flex: 1, minWidth: '120px' }}><div className="risk-header"><div className="risk-title" style={{ fontSize: '1.5rem', fontWeight: 700 }}>{riskFindings.low}</div></div><div className="risk-detail">Low</div></div>}
+            </div>
+            <table>
+              <thead>
+                <tr><th>Product</th><th>Findings</th><th>Critical</th><th>High</th><th>Open</th></tr>
+              </thead>
+              <tbody>
+                {products.filter(p => p.riskFindings && p.riskFindings.total > 0).map(p => (
+                  <tr key={p.id}>
+                    <td><Link to={`/products/${p.id}?tab=risk-findings`}>{p.name}</Link></td>
+                    <td>{p.riskFindings.total}</td>
+                    <td>{p.riskFindings.critical > 0 ? <span style={{ color: '#dc2626', fontWeight: 600 }}>{p.riskFindings.critical}</span> : <span style={{ color: 'var(--muted)' }}>0</span>}</td>
+                    <td>{p.riskFindings.high > 0 ? <span style={{ color: '#f97316', fontWeight: 600 }}>{p.riskFindings.high}</span> : <span style={{ color: 'var(--muted)' }}>0</span>}</td>
+                    <td>{p.riskFindings.open}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.5rem' }}>
+              {riskFindings.dismissed > 0 && <span>{riskFindings.dismissed} dismissed. </span>}
+              Last scan: {riskFindings.lastScanAt ? new Date(riskFindings.lastScanAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'never'}.
+              {' '}<Link to="/risk-findings" style={{ color: 'var(--accent)' }}>View all findings</Link>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="section">

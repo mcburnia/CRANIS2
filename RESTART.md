@@ -128,8 +128,8 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 - GitHubRepo nodes (owner, name, description, stars, forks, language, visibility)
 - Contributor nodes (githubLogin, avatarUrl, contributions count)
 - Relationships: (Organisation)-[:BELONGS_TO]-(Product), (Product)-[:HAS_REPO]->(GitHubRepo), (GitHubRepo)-[:HAS_CONTRIBUTOR]->(Contributor)
-- Dependency nodes + DEPENDS_ON relationships (future)
-- Vulnerability/CVE nodes (future)
+- Dependency nodes + DEPENDS_ON relationships (live — from SBOM sync)
+- Vulnerability findings tracked in Postgres (vulnerability_findings + vulnerability_scans tables)
 - Supply chain traversal queries (e.g. "which products are affected by this CVE through any depth of dependency?")
 
 ## Project Structure
@@ -159,6 +159,14 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         github.ts          ← GitHub OAuth flow, repo sync, SBOM, versions, webhook
         technical-file.ts  ← CRA Annex VII technical file CRUD (8 sections)
         audit.ts           ← GET /audit/events (paginated audit log)
+        dashboard.ts       ← GET /dashboard (aggregate stats with vulnerability data)
+        stakeholders.ts    ← GET/PUT stakeholders (org + product CRA contacts)
+        technical-files-overview.ts ← GET /technical-files/overview (cross-product compliance)
+        obligations.ts     ← GET/PUT obligations (cross-product status tracker)
+        repos-overview.ts  ← GET /repos/overview (cross-product repo summary)
+        contributors-overview.ts ← GET /contributors/overview
+        dependencies-overview.ts ← GET /dependencies/overview (+ license analysis)
+        risk-findings.ts   ← Vulnerability scanning + findings CRUD (5 endpoints)
         dev.ts             ← Dev-only routes (nuke button — MUST REMOVE BEFORE PRODUCTION)
       db/
         pool.ts            ← Postgres pool + schema init (users, user_events, github_connections)
@@ -169,6 +177,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         telemetry.ts       ← Passive telemetry — dual-write to Postgres + Neo4j
         github.ts          ← GitHub API client (READ-ONLY — GET requests + SBOM + releases/tags)
         scheduler.ts       ← Daily auto-sync scheduler (stale SBOMs at 2 AM)
+        vulnerability-scanner.ts ← Multi-source CVE scanner (OSV.dev + GitHub Advisory + NVD)
       utils/
         password.ts        ← bcrypt hashing (12 salt rounds)
         token.ts           ← JWT generation/verification + email verification tokens
@@ -197,10 +206,10 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         setup/             ← WelcomePage, OrgSetupPage (wizard with CRA role selection)
         dashboard/         ← DashboardPage (fully migrated)
         products/          ← ProductsPage (list + add modal), ProductDetailPage (tabs + GitHub UI)
-        compliance/        ← ObligationsPage, TechnicalFilesPage (stubs)
-        repositories/      ← ReposPage, ContributorsPage, DependenciesPage, RiskFindingsPage (stubs)
+        compliance/        ← ObligationsPage (live), TechnicalFilesPage (live)
+        repositories/      ← ReposPage (live), ContributorsPage (live), DependenciesPage (live), RiskFindingsPage (live)
         billing/           ← BillingPage, ReportsPage (stubs)
-        settings/          ← StakeholdersPage (stub), OrganisationPage (live), AuditLogPage (live)
+        settings/          ← StakeholdersPage (live), OrganisationPage (live), AuditLogPage (live)
         notifications/     ← NotificationsPage (stub)
 ```
 
@@ -216,19 +225,19 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 - `/setup/org` → Organisation setup wizard
 
 **Authenticated (with sidebar, requires JWT + org):**
-- `/dashboard` → Dashboard (fully migrated with stats, tables, activity feed)
+- `/dashboard` → Dashboard (live — real data from Neo4j + Postgres, vulnerability summary)
 - `/notifications` → Notifications (stub)
 - `/products` → Products list with add modal (live — CRUD backed by Neo4j)
 - `/products/:productId` → Product detail with tabs + GitHub integration
-- `/obligations` → CRA obligations (stub)
-- `/technical-files` → Technical documentation (stub)
-- `/repos` → Repository management (stub)
-- `/contributors` → Contributor tracking (stub)
-- `/dependencies` → Dependency/SBOM management (stub)
-- `/risk-findings` → Vulnerability findings (stub)
+- `/obligations` → CRA obligations tracker (live — cross-product status tracking)
+- `/technical-files` → Technical files overview (live — cross-product compliance dashboard)
+- `/repos` → Repository overview (live — cross-product repo summary)
+- `/contributors` → Contributor tracking (live — cross-product contributor grid)
+- `/dependencies` → Dependency management (live — license analysis, SBOM status)
+- `/risk-findings` → Vulnerability findings (live — multi-source CVE scanning)
 - `/billing` → Billing (stub)
 - `/reports` → Compliance reports (stub)
-- `/stakeholders` → Team management (stub)
+- `/stakeholders` → CRA stakeholder management (live — org + product contacts)
 - `/organisation` → Organisation settings (live — editable)
 - `/audit-log` → Audit trail (live — paginated event log)
 
@@ -263,6 +272,22 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 | GET | /api/technical-file/:productId | Get all technical file sections (auto-creates defaults) |
 | PUT | /api/technical-file/:productId/:sectionKey | Update a technical file section |
 | GET | /api/technical-file/:productId/progress | Get technical file completion progress |
+| GET | /api/dashboard | Aggregate dashboard data (real data from Neo4j + Postgres + vulnerability summary) |
+| GET | /api/stakeholders?orgId=xxx | Get all stakeholders for an organisation |
+| PUT | /api/stakeholders/:roleKey | Update stakeholder contact details |
+| GET | /api/technical-files/overview | Cross-product technical file compliance overview |
+| GET | /api/obligations/overview | Cross-product CRA obligations overview |
+| GET | /api/obligations/:productId | Per-product obligations |
+| PUT | /api/obligations/:productId/:obligationKey | Update obligation status |
+| GET | /api/repos/overview | Cross-product repository summary |
+| GET | /api/contributors/overview | Cross-product contributor overview |
+| GET | /api/dependencies/overview | Cross-product dependency + license overview |
+| GET | /api/risk-findings/overview | Cross-product vulnerability findings overview |
+| GET | /api/risk-findings/:productId | Per-product vulnerability findings |
+| POST | /api/risk-findings/:productId/scan | Trigger vulnerability scan (OSV + GitHub + NVD) |
+| GET | /api/risk-findings/scan/:scanId | Poll scan status + performance data |
+| GET | /api/risk-findings/:productId/scan-history | Scan performance history with aggregate stats |
+| PUT | /api/risk-findings/:findingId | Dismiss/acknowledge a vulnerability finding |
 
 ## Database Schema
 
@@ -350,6 +375,102 @@ CREATE TABLE product_versions (
   is_prerelease BOOLEAN DEFAULT FALSE,
   source VARCHAR(20) NOT NULL DEFAULT 'sync',
   created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Sync history (repo sync performance tracking)
+CREATE TABLE sync_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id VARCHAR(255) NOT NULL,
+  org_id UUID NOT NULL,
+  sync_type VARCHAR(20) DEFAULT 'manual',
+  duration_seconds NUMERIC(10,2),
+  status VARCHAR(20) DEFAULT 'completed',
+  error_message TEXT,
+  triggered_by VARCHAR(255),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Stakeholders (CRA/NIS2 compliance contacts)
+CREATE TABLE stakeholders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL,
+  product_id VARCHAR(255),
+  role_key VARCHAR(50) NOT NULL,
+  name VARCHAR(255) DEFAULT '',
+  email VARCHAR(255) DEFAULT '',
+  phone VARCHAR(50) DEFAULT '',
+  organisation VARCHAR(255) DEFAULT '',
+  address TEXT DEFAULT '',
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Obligations (CRA compliance status tracking)
+CREATE TABLE obligations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL,
+  product_id VARCHAR(255) NOT NULL,
+  obligation_key VARCHAR(100) NOT NULL,
+  status VARCHAR(20) DEFAULT 'not_started',
+  updated_by VARCHAR(255),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(org_id, product_id, obligation_key)
+);
+
+-- Vulnerability scans (scan execution tracking with performance data)
+CREATE TABLE vulnerability_scans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL,
+  product_id VARCHAR(255) NOT NULL,
+  started_at TIMESTAMPTZ DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
+  status VARCHAR(20) DEFAULT 'running',
+  findings_count INT DEFAULT 0,
+  critical_count INT DEFAULT 0,
+  high_count INT DEFAULT 0,
+  medium_count INT DEFAULT 0,
+  low_count INT DEFAULT 0,
+  duration_seconds NUMERIC(10,2),
+  dependency_count INTEGER,
+  osv_duration_ms INTEGER,
+  osv_findings INTEGER,
+  github_duration_ms INTEGER,
+  github_findings INTEGER,
+  nvd_duration_ms INTEGER,
+  nvd_findings INTEGER,
+  triggered_by VARCHAR(255),
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Vulnerability findings (CVE data from OSV/GitHub/NVD)
+CREATE TABLE vulnerability_findings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL,
+  product_id VARCHAR(255) NOT NULL,
+  scan_id UUID REFERENCES vulnerability_scans(id),
+  source VARCHAR(20) NOT NULL,
+  source_id VARCHAR(255),
+  severity VARCHAR(20) NOT NULL,
+  cvss_score DECIMAL(3,1),
+  title VARCHAR(500) NOT NULL,
+  description TEXT,
+  dependency_name VARCHAR(255),
+  dependency_version VARCHAR(100),
+  dependency_ecosystem VARCHAR(50),
+  dependency_purl VARCHAR(1000),
+  affected_versions TEXT,
+  fixed_version VARCHAR(100),
+  references_url TEXT,
+  mitigation TEXT DEFAULT '',
+  status VARCHAR(20) DEFAULT 'open',
+  dismissed_by VARCHAR(255),
+  dismissed_at TIMESTAMPTZ,
+  dismissed_reason TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(product_id, source, source_id, dependency_purl)
 );
 ```
 
@@ -442,7 +563,7 @@ Products represent software products that need CRA compliance tracking. Each pro
 - `class_i` (Important) — Products with digital element requiring third-party assessment
 - `class_ii` (Critical) — Critical products requiring EU-level assessment
 
-**ProductDetailPage tabs**: Overview (product info + GitHub repo card + version history + SBOM summary + compliance progress), Obligations (stub), Technical File (CRA Annex VII — 8 expandable sections with inline editors, Annex I checklist, status tracking), Risk Findings (stub), Dependencies (SBOM table with ecosystem badges + language breakdown + contributors)
+**ProductDetailPage tabs**: Overview (product info + GitHub repo card + version history + SBOM summary + compliance progress), Obligations (live — per-product CRA obligation tracker), Technical File (CRA Annex VII — 8 expandable sections with inline editors, Annex I checklist, status tracking), Risk Findings (live — per-product vulnerability scanning with dismiss/acknowledge), Dependencies (SBOM table with ecosystem badges + language breakdown + contributors)
 
 ## User Registration + Org Setup Flow
 
@@ -608,7 +729,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-02-21
+**Last updated:** 2026-02-22
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -620,7 +741,6 @@ sudo systemctl restart cloudflared
 - Login with JWT session tokens
 - Auth context with protected routes (redirects to /login if no session, /setup/org if no org)
 - Landing page fully migrated from HTML prototype
-- Dashboard page fully migrated (stats, tables, risk cards, activity feed)
 - Responsive sidebar with 5 navigation sections
 - Neo4j integration — Organisation nodes stored in graph database
 - Org setup wizard — collects name, country, company size, CRA role, industry
@@ -641,6 +761,19 @@ sudo systemctl restart cloudflared
 - **Stale SBOM UI** — Sync button shows "Update Available" with pulse animation when stale, dimmed when fresh
 - **Daily auto-sync scheduler** — checks hourly, syncs stale SBOMs at 2 AM, generates new version
 - **Cloudflare Tunnel** — `dev.cranis2.dev` publicly accessible, systemd service, survives reboots
+- **Sync duration tracking** — Per-sync timing stored in `sync_history` table, displayed on product cards
+- **Dashboard (real data)** — Aggregate stats from Neo4j + Postgres, product table, activity feed, risk findings summary
+- **Stakeholders page** — Org-level (manufacturer contact, authorised rep, compliance officer) + product-level (security contact, tech file owner, incident response lead) CRA/NIS2 contacts with inline editing
+- **Technical Files overview** — Cross-product compliance dashboard with StatCards, progress bars, deep links to section editors
+- **Obligations tracker** — Cross-product CRA obligation status tracking (22 obligations), persisted in Postgres, inline status changes
+- **Repos overview** — Cross-product repository summary with StatCards (connected/disconnected), repo details, sync status
+- **Contributors overview** — Cross-product contributor grid with avatar display, GitHub profile links, contribution counts
+- **Dependencies overview** — Cross-product dependency management with license analysis (MIT/ISC/copyleft risk), SBOM status, searchable dependency tables
+- **Vulnerability scanning** — Multi-source CVE scanning against OSV.dev (batch PURL), GitHub Advisory Database, and NVD (rate-limited). Per-finding severity, mitigation guidance, CRA Art. 13(6) references
+- **Risk Findings page** — Cross-product vulnerability overview with severity breakdown, expandable findings, dismiss/acknowledge workflow
+- **Scan performance tracking** — Per-source timing (OSV/GitHub/NVD), scan history with aggregate stats (avg/min/max)
+- **Dashboard risk card** — Real vulnerability data replacing "coming soon" placeholder, severity breakdown, per-product findings
+- **Product RiskFindingsTab** — Per-product vulnerability findings with scan trigger, severity badges, mitigation display, dismiss actions
 
 **Known Issues:**
 - DNS for poste.cranis2.com still pending (DEV_SKIP_EMAIL remains true)
@@ -648,15 +781,11 @@ sudo systemctl restart cloudflared
 - SBOM debug logging still in `services/github.ts` (console.log statements) — remove before production
 
 **Next Steps:**
-- **Add sync duration tracking** — timestamp before each repo sync, measure elapsed seconds, store in DB for workload balancing at scale (3600+ repo contributors)
-- Connect dashboard to real data from Postgres + Neo4j (currently prototype data)
+- **Platform Admin Dashboard** — CRANIS2 staff-only admin area (is_platform_admin role, admin layout, cross-org stats, org/user management, system health)
+- **Phase 2: Automated vulnerability scanning** — Daily SBOM update + vulnerability checks + stakeholder notifications
+- Stub pages remaining: Billing, Reports, Notifications
 - Switch DEV_SKIP_EMAIL to false once email domain is verified
 - Remove dev routes before production deployment
 - Remove SBOM debug logging from services/github.ts
-- Migrate remaining stub pages:
-  - Obligations, Repos, Contributors, Dependencies, Risk Findings
-  - Billing, Reports, Stakeholders
-- Implement Risk Findings (vulnerability tracking)
-- Full dependency scanning and vulnerability correlation (Neo4j graph queries)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 

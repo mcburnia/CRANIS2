@@ -1,0 +1,65 @@
+.rp-stats { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.rp-filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+.rp-filter-btn {
+  padding: 0.4rem 1rem; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--muted); cursor: pointer; font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+.rp-filter-btn:hover { border-color: var(--accent); color: var(--text); }
+.rp-filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.rp-product-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 1rem; overflow: hidden;
+}
+.rp-card-header {
+  display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem;
+  flex-wrap: wrap;
+}
+.rp-card-header h3 { margin: 0; font-size: 1rem; }
+.rp-card-header h3 a { color: var(--text); text-decoration: none; }
+.rp-card-header h3 a:hover { color: var(--accent); }
+.rp-badge {
+  font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px;
+  font-weight: 600; text-transform: uppercase;
+}
+.rp-badge.public { background: rgba(76, 175, 80, 0.15); color: var(--green); }
+.rp-badge.private { background: rgba(255, 152, 0, 0.15); color: var(--amber); }
+.rp-badge.disconnected { background: rgba(255, 255, 255, 0.08); color: var(--muted); }
+
+.rp-repo-details {
+  padding: 0 1.25rem 1rem; display: flex; gap: 2rem; flex-wrap: wrap;
+  font-size: 0.85rem; color: var(--muted);
+}
+.rp-repo-detail { display: flex; align-items: center; gap: 0.35rem; }
+.rp-repo-detail .label { color: var(--muted); }
+.rp-repo-detail .value { color: var(--text); font-weight: 500; }
+
+.rp-repo-meta {
+  padding: 0 1.25rem 1rem; display: flex; gap: 1.5rem; flex-wrap: wrap;
+  font-size: 0.8rem; color: var(--muted);
+}
+
+.rp-disconnected {
+  padding: 1rem 1.25rem; color: var(--muted); font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+.rp-disconnected a { color: var(--accent); text-decoration: none; }
+.rp-disconnected a:hover { text-decoration: underline; }
+
+.rp-empty { color: var(--muted); text-align: center; padding: 3rem 1rem; }
+.rp-empty a { color: var(--accent); text-decoration: none; }
+
+.rp-description {
+  padding: 0 1.25rem 0.5rem; font-size: 0.85rem; color: var(--muted);
+  font-style: italic;
+}
+
+.rp-lang-dot {
+  width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+}
+
+@media (max-width: 768px) {
+  .rp-card-header { flex-direction: column; align-items: flex-start; }
+  .rp-repo-details { flex-direction: column; gap: 0.5rem; }
+}

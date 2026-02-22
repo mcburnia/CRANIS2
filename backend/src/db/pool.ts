@@ -190,6 +190,62 @@ export async function initDb() {
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_obligations_product_key ON obligations(org_id, product_id, obligation_key)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_obligations_product ON obligations(product_id)`);
 
+
+    // Vulnerability scans — tracking scan runs per product
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS vulnerability_scans (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        started_at TIMESTAMPTZ DEFAULT NOW(),
+        completed_at TIMESTAMPTZ,
+        status VARCHAR(20) DEFAULT 'running',
+        findings_count INT DEFAULT 0,
+        critical_count INT DEFAULT 0,
+        high_count INT DEFAULT 0,
+        medium_count INT DEFAULT 0,
+        low_count INT DEFAULT 0,
+        source VARCHAR(50),
+        error_message TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_scans_product ON vulnerability_scans(product_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_scans_org ON vulnerability_scans(org_id)`);
+
+    // Vulnerability findings — individual CVEs/advisories found per product
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS vulnerability_findings (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        scan_id UUID REFERENCES vulnerability_scans(id),
+        source VARCHAR(20) NOT NULL,
+        source_id VARCHAR(255),
+        severity VARCHAR(20) NOT NULL,
+        cvss_score DECIMAL(3,1),
+        title VARCHAR(500) NOT NULL,
+        description TEXT,
+        dependency_name VARCHAR(255),
+        dependency_version VARCHAR(100),
+        dependency_ecosystem VARCHAR(50),
+        dependency_purl VARCHAR(1000),
+        affected_versions TEXT,
+        fixed_version VARCHAR(100),
+        references_url TEXT,
+        mitigation TEXT DEFAULT '',
+        status VARCHAR(20) DEFAULT 'open',
+        dismissed_by VARCHAR(255),
+        dismissed_at TIMESTAMPTZ,
+        dismissed_reason TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_findings_product ON vulnerability_findings(product_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_findings_scan ON vulnerability_findings(scan_id)`);
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_vuln_findings_unique ON vulnerability_findings(product_id, source, source_id, dependency_purl)`);
+
     console.log('Database schema initialized');
   } finally {
     client.release();

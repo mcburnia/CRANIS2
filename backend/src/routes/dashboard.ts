@@ -155,8 +155,51 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       metadata: row.metadata,
     }));
 
+    // --- Postgres: vulnerability findings summary ---
+    let riskFindings = { total: 0, critical: 0, high: 0, medium: 0, low: 0, open: 0, dismissed: 0, lastScanAt: null as string | null };
+    let productRiskMap: Record<string, { total: number; critical: number; high: number; open: number }> = {};
+    if (productIds.length > 0) {
+      const vulnResult = await pool.query(
+        `SELECT product_id, severity, status, count(*) as cnt
+         FROM vulnerability_findings
+         WHERE org_id = $1
+         GROUP BY product_id, severity, status`,
+        [orgId]
+      );
+      for (const row of vulnResult.rows) {
+        const cnt = parseInt(row.cnt);
+        riskFindings.total += cnt;
+        if (row.severity === 'critical') riskFindings.critical += cnt;
+        if (row.severity === 'high') riskFindings.high += cnt;
+        if (row.severity === 'medium') riskFindings.medium += cnt;
+        if (row.severity === 'low') riskFindings.low += cnt;
+        if (row.status === 'open') riskFindings.open += cnt;
+        if (row.status === 'dismissed') riskFindings.dismissed += cnt;
+
+        if (!productRiskMap[row.product_id]) productRiskMap[row.product_id] = { total: 0, critical: 0, high: 0, open: 0 };
+        productRiskMap[row.product_id].total += cnt;
+        if (row.severity === 'critical') productRiskMap[row.product_id].critical += cnt;
+        if (row.severity === 'high') productRiskMap[row.product_id].high += cnt;
+        if (row.status === 'open') productRiskMap[row.product_id].open += cnt;
+      }
+
+      const lastScanResult = await pool.query(
+        `SELECT MAX(completed_at) as last_scan
+         FROM vulnerability_scans
+         WHERE org_id = $1 AND status = 'completed'`,
+        [orgId]
+      );
+      riskFindings.lastScanAt = lastScanResult.rows[0]?.last_scan || null;
+    }
+
+    // Enrich products with risk data
+    const finalProducts = enrichedProducts.map(p => ({
+      ...p,
+      riskFindings: productRiskMap[p.id] || { total: 0, critical: 0, high: 0, open: 0 },
+    }));
+
     res.json({
-      products: enrichedProducts,
+      products: finalProducts,
       stats: {
         totalProducts: products.length,
         connectedRepos,
@@ -164,6 +207,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
         totalDependencies,
         staleSboms,
       },
+      riskFindings,
       recentActivity,
     });
 
