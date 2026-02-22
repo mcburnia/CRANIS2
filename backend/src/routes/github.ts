@@ -418,6 +418,9 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       return;
     }
 
+    const syncStartedAt = new Date();
+    const syncStartMs = Date.now();
+
     // Fetch ALL data from GitHub in parallel (ALL READ-ONLY GET requests)
     console.log("[SYNC] Fetching SBOM for", parsed.owner, parsed.repo);
     const [repoData, contributors, languages, sbomData, releases, tags] = await Promise.all([
@@ -582,6 +585,15 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
         sbomPackages: sbomResult?.packageCount || 0,
       },
     });
+
+    // Record sync duration
+    const syncDurationSeconds = (Date.now() - syncStartMs) / 1000;
+    console.log(`[SYNC] Duration: ${syncDurationSeconds.toFixed(2)}s for ${parsed.owner}/${parsed.repo}`);
+    await pool.query(
+      `INSERT INTO sync_history (product_id, sync_type, started_at, duration_seconds, package_count, contributor_count, release_count, cranis_version, triggered_by, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [productId, 'manual', syncStartedAt, syncDurationSeconds, sbomResult?.packageCount || 0, contributors.length, publishedReleases.length, cranisVersion, userEmail, 'success']
+    );
 
     // Build response
     const totalBytes = Object.values(languages).reduce((sum, b) => sum + b, 0);
@@ -914,6 +926,76 @@ router.get('/versions/:productId', requireAuth, async (req: Request, res: Respon
         source: row.source,
         createdAt: row.created_at,
       })),
+    });
+  } finally {
+    await neo4jSession.close();
+  }
+});
+
+// ─── GET /api/github/sync-history/:productId ─────────────────────
+// Get sync duration history for a product
+router.get('/sync-history/:productId', requireAuth, async (req: Request, res: Response) => {
+  const orgId = await getUserOrgId((req as any).userId);
+  if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+  const productId = req.params.productId as string;
+
+  const neo4jSession = getDriver().session();
+  try {
+    const check = await neo4jSession.run(
+      `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId}) RETURN p`,
+      { orgId, productId }
+    );
+    if (check.records.length === 0) {
+      res.status(404).json({ error: 'Product not found' });
+      return;
+    }
+
+    const result = await pool.query(
+      `SELECT sync_type, started_at, duration_seconds, package_count,
+              contributor_count, release_count, cranis_version,
+              triggered_by, status, error_message, created_at
+       FROM sync_history
+       WHERE product_id = $1
+       ORDER BY started_at DESC
+       LIMIT 50`,
+      [productId]
+    );
+
+    // Also get aggregate stats
+    const stats = await pool.query(
+      `SELECT
+         COUNT(*) as total_syncs,
+         ROUND(AVG(duration_seconds)::numeric, 2) as avg_duration,
+         ROUND(MIN(duration_seconds)::numeric, 2) as min_duration,
+         ROUND(MAX(duration_seconds)::numeric, 2) as max_duration,
+         COUNT(*) FILTER (WHERE status = 'error') as error_count
+       FROM sync_history
+       WHERE product_id = $1`,
+      [productId]
+    );
+
+    res.json({
+      history: result.rows.map((row: any) => ({
+        syncType: row.sync_type,
+        startedAt: row.started_at,
+        durationSeconds: parseFloat(row.duration_seconds),
+        packageCount: row.package_count,
+        contributorCount: row.contributor_count,
+        releaseCount: row.release_count,
+        cranisVersion: row.cranis_version,
+        triggeredBy: row.triggered_by,
+        status: row.status,
+        errorMessage: row.error_message,
+        createdAt: row.created_at,
+      })),
+      stats: stats.rows[0] ? {
+        totalSyncs: parseInt(stats.rows[0].total_syncs),
+        avgDuration: parseFloat(stats.rows[0].avg_duration) || 0,
+        minDuration: parseFloat(stats.rows[0].min_duration) || 0,
+        maxDuration: parseFloat(stats.rows[0].max_duration) || 0,
+        errorCount: parseInt(stats.rows[0].error_count),
+      } : null,
     });
   } finally {
     await neo4jSession.close();

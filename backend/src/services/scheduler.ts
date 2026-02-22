@@ -47,6 +47,8 @@ async function getProductGitHubToken(productId: string): Promise<{ token: string
 
 async function autoSyncProduct(productId: string): Promise<boolean> {
   console.log(`[AUTO-SYNC] Syncing product ${productId}`);
+  const syncStartedAt = new Date();
+  const syncStartMs = Date.now();
 
   const auth = await getProductGitHubToken(productId);
   if (!auth) {
@@ -175,10 +177,23 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
       { productId, version: cranisVersion }
     );
 
-    console.log(`[AUTO-SYNC] Completed: ${productId} → ${cranisVersion}`);
+    // Record sync duration
+    const syncDurationSeconds = (Date.now() - syncStartMs) / 1000;
+    console.log(`[AUTO-SYNC] Completed: ${productId} → ${cranisVersion} (${syncDurationSeconds.toFixed(2)}s)`);
+    await pool.query(
+      `INSERT INTO sync_history (product_id, sync_type, started_at, duration_seconds, package_count, contributor_count, release_count, cranis_version, triggered_by, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [productId, 'auto', syncStartedAt, syncDurationSeconds, sbomData?.sbom?.packages?.length || 0, 0, publishedReleases.length, cranisVersion, 'scheduler', 'success']
+    );
     return true;
   } catch (err: any) {
-    console.error(`[AUTO-SYNC] Error syncing product ${productId}:`, err.message);
+    const syncDurationSeconds = (Date.now() - syncStartMs) / 1000;
+    console.error(`[AUTO-SYNC] Error syncing product ${productId} (${syncDurationSeconds.toFixed(2)}s):`, err.message);
+    await pool.query(
+      `INSERT INTO sync_history (product_id, sync_type, started_at, duration_seconds, triggered_by, status, error_message)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [productId, 'auto', syncStartedAt, syncDurationSeconds, 'scheduler', 'error', err.message]
+    ).catch(() => {});
     return false;
   } finally {
     await neo4jSession.close();

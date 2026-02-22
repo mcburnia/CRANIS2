@@ -115,6 +115,27 @@ export async function initDb() {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
+    // Sync history (duration tracking for workload balancing)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS sync_history (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id VARCHAR(255) NOT NULL,
+        sync_type VARCHAR(20) NOT NULL DEFAULT 'manual',
+        started_at TIMESTAMPTZ NOT NULL,
+        duration_seconds NUMERIC(10,2) NOT NULL,
+        package_count INTEGER DEFAULT 0,
+        contributor_count INTEGER DEFAULT 0,
+        release_count INTEGER DEFAULT 0,
+        cranis_version VARCHAR(20),
+        triggered_by VARCHAR(255),
+        status VARCHAR(20) NOT NULL DEFAULT 'success',
+        error_message TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_sync_history_product ON sync_history(product_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_sync_history_started ON sync_history(started_at)`);
+
     await client.query(`CREATE INDEX IF NOT EXISTS idx_product_versions_product ON product_versions(product_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_product_versions_cranis ON product_versions(product_id, cranis_version)`);
 

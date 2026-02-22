@@ -528,3 +528,22 @@
   0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
   50% { box-shadow: 0 0 0 4px rgba(59,130,246,0.15); }
 }
+
+
+/* ─── Sync History ───────────────────────────────────────────── */
+.sh-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
+.sh-stat { text-align: center; padding: 0.5rem; background: var(--bg); border-radius: 8px; }
+.sh-stat-value { display: block; font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+.sh-stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.sh-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.sh-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--bg); border-radius: 8px; }
+.sh-item.sh-error { border-left: 3px solid var(--red); }
+.sh-duration { display: flex; align-items: center; gap: 0.5rem; }
+.sh-seconds { font-weight: 600; font-size: 0.95rem; color: var(--text); font-variant-numeric: tabular-nums; }
+.sh-type { font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.4rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+.sh-type-manual { background: rgba(59,130,246,0.15); color: var(--accent); }
+.sh-type-auto { background: rgba(168,85,247,0.15); color: var(--purple); }
+.sh-meta { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--muted); }
+.sh-version { font-family: monospace; font-size: 0.7rem; color: var(--muted); }
+.sh-packages { color: var(--muted); }
+.sh-date { color: var(--muted); }

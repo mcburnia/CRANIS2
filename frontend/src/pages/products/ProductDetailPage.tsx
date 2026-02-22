@@ -105,6 +105,27 @@ interface VersionEntry {
 
 
 
+interface SyncHistoryEntry {
+  syncType: 'manual' | 'auto';
+  startedAt: string;
+  durationSeconds: number;
+  packageCount: number;
+  contributorCount: number;
+  releaseCount: number;
+  cranisVersion: string | null;
+  triggeredBy: string | null;
+  status: 'success' | 'error';
+  errorMessage: string | null;
+}
+
+interface SyncStats {
+  totalSyncs: number;
+  avgDuration: number;
+  minDuration: number;
+  maxDuration: number;
+  errorCount: number;
+}
+
 interface GitHubData {
   synced: boolean;
   repo?: RepoData;
@@ -198,6 +219,8 @@ export default function ProductDetailPage() {
   const [techFileData, setTechFileData] = useState<TechFileData>({ sections: [], progress: { total: 0, completed: 0, inProgress: 0, notStarted: 0 } });
   const [techFileLoading, setTechFileLoading] = useState(false);
   const [versionHistory, setVersionHistory] = useState<VersionEntry[]>([]);
+  const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([]);
+  const [syncStats, setSyncStats] = useState<SyncStats | null>(null);
 
   useEffect(() => {
     fetchProduct();
@@ -211,6 +234,7 @@ export default function ProductDetailPage() {
       fetchSBOMData();
       fetchTechFileData();
       fetchVersionHistory();
+      fetchSyncHistory();
     }
   }, [product?.id]);
 
@@ -291,7 +315,7 @@ export default function ProductDetailPage() {
     try {
       setTechFileLoading(true);
       const res = await fetch(`/api/technical-file/${productId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('session_token')}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -309,7 +333,7 @@ export default function ProductDetailPage() {
     if (!productId) return;
     try {
       const res = await fetch(`/api/github/versions/${productId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('session_token')}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -317,6 +341,22 @@ export default function ProductDetailPage() {
       }
     } catch (err) {
       console.error('Failed to fetch version history:', err);
+    }
+  }
+
+  async function fetchSyncHistory() {
+    if (!productId) return;
+    try {
+      const res = await fetch(`/api/github/sync-history/${productId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('session_token')}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSyncHistory(data.history || []);
+        setSyncStats(data.stats || null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch sync history:', err);
     }
   }
 
@@ -351,6 +391,7 @@ export default function ProductDetailPage() {
         if (data.version) setProduct(prev => prev ? { ...prev, version: data.version } : prev);
         fetchSBOMData();
         fetchVersionHistory();
+        fetchSyncHistory();
       } else {
         const err = await res.json();
         setSyncError(err.error || 'Sync failed');
@@ -570,7 +611,7 @@ export default function ProductDetailPage() {
 
       {/* Tab content */}
       <div className="pd-tab-content">
-        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} />}
+        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} syncHistory={syncHistory} syncStats={syncStats} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} />}
         {activeTab === 'obligations' && <ObligationsTab product={product} />}
         {activeTab === 'technical-file' && <TechnicalFileTab productId={productId!} techFileData={techFileData} loading={techFileLoading} onUpdate={fetchTechFileData} />}
         {activeTab === 'risk-findings' && <RiskFindingsTab />}
@@ -581,11 +622,13 @@ export default function ProductDetailPage() {
 }
 
 /* ── Overview Tab ─────────────────────────────────────── */
-function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFileProgress, versionHistory, onConnect, onSync, syncing, onDisconnect }: {
+function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFileProgress, versionHistory, syncHistory, syncStats, onConnect, onSync, syncing, onDisconnect }: {
   product: Product; catInfo: { label: string; color: string; desc: string };
   ghStatus: GitHubStatus; ghData: GitHubData; sbomData: SBOMData;
   techFileProgress: { total: number; completed: number; inProgress: number; notStarted: number };
   versionHistory: VersionEntry[];
+  syncHistory: SyncHistoryEntry[];
+  syncStats: SyncStats | null;
   onConnect: () => void; onSync: () => void; syncing: boolean; onDisconnect: () => void;
 }) {
   return (
@@ -731,6 +774,50 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFilePro
                 <div className="vh-meta">
                   <span className={`vh-source vh-source-${v.source}`}>{v.source === 'sync' ? 'Sync' : v.source === 'github_release' ? 'Release' : 'Manual'}</span>
                   <span className="vh-date">{new Date(v.createdAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {syncHistory.length > 0 && (
+        <div className="pd-card">
+          <div className="pd-card-header">
+            <Clock size={18} />
+            <h3>Sync Performance</h3>
+          </div>
+          {syncStats && (
+            <div className="sh-stats">
+              <div className="sh-stat">
+                <span className="sh-stat-value">{syncStats.avgDuration.toFixed(1)}s</span>
+                <span className="sh-stat-label">Avg Duration</span>
+              </div>
+              <div className="sh-stat">
+                <span className="sh-stat-value">{syncStats.totalSyncs}</span>
+                <span className="sh-stat-label">Total Syncs</span>
+              </div>
+              <div className="sh-stat">
+                <span className="sh-stat-value">{syncStats.minDuration.toFixed(1)}s</span>
+                <span className="sh-stat-label">Fastest</span>
+              </div>
+              <div className="sh-stat">
+                <span className="sh-stat-value">{syncStats.maxDuration.toFixed(1)}s</span>
+                <span className="sh-stat-label">Slowest</span>
+              </div>
+            </div>
+          )}
+          <div className="sh-list">
+            {syncHistory.slice(0, 8).map((s, i) => (
+              <div key={i} className={`sh-item ${s.status === 'error' ? 'sh-error' : ''}`}>
+                <div className="sh-duration">
+                  <span className="sh-seconds">{s.durationSeconds.toFixed(1)}s</span>
+                  <span className={`sh-type sh-type-${s.syncType}`}>{s.syncType === 'manual' ? 'Manual' : 'Auto'}</span>
+                </div>
+                <div className="sh-meta">
+                  {s.cranisVersion && <span className="sh-version">{s.cranisVersion}</span>}
+                  <span className="sh-packages">{s.packageCount} pkgs</span>
+                  <span className="sh-date">{new Date(s.startedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               </div>
             ))}
@@ -904,7 +991,7 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('session_token')}`,
         },
         body: JSON.stringify({
           content: editContent[sectionKey],
