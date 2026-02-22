@@ -167,17 +167,20 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         contributors-overview.ts ← GET /contributors/overview
         dependencies-overview.ts ← GET /dependencies/overview (+ license analysis)
         risk-findings.ts   ← Vulnerability scanning + findings CRUD (5 endpoints)
+        admin.ts           ← Platform admin endpoints (dashboard, orgs, users, invite, audit, system)
         dev.ts             ← Dev-only routes (nuke button — MUST REMOVE BEFORE PRODUCTION)
       db/
         pool.ts            ← Postgres pool + schema init (users, user_events, github_connections)
         neo4j.ts           ← Neo4j driver + graph schema init (constraints/indexes)
         schema.sql         ← Users table DDL (reference)
       services/
-        email.ts           ← Resend email integration
+        email.ts           ← Resend email integration (verification + invite emails)
         telemetry.ts       ← Passive telemetry — dual-write to Postgres + Neo4j
         github.ts          ← GitHub API client (READ-ONLY — GET requests + SBOM + releases/tags)
         scheduler.ts       ← Daily auto-sync scheduler (stale SBOMs at 2 AM)
         vulnerability-scanner.ts ← Multi-source CVE scanner (OSV.dev + GitHub Advisory + NVD)
+      middleware/
+        requirePlatformAdmin.ts ← Platform admin auth middleware (JWT + DB check)
       utils/
         password.ts        ← bcrypt hashing (12 salt rounds)
         token.ts           ← JWT generation/verification + email verification tokens
@@ -197,12 +200,13 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         RootLayout.tsx     ← Wraps AuthProvider around all routes
         PublicLayout.tsx    ← No sidebar (landing, login, signup)
         AuthenticatedLayout.tsx ← Sidebar + auth guard + org guard
+        AdminLayout.tsx    ← Admin panel layout (purple accent, admin sidebar, redirects non-admins)
       components/
         Sidebar.tsx        ← Navigation with lucide-react icons (5 sections)
         PageHeader.tsx     ← Page title + timestamp
         StatCard.tsx       ← Metric display card
       pages/
-        public/            ← LandingPage, LoginPage, SignupPage, CheckEmailPage, VerifyEmailPage
+        public/            ← LandingPage, LoginPage, SignupPage, CheckEmailPage, VerifyEmailPage, AcceptInvitePage
         setup/             ← WelcomePage, OrgSetupPage (wizard with CRA role selection)
         dashboard/         ← DashboardPage (fully migrated)
         products/          ← ProductsPage (list + add modal), ProductDetailPage (tabs + GitHub UI)
@@ -211,6 +215,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         billing/           ← BillingPage, ReportsPage (stubs)
         settings/          ← StakeholdersPage (live), OrganisationPage (live), AuditLogPage (live)
         notifications/     ← NotificationsPage (stub)
+        admin/             ← AdminDashboardPage, AdminOrgsPage, AdminUsersPage, AdminAuditLogPage, AdminSystemPage
 ```
 
 ## Routes
@@ -222,7 +227,16 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 - `/check-email` → "Check your inbox" confirmation
 - `/verify-email?token=xxx` → Email verification handler
 - `/welcome` → Post-verification welcome page (links to org setup)
+- `/accept-invite?token=xxx` → Accept invitation, set password, activate account
 - `/setup/org` → Organisation setup wizard
+
+**Admin (platform admins only, separate layout):**
+- `/admin` → Admin dashboard (cross-org platform statistics)
+- `/admin/dashboard` → Same as above
+- `/admin/orgs` → Organisation management (browse all orgs, drill-down)
+- `/admin/users` → User management (search, filters, admin toggle, invite users via email)
+- `/admin/audit-log` → Cross-org audit log (paginated, filterable by event type/email)
+- `/admin/system` → System health (scan performance, DB row counts, error rates)
 
 **Authenticated (with sidebar, requires JWT + org):**
 - `/dashboard` → Dashboard (live — real data from Neo4j + Postgres, vulnerability summary)
@@ -288,6 +302,15 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 | GET | /api/risk-findings/scan/:scanId | Poll scan status + performance data |
 | GET | /api/risk-findings/:productId/scan-history | Scan performance history with aggregate stats |
 | PUT | /api/risk-findings/:findingId | Dismiss/acknowledge a vulnerability finding |
+| GET | /api/admin/dashboard | Platform-wide stats (users, orgs, products, vulnerabilities) |
+| GET | /api/admin/orgs | List all organisations with user/product/vulnerability counts |
+| GET | /api/admin/orgs/:orgId | Organisation detail (users, products, recent activity) |
+| GET | /api/admin/users | List all users with org names, admin status, last login |
+| PUT | /api/admin/users/:userId/platform-admin | Toggle platform admin role (self-demotion prevented) |
+| POST | /api/admin/invite | Invite new user via email (optional org assignment + admin flag) |
+| GET | /api/admin/audit-log | Cross-org paginated audit log with event type/email filters |
+| GET | /api/admin/system | System health (scan perf, DB row counts, error rates) |
+| POST | /api/auth/accept-invite | Accept invitation — set password, activate account |
 
 ## Database Schema
 
@@ -306,6 +329,8 @@ CREATE TABLE users (
   org_role VARCHAR(50) DEFAULT 'admin',
   preferred_language VARCHAR(10),
   created_at TIMESTAMPTZ DEFAULT NOW(),
+  is_platform_admin BOOLEAN DEFAULT FALSE,
+  invited_by UUID,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -589,8 +614,8 @@ NEO4J_PASSWORD=cranis2_dev_2026
 RESEND_API_KEY=re_tZ1swTMo_4yB2pTde1Lm6KMxFpA7hZtNU
 JWT_SECRET=<auto-generated>
 FRONTEND_URL=http://192.168.1.107:3002
-EMAIL_FROM=info@cranis2.com
-DEV_SKIP_EMAIL=true
+EMAIL_FROM=info@poste.cranis2.com
+DEV_SKIP_EMAIL=false
 
 GITHUB_CLIENT_ID=PLACEHOLDER          ← Needs real OAuth App credentials
 GITHUB_CLIENT_SECRET=PLACEHOLDER      ← Needs real OAuth App credentials
@@ -607,10 +632,10 @@ GITHUB_ENCRYPTION_KEY=<32-byte hex>   ← Generated, used for AES-256-GCM token 
 
 ## Dev Mode
 
-`DEV_SKIP_EMAIL=true` in `.env` enables:
-- Registration auto-verifies accounts immediately (skips email)
-- Returns session token directly so user goes straight to /welcome
-- Set to `false` once Resend domain (poste.cranis2.com) DNS is propagated
+`DEV_SKIP_EMAIL=false` in `.env` (currently disabled — real emails active):
+- When `true`: registration auto-verifies accounts, invite URLs logged to console
+- When `false`: verification + invite emails sent via Resend from `info@poste.cranis2.com`
+- Resend domain `poste.cranis2.com` pending DKIM verification
 
 **Dev nuke button** (`/api/dev/nuke`) — accessible from Organisation page. Wipes all user data for testing. **MUST BE REMOVED before production deployment.**
 
@@ -729,7 +754,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-02-22
+**Last updated:** 2026-02-22 (session 2)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -774,17 +799,24 @@ sudo systemctl restart cloudflared
 - **Scan performance tracking** — Per-source timing (OSV/GitHub/NVD), scan history with aggregate stats (avg/min/max)
 - **Dashboard risk card** — Real vulnerability data replacing "coming soon" placeholder, severity breakdown, per-product findings
 - **Product RiskFindingsTab** — Per-product vulnerability findings with scan trigger, severity badges, mitigation display, dismiss actions
+- **Platform Admin Dashboard** — Separate admin area with purple accent theme, cross-org stats, organisation drill-down, user management
+- **Admin User Management** — Platform admin toggle with confirmation modal, user search/filters, "You" badge for current user
+- **Admin Audit Log** — Cross-org paginated event table with event type and email filters
+- **Admin System Health** — Scan performance metrics, DB row counts, error rates, recent scan history
+- **User Invite System** — Platform admins invite users via email (Resend), optional org pre-assignment, set-password flow, re-invite support
+- **Accept Invite Page** — `/accept-invite` page with password strength validation, auto-login on completion, org-aware redirect
 
 **Known Issues:**
-- DNS for poste.cranis2.com still pending (DEV_SKIP_EMAIL remains true)
+- DNS for poste.cranis2.com pending DKIM verification — once verified, invite emails will flow via Resend
+- FRONTEND_URL in .env still points to `http://192.168.1.107:3002` — invite email links use this; should be updated to `https://dev.cranis2.dev` for external invitees
 - Dev routes (`/api/dev/*`) must be removed before production
 - SBOM debug logging still in `services/github.ts` (console.log statements) — remove before production
 
 **Next Steps:**
-- **Platform Admin Dashboard** — CRANIS2 staff-only admin area (is_platform_admin role, admin layout, cross-org stats, org/user management, system health)
+- **FRONTEND_URL fix** — Update to `https://dev.cranis2.dev` so invite email links work for external users
 - **Phase 2: Automated vulnerability scanning** — Daily SBOM update + vulnerability checks + stakeholder notifications
 - Stub pages remaining: Billing, Reports, Notifications
-- Switch DEV_SKIP_EMAIL to false once email domain is verified
+- Verify poste.cranis2.com DKIM in Resend, then confirm invite emails deliver
 - Remove dev routes before production deployment
 - Remove SBOM debug logging from services/github.ts
 - Production deployment planning (Infomaniak hosting, cranis2.com)
