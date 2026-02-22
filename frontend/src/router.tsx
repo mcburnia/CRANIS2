@@ -27,6 +27,13 @@ import StakeholdersPage from './pages/settings/StakeholdersPage';
 import OrganisationPage from './pages/settings/OrganisationPage';
 import AuditLogPage from './pages/settings/AuditLogPage';
 
+import AdminLayout from './layouts/AdminLayout';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminOrgsPage from './pages/admin/AdminOrgsPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminAuditLogPage from './pages/admin/AdminAuditLogPage';
+import AdminSystemPage from './pages/admin/AdminSystemPage';
+
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -61,6 +68,17 @@ const router = createBrowserRouter([
           { path: '/stakeholders', element: <StakeholdersPage /> },
           { path: '/organisation', element: <OrganisationPage /> },
           { path: '/audit-log', element: <AuditLogPage /> },
+        ],
+      },
+      {
+        element: <AdminLayout />,
+        children: [
+          { path: '/admin', element: <AdminDashboardPage /> },
+          { path: '/admin/dashboard', element: <AdminDashboardPage /> },
+          { path: '/admin/orgs', element: <AdminOrgsPage /> },
+          { path: '/admin/users', element: <AdminUsersPage /> },
+          { path: '/admin/audit-log', element: <AdminAuditLogPage /> },
+          { path: '/admin/system', element: <AdminSystemPage /> },
         ],
       },
     ],

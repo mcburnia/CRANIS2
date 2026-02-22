@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
   FolderGit2, Users, Box, AlertTriangle, CreditCard,
-  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2
+  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2, Shield
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -112,6 +112,19 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
           ))}
         </div>
       ))}
+      {user?.isPlatformAdmin && (
+        <div className="nav-section admin-nav-section">
+          <div className="nav-section-label">Platform</div>
+          <NavLink
+            to="/admin/dashboard"
+            className={({ isActive }) => `nav-item admin-panel-link${isActive ? ' active' : ''}`}
+            onClick={onNavigate}
+          >
+            <Shield size={18} className="nav-icon" />
+            Admin Panel
+          </NavLink>
+        </div>
+      )}
       <div className="sidebar-footer">
         <button className="sidebar-user-btn" onClick={() => setShowDeleteConfirm(true)} title="DEV: Delete account & org data">
           <Trash2 size={14} className="dev-trash-icon" />

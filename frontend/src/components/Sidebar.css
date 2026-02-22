@@ -191,3 +191,22 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Admin panel link */
+.admin-nav-section {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 0.5rem;
+}
+
+.admin-panel-link {
+  color: var(--purple) !important;
+}
+
+.admin-panel-link .nav-icon {
+  color: var(--purple);
+}
+
+.admin-panel-link.active {
+  background: rgba(168, 85, 247, 0.1) !important;
+}

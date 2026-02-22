@@ -256,7 +256,7 @@ router.get('/me', async (req: Request, res: Response) => {
     const { verifySessionToken } = await import('../utils/token.js');
     const payload = verifySessionToken(token);
 
-    const result = await pool.query('SELECT id, email, email_verified, org_id, org_role, preferred_language FROM users WHERE id = $1', [payload.userId]);
+    const result = await pool.query('SELECT id, email, email_verified, org_id, org_role, preferred_language, is_platform_admin FROM users WHERE id = $1', [payload.userId]);
     if (result.rows.length === 0) {
       res.status(401).json({ error: 'User not found' });
       return;
@@ -270,6 +270,7 @@ router.get('/me', async (req: Request, res: Response) => {
         orgId: user.org_id || null,
         orgRole: user.org_role || null,
         preferredLanguage: user.preferred_language || null,
+        isPlatformAdmin: user.is_platform_admin || false,
       },
     });
   } catch {

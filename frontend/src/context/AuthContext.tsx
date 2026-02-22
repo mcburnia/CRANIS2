@@ -6,6 +6,7 @@ interface User {
   orgId: string | null;
   orgRole: string | null;
   preferredLanguage: string | null;
+  isPlatformAdmin: boolean;
 }
 
 interface AuthContextType {

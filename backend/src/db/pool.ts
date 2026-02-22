@@ -30,6 +30,7 @@ export async function initDb() {
         ALTER TABLE users ADD COLUMN IF NOT EXISTS org_id UUID;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS org_role VARCHAR(50) DEFAULT 'admin';
         ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language VARCHAR(10);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS is_platform_admin BOOLEAN DEFAULT FALSE;
       END $$;
     `);
 

@@ -1,0 +1,236 @@
+.admin-dashboard {
+  max-width: 1200px;
+}
+
+.ad-stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.ad-loading {
+  display: flex;
+  justify-content: center;
+  padding: 4rem;
+}
+
+.ad-spinner {
+  color: var(--purple);
+  animation: spin 1s linear infinite;
+}
+
+.ad-error {
+  background: var(--surface);
+  border: 1px solid var(--red);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  color: var(--red);
+}
+
+.ad-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.ad-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ad-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.ad-card-header h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ad-card-body {
+  padding: 1.25rem;
+}
+
+.ad-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+}
+
+.ad-metric-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.ad-metric-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ad-metric-value.ad-small {
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.ad-purple { color: var(--purple); }
+.ad-green { color: var(--green); }
+.ad-amber { color: var(--amber); }
+.ad-red { color: var(--red); }
+
+/* Severity bar */
+.ad-severity-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+  background: var(--border);
+}
+
+.ad-sev-segment { min-width: 4px; }
+.ad-sev-critical { background: var(--red); }
+.ad-sev-high { background: #f97316; }
+.ad-sev-medium { background: var(--amber); }
+.ad-sev-low { background: var(--accent); }
+
+.ad-severity-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.ad-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.ad-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.ad-dot-critical { background: var(--red); }
+.ad-dot-high { background: #f97316; }
+.ad-dot-medium { background: var(--amber); }
+.ad-dot-low { background: var(--accent); }
+
+/* Progress bars */
+.ad-progress-section {
+  margin-bottom: 1rem;
+}
+
+.ad-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.ad-progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ad-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.ad-fill-green { background: var(--green); }
+.ad-fill-accent { background: var(--accent); }
+
+/* Empty state */
+.ad-empty-state {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* Recent events */
+.ad-recent-events {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.ad-recent-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.ad-event-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  font-size: 0.8rem;
+}
+
+.ad-event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ad-event-green { background: var(--green); }
+.ad-event-accent { background: var(--accent); }
+.ad-event-amber { background: var(--amber); }
+.ad-event-red { background: var(--red); }
+.ad-event-muted { background: var(--muted); }
+
+.ad-event-type {
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.ad-event-user {
+  color: var(--muted);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ad-event-time {
+  color: var(--muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .ad-stat-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ad-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,64 @@
+/* Admin layout overrides */
+.admin-layout .admin-sidebar {
+  border-right-color: var(--purple);
+}
+
+.admin-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-shield {
+  color: var(--purple);
+}
+
+.admin-badge {
+  background: rgba(168, 85, 247, 0.15);
+  color: var(--purple);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  margin: 0 1rem;
+  text-align: center;
+}
+
+.admin-topbar {
+  border-bottom-color: var(--purple);
+}
+
+.admin-topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--purple);
+}
+
+.back-to-app-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  width: 100%;
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.back-to-app-btn:hover {
+  color: var(--accent);
+}
+
+/* Admin active nav uses purple instead of blue */
+.admin-sidebar .nav-item.active {
+  background: rgba(168, 85, 247, 0.1);
+  color: var(--purple);
+  border-left-color: var(--purple);
+}
