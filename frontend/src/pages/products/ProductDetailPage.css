@@ -179,6 +179,9 @@
 .pd-obligation-status.status-not_started { background: rgba(139,141,152,0.12); color: var(--muted); }
 .pd-obligation-status.status-in_progress { background: rgba(245,158,11,0.12); color: var(--amber); }
 .pd-obligation-status.status-complete { background: rgba(34,197,94,0.12); color: var(--green); }
+.pd-obligation-status.status-met { background: rgba(34,197,94,0.12); color: var(--green); }
+select.pd-obligation-status { border: 1px solid var(--border); border-radius: 4px; cursor: pointer; outline: none; appearance: auto; }
+select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
 .pd-obligation-card h4 { font-size: 0.9rem; margin-bottom: 0.35rem; }
 .pd-obligation-card p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin: 0; }
 

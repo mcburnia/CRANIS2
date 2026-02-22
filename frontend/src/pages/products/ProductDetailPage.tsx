@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 
 import PageHeader from '../../components/PageHeader';
 import {
@@ -203,7 +203,9 @@ export default function ProductDetailPage() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const [searchParams] = useSearchParams();
+  const initialTab = (searchParams.get('tab') as TabKey) || 'overview';
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '' });
   const [saving, setSaving] = useState(false);
@@ -906,7 +908,51 @@ function ProgressItem({ label, status }: { label: string; status: 'completed' | 
 
 /* ── Obligations Tab ─────────────────────────────────────── */
 function ObligationsTab({ product }: { product: Product }) {
-  const obligations = getCRAObligations(product.craCategory);
+  const [obligations, setObligations] = useState<{ id: string; obligationKey: string; article: string; title: string; description: string; status: string; notes: string }[]>([]);
+  const [obLoading, setObLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const token = localStorage.getItem('session_token');
+
+  async function fetchObligations() {
+    try {
+      const res = await fetch(`/api/obligations/${product.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setObligations(data.obligations);
+      }
+    } catch (err) {
+      console.error('Failed to fetch obligations:', err);
+    } finally {
+      setObLoading(false);
+    }
+  }
+
+  useEffect(() => { fetchObligations(); }, [product.id]);
+
+  async function handleStatusChange(id: string, newStatus: string) {
+    setUpdatingId(id);
+    try {
+      const res = await fetch(`/api/obligations/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        setObligations(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+      }
+    } catch (err) {
+      console.error('Failed to update obligation:', err);
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  if (obLoading) {
+    return <div className="pd-obligations"><p style={{ color: 'var(--muted)' }}>Loading obligations...</p></div>;
+  }
+
   return (
     <div className="pd-obligations">
       <div className="pd-section-intro">
@@ -917,13 +963,21 @@ function ObligationsTab({ product }: { product: Product }) {
         </div>
       </div>
       <div className="pd-obligations-list">
-        {obligations.map((ob, i) => (
-          <div key={i} className="pd-obligation-card">
+        {obligations.map((ob) => (
+          <div key={ob.id} className="pd-obligation-card">
             <div className="pd-obligation-header">
               <span className="pd-obligation-article">{ob.article}</span>
-              <span className={`pd-obligation-status status-${ob.status}`}>
-                {ob.status === 'not_started' ? 'Not Started' : ob.status === 'in_progress' ? 'In Progress' : 'Complete'}
-              </span>
+              <select
+                className={`pd-obligation-status status-${ob.status}`}
+                value={ob.status}
+                disabled={updatingId === ob.id}
+                onChange={e => handleStatusChange(ob.id, e.target.value)}
+                onClick={e => e.stopPropagation()}
+              >
+                <option value="not_started">Not Started</option>
+                <option value="in_progress">In Progress</option>
+                <option value="met">Met</option>
+              </select>
             </div>
             <h4>{ob.title}</h4>
             <p>{ob.description}</p>
@@ -932,27 +986,6 @@ function ObligationsTab({ product }: { product: Product }) {
       </div>
     </div>
   );
-}
-
-function getCRAObligations(category: string) {
-  const base = [
-    { article: 'Art. 13', title: 'Obligations of Manufacturers', description: 'Ensure products are designed and developed in accordance with essential cybersecurity requirements.', status: 'not_started' as const },
-    { article: 'Art. 13(6)', title: 'Vulnerability Handling', description: 'Identify and document vulnerabilities, provide security updates for at least 5 years.', status: 'not_started' as const },
-    { article: 'Art. 13(11)', title: 'SBOM (Software Bill of Materials)', description: 'Identify and document components contained in the product, including an SBOM in machine-readable format.', status: 'not_started' as const },
-    { article: 'Art. 13(12)', title: 'Technical Documentation', description: 'Draw up technical documentation before placing the product on the market.', status: 'not_started' as const },
-    { article: 'Art. 13(14)', title: 'Conformity Assessment', description: 'Carry out a conformity assessment of the product.', status: 'not_started' as const },
-    { article: 'Art. 13(15)', title: 'EU Declaration of Conformity', description: 'Draw up the EU declaration of conformity and affix the CE marking.', status: 'not_started' as const },
-    { article: 'Art. 14', title: 'Vulnerability Reporting', description: 'Report actively exploited vulnerabilities and severe incidents to ENISA within 24 hours.', status: 'not_started' as const },
-    { article: 'Annex I, Part I', title: 'Security by Design', description: 'Products shall be designed and developed with appropriate level of cybersecurity based on risks.', status: 'not_started' as const },
-    { article: 'Annex I, Part II', title: 'Vulnerability Handling Requirements', description: 'Implement vulnerability handling processes including coordinated disclosure policy.', status: 'not_started' as const },
-  ];
-  if (category === 'class_i' || category === 'class_ii') {
-    base.push({ article: 'Art. 32', title: 'Harmonised Standards', description: 'Where harmonised standards exist, conformity assessment shall reference them.', status: 'not_started' });
-  }
-  if (category === 'class_ii') {
-    base.push({ article: 'Art. 32(3)', title: 'Third-Party Assessment', description: 'Critical products require third-party conformity assessment by a notified body.', status: 'not_started' });
-  }
-  return base;
 }
 
 /* ── Technical File Tab ─────────────────────────────────────── */

@@ -150,6 +150,46 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_user_events_ip ON user_events(ip_address);
     `);
 
+    // Stakeholders — CRA/NIS2 compliance contacts
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS stakeholders (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255),
+        role_key VARCHAR(50) NOT NULL,
+        name VARCHAR(255) DEFAULT '',
+        email VARCHAR(255) DEFAULT '',
+        phone VARCHAR(100) DEFAULT '',
+        organisation VARCHAR(255) DEFAULT '',
+        address TEXT DEFAULT '',
+        updated_by VARCHAR(255),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_stakeholders_org ON stakeholders(org_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_stakeholders_product ON stakeholders(product_id)`);
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_stakeholders_org_role ON stakeholders(org_id, role_key) WHERE product_id IS NULL`);
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_stakeholders_product_role ON stakeholders(org_id, product_id, role_key) WHERE product_id IS NOT NULL`);
+
+
+    // Obligations — CRA/NIS2 compliance tracking per product
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS obligations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        obligation_key VARCHAR(50) NOT NULL,
+        status VARCHAR(20) DEFAULT 'not_started',
+        notes TEXT DEFAULT '',
+        updated_by VARCHAR(255),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_obligations_product_key ON obligations(org_id, product_id, obligation_key)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_obligations_product ON obligations(product_id)`);
+
     console.log('Database schema initialized');
   } finally {
     client.release();

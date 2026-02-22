@@ -9,6 +9,10 @@ import productRoutes from './routes/products.js';
 import devRoutes from './routes/dev.js';  // DEV ONLY — REMOVE BEFORE PRODUCTION
 import githubRoutes from './routes/github.js';
 import technicalFileRoutes from './routes/technical-file.js';
+import dashboardRoutes from './routes/dashboard.js';
+import stakeholderRoutes from './routes/stakeholders.js';
+import technicalFilesOverviewRoutes from './routes/technical-files-overview.js';
+import obligationRoutes from './routes/obligations.js';
 import { startScheduler } from './services/scheduler.js';
 
 const app = express();
@@ -29,6 +33,10 @@ app.use('/api/products', productRoutes);
 app.use('/api/dev', devRoutes);  // DEV ONLY — REMOVE BEFORE PRODUCTION
 app.use('/api/github', githubRoutes);
 app.use('/api/technical-file', technicalFileRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/stakeholders', stakeholderRoutes);
+app.use('/api/technical-files', technicalFilesOverviewRoutes);
+app.use('/api/obligations', obligationRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
