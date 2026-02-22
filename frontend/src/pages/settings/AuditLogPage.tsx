@@ -149,10 +149,10 @@ export default function AuditLogPage() {
             <tr>
               <th>Event</th>
               <th>User</th>
-              <th>IP Address</th>
-              <th>Device</th>
               <th>Location</th>
               <th>Time</th>
+              <th>IP Address</th>
+              <th>Device</th>
             </tr>
           </thead>
           <tbody>
@@ -174,8 +174,6 @@ export default function AuditLogPage() {
                     </div>
                   </td>
                   <td className="audit-email">{event.userEmail}</td>
-                  <td className="audit-mono">{event.ipAddress || '—'}</td>
-                  <td>{parseBrowserShort(event.userAgent)}</td>
                   <td>
                     {event.browserTimezone ? (
                       <div className="audit-location">
@@ -190,6 +188,8 @@ export default function AuditLogPage() {
                       <span className="audit-time-full">{formatTimestamp(event.createdAt)}</span>
                     </div>
                   </td>
+                  <td className="audit-mono">{event.ipAddress || '—'}</td>
+                  <td>{parseBrowserShort(event.userAgent)}</td>
                 </tr>
               );
             })}
