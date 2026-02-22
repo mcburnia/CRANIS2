@@ -210,3 +210,21 @@
 .admin-panel-link.active {
   background: rgba(168, 85, 247, 0.1) !important;
 }
+
+
+/* Notification badge */
+.notification-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--red);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-left: auto;
+  line-height: 1;
+}

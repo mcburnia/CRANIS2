@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Loader2, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
+import { Shield, ChevronDown, ChevronRight, Clock } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import './RiskFindingsPage.css';
@@ -99,6 +99,24 @@ interface Finding {
   created_at: string;
 }
 
+interface PlatformScan {
+  id: string;
+  status: string;
+  triggeredBy: string;
+  triggerType: string;
+  totalProducts: number;
+  totalUniqueDependencies: number;
+  totalFindings: number;
+  criticalCount: number;
+  highCount: number;
+  mediumCount: number;
+  lowCount: number;
+  newFindingsCount: number;
+  startedAt: string;
+  completedAt: string | null;
+  durationSeconds: number | null;
+}
+
 type Filter = 'all' | 'critical_high' | 'open' | 'dismissed';
 
 function formatTimeAgo(dateStr: string | null): string {
@@ -107,79 +125,41 @@ function formatTimeAgo(dateStr: string | null): string {
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffMins < 60) return diffMins + 'm ago';
   const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 24) return diffHours + 'h ago';
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+  return diffDays + 'd ago';
 }
 
 export default function RiskFindingsPage() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
-  const [scanning, setScanning] = useState(false);
-  const [scanStatus, setScanStatus] = useState('');
   const [productFindings, setProductFindings] = useState<Record<string, Finding[]>>({});
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
   const [expandedFindings, setExpandedFindings] = useState<Record<string, boolean>>({});
   const [scanHistories, setScanHistories] = useState<Record<string, ScanHistoryData>>({});
   const [showHistory, setShowHistory] = useState<Record<string, boolean>>({});
+  const [latestPlatformScan, setLatestPlatformScan] = useState<PlatformScan | null>(null);
 
   const token = localStorage.getItem('session_token');
 
   const fetchOverview = useCallback(() => {
-    fetch('/api/risk-findings/overview', { headers: { Authorization: `Bearer ${token}` } })
+    fetch('/api/risk-findings/overview', { headers: { Authorization: 'Bearer ' + token } })
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, [token]);
 
-  useEffect(() => { fetchOverview(); }, [fetchOverview]);
+  const fetchLatestPlatformScan = useCallback(() => {
+    fetch('/api/risk-findings/platform-scan/latest', { headers: { Authorization: 'Bearer ' + token } })
+      .then(r => r.json())
+      .then(d => { if (d.latestScan) setLatestPlatformScan(d.latestScan); })
+      .catch(() => {});
+  }, [token]);
 
-  const handleScanAll = async () => {
-    if (!data || scanning) return;
-    setScanning(true);
-    setScanStatus('Starting scans...');
-
-    const productsToScan = data.products;
-    let completed = 0;
-
-    for (const product of productsToScan) {
-      setScanStatus(`Scanning ${product.name} (${completed + 1}/${productsToScan.length})...`);
-      try {
-        const resp = await fetch(`/api/risk-findings/${product.id}/scan`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
-        const result = await resp.json();
-
-        if (result.status === 'started' || result.status === 'already_running') {
-          // Poll for completion
-          let scanDone = false;
-          let attempts = 0;
-          while (!scanDone && attempts < 60) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            const pollResp = await fetch(`/api/risk-findings/scan/${result.scanId}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            const pollData = await pollResp.json();
-            if (pollData.status === 'completed' || pollData.status === 'failed') {
-              scanDone = true;
-            }
-            attempts++;
-          }
-        }
-      } catch (err) {
-        console.error(`Scan failed for ${product.name}:`, err);
-      }
-      completed++;
-    }
-
-    setScanStatus('');
-    setScanning(false);
-    fetchOverview();
-  };
+  useEffect(() => { fetchOverview(); fetchLatestPlatformScan(); }, [fetchOverview, fetchLatestPlatformScan]);
 
   const loadProductFindings = async (productId: string) => {
     if (productFindings[productId]) {
@@ -187,8 +167,8 @@ export default function RiskFindingsPage() {
       return;
     }
     try {
-      const resp = await fetch(`/api/risk-findings/${productId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const resp = await fetch('/api/risk-findings/' + productId, {
+        headers: { Authorization: 'Bearer ' + token },
       });
       const result = await resp.json();
       setProductFindings(prev => ({ ...prev, [productId]: result.findings }));
@@ -201,14 +181,13 @@ export default function RiskFindingsPage() {
   const handleDismiss = async (findingId: string, productId: string) => {
     const reason = prompt('Reason for dismissing this finding (optional):');
     try {
-      await fetch(`/api/risk-findings/${findingId}`, {
+      await fetch('/api/risk-findings/' + findingId, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'dismissed', reason: reason || '' }),
       });
-      // Refresh findings for this product
-      const resp = await fetch(`/api/risk-findings/${productId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const resp = await fetch('/api/risk-findings/' + productId, {
+        headers: { Authorization: 'Bearer ' + token },
       });
       const result = await resp.json();
       setProductFindings(prev => ({ ...prev, [productId]: result.findings }));
@@ -224,8 +203,8 @@ export default function RiskFindingsPage() {
       return;
     }
     try {
-      const resp = await fetch(`/api/risk-findings/${productId}/scan-history`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const resp = await fetch('/api/risk-findings/' + productId + '/scan-history', {
+        headers: { Authorization: 'Bearer ' + token },
       });
       const result = await resp.json();
       setScanHistories(prev => ({ ...prev, [productId]: result }));
@@ -250,26 +229,46 @@ export default function RiskFindingsPage() {
   return (
     <>
       <PageHeader title="Risk Findings" />
+
+      {/* Platform scan banner */}
+      {latestPlatformScan && (
+        <div className="rf-platform-banner">
+          <Clock size={16} />
+          <span>
+            Last platform scan: <strong>{formatTimeAgo(latestPlatformScan.completedAt || latestPlatformScan.startedAt)}</strong>
+            {latestPlatformScan.status === 'completed' && (
+              <> &mdash; {latestPlatformScan.totalFindings} findings across {latestPlatformScan.totalProducts} products
+                {latestPlatformScan.newFindingsCount > 0 && (
+                  <span className="rf-new-badge">{latestPlatformScan.newFindingsCount} new</span>
+                )}
+              </>
+            )}
+            {latestPlatformScan.status === 'running' && (
+              <> &mdash; <span style={{ color: 'var(--amber)' }}>Scan in progress...</span></>
+            )}
+            {latestPlatformScan.status === 'failed' && (
+              <> &mdash; <span style={{ color: 'var(--red)' }}>Scan failed</span></>
+            )}
+          </span>
+        </div>
+      )}
+
       <div className="rf-stats">
-        <StatCard label="Total Findings" value={totals.totalFindings} color="blue" sub={`${totals.openFindings} open`} />
+        <StatCard label="Total Findings" value={totals.totalFindings} color="blue" sub={totals.openFindings + ' open'} />
         <StatCard label="Critical" value={totals.critical} color="red" sub={totals.critical > 0 ? 'immediate action' : 'none found'} />
         <StatCard label="High" value={totals.high} color="amber" sub={totals.high > 0 ? 'review needed' : 'none found'} />
-        <StatCard label="Medium + Low" value={totals.medium + totals.low} color="blue" sub={`${totals.medium} medium, ${totals.low} low`} />
+        <StatCard label="Medium + Low" value={totals.medium + totals.low} color="blue" sub={totals.medium + ' medium, ' + totals.low + ' low'} />
       </div>
 
       <div className="rf-header-actions">
-        <button className="rf-scan-btn" onClick={handleScanAll} disabled={scanning}>
-          {scanning ? <Loader2 size={16} className="spinner" /> : <RefreshCw size={16} />}
-          {scanning ? scanStatus || 'Scanning...' : 'Scan All Products'}
-        </button>
         <div className="rf-filter-bar">
-          {[
+          {([
             { key: 'all' as Filter, label: 'All' },
             { key: 'critical_high' as Filter, label: 'Critical + High' },
             { key: 'open' as Filter, label: 'Open Only' },
             { key: 'dismissed' as Filter, label: 'Dismissed' },
-          ].map(f => (
-            <button key={f.key} className={`rf-filter-btn ${filter === f.key ? 'active' : ''}`} onClick={() => setFilter(f.key)}>
+          ]).map(f => (
+            <button key={f.key} className={'rf-filter-btn ' + (filter === f.key ? 'active' : '')} onClick={() => setFilter(f.key)}>
               {f.label}
             </button>
           ))}
@@ -289,7 +288,7 @@ export default function RiskFindingsPage() {
           <div key={product.id} className="rf-product-card">
             <div className="rf-card-header" onClick={() => loadProductFindings(product.id)} style={{ cursor: 'pointer' }}>
               {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-              <h3><Link to={`/products/${product.id}?tab=risk-findings`} onClick={e => e.stopPropagation()}>{product.name}</Link></h3>
+              <h3><Link to={'/products/' + product.id + '?tab=risk-findings'} onClick={e => e.stopPropagation()}>{product.name}</Link></h3>
               {total > 0 && (
                 <>
                   {findings.critical > 0 && <span className="rf-severity-badge critical">{findings.critical} Critical</span>}
@@ -301,7 +300,7 @@ export default function RiskFindingsPage() {
               <div className="rf-scan-info" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                 <span>
                   {product.lastScan
-                    ? `Last scan: ${formatTimeAgo(product.lastScan.completedAt)} (${product.lastScan.findingsCount} findings)`
+                    ? 'Last scan: ' + formatTimeAgo(product.lastScan.completedAt) + ' (' + product.lastScan.findingsCount + ' findings)'
                     : 'Never scanned'}
                 </span>
                 {product.lastScan && (
@@ -318,10 +317,10 @@ export default function RiskFindingsPage() {
             {total > 0 && (
               <>
                 <div className="rf-severity-bar">
-                  {findings.critical > 0 && <div className="rf-severity-segment critical" style={{ width: `${(findings.critical / total) * 100}%` }} />}
-                  {findings.high > 0 && <div className="rf-severity-segment high" style={{ width: `${(findings.high / total) * 100}%` }} />}
-                  {findings.medium > 0 && <div className="rf-severity-segment medium" style={{ width: `${(findings.medium / total) * 100}%` }} />}
-                  {findings.low > 0 && <div className="rf-severity-segment low" style={{ width: `${(findings.low / total) * 100}%` }} />}
+                  {findings.critical > 0 && <div className="rf-severity-segment critical" style={{ width: (findings.critical / total) * 100 + '%' }} />}
+                  {findings.high > 0 && <div className="rf-severity-segment high" style={{ width: (findings.high / total) * 100 + '%' }} />}
+                  {findings.medium > 0 && <div className="rf-severity-segment medium" style={{ width: (findings.medium / total) * 100 + '%' }} />}
+                  {findings.low > 0 && <div className="rf-severity-segment low" style={{ width: (findings.low / total) * 100 + '%' }} />}
                 </div>
                 <div className="rf-severity-legend">
                   {findings.critical > 0 && <span className="rf-legend-item"><span className="rf-legend-dot critical" /> Critical ({findings.critical})</span>}
@@ -338,7 +337,7 @@ export default function RiskFindingsPage() {
             {total === 0 && !product.lastScan && (
               <div className="rf-no-findings">
                 <Shield size={24} strokeWidth={1} style={{ marginBottom: '0.5rem', opacity: 0.5 }} /><br />
-                No scans yet. Click "Scan All Products" to check for vulnerabilities.
+                Awaiting platform scan. Scans run daily at 3:00 AM.
               </div>
             )}
 
@@ -382,7 +381,7 @@ export default function RiskFindingsPage() {
                       {sh.history.map(h => (
                         <tr key={h.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                           <td style={{ padding: '0.3rem 0.5rem', color: 'var(--muted)' }}>{new Date(h.startedAt).toLocaleString()}</td>
-                          <td style={{ padding: '0.3rem 0.5rem', color: 'var(--text)', fontWeight: 500 }}>{h.durationSeconds != null ? `${h.durationSeconds}s` : '-'}</td>
+                          <td style={{ padding: '0.3rem 0.5rem', color: 'var(--text)', fontWeight: 500 }}>{h.durationSeconds != null ? h.durationSeconds + 's' : '-'}</td>
                           <td style={{ padding: '0.3rem 0.5rem' }}>{h.dependencyCount || '-'}</td>
                           <td style={{ padding: '0.3rem 0.5rem' }}>
                             {h.findingsCount}
@@ -390,9 +389,9 @@ export default function RiskFindingsPage() {
                             {h.highCount > 0 && <span style={{ color: '#f97316' }}> {h.highCount}H</span>}
                             {(h.criticalCount > 0 || h.highCount > 0) && <span style={{ color: 'var(--muted)' }}>)</span>}
                           </td>
-                          <td style={{ padding: '0.3rem 0.5rem', color: 'var(--muted)' }}>{h.osvDurationMs != null ? `${h.osvDurationMs}ms (${h.osvFindings})` : '-'}</td>
-                          <td style={{ padding: '0.3rem 0.5rem', color: 'var(--muted)' }}>{h.githubDurationMs != null ? `${h.githubDurationMs}ms (${h.githubFindings})` : '-'}</td>
-                          <td style={{ padding: '0.3rem 0.5rem', color: 'var(--muted)' }}>{h.nvdDurationMs != null ? `${h.nvdDurationMs}ms (${h.nvdFindings})` : '-'}</td>
+                          <td style={{ padding: '0.3rem 0.5rem', color: 'var(--muted)' }}>{h.osvDurationMs != null ? h.osvDurationMs + 'ms (' + h.osvFindings + ')' : '-'}</td>
+                          <td style={{ padding: '0.3rem 0.5rem', color: 'var(--muted)' }}>{h.githubDurationMs != null ? h.githubDurationMs + 'ms (' + h.githubFindings + ')' : '-'}</td>
+                          <td style={{ padding: '0.3rem 0.5rem', color: 'var(--muted)' }}>{h.nvdDurationMs != null ? h.nvdDurationMs + 'ms (' + h.nvdFindings + ')' : '-'}</td>
                           <td style={{ padding: '0.3rem 0.5rem', color: 'var(--muted)' }}>{h.triggeredBy || '-'}</td>
                           <td style={{ padding: '0.3rem 0.5rem' }}>
                             <span style={{ color: h.status === 'completed' ? 'var(--green)' : h.status === 'failed' ? 'var(--red)' : 'var(--amber)' }}>{h.status}</span>
@@ -416,7 +415,7 @@ export default function RiskFindingsPage() {
                         className="rf-finding-row"
                         onClick={() => setExpandedFindings(prev => ({ ...prev, [finding.id]: !prev[finding.id] }))}
                       >
-                        <span className={`rf-severity-badge ${finding.severity}`}>{finding.severity}</span>
+                        <span className={'rf-severity-badge ' + finding.severity}>{finding.severity}</span>
                         <div className="rf-finding-content">
                           <div className="rf-finding-title">{finding.title.substring(0, 120)}</div>
                           <div className="rf-finding-meta">
@@ -434,13 +433,13 @@ export default function RiskFindingsPage() {
                         <div className="rf-finding-detail">
                           {finding.mitigation && (
                             <div style={{ background: 'rgba(100, 149, 237, 0.08)', border: '1px solid rgba(100, 149, 237, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem' }}>
-                              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)', marginBottom: '0.3rem', textTransform: 'uppercase' as const }}>Recommended Action</div>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)', marginBottom: '0.3rem', textTransform: 'uppercase' }}>Recommended Action</div>
                               <div style={{ fontSize: '0.82rem', color: 'var(--text)', lineHeight: 1.5 }}>{finding.mitigation}</div>
                             </div>
                           )}
                           {!finding.mitigation && finding.fixed_version && (
                             <div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem' }}>
-                              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--green)', marginBottom: '0.3rem', textTransform: 'uppercase' as const }}>Fix Available</div>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--green)', marginBottom: '0.3rem', textTransform: 'uppercase' }}>Fix Available</div>
                               <div style={{ fontSize: '0.82rem', color: 'var(--text)' }}>Upgrade {finding.dependency_name} to version {finding.fixed_version} or later.</div>
                             </div>
                           )}
@@ -460,7 +459,7 @@ export default function RiskFindingsPage() {
                           )}
                           {finding.dismissed_by && (
                             <p style={{ fontSize: '0.75rem', marginTop: '0.5rem' }}>
-                              Dismissed by {finding.dismissed_by}{finding.dismissed_reason ? `: ${finding.dismissed_reason}` : ''}
+                              Dismissed by {finding.dismissed_by}{finding.dismissed_reason ? ': ' + finding.dismissed_reason : ''}
                             </p>
                           )}
                         </div>

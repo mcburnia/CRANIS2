@@ -3,7 +3,6 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
-import { scanProductVulnerabilities } from '../services/vulnerability-scanner.js';
 
 const router = Router();
 
@@ -41,9 +40,9 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
     let products: { id: string; name: string; craCategory: string | null }[] = [];
     try {
       const result = await session.run(
-        `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product)
-         RETURN p.id AS id, p.name AS name, p.craCategory AS craCategory
-         ORDER BY p.name`,
+        'MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product) ' +
+        'RETURN p.id AS id, p.name AS name, p.craCategory AS craCategory ' +
+        'ORDER BY p.name',
         { orgId }
       );
       products = result.records.map(r => ({
@@ -64,24 +63,24 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
 
     // Get latest scan per product
     const scansResult = await pool.query(
-      `SELECT DISTINCT ON (product_id) id, product_id, status, completed_at, findings_count,
-              critical_count, high_count, medium_count, low_count
-       FROM vulnerability_scans
-       WHERE product_id = ANY($1) AND org_id = $2
-       ORDER BY product_id, started_at DESC`,
+      'SELECT DISTINCT ON (product_id) id, product_id, status, completed_at, findings_count, ' +
+      'critical_count, high_count, medium_count, low_count ' +
+      'FROM vulnerability_scans ' +
+      'WHERE product_id = ANY($1) AND org_id = $2 ' +
+      'ORDER BY product_id, started_at DESC',
       [productIds, orgId]
     );
     const scanMap = new Map(scansResult.rows.map(r => [r.product_id, r]));
 
     // Get finding counts by status per product
     const findingsResult = await pool.query(
-      `SELECT product_id, severity, status, count(*) as cnt
-       FROM vulnerability_findings
-       WHERE product_id = ANY($1) AND org_id = $2
-       GROUP BY product_id, severity, status`,
+      'SELECT product_id, severity, status, count(*) as cnt ' +
+      'FROM vulnerability_findings ' +
+      'WHERE product_id = ANY($1) AND org_id = $2 ' +
+      'GROUP BY product_id, severity, status',
       [productIds, orgId]
     );
-    
+
     const findingsMap = new Map<string, any>();
     for (const row of findingsResult.rows) {
       if (!findingsMap.has(row.product_id)) {
@@ -102,7 +101,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
     const enrichedProducts = products.map(p => {
       const scan = scanMap.get(p.id);
       const findings = findingsMap.get(p.id) || { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0 };
-      
+
       totalCritical += findings.critical;
       totalHigh += findings.high;
       totalMedium += findings.medium;
@@ -141,6 +140,56 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/risk-findings/platform-scan/latest — Latest platform-wide scan info
+router.get('/platform-scan/latest', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, status, triggered_by, trigger_type, total_products, total_unique_dependencies, ' +
+      'total_findings, critical_count, high_count, medium_count, low_count, new_findings_count, ' +
+      'started_at, completed_at, duration_seconds, ' +
+      'osv_duration_ms, osv_findings, github_duration_ms, github_findings, ' +
+      'nvd_duration_ms, nvd_findings, error_message ' +
+      'FROM platform_scan_runs ORDER BY started_at DESC LIMIT 1'
+    );
+
+    if (result.rows.length === 0) {
+      res.json({ latestScan: null });
+      return;
+    }
+
+    const row = result.rows[0];
+    res.json({
+      latestScan: {
+        id: row.id,
+        status: row.status,
+        triggeredBy: row.triggered_by,
+        triggerType: row.trigger_type,
+        totalProducts: row.total_products,
+        totalUniqueDependencies: row.total_unique_dependencies,
+        totalFindings: row.total_findings,
+        criticalCount: row.critical_count,
+        highCount: row.high_count,
+        mediumCount: row.medium_count,
+        lowCount: row.low_count,
+        newFindingsCount: row.new_findings_count,
+        startedAt: row.started_at,
+        completedAt: row.completed_at,
+        durationSeconds: row.duration_seconds ? parseFloat(row.duration_seconds) : null,
+        osvDurationMs: row.osv_duration_ms,
+        osvFindings: row.osv_findings,
+        githubDurationMs: row.github_duration_ms,
+        githubFindings: row.github_findings,
+        nvdDurationMs: row.nvd_duration_ms,
+        nvdFindings: row.nvd_findings,
+        errorMessage: row.error_message,
+      },
+    });
+  } catch (err) {
+    console.error('Failed to fetch latest platform scan:', err);
+    res.status(500).json({ error: 'Failed to fetch latest platform scan' });
+  }
+});
+
 // GET /api/risk-findings/scan/:scanId — Poll scan status
 router.get('/scan/:scanId', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
@@ -151,13 +200,13 @@ router.get('/scan/:scanId', requireAuth, async (req: Request, res: Response) => 
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
     const result = await pool.query(
-      `SELECT id, product_id, status, started_at, completed_at, findings_count,
-              critical_count, high_count, medium_count, low_count, error_message,
-              duration_seconds, dependency_count, osv_duration_ms, osv_findings,
-              github_duration_ms, github_findings, nvd_duration_ms, nvd_findings,
-              triggered_by
-       FROM vulnerability_scans
-       WHERE id = $1 AND org_id = $2`,
+      'SELECT id, product_id, status, started_at, completed_at, findings_count, ' +
+      'critical_count, high_count, medium_count, low_count, error_message, ' +
+      'duration_seconds, dependency_count, osv_duration_ms, osv_findings, ' +
+      'github_duration_ms, github_findings, nvd_duration_ms, nvd_findings, ' +
+      'triggered_by ' +
+      'FROM vulnerability_scans ' +
+      'WHERE id = $1 AND org_id = $2',
       [scanId, orgId]
     );
 
@@ -187,8 +236,8 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
     const session = driver.session();
     try {
       const check = await session.run(
-        `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
-         RETURN p.id`,
+        'MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId}) ' +
+        'RETURN p.id',
         { orgId, productId }
       );
       if (check.records.length === 0) {
@@ -203,31 +252,31 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
     const severity = req.query.severity as string | undefined;
     const status = req.query.status as string | undefined;
 
-    let query = `SELECT * FROM vulnerability_findings WHERE product_id = $1 AND org_id = $2`;
+    let query = 'SELECT * FROM vulnerability_findings WHERE product_id = $1 AND org_id = $2';
     const params: any[] = [productId, orgId];
     let paramIdx = 3;
 
     if (severity) {
-      query += ` AND severity = $${paramIdx}`;
+      query += ' AND severity = $' + paramIdx;
       params.push(severity);
       paramIdx++;
     }
     if (status) {
-      query += ` AND status = $${paramIdx}`;
+      query += ' AND status = $' + paramIdx;
       params.push(status);
       paramIdx++;
     }
 
-    query += ` ORDER BY CASE severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END, created_at DESC`;
+    query += " ORDER BY CASE severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END, created_at DESC";
 
     const result = await pool.query(query, params);
 
     // Get latest scan
     const scanResult = await pool.query(
-      `SELECT id, status, started_at, completed_at, findings_count
-       FROM vulnerability_scans
-       WHERE product_id = $1 AND org_id = $2
-       ORDER BY started_at DESC LIMIT 1`,
+      'SELECT id, status, started_at, completed_at, findings_count ' +
+      'FROM vulnerability_scans ' +
+      'WHERE product_id = $1 AND org_id = $2 ' +
+      'ORDER BY started_at DESC LIMIT 1',
       [productId, orgId]
     );
 
@@ -251,66 +300,6 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/risk-findings/:productId/scan — Trigger manual scan
-router.post('/:productId/scan', requireAuth, async (req: Request, res: Response) => {
-  const userId = (req as any).userId;
-  const productId = req.params.productId as string;
-
-  try {
-    const orgId = await getOrgId(userId);
-    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
-
-    // Verify product belongs to org
-    const driver = getDriver();
-    const session = driver.session();
-    try {
-      const check = await session.run(
-        `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
-         RETURN p.id`,
-        { orgId, productId }
-      );
-      if (check.records.length === 0) {
-        res.status(404).json({ error: 'Product not found' });
-        return;
-      }
-    } finally {
-      await session.close();
-    }
-
-    // Check if a scan is already running for this product
-    const runningCheck = await pool.query(
-      `SELECT id FROM vulnerability_scans 
-       WHERE product_id = $1 AND org_id = $2 AND status = 'running'`,
-      [productId, orgId]
-    );
-    if (runningCheck.rows.length > 0) {
-      res.json({ scanId: runningCheck.rows[0].id, status: 'already_running' });
-      return;
-    }
-
-    // Start scan asynchronously
-    const { scanId } = await scanProductVulnerabilities(productId, orgId, userId);
-
-    // Record triggered_by
-    await pool.query('UPDATE vulnerability_scans SET triggered_by = $2 WHERE id = $1', [scanId, (req as any).email]);
-
-    // Record telemetry
-    const reqData = extractRequestData(req);
-    await recordEvent({
-      userId,
-      email: (req as any).email,
-      eventType: 'vulnerability_scan_triggered',
-      ...reqData,
-      metadata: { productId, scanId },
-    });
-
-    res.json({ scanId, status: 'started' });
-  } catch (err) {
-    console.error('Failed to start vulnerability scan:', err);
-    res.status(500).json({ error: 'Failed to start vulnerability scan' });
-  }
-});
-
 // GET /api/risk-findings/:productId/scan-history — Scan performance history
 router.get('/:productId/scan-history', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
@@ -321,33 +310,33 @@ router.get('/:productId/scan-history', requireAuth, async (req: Request, res: Re
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
     const result = await pool.query(
-      `SELECT id, status, started_at, completed_at, findings_count,
-              critical_count, high_count, medium_count, low_count,
-              duration_seconds, dependency_count,
-              osv_duration_ms, osv_findings,
-              github_duration_ms, github_findings,
-              nvd_duration_ms, nvd_findings,
-              triggered_by, error_message, source
-       FROM vulnerability_scans
-       WHERE product_id = $1 AND org_id = $2
-       ORDER BY started_at DESC
-       LIMIT 50`,
+      'SELECT id, status, started_at, completed_at, findings_count, ' +
+      'critical_count, high_count, medium_count, low_count, ' +
+      'duration_seconds, dependency_count, ' +
+      'osv_duration_ms, osv_findings, ' +
+      'github_duration_ms, github_findings, ' +
+      'nvd_duration_ms, nvd_findings, ' +
+      'triggered_by, error_message, source ' +
+      'FROM vulnerability_scans ' +
+      'WHERE product_id = $1 AND org_id = $2 ' +
+      'ORDER BY started_at DESC ' +
+      'LIMIT 50',
       [productId, orgId]
     );
 
     const stats = await pool.query(
-      `SELECT
-         COUNT(*) as total_scans,
-         ROUND(AVG(duration_seconds)::numeric, 2) as avg_duration,
-         ROUND(MIN(duration_seconds)::numeric, 2) as min_duration,
-         ROUND(MAX(duration_seconds)::numeric, 2) as max_duration,
-         ROUND(AVG(osv_duration_ms)::numeric, 0) as avg_osv_ms,
-         ROUND(AVG(github_duration_ms)::numeric, 0) as avg_github_ms,
-         ROUND(AVG(nvd_duration_ms)::numeric, 0) as avg_nvd_ms,
-         ROUND(AVG(dependency_count)::numeric, 0) as avg_deps,
-         COUNT(*) FILTER (WHERE status = 'failed') as error_count
-       FROM vulnerability_scans
-       WHERE product_id = $1 AND org_id = $2 AND duration_seconds IS NOT NULL`,
+      'SELECT ' +
+      'COUNT(*) as total_scans, ' +
+      'ROUND(AVG(duration_seconds)::numeric, 2) as avg_duration, ' +
+      'ROUND(MIN(duration_seconds)::numeric, 2) as min_duration, ' +
+      'ROUND(MAX(duration_seconds)::numeric, 2) as max_duration, ' +
+      'ROUND(AVG(osv_duration_ms)::numeric, 0) as avg_osv_ms, ' +
+      'ROUND(AVG(github_duration_ms)::numeric, 0) as avg_github_ms, ' +
+      'ROUND(AVG(nvd_duration_ms)::numeric, 0) as avg_nvd_ms, ' +
+      'ROUND(AVG(dependency_count)::numeric, 0) as avg_deps, ' +
+      "COUNT(*) FILTER (WHERE status = 'failed') as error_count " +
+      'FROM vulnerability_scans ' +
+      'WHERE product_id = $1 AND org_id = $2 AND duration_seconds IS NOT NULL',
       [productId, orgId]
     );
 
@@ -408,11 +397,11 @@ router.put('/:findingId', requireAuth, async (req: Request, res: Response) => {
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
     const result = await pool.query(
-      `UPDATE vulnerability_findings 
-       SET status = $1, dismissed_by = $2, dismissed_at = CASE WHEN $1 = 'dismissed' THEN NOW() ELSE NULL END,
-           dismissed_reason = $3, updated_at = NOW()
-       WHERE id = $4 AND org_id = $5
-       RETURNING *`,
+      'UPDATE vulnerability_findings ' +
+      "SET status = $1, dismissed_by = $2, dismissed_at = CASE WHEN $1 = 'dismissed' THEN NOW() ELSE NULL END, " +
+      'dismissed_reason = $3, updated_at = NOW() ' +
+      'WHERE id = $4 AND org_id = $5 ' +
+      'RETURNING *',
       [status, status === 'open' ? null : (req as any).email, reason || null, findingId, orgId]
     );
 

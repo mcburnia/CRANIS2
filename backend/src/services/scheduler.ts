@@ -1,6 +1,8 @@
 import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { decrypt } from '../utils/encryption.js';
+import { createNotification } from './notifications.js';
+import { runPlatformScan } from './vulnerability-scanner.js';
 import {
   getRepo, getContributors, getLanguages, getSBOM, getReleases, getTags, parseRepoUrl,
 } from '../services/github.js';
@@ -12,7 +14,11 @@ const CHECK_INTERVAL_MS = 60 * 60 * 1000;
 // Hour of the day to run auto-sync (0-23, default: 2 AM)
 const AUTO_SYNC_HOUR = 2;
 
+// Hour of the day to run platform-wide vulnerability scan (0-23, default: 3 AM — after SBOM sync)
+const VULN_SCAN_HOUR = 3;
+
 let lastSyncDate = '';
+let lastVulnScanDate = '';
 
 async function getProductGitHubToken(productId: string): Promise<{ token: string; userId: string } | null> {
   // Find the user who owns this product (via org) and has a GitHub connection
@@ -194,6 +200,34 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [productId, 'auto', syncStartedAt, syncDurationSeconds, 'scheduler', 'error', err.message]
     ).catch(() => {});
+
+    // Create sync_failed notification
+    const failSession = getDriver().session();
+    try {
+      const failResult = await failSession.run(
+        `MATCH (p:Product {id: $productId})-[:BELONGS_TO]->(o:Organisation)
+         RETURN o.id AS orgId, p.name AS productName`,
+        { productId }
+      );
+      if (failResult.records.length > 0) {
+        const orgId = failResult.records[0].get('orgId');
+        const productName = failResult.records[0].get('productName') || 'Unknown product';
+        createNotification({
+          orgId,
+          type: 'sync_failed',
+          severity: 'high',
+          title: `Auto-sync failed for ${productName}`,
+          body: err.message || 'An error occurred during automatic synchronisation',
+          link: `/products/${productId}`,
+          metadata: { productId, errorMessage: err.message },
+        }).catch(() => {});
+      }
+    } catch (_notifErr) {
+      // Notification failure should never mask the real error
+    } finally {
+      await failSession.close();
+    }
+
     return false;
   } finally {
     await neo4jSession.close();
@@ -232,8 +266,27 @@ async function runDailySync(): Promise<void> {
   }
 }
 
+
+async function runDailyVulnScan(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (lastVulnScanDate === todayStr) return; // Already ran today
+
+  const now = new Date();
+  if (now.getHours() < VULN_SCAN_HOUR) return; // Not yet time
+
+  lastVulnScanDate = todayStr;
+  console.log('[VULN-SCHEDULER] Starting daily platform vulnerability scan...');
+
+  try {
+    const result = await runPlatformScan('scheduler', 'scheduled');
+    console.log('[VULN-SCHEDULER] Daily scan complete: run ' + result.runId + ', ' + result.totalFindings + ' findings');
+  } catch (err: any) {
+    console.error('[VULN-SCHEDULER] Daily vulnerability scan failed:', err.message);
+  }
+}
+
 export function startScheduler(): void {
-  console.log(`[SCHEDULER] Started — checking every ${CHECK_INTERVAL_MS / 60000} minutes, auto-sync at ${AUTO_SYNC_HOUR}:00`);
+  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, auto-sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00');
 
   // Run check periodically
   setInterval(() => {

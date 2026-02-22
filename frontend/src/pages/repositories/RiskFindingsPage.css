@@ -1,15 +1,30 @@
+/* Platform scan banner */
+.rf-platform-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.04);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.rf-platform-banner strong { color: var(--text); }
+.rf-new-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 .rf-stats { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .rf-header-actions { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
-.rf-scan-btn {
-  display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.5rem 1.25rem; border-radius: 6px; border: 1px solid var(--accent);
-  background: var(--accent); color: #fff; cursor: pointer; font-size: 0.85rem;
-  font-weight: 500; transition: opacity 0.15s;
-}
-.rf-scan-btn:hover { opacity: 0.9; }
-.rf-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.rf-scan-btn .spinner { animation: rf-spin 1s linear infinite; }
-@keyframes rf-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 .rf-filter-bar { display: flex; gap: 0.5rem; }
 .rf-filter-btn {

@@ -26,6 +26,7 @@ const adminNavSections = [
     items: [
       { to: '/admin/audit-log', icon: ScrollText, label: 'Audit Log' },
       { to: '/admin/system', icon: Activity, label: 'System Health' },
+      { to: '/admin/vuln-scan', icon: Shield, label: 'Vuln Scanning' },
     ],
   },
 ];

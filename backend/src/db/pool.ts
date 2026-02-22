@@ -248,6 +248,65 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_findings_scan ON vulnerability_findings(scan_id)`);
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_vuln_findings_unique ON vulnerability_findings(product_id, source, source_id, dependency_purl)`);
 
+
+    // Notifications table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        user_id UUID REFERENCES users(id),
+        type VARCHAR(50) NOT NULL,
+        severity VARCHAR(20) DEFAULT 'info',
+        title VARCHAR(500) NOT NULL,
+        body TEXT DEFAULT '',
+        link VARCHAR(500),
+        metadata JSONB DEFAULT '{}',
+        is_read BOOLEAN DEFAULT FALSE,
+        read_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_notifications_org ON notifications(org_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_notifications_org_unread ON notifications(org_id, is_read) WHERE is_read = FALSE`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at DESC)`);
+
+
+    // Platform-wide vulnerability scan runs
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS platform_scan_runs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        status VARCHAR(20) DEFAULT 'running',
+        triggered_by VARCHAR(255),
+        trigger_type VARCHAR(20) NOT NULL,
+        total_products INT DEFAULT 0,
+        total_unique_dependencies INT DEFAULT 0,
+        total_findings INT DEFAULT 0,
+        critical_count INT DEFAULT 0,
+        high_count INT DEFAULT 0,
+        medium_count INT DEFAULT 0,
+        low_count INT DEFAULT 0,
+        new_findings_count INT DEFAULT 0,
+        started_at TIMESTAMPTZ DEFAULT NOW(),
+        completed_at TIMESTAMPTZ,
+        duration_seconds NUMERIC(10,2),
+        osv_duration_ms INT,
+        osv_findings INT DEFAULT 0,
+        github_duration_ms INT,
+        github_findings INT DEFAULT 0,
+        nvd_duration_ms INT,
+        nvd_findings INT DEFAULT 0,
+        error_message TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_platform_scan_runs_status ON platform_scan_runs(status)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_platform_scan_runs_started ON platform_scan_runs(started_at DESC)`);
+
+    // Add platform_scan_run_id FK to existing tables
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS platform_scan_run_id UUID REFERENCES platform_scan_runs(id)`);
+    await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS platform_scan_run_id UUID REFERENCES platform_scan_runs(id)`);
+
     console.log('Database schema initialized');
   } finally {
     client.release();

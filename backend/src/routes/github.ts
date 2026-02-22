@@ -5,6 +5,7 @@ import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { encrypt, decrypt } from '../utils/encryption.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
+import { createNotification } from '../services/notifications.js';
 import {
   exchangeCodeForToken,
   getAuthenticatedUser,
@@ -874,6 +875,32 @@ router.post('/webhook', async (req: Request, res: Response) => {
         console.log(`[WEBHOOK] Audit event recorded for product: ${productId}`);
       } catch (telErr: any) {
         console.error('[WEBHOOK] Failed to record audit event:', telErr.message);
+      }
+
+      // Create notification for stale SBOM
+      try {
+        const orgResult = await neo4jSession.run(
+          'MATCH (p:Product {id: $productId})-[:BELONGS_TO]->(o:Organisation) RETURN o.id AS orgId, p.name AS name',
+          { productId }
+        );
+        if (orgResult.records.length > 0) {
+          const webhookOrgId = orgResult.records[0].get('orgId');
+          const productName = orgResult.records[0].get('name') || productId;
+          if (webhookOrgId) {
+            await createNotification({
+              orgId: webhookOrgId,
+              userId: null,
+              type: 'sbom_stale',
+              severity: 'medium',
+              title: 'SBOM is now stale for ' + productName,
+              body: 'A push to the GitHub repository was detected. The SBOM needs to be re-synced.',
+              link: '/products/' + productId + '?tab=dependencies',
+              metadata: { productId, productName, repoUrl, event: 'push' },
+            });
+          }
+        }
+      } catch (notifErr: any) {
+        console.error('[WEBHOOK] Failed to create stale SBOM notification:', notifErr.message);
       }
     }
 

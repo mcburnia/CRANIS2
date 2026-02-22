@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useUnreadCount } from '../hooks/useNotifications';
 import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
   FolderGit2, Users, Box, AlertTriangle, CreditCard,
@@ -19,7 +20,7 @@ const navSections = [
     label: 'Overview',
     items: [
       { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-      { to: '/notifications', icon: Bell, label: 'Notifications' },
+      { to: '/notifications', icon: Bell, label: 'Notifications', badge: true },
     ],
   },
   {
@@ -59,6 +60,7 @@ const navSections = [
 export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { unreadCount } = useUnreadCount();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -108,6 +110,9 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
             >
               <item.icon size={18} className="nav-icon" />
               {item.label}
+              {'badge' in item && item.badge && unreadCount > 0 && (
+                <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+              )}
             </NavLink>
           ))}
         </div>
