@@ -18,17 +18,45 @@ CRANIS2 is a SaaS platform that helps software organisations achieve and maintai
 ## Server Access
 
 - **Server:** Mac Mini running Ubuntu Linux
-- **SSH:** `ssh mcburnia@192.168.1.107`
+- **SSH (direct):** `ssh mcburnia@192.168.1.107` (only works from user's own terminal)
+- **SSH (Claude Code):** `ssh -p 2222 mcburnia@localhost` (via SSH tunnel — see below)
 - **Project path:** `~/cranis2/`
 - **Public URL:** `https://dev.cranis2.dev` (via Cloudflare Tunnel)
 - **Node.js:** Available via nvm — always prefix commands with `source ~/.nvm/nvm.sh &&`
 - **SSH key for GitHub:** `~/.ssh/id_ed25519` (has passphrase — user must run `git push` manually)
 - **Cloudflare Tunnel:** `cloudflared` running as systemd service (`cloudflared.service`), config at `~/.cloudflared/config.yml`
 
-## Step 1: Connect and Verify Server
+### SSH Tunnel Workaround (IMPORTANT)
+
+Claude Code's CLI binary has a macOS bug where it cannot access local network devices directly (missing Info.plist prevents TCC Local Network permission from working). See `learning.md` for full details.
+
+**Before starting any session, the user must run these commands in their own terminal (not Claude Code):**
 
 ```bash
-ssh mcburnia@192.168.1.107 "echo 'Connected' && hostname && uname -a"
+# Terminal tab 1: Start SSH tunnel (keep running)
+ssh -N -L 2222:localhost:22 mcburnia@192.168.1.107
+
+# Terminal tab 2: Load SSH key
+ssh-add ~/.ssh/id_ed25519
+```
+
+**Claude Code then uses the tunnel for all server access:**
+```bash
+# SSH commands
+ssh -p 2222 mcburnia@localhost 'command here'
+
+# SCP file transfers
+scp -P 2222 localfile mcburnia@localhost:~/cranis2/path/
+```
+
+**If the tunnel dies**, the user needs to restart it in their terminal. If `bind [127.0.0.1]:2222: Address already in use` appears, the tunnel is already running.
+
+## Step 1: Connect and Verify Server
+
+**Ensure the SSH tunnel is running first** (see Server Access section above).
+
+```bash
+ssh -p 2222 mcburnia@localhost "echo 'Connected' && hostname && uname -a"
 ```
 
 ## Step 2: Check Docker Containers
@@ -36,7 +64,7 @@ ssh mcburnia@192.168.1.107 "echo 'Connected' && hostname && uname -a"
 All four must be running:
 
 ```bash
-ssh mcburnia@192.168.1.107 "docker ps --filter name=cranis2 --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+ssh -p 2222 mcburnia@localhost "docker ps --filter name=cranis2 --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
 ```
 
 Expected containers:
@@ -51,7 +79,7 @@ Expected containers:
 If containers are down, start them:
 
 ```bash
-ssh mcburnia@192.168.1.107 "cd ~/cranis2 && docker compose up -d"
+ssh -p 2222 mcburnia@localhost "cd ~/cranis2 && docker compose up -d"
 ```
 
 ## Step 3: Sync Code from GitHub
@@ -59,7 +87,7 @@ ssh mcburnia@192.168.1.107 "cd ~/cranis2 && docker compose up -d"
 The server may have been restarted overnight. Always pull latest:
 
 ```bash
-ssh mcburnia@192.168.1.107 "cd ~/cranis2 && git pull origin main"
+ssh -p 2222 mcburnia@localhost "cd ~/cranis2 && git pull origin main"
 ```
 
 **Note:** If git pull fails with SSH permission errors, the user needs to run:
@@ -74,16 +102,16 @@ If code was pulled or changes were made:
 
 ```bash
 # Rebuild frontend
-ssh mcburnia@192.168.1.107 "source ~/.nvm/nvm.sh && cd ~/cranis2/frontend && npm install && npm run build"
+ssh -p 2222 mcburnia@localhost "source ~/.nvm/nvm.sh && cd ~/cranis2/frontend && npm install && npm run build"
 
 # Rebuild and restart all services
-ssh mcburnia@192.168.1.107 "cd ~/cranis2 && docker compose up -d --build && docker compose restart nginx"
+ssh -p 2222 mcburnia@localhost "cd ~/cranis2 && docker compose up -d --build && docker compose restart nginx"
 ```
 
 ## Step 5: Verify the App
 
 ```bash
-ssh mcburnia@192.168.1.107 "curl -s -o /dev/null -w '%{http_code}' http://localhost:3002 && echo '' && curl -s http://localhost:3002/api/health"
+ssh -p 2222 mcburnia@localhost "curl -s -o /dev/null -w '%{http_code}' http://localhost:3002 && echo '' && curl -s http://localhost:3002/api/health"
 ```
 
 Should return `200` and `{"status":"ok"}`. The app is accessible at:
