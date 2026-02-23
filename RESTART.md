@@ -195,18 +195,19 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         contributors-overview.ts ← GET /contributors/overview
         dependencies-overview.ts ← GET /dependencies/overview (+ license analysis)
         risk-findings.ts   ← Vulnerability scanning + findings CRUD (5 endpoints)
-        admin.ts           ← Platform admin endpoints (dashboard, orgs, users, invite, audit, system)
+        admin.ts           ← Platform admin endpoints (dashboard, orgs, users, invite, audit, system, vuln-scan, vuln-db)
         dev.ts             ← Dev-only routes (nuke button — MUST REMOVE BEFORE PRODUCTION)
       db/
-        pool.ts            ← Postgres pool + schema init (users, user_events, github_connections)
+        pool.ts            ← Postgres pool + schema init (all tables including vuln_db_* and CPE index)
         neo4j.ts           ← Neo4j driver + graph schema init (constraints/indexes)
         schema.sql         ← Users table DDL (reference)
       services/
         email.ts           ← Resend email integration (verification + invite emails)
         telemetry.ts       ← Passive telemetry — dual-write to Postgres + Neo4j
         github.ts          ← GitHub API client (READ-ONLY — GET requests + SBOM + releases/tags)
-        scheduler.ts       ← Daily auto-sync scheduler (stale SBOMs at 2 AM)
-        vulnerability-scanner.ts ← Platform-wide CVE scanner (OSV + GitHub Advisory + NVD, deduplication)
+        scheduler.ts       ← Daily scheduler (vuln DB sync 1 AM, SBOM sync 2 AM, vuln scan 3 AM)
+        vulnerability-scanner.ts ← Platform-wide CVE scanner (local Postgres DB with CPE matching, deduplication)
+        vuln-db-sync.ts    ← Local vulnerability database sync (OSV.dev + NVD feeds → Postgres, CPE index rebuild)
       middleware/
         requirePlatformAdmin.ts ← Platform admin auth middleware (JWT + DB check)
       utils/
@@ -245,7 +246,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         billing/           ← BillingPage, ReportsPage (stubs)
         settings/          ← StakeholdersPage (live), OrganisationPage (live), AuditLogPage (live)
         notifications/     ← NotificationsPage (live — filters, mark-read, severity badges)
-        admin/             ← AdminDashboardPage, AdminOrgsPage, AdminUsersPage, AdminAuditLogPage, AdminSystemPage
+        admin/             ← AdminDashboardPage, AdminOrgsPage, AdminUsersPage, AdminAuditLogPage, AdminSystemPage, AdminVulnScanPage, AdminVulnDbPage
 ```
 
 ## Routes
@@ -267,6 +268,8 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 - `/admin/users` → User management (search, filters, admin toggle, invite users via email)
 - `/admin/audit-log` → Cross-org audit log (paginated, filterable by event type/email)
 - `/admin/system` → System health (scan performance, DB row counts, error rates)
+- `/admin/vuln-scan` → Vulnerability scanning (trigger scans, scan history, per-product breakdown)
+- `/admin/vuln-db` → Vulnerability database (ecosystem stats, sync controls, advisory/CVE counts)
 
 **Authenticated (with sidebar, requires JWT + org):**
 - `/dashboard` → Dashboard (live — real data from Neo4j + Postgres, vulnerability summary)
@@ -348,6 +351,8 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 | GET | /api/admin/vulnerability-scan/status | Latest scan status with per-product breakdown |
 | GET | /api/admin/vulnerability-scan/history | Paginated scan run history |
 | POST | /api/auth/accept-invite | Accept invitation — set password, activate account |
+| GET | /api/admin/vulnerability-db/status | Local vuln DB status (ecosystems, advisory counts, sync times) |
+| POST | /api/admin/vulnerability-db/sync | Trigger manual vuln DB sync (admin only) |
 
 ## Database Schema
 
@@ -480,11 +485,12 @@ CREATE TABLE obligations (
   UNIQUE(org_id, product_id, obligation_key)
 );
 
--- Vulnerability scans (scan execution tracking with performance data)
+-- Vulnerability scans (per-product scan tracking, FK to platform_scan_runs)
 CREATE TABLE vulnerability_scans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL,
   product_id VARCHAR(255) NOT NULL,
+  platform_scan_run_id UUID REFERENCES platform_scan_runs(id),
   started_at TIMESTAMPTZ DEFAULT NOW(),
   completed_at TIMESTAMPTZ,
   status VARCHAR(20) DEFAULT 'running',
@@ -533,6 +539,87 @@ CREATE TABLE vulnerability_findings (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(product_id, source, source_id, dependency_purl)
+);
+
+-- Platform scan runs (platform-wide vulnerability scan tracking)
+CREATE TABLE platform_scan_runs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  status VARCHAR(20) DEFAULT 'running',
+  triggered_by VARCHAR(255),
+  trigger_type VARCHAR(20) DEFAULT 'manual',
+  total_products INT DEFAULT 0,
+  total_unique_dependencies INT DEFAULT 0,
+  total_findings INT DEFAULT 0,
+  new_findings_count INT DEFAULT 0,
+  critical_count INT DEFAULT 0,
+  high_count INT DEFAULT 0,
+  medium_count INT DEFAULT 0,
+  low_count INT DEFAULT 0,
+  osv_duration_ms INT,
+  osv_findings INT DEFAULT 0,
+  github_duration_ms INT,
+  github_findings INT DEFAULT 0,
+  nvd_duration_ms INT,
+  nvd_findings INT DEFAULT 0,
+  local_db_duration_ms INT,
+  local_db_findings INT DEFAULT 0,
+  duration_seconds NUMERIC(10,2),
+  error_message TEXT,
+  started_at TIMESTAMPTZ DEFAULT NOW(),
+  completed_at TIMESTAMPTZ
+);
+
+-- Local vulnerability database: OSV/GHSA advisories (263K+ records)
+CREATE TABLE vuln_db_advisories (
+  id VARCHAR(50) PRIMARY KEY,
+  ecosystem VARCHAR(50) NOT NULL,
+  package_name VARCHAR(500),
+  aliases TEXT[],
+  severity VARCHAR(20),
+  summary TEXT,
+  affected JSONB,
+  raw JSONB,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Local vulnerability database: NVD CVEs (182K+ records)
+CREATE TABLE vuln_db_nvd (
+  cve_id VARCHAR(30) PRIMARY KEY,
+  description TEXT,
+  description_tsv TSVECTOR,
+  severity VARCHAR(20),
+  cvss_score DECIMAL(3,1),
+  cpe_matches JSONB DEFAULT '[]',
+  references JSONB DEFAULT '[]',
+  published_at TIMESTAMPTZ,
+  modified_at TIMESTAMPTZ,
+  raw JSONB
+);
+
+-- Flattened CPE index for fast NVD vulnerability matching (1M+ entries)
+CREATE TABLE vuln_db_nvd_cpe_index (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  cve_id VARCHAR(30) NOT NULL,
+  vendor VARCHAR(200),
+  product VARCHAR(200) NOT NULL,
+  target_sw VARCHAR(100),
+  version_exact VARCHAR(100),
+  version_start_incl VARCHAR(100),
+  version_start_excl VARCHAR(100),
+  version_end_incl VARCHAR(100),
+  version_end_excl VARCHAR(100)
+);
+-- Indexes: idx_nvd_cpe_product, idx_nvd_cpe_target, idx_nvd_cpe_product_target
+
+-- Vulnerability database sync status (per-ecosystem tracking)
+CREATE TABLE vuln_db_sync_status (
+  ecosystem VARCHAR(50) PRIMARY KEY,
+  last_sync_at TIMESTAMPTZ,
+  status VARCHAR(20) DEFAULT 'pending',
+  advisory_count INT DEFAULT 0,
+  package_count INT DEFAULT 0,
+  duration_seconds NUMERIC(10,2),
+  error_message TEXT
 );
 ```
 
@@ -764,7 +851,7 @@ Version history is displayed on the Product Overview tab showing both CRANIS2 ve
 4. **Resolution** -> Either manual "Update Available" click OR daily 2 AM auto-sync
 5. **Sync runs** -> Fresh SBOM fetched, new CRANIS2 version generated, `is_stale` cleared to FALSE
 
-The scheduler (`services/scheduler.ts`) checks every 60 minutes and runs the auto-sync at 2 AM for any stale SBOMs.
+The scheduler (`services/scheduler.ts`) checks every 60 minutes and runs: vuln DB sync at 1 AM, SBOM auto-sync at 2 AM for stale SBOMs, and platform vulnerability scan at 3 AM.
 
 ## Cloudflare Tunnel
 
@@ -791,7 +878,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-02-22 (session 3)
+**Last updated:** 2026-02-23 (session 4)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -831,9 +918,9 @@ sudo systemctl restart cloudflared
 - **Repos overview** — Cross-product repository summary with StatCards (connected/disconnected), repo details, sync status
 - **Contributors overview** — Cross-product contributor grid with avatar display, GitHub profile links, contribution counts
 - **Dependencies overview** — Cross-product dependency management with license analysis (MIT/ISC/copyleft risk), SBOM status, searchable dependency tables
-- **Vulnerability scanning** — Multi-source CVE scanning against OSV.dev (batch PURL), GitHub Advisory Database, and NVD (rate-limited). Per-finding severity, mitigation guidance, CRA Art. 13(6) references
+- **Vulnerability scanning** — Scans local Postgres vulnerability database (OSV/GHSA advisories + NVD CVEs via CPE matching). Per-finding severity, mitigation guidance, CRA Art. 13(6) references
 - **Risk Findings page** — Cross-product vulnerability overview with severity breakdown, expandable findings, dismiss/acknowledge workflow
-- **Scan performance tracking** — Per-source timing (OSV/GitHub/NVD), scan history with aggregate stats (avg/min/max)
+- **Scan performance tracking** — Local DB timing + legacy per-source timing, scan history with aggregate stats (avg/min/max)
 - **Dashboard risk card** — Real vulnerability data replacing "coming soon" placeholder, severity breakdown, per-product findings
 - **Product RiskFindingsTab** — Per-product vulnerability findings with scan trigger, severity badges, mitigation display, dismiss actions
 - **Platform Admin Dashboard** — Separate admin area with purple accent theme, cross-org stats, organisation drill-down, user management
@@ -842,20 +929,29 @@ sudo systemctl restart cloudflared
 - **Admin System Health** — Scan performance metrics, DB row counts, error rates, recent scan history
 - **User Invite System** — Platform admins invite users via email (Resend), optional org pre-assignment, set-password flow, re-invite support
 - **Notifications system** -- Backend API (list/unread-count/mark-read), notifications service, sidebar unread badge with 60s polling, full notifications page with type/severity filters and mark-all-read
-- **Platform-wide vulnerability scanning** -- Admin-only, deduplicates all SBOM components across all products, scans OSV + GitHub Advisory + NVD once, attributes findings to all affected products, sends targeted notifications to stakeholders (security contacts, compliance officers) and platform admins
-- **Admin Vulnerability Scan page** -- Manual scan trigger, current scan summary with per-source timing, per-product findings breakdown table, paginated scan history
+- **Platform-wide vulnerability scanning** -- Admin-only, deduplicates all SBOM components across all products, scans local Postgres DB, attributes findings to all affected products, sends targeted notifications to stakeholders (security contacts, compliance officers) and platform admins
+- **Admin Vulnerability Scan page** -- Manual scan trigger, current scan summary with local DB timing, per-product findings breakdown table, paginated scan history
 - **Daily scheduled vulnerability scan** -- Runs at 3 AM (after 2 AM SBOM sync), uses same platform-wide deduplication approach
-- **platform_scan_runs table** -- Tracks platform-wide scan operations with per-source timing (OSV/GitHub/NVD), aggregate severity metrics, new findings count
+- **platform_scan_runs table** -- Tracks platform-wide scan operations with local DB timing + legacy per-source timing, aggregate severity metrics, new findings count
 - **Accept Invite Page** — `/accept-invite` page with password strength validation, auto-login on completion, org-aware redirect
+- **Local vulnerability database** — 263K OSV/GHSA advisories + 182K NVD CVEs stored in Postgres. Daily sync at 1 AM from OSV.dev + NVD community feeds (vuln-db-sync.ts). Scans query local DB instead of external APIs (~0.25s vs ~6 min)
+- **CPE-based NVD matching** — Flattened CPE index (1M+ entries) with ecosystem-strict matching (node.js target_sw only, no wildcards). GENERIC_CPE_NAMES blocklist prevents false positives from scoped package short names
+- **Severity normalisation** — normaliseSeverity() maps GitHub "moderate" to standard "medium". All severities standardised to critical/high/medium/low
+- **Admin Vuln Database page** — `/admin/vuln-db` showing ecosystem stats, advisory/CVE counts, sync controls, architecture info card
+- **Admin pages updated for local DB** — Dashboard shows last DB sync time, System Health shows Local DB Query avg latency (historical API latencies dimmed), Vuln Scan shows local DB timing as primary display
 
-**Known Issues:**
+**Known Issues / Gotchas:**
 - **PRODUCTION MIGRATION**: `FRONTEND_URL` in `.env` is currently `https://dev.cranis2.dev`. When moving to production, this MUST be changed to `https://cranis2.com` (or equivalent production URL). This affects all email links (verification, invitations) and OAuth callback URLs.
 - DNS for poste.cranis2.com pending DKIM verification — once verified, invite emails will flow via Resend
 - Dev routes (`/api/dev/*`) must be removed before production
 - SBOM debug logging still in `services/github.ts` (console.log statements) — remove before production
+- **local_db_duration_ms** lives on `platform_scan_runs`, NOT `vulnerability_scans` — must JOIN through `platform_scan_run_id`
+- **GitHub "moderate" severity** — always use normaliseSeverity() when storing severity from any source
+- **NVD CPE matching** — never use keyword/description search (produces massive false positives). Always use CPE index with ecosystem-strict targets
+- **CPE wildcard target_sw** (`*`) matches unrelated products — only match ecosystem-specific targets (e.g. `node.js`)
+- **GENERIC_CPE_NAMES blocklist** in vulnerability-scanner.ts prevents scoped npm short names (core, connect, debug, etc.) from matching unrelated CPE products
 
 **Next Steps:**
-- **Phase 2: Automated vulnerability scanning** — Daily SBOM update + vulnerability checks + stakeholder notifications
 - Stub pages remaining: Billing, Reports
 - Verify poste.cranis2.com DKIM in Resend, then confirm invite emails deliver
 - Remove dev routes before production deployment
