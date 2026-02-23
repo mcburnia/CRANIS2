@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { readFileSync } from 'fs';
 import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { requirePlatformAdmin } from '../middleware/requirePlatformAdmin.js';
@@ -488,7 +489,7 @@ router.get('/users', requirePlatformAdmin, async (req: Request, res: Response) =
     // Get all users from Postgres
     let query = `
       SELECT id, email, org_id, org_role, email_verified, is_platform_admin,
-             preferred_language, created_at, updated_at
+             preferred_language, created_at, updated_at, suspended_at, suspended_by
       FROM users
     `;
     const params: any[] = [];
@@ -550,6 +551,8 @@ router.get('/users', requirePlatformAdmin, async (req: Request, res: Response) =
       preferredLanguage: u.preferred_language || null,
       lastLogin: lastLoginMap[u.id] || null,
       createdAt: u.created_at,
+      suspendedAt: u.suspended_at || null,
+      suspendedBy: u.suspended_by || null,
     }));
 
     const totalAdmins = users.filter(u => u.isPlatformAdmin).length;
@@ -623,6 +626,156 @@ router.put('/users/:userId/platform-admin', requirePlatformAdmin, async (req: Re
   }
 });
 
+
+
+// PUT /api/admin/users/:userId — Edit user details
+router.put('/users/:userId', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const adminUserId = (req as any).userId;
+    const adminEmail = (req as any).email;
+    const { email, orgRole } = req.body;
+
+    const userResult = await pool.query('SELECT id, email FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const updates: string[] = ['updated_at = NOW()'];
+    const params: any[] = [];
+    let idx = 1;
+
+    if (email) {
+      // Check email not already taken
+      const existing = await pool.query('SELECT id FROM users WHERE email = $1 AND id != $2', [email, userId]);
+      if (existing.rows.length > 0) {
+        res.status(409).json({ error: 'Email address already in use' });
+        return;
+      }
+      updates.push('email = $' + idx); params.push(email); idx++;
+    }
+    if (orgRole) {
+      updates.push('org_role = $' + idx); params.push(orgRole); idx++;
+    }
+
+    params.push(userId);
+    await pool.query(
+      'UPDATE users SET ' + updates.join(', ') + ' WHERE id = $' + idx,
+      params
+    );
+
+    const { recordEvent, extractRequestData } = await import('../services/telemetry.js');
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: adminUserId, email: adminEmail,
+      eventType: 'admin_user_edited', ...reqData,
+      metadata: { targetUserId: userId, changes: { email, orgRole } },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Admin edit user error:', err);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// PUT /api/admin/users/:userId/suspend — Suspend or unsuspend a user
+router.put('/users/:userId/suspend', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { suspend } = req.body;
+    const adminUserId = (req as any).userId;
+    const adminEmail = (req as any).email;
+
+    if (typeof suspend !== 'boolean') {
+      res.status(400).json({ error: 'suspend must be a boolean' });
+      return;
+    }
+
+    if (userId === adminUserId) {
+      res.status(400).json({ error: 'Cannot suspend yourself' });
+      return;
+    }
+
+    const userResult = await pool.query('SELECT id, email FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const targetEmail = userResult.rows[0].email;
+
+    if (suspend) {
+      await pool.query(
+        'UPDATE users SET suspended_at = NOW(), suspended_by = $1, updated_at = NOW() WHERE id = $2',
+        [adminEmail, userId]
+      );
+    } else {
+      await pool.query(
+        'UPDATE users SET suspended_at = NULL, suspended_by = NULL, updated_at = NOW() WHERE id = $1',
+        [userId]
+      );
+    }
+
+    const { recordEvent, extractRequestData } = await import('../services/telemetry.js');
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: adminUserId, email: adminEmail,
+      eventType: suspend ? 'admin_user_suspended' : 'admin_user_unsuspended',
+      ...reqData,
+      metadata: { targetUserId: userId, targetEmail },
+    });
+
+    res.json({ success: true, suspended: suspend });
+  } catch (err) {
+    console.error('Admin suspend user error:', err);
+    res.status(500).json({ error: 'Failed to suspend/unsuspend user' });
+  }
+});
+
+// DELETE /api/admin/users/:userId — Delete a user
+router.delete('/users/:userId', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const adminUserId = (req as any).userId;
+    const adminEmail = (req as any).email;
+
+    if (userId === adminUserId) {
+      res.status(400).json({ error: 'Cannot delete yourself' });
+      return;
+    }
+
+    const userResult = await pool.query('SELECT id, email, org_id FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const targetEmail = userResult.rows[0].email;
+    const targetOrgId = userResult.rows[0].org_id;
+
+    // Delete related data
+    await pool.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM user_events WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM feedback WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM github_connections WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+
+    const { recordEvent, extractRequestData } = await import('../services/telemetry.js');
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: adminUserId, email: adminEmail,
+      eventType: 'admin_user_deleted', ...reqData,
+      metadata: { targetUserId: userId, targetEmail, targetOrgId },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Admin delete user error:', err);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
 
 // GET /api/admin/audit-log — Cross-org audit log with filtering + pagination
 router.get('/audit-log', requirePlatformAdmin, async (req: Request, res: Response) => {
@@ -839,6 +992,13 @@ router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) 
     `);
     const tableCounts = tableCountsResult.rows[0];
 
+    // Read CPU temperature
+    let cpuTempC: number | null = null;
+    try {
+      const raw = readFileSync('/sys/class/thermal/thermal_zone0/temp', 'utf-8').trim();
+      cpuTempC = Math.round(parseInt(raw) / 1000);
+    } catch { /* not available */ }
+
     res.json({
       overview: {
         totalEvents: totalEvents,
@@ -846,6 +1006,7 @@ router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) 
         scansToday: parseInt(scanStats.scans_today) || 0,
         avgScanDuration: scanStats.avg_duration ? parseFloat(scanStats.avg_duration).toFixed(1) : null,
         errorRate: parseFloat(errorRate),
+        cpuTemp: cpuTempC,
       },
       scanPerformance: {
         totalScans,
@@ -1217,6 +1378,95 @@ router.get('/vulnerability-db/status', requirePlatformAdmin, async (req: Request
   } catch (err) {
     console.error('Admin vuln DB status error:', err);
     res.status(500).json({ error: 'Failed to fetch vulnerability database status' });
+  }
+});
+
+
+// GET /api/admin/feedback — List all feedback submissions
+router.get('/feedback', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const status = req.query.status as string | undefined;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = (page - 1) * limit;
+
+    let query = 'SELECT * FROM feedback';
+    const params: any[] = [];
+    let paramIdx = 1;
+
+    if (status) {
+      query += ' WHERE status = $' + paramIdx;
+      params.push(status);
+      paramIdx++;
+    }
+
+    query += ' ORDER BY created_at DESC LIMIT $' + paramIdx + ' OFFSET $' + (paramIdx + 1);
+    params.push(limit, offset);
+
+    const result = await pool.query(query, params);
+
+    let countQuery = 'SELECT COUNT(*) AS total FROM feedback';
+    const countParams: any[] = [];
+    if (status) {
+      countQuery += ' WHERE status = $1';
+      countParams.push(status);
+    }
+    const countResult = await pool.query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0].total);
+
+    // Summary counts
+    const summaryResult = await pool.query(
+      "SELECT status, COUNT(*) AS cnt FROM feedback GROUP BY status"
+    );
+    const summary: Record<string, number> = { new: 0, reviewed: 0, resolved: 0 };
+    for (const row of summaryResult.rows) {
+      summary[row.status] = parseInt(row.cnt);
+    }
+
+    res.json({
+      feedback: result.rows,
+      summary,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    console.error('Failed to fetch feedback:', err);
+    res.status(500).json({ error: 'Failed to fetch feedback' });
+  }
+});
+
+// PUT /api/admin/feedback/:id — Update feedback status/notes
+router.put('/feedback/:id', requirePlatformAdmin, async (req: Request, res: Response) => {
+  const feedbackId = req.params.id as string;
+  const { status, adminNotes } = req.body;
+
+  if (status && !['new', 'reviewed', 'resolved'].includes(status)) {
+    res.status(400).json({ error: 'Invalid status' });
+    return;
+  }
+
+  try {
+    const updates: string[] = ['updated_at = NOW()'];
+    const params: any[] = [];
+    let idx = 1;
+
+    if (status) { updates.push('status = $' + idx); params.push(status); idx++; }
+    if (adminNotes !== undefined) { updates.push('admin_notes = $' + idx); params.push(adminNotes); idx++; }
+
+    params.push(feedbackId);
+    const result = await pool.query(
+      'UPDATE feedback SET ' + updates.join(', ') + ' WHERE id = $' + idx + ' RETURNING *',
+      params
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Feedback not found' });
+      return;
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Failed to update feedback:', err);
+    res.status(500).json({ error: 'Failed to update feedback' });
   }
 });
 

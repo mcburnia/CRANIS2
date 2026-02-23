@@ -19,6 +19,7 @@ import dependenciesOverviewRoutes from "./routes/dependencies-overview.js";
 import riskFindingsRoutes from "./routes/risk-findings.js";
 import adminRoutes from "./routes/admin.js";
 import notificationRoutes from "./routes/notifications.js";
+import feedbackRoutes from "./routes/feedback.js";
 import { startScheduler } from './services/scheduler.js';
 
 const app = express();
@@ -49,6 +50,7 @@ app.use('/api/dependencies', dependenciesOverviewRoutes);
 app.use('/api/risk-findings', riskFindingsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

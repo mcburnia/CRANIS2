@@ -193,7 +193,7 @@ export default function AdminVulnScanPage() {
 
           <div className="avs-stat-row">
             <StatCard label="Products" value={currentRun.totalProducts} color="blue" />
-            <StatCard label="Unique Deps" value={currentRun.totalUniqueDependencies} color="blue" />
+            <StatCard label="Dependencies" value={currentRun.totalUniqueDependencies} color="blue" />
             <StatCard label="Findings" value={currentRun.totalFindings} color={currentRun.criticalCount > 0 ? 'red' : 'blue'} />
             <StatCard label="New" value={currentRun.newFindingsCount} color={currentRun.newFindingsCount > 0 ? 'amber' : 'green'} />
           </div>

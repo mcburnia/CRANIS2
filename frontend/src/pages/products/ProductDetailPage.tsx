@@ -5,7 +5,7 @@ import PageHeader from '../../components/PageHeader';
 import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
-  CheckCircle2, Clock, ChevronRight, ExternalLink, Github, Star,
+  CheckCircle2, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
   GitFork, Eye, RefreshCw, Users, Unplug, Loader2
 } from 'lucide-react';
 import './ProductDetailPage.css';
@@ -1306,20 +1306,36 @@ function RiskFindingsTab({ productId }: { productId: string }) {
   useEffect(() => { fetchFindings(); }, [productId]);
 
   const handleScan = async () => {
+    if (scanning) return;
     setScanning(true);
     try {
       const resp = await fetch(`/api/risk-findings/${productId}/scan`, {
         method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
-      const result = await resp.json();
-      if (result.scanId) {
-        let done = false; let attempts = 0;
-        while (!done && attempts < 60) {
-          await new Promise(r => setTimeout(r, 3000));
-          const poll = await fetch(`/api/risk-findings/scan/${result.scanId}`, { headers: { Authorization: `Bearer ${token}` } });
-          const pollData = await poll.json();
-          if (pollData.status === 'completed' || pollData.status === 'failed') done = true;
-          attempts++;
+      if (resp.status === 409) {
+        // Already running — just poll the existing scan
+        const existing = await resp.json();
+        if (existing.scanId) {
+          let done = false; let attempts = 0;
+          while (!done && attempts < 60) {
+            await new Promise(r => setTimeout(r, 3000));
+            const poll = await fetch(`/api/risk-findings/scan/${existing.scanId}`, { headers: { Authorization: `Bearer ${token}` } });
+            const pollData = await poll.json();
+            if (pollData.status === 'completed' || pollData.status === 'failed') done = true;
+            attempts++;
+          }
+        }
+      } else {
+        const result = await resp.json();
+        if (result.scanId) {
+          let done = false; let attempts = 0;
+          while (!done && attempts < 60) {
+            await new Promise(r => setTimeout(r, 3000));
+            const poll = await fetch(`/api/risk-findings/scan/${result.scanId}`, { headers: { Authorization: `Bearer ${token}` } });
+            const pollData = await poll.json();
+            if (pollData.status === 'completed' || pollData.status === 'failed') done = true;
+            attempts++;
+          }
         }
       }
     } catch (err) { console.error('Scan failed', err); }
@@ -1328,7 +1344,7 @@ function RiskFindingsTab({ productId }: { productId: string }) {
   };
 
   const handleDismiss = async (findingId: string) => {
-    const reason = prompt('Reason for dismissing (optional):');
+    const reason = prompt('What action was taken to mitigate this vulnerability?');
     await fetch(`/api/risk-findings/${findingId}`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -1351,7 +1367,7 @@ function RiskFindingsTab({ productId }: { productId: string }) {
         <div>
           {summary && (
             <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
-              {summary.total} findings ({summary.open} open) &mdash;
+              {summary.total} findings ({summary.open} open{summary.dismissed > 0 ? ', ' + summary.dismissed + ' mitigated' : ''}) &mdash;
               {summary.critical > 0 && <span style={{ color: '#dc2626', fontWeight: 600 }}> {summary.critical} critical</span>}
               {summary.high > 0 && <span style={{ color: '#f97316', fontWeight: 600 }}> {summary.high} high</span>}
               {summary.medium > 0 && <span style={{ color: 'var(--amber)' }}> {summary.medium} medium</span>}
@@ -1371,7 +1387,7 @@ function RiskFindingsTab({ productId }: { productId: string }) {
         <div className="pd-placeholder">
           <Shield size={48} strokeWidth={1} />
           <h3>No Risk Findings Yet</h3>
-          <p>Click "Scan Now" to check dependencies against OSV.dev, GitHub Advisories, and NVD.</p>
+          <p>Click "Scan Now" to scan this product's dependencies against the local vulnerability database.</p>
         </div>
       )}
 
@@ -1393,9 +1409,10 @@ function RiskFindingsTab({ productId }: { productId: string }) {
                 <span>{f.source_id}</span>
                 <span>{f.dependency_name}@{f.dependency_version}</span>
                 {f.fixed_version && <span>Fix: {f.fixed_version}</span>}
+                {f.status === 'dismissed' && <span style={{ color: 'var(--green)', fontWeight: 500 }}>✓ Mitigated</span>}
               </div>
             </div>
-            <span style={{ fontSize: '0.75rem', color: f.status === 'open' ? 'var(--amber)' : 'var(--muted)' }}>{f.status}</span>
+            <span style={{ fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "0.25rem", color: "var(--accent)", cursor: "pointer" }}>{expandedIds.has(f.id) ? <><ChevronDown size={14} /> Close</> : <><ChevronRight size={14} /> View</>}</span>
           </div>
           {expandedIds.has(f.id) && (
             <div style={{ paddingLeft: '4rem', paddingTop: '0.5rem', fontSize: '0.8rem', color: 'var(--muted)' }}>
@@ -1412,7 +1429,8 @@ function RiskFindingsTab({ productId }: { productId: string }) {
                 </div>
               )}
               <p>{f.description?.substring(0, 500)}</p>
-              {f.status === 'open' && <button onClick={() => handleDismiss(f.id)} style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--muted)', padding: '0.2rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', marginTop: '0.5rem' }}>Dismiss</button>}
+              {f.status === 'dismissed' && (<div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginTop: '0.75rem' }}><div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--green)', marginBottom: '0.2rem' }}>✓ MITIGATED</div>{f.dismissed_reason && <div style={{ fontSize: '0.8rem', color: 'var(--text)' }}>{f.dismissed_reason}</div>}{f.dismissed_at && <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.2rem' }}>by {f.dismissed_by} on {new Date(f.dismissed_at).toLocaleDateString()}</div>}</div>)}
+              {f.status === 'open' && <button onClick={() => handleDismiss(f.id)} style={{ background: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', color: 'var(--green)', padding: '0.3rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', marginTop: '0.75rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem' }}><CheckCircle2 size={13} /> Mark as Mitigated</button>}
             </div>
           )}
         </div>

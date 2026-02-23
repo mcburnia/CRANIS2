@@ -26,7 +26,7 @@
 .aal-select:focus { border-color: var(--purple); }
 
 /* Table */
-.aal-table { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.aal-table { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; min-width: 0; }
 
 .aal-table-header {
   display: grid; grid-template-columns: 0.8fr 1.5fr 1.5fr 1.2fr 0.8fr;
@@ -42,6 +42,13 @@
 .aal-row:last-child { border-bottom: none; }
 .aal-row:hover { background: rgba(168, 85, 247, 0.03); }
 
+.aal-row > span, .aal-table-header > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
 .aal-col-time { color: var(--muted); font-size: 0.8rem; }
 
 .aal-col-type { display: flex; align-items: center; gap: 0.4rem; }
@@ -50,7 +57,7 @@
 
 .aal-col-user { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aal-col-org { font-size: 0.8rem; }
-.aal-org-badge { display: inline-flex; align-items: center; gap: 0.25rem; color: var(--muted); }
+.aal-org-badge { display: inline-flex; align-items: center; gap: 0.25rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .aal-no-val { color: var(--muted); }
 .aal-col-ip { color: var(--muted); font-size: 0.75rem; font-family: monospace; }
 

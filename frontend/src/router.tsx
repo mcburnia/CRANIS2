@@ -36,6 +36,7 @@ import AdminAuditLogPage from './pages/admin/AdminAuditLogPage';
 import AdminSystemPage from './pages/admin/AdminSystemPage';
 import AdminVulnScanPage from './pages/admin/AdminVulnScanPage';
 import AdminVulnDbPage from './pages/admin/AdminVulnDbPage';
+import AdminFeedbackPage from './pages/admin/AdminFeedbackPage';
 
 const router = createBrowserRouter([
   {
@@ -85,6 +86,7 @@ const router = createBrowserRouter([
           { path: '/admin/system', element: <AdminSystemPage /> },
           { path: '/admin/vuln-scan', element: <AdminVulnScanPage /> },
           { path: '/admin/vuln-db', element: <AdminVulnDbPage /> },
+          { path: '/admin/feedback', element: <AdminFeedbackPage /> },
         ],
       },
     ],

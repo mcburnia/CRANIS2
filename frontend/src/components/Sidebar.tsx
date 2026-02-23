@@ -6,8 +6,9 @@ import { useUnreadCount } from '../hooks/useNotifications';
 import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
   FolderGit2, Users, Box, AlertTriangle, CreditCard,
-  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2, Shield
+  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2, Shield, MessageSquareMore
 } from 'lucide-react';
+import FeedbackModal from './FeedbackModal';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -57,11 +58,14 @@ const navSections = [
   },
 ];
 
+// Feedback is a modal trigger, not a nav link — handled separately
+
 export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { unreadCount } = useUnreadCount();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   function handleLogout() {
@@ -117,6 +121,12 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
           ))}
         </div>
       ))}
+      <div className="nav-section">
+        <button className="nav-item feedback-btn" onClick={() => { setShowFeedback(true); if (onNavigate) onNavigate(); }}>
+          <MessageSquareMore size={18} className="nav-icon" />
+          Feedback & Bug Report
+        </button>
+      </div>
       {user?.isPlatformAdmin && (
         <div className="nav-section admin-nav-section">
           <div className="nav-section-label">Platform</div>
@@ -165,6 +175,7 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
         </div>,
         document.body
       )}
+      <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} />
     </>
   );
 }

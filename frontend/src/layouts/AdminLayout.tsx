@@ -3,7 +3,7 @@ import { Outlet, Navigate, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Building2, Users, ScrollText, Activity,
-  ArrowLeft, Menu, X, Loader, Shield, Database
+  ArrowLeft, Menu, X, Loader, Shield, Database, MessageSquareMore
 } from 'lucide-react';
 import './AdminLayout.css';
 
@@ -28,6 +28,12 @@ const adminNavSections = [
       { to: '/admin/system', icon: Activity, label: 'System Health' },
       { to: '/admin/vuln-scan', icon: Shield, label: 'Vuln Scanning' },
       { to: '/admin/vuln-db', icon: Database, label: 'Vuln Database' },
+    ],
+  },
+  {
+    label: 'Support',
+    items: [
+      { to: '/admin/feedback', icon: MessageSquareMore, label: 'User Feedback' },
     ],
   },
 ];
@@ -57,8 +63,7 @@ export default function AdminLayout() {
     <div className="app-layout admin-layout">
       <div className="mobile-topbar admin-topbar">
         <div className="topbar-logo admin-topbar-logo">
-          <Shield size={18} />
-          CRANIS<span>2</span> Admin
+          <Shield size={18} /><span style={{ color: "var(--text)" }}>CRANIS<span style={{ color: "var(--purple)" }}>2</span> Admin</span>
         </div>
         <button
           className="hamburger-btn"
@@ -71,8 +76,7 @@ export default function AdminLayout() {
       <div className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
       <aside className={`sidebar admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-logo admin-logo">
-          <Shield size={16} className="admin-shield" />
-          CRANIS<span>2</span>
+          <Shield size={16} className="admin-shield" /><span style={{ color: "var(--text)" }}>CRANIS<span style={{ color: "var(--purple)" }}>2</span></span>
         </div>
         <div className="sidebar-org admin-badge">Platform Admin</div>
         {adminNavSections.map((section) => (

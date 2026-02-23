@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, CheckCircle, Search, Loader, Clock, Mail, Building2, XCircle, UserPlus } from 'lucide-react';
+import { Shield, CheckCircle, Search, Loader, Clock, Mail, Building2, XCircle, UserPlus, MoreVertical, Edit3, Ban, Trash2, Undo2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
@@ -16,6 +16,8 @@ interface AdminUser {
   preferredLanguage: string | null;
   lastLogin: string | null;
   createdAt: string;
+  suspendedAt: string | null;
+  suspendedBy: string | null;
 }
 
 interface OrgOption {
@@ -23,7 +25,7 @@ interface OrgOption {
   name: string;
 }
 
-type FilterType = 'all' | 'admins' | 'unverified' | 'active';
+type FilterType = 'all' | 'admins' | 'unverified' | 'active' | 'suspended';
 
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return 'Never';
@@ -46,6 +48,15 @@ export default function AdminUsersPage() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [toggling, setToggling] = useState<string | null>(null);
   const [confirmToggle, setConfirmToggle] = useState<{ userId: string; email: string; newStatus: boolean } | null>(null);
+
+  // Action menu state
+  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ userId: string; email: string; action: 'suspend' | 'unsuspend' | 'delete' } | null>(null);
+  const [editUser, setEditUser] = useState<{ id: string; email: string; orgRole: string | null } | null>(null);
+  const [editEmail, setEditEmail] = useState('');
+  const [editRole, setEditRole] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState('');
 
   // Invite state
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -141,6 +152,62 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function handleSuspend(userId: string, suspend: boolean) {
+    setActionLoading(true);
+    setActionError('');
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/admin/users/${userId}/suspend`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ suspend }),
+      });
+      if (!res.ok) { const d = await res.json(); setActionError(d.error || 'Failed'); return; }
+      setConfirmAction(null);
+      await fetchUsers();
+    } catch { setActionError('Network error'); }
+    finally { setActionLoading(false); }
+  }
+
+  async function handleDeleteUser(userId: string) {
+    setActionLoading(true);
+    setActionError('');
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) { const d = await res.json(); setActionError(d.error || 'Failed'); return; }
+      setConfirmAction(null);
+      await fetchUsers();
+    } catch { setActionError('Network error'); }
+    finally { setActionLoading(false); }
+  }
+
+  async function handleEditUser() {
+    if (!editUser) return;
+    setActionLoading(true);
+    setActionError('');
+    try {
+      const token = localStorage.getItem('session_token');
+      const body: any = {};
+      if (editEmail && editEmail !== editUser.email) body.email = editEmail;
+      if (editRole && editRole !== editUser.orgRole) body.orgRole = editRole;
+      if (Object.keys(body).length === 0) { setEditUser(null); return; }
+
+      const res = await fetch(`/api/admin/users/${editUser.id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) { const d = await res.json(); setActionError(d.error || 'Failed'); return; }
+      setEditUser(null);
+      await fetchUsers();
+    } catch { setActionError('Network error'); }
+    finally { setActionLoading(false); }
+  }
+
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
   const filtered = users.filter(u => {
@@ -148,6 +215,7 @@ export default function AdminUsersPage() {
     if (filter === 'admins' && !u.isPlatformAdmin) return false;
     if (filter === 'unverified' && u.emailVerified) return false;
     if (filter === 'active' && (!u.lastLogin || new Date(u.lastLogin).getTime() < thirtyDaysAgo)) return false;
+    if (filter === 'suspended' && !u.suspendedAt) return false;
     return true;
   });
 
@@ -178,13 +246,13 @@ export default function AdminUsersPage() {
         </div>
         <div className="au-controls-right">
           <div className="au-filters">
-            {(['all', 'admins', 'unverified', 'active'] as FilterType[]).map(f => (
+            {(['all', 'admins', 'unverified', 'active', 'suspended'] as FilterType[]).map(f => (
               <button
                 key={f}
                 className={`au-filter-btn ${filter === f ? 'au-filter-active' : ''}`}
                 onClick={() => setFilter(f)}
               >
-                {f === 'all' ? 'All' : f === 'admins' ? 'Admins' : f === 'unverified' ? 'Unverified' : 'Active'}
+                {f === 'all' ? 'All' : f === 'admins' ? 'Admins' : f === 'unverified' ? 'Unverified' : f === 'active' ? 'Active' : 'Suspended'}
               </button>
             ))}
           </div>
@@ -201,6 +269,7 @@ export default function AdminUsersPage() {
           <span className="au-col-status">Status</span>
           <span className="au-col-login">Last Login</span>
           <span className="au-col-admin">Admin</span>
+          <span className="au-col-actions">Actions</span>
         </div>
 
         {filtered.length === 0 && (
@@ -212,19 +281,22 @@ export default function AdminUsersPage() {
             <div className="au-col-email">
               <Mail size={14} className="au-row-icon" />
               <span className="au-email-text">{u.email}</span>
-              {u.id === currentUser?.id && <span className="au-you-badge">You</span>}
+              {u.email === currentUser?.email && <span className="au-you-badge">You</span>}
             </div>
             <div className="au-col-org">
               {u.orgName ? (
                 <span className="au-org-link">
                   <Building2 size={12} /> {u.orgName}
+                  {u.orgRole && <span className="au-role-badge">{u.orgRole}</span>}
                 </span>
               ) : (
                 <span className="au-no-org">No org</span>
               )}
             </div>
             <div className="au-col-status">
-              {u.emailVerified ? (
+              {u.suspendedAt ? (
+                <span className="au-status-badge au-suspended"><Ban size={12} /> Suspended</span>
+              ) : u.emailVerified ? (
                 <span className="au-status-badge au-verified"><CheckCircle size={12} /> Verified</span>
               ) : (
                 <span className="au-status-badge au-unverified"><XCircle size={12} /> Invited</span>
@@ -235,7 +307,7 @@ export default function AdminUsersPage() {
               <span>{timeAgo(u.lastLogin)}</span>
             </div>
             <div className="au-col-admin">
-              {u.id === currentUser?.id ? (
+              {u.email === currentUser?.email ? (
                 <span className="au-admin-self">
                   <Shield size={14} />
                 </span>
@@ -249,6 +321,34 @@ export default function AdminUsersPage() {
                   {toggling === u.id ? '...' : u.isPlatformAdmin ? 'Admin' : 'User'}
                 </button>
               )}
+            </div>
+            <div className="au-col-actions">
+              <div className="au-action-menu-wrap">
+                  <button className="au-action-trigger" onClick={(e) => { e.stopPropagation(); setActionMenuId(actionMenuId === u.id ? null : u.id); }}>
+                    <MoreVertical size={16} />
+                  </button>
+                  {actionMenuId === u.id && (
+                    <div className="au-action-dropdown">
+                      <button onClick={() => { setEditUser({ id: u.id, email: u.email, orgRole: u.orgRole }); setEditEmail(u.email); setEditRole(u.orgRole || 'member'); setActionMenuId(null); setActionError(''); }}>
+                        <Edit3 size={13} /> Edit
+                      </button>
+                      {u.email === currentUser?.email ? null : u.suspendedAt ? (
+                        <button onClick={() => { setConfirmAction({ userId: u.id, email: u.email, action: 'unsuspend' }); setActionMenuId(null); setActionError(''); }}>
+                          <Undo2 size={13} /> Unsuspend
+                        </button>
+                      ) : (
+                        <button onClick={() => { setConfirmAction({ userId: u.id, email: u.email, action: 'suspend' }); setActionMenuId(null); setActionError(''); }}>
+                          <Ban size={13} /> Suspend
+                        </button>
+                      )}
+                      {u.email !== currentUser?.email && (
+                        <button className="au-delete-action" onClick={() => { setConfirmAction({ userId: u.id, email: u.email, action: 'delete' }); setActionMenuId(null); setActionError(''); }}>
+                          <Trash2 size={13} /> Delete
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
             </div>
           </div>
         ))}
@@ -337,6 +437,71 @@ export default function AdminUsersPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirm suspend/delete modal */}
+      {confirmAction && (
+        <div className="au-modal-overlay" onClick={() => setConfirmAction(null)}>
+          <div className="au-modal" onClick={e => e.stopPropagation()}>
+            <h3>
+              {confirmAction.action === 'suspend' ? 'Suspend User' :
+               confirmAction.action === 'unsuspend' ? 'Unsuspend User' : 'Delete User'}
+            </h3>
+            <p>
+              {confirmAction.action === 'suspend'
+                ? `Suspend ${confirmAction.email}? They will not be able to log in until unsuspended.`
+                : confirmAction.action === 'unsuspend'
+                ? `Unsuspend ${confirmAction.email}? They will be able to log in again.`
+                : `Permanently delete ${confirmAction.email}? This will remove all their data and cannot be undone.`}
+            </p>
+            {actionError && <div className="au-invite-error">{actionError}</div>}
+            <div className="au-modal-actions">
+              <button className="au-btn-cancel" onClick={() => setConfirmAction(null)} disabled={actionLoading}>Cancel</button>
+              <button
+                className={`au-btn-confirm ${confirmAction.action === 'delete' ? 'au-btn-revoke' : confirmAction.action === 'suspend' ? 'au-btn-revoke' : 'au-btn-grant'}`}
+                onClick={() => {
+                  if (confirmAction.action === 'delete') handleDeleteUser(confirmAction.userId);
+                  else handleSuspend(confirmAction.userId, confirmAction.action === 'suspend');
+                }}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Processing...' :
+                 confirmAction.action === 'suspend' ? 'Suspend' :
+                 confirmAction.action === 'unsuspend' ? 'Unsuspend' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit user modal */}
+      {editUser && (
+        <div className="au-modal-overlay" onClick={() => setEditUser(null)}>
+          <div className="au-modal au-invite-modal" onClick={e => e.stopPropagation()}>
+            <h3><Edit3 size={18} /> Edit User</h3>
+            {actionError && <div className="au-invite-error">{actionError}</div>}
+            <div className="au-invite-form">
+              <div className="au-invite-field">
+                <label>Email address</label>
+                <input type="email" className="au-invite-input" value={editEmail} onChange={e => setEditEmail(e.target.value)} />
+              </div>
+              <div className="au-invite-field">
+                <label>Organisation Role</label>
+                <select className="au-invite-input" value={editRole} onChange={e => setEditRole(e.target.value)}>
+                  <option value="admin">Admin</option>
+                  <option value="member">Member</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              </div>
+            </div>
+            <div className="au-modal-actions">
+              <button className="au-btn-cancel" onClick={() => setEditUser(null)} disabled={actionLoading}>Cancel</button>
+              <button className="au-btn-confirm au-btn-grant" onClick={handleEditUser} disabled={actionLoading}>
+                {actionLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         </div>
       )}

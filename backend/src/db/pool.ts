@@ -32,6 +32,8 @@ export async function initDb() {
         ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language VARCHAR(10);
         ALTER TABLE users ADD COLUMN IF NOT EXISTS is_platform_admin BOOLEAN DEFAULT FALSE;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS invited_by UUID;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_at TIMESTAMPTZ;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_by VARCHAR(255);
       END $$;
     `);
 
@@ -407,6 +409,28 @@ export async function initDb() {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
+
+
+    // User feedback & bug reports
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS feedback (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id),
+        org_id UUID,
+        email VARCHAR(255) NOT NULL,
+        category VARCHAR(20) NOT NULL DEFAULT 'feedback',
+        subject VARCHAR(255) NOT NULL,
+        body TEXT NOT NULL,
+        page_url VARCHAR(500),
+        user_agent TEXT,
+        status VARCHAR(20) DEFAULT 'new',
+        admin_notes TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC)`);
 
   } finally {
     client.release();

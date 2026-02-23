@@ -168,7 +168,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
     // Find user
     const result = await pool.query(
-      'SELECT id, email, password_hash, email_verified FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, email_verified, suspended_at FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
 
@@ -213,6 +213,12 @@ router.post('/login', async (req: Request, res: Response) => {
     // Check email verified
     if (!user.email_verified) {
       res.status(403).json({ error: 'Please verify your email address before logging in' });
+      return;
+    }
+
+    // Check suspended
+    if (user.suspended_at) {
+      res.status(403).json({ error: 'Your account has been suspended. Please contact your administrator.' });
       return;
     }
 

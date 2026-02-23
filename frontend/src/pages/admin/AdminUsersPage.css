@@ -212,3 +212,50 @@ select.au-invite-input option { background: var(--surface); color: var(--text); 
   }
   .au-col-email { font-weight: 600; }
 }
+
+/* Actions column */
+.au-col-actions { display: flex; align-items: center; justify-content: center; }
+
+.au-action-menu-wrap { position: relative; }
+
+.au-action-trigger {
+  background: none; border: 1px solid transparent; border-radius: 4px;
+  color: var(--muted); cursor: pointer; padding: 0.2rem;
+}
+.au-action-trigger:hover { color: var(--text); border-color: var(--border); }
+
+.au-action-dropdown {
+  position: absolute; right: 0; top: 100%; z-index: 100;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3); min-width: 140px;
+  padding: 0.25rem 0; overflow: hidden;
+}
+
+.au-action-dropdown button {
+  display: flex; align-items: center; gap: 0.4rem; width: 100%;
+  padding: 0.45rem 0.75rem; border: none; background: none;
+  color: var(--text); font-size: 0.8rem; cursor: pointer; text-align: left;
+}
+.au-action-dropdown button:hover { background: rgba(255,255,255,0.04); }
+.au-action-dropdown .au-delete-action { color: var(--red); }
+.au-action-dropdown .au-delete-action:hover { background: rgba(239, 68, 68, 0.08); }
+
+/* Suspended status badge */
+.au-suspended { color: var(--red) !important; background: rgba(239, 68, 68, 0.1); }
+
+/* Update grid to include actions column */
+.au-table-header, .au-user-row {
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 0.8fr 0.5fr !important;
+}
+
+/* Org role badge */
+.au-role-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.06);
+  color: var(--muted);
+  margin-left: 0.35rem;
+}

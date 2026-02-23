@@ -3,6 +3,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
+import { runProductScan } from '../services/vulnerability-scanner.js';
 
 const router = Router();
 
@@ -378,6 +379,65 @@ router.get('/:productId/scan-history', requireAuth, async (req: Request, res: Re
   } catch (err) {
     console.error('Failed to fetch scan history:', err);
     res.status(500).json({ error: 'Failed to fetch scan history' });
+  }
+});
+
+// POST /api/risk-findings/:productId/scan — Trigger per-product vulnerability scan
+router.post('/:productId/scan', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const email = (req as any).email;
+  const productId = req.params.productId as string;
+
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    // Verify product belongs to org
+    const driver = getDriver();
+    const session = driver.session();
+    try {
+      const check = await session.run(
+        'MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId}) RETURN p.id',
+        { orgId, productId }
+      );
+      if (check.records.length === 0) {
+        res.status(404).json({ error: 'Product not found' });
+        return;
+      }
+    } finally {
+      await session.close();
+    }
+
+    // Reject if a scan is already running for this product
+    const running = await pool.query(
+      "SELECT id FROM vulnerability_scans WHERE product_id = $1 AND status = 'running' LIMIT 1",
+      [productId]
+    );
+    if (running.rows.length > 0) {
+      res.status(409).json({ error: 'A scan is already running for this product', scanId: running.rows[0].id });
+      return;
+    }
+
+    // Run scan
+    const scanPromise = runProductScan(productId, orgId, email);
+
+    // Wait briefly to get the scanId from the initial INSERT
+    const result = await scanPromise;
+
+    // Record telemetry
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId,
+      email,
+      eventType: 'product_vulnerability_scan_triggered',
+      ...reqData,
+      metadata: { productId, scanId: result.scanId, totalFindings: result.totalFindings },
+    });
+
+    res.json({ scanId: result.scanId, totalFindings: result.totalFindings });
+  } catch (err) {
+    console.error('Failed to trigger product scan:', err);
+    res.status(500).json({ error: 'Failed to trigger vulnerability scan' });
   }
 });
 

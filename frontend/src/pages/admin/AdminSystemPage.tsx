@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Loader, Database, AlertTriangle, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Activity, Loader, Database, AlertTriangle, CheckCircle, Clock, XCircle}  from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import './AdminSystemPage.css';
@@ -32,6 +32,7 @@ interface SystemData {
     scansToday: number;
     avgScanDuration: string | null;
     errorRate: number;
+    cpuTemp: number | null;
   };
   scanPerformance: {
     totalScans: number;
@@ -108,6 +109,13 @@ export default function AdminSystemPage() {
           value={`${data.overview.errorRate}%`}
           color={data.overview.errorRate > 10 ? 'red' : data.overview.errorRate > 0 ? 'amber' : 'green'}
         />
+        {data.overview.cpuTemp !== null && (
+          <StatCard
+            label="CPU Temperature"
+            value={`${data.overview.cpuTemp}°C`}
+            color={data.overview.cpuTemp > 80 ? 'red' : data.overview.cpuTemp > 65 ? 'amber' : 'green'}
+          />
+        )}
       </div>
 
       <div className="as-grid">
