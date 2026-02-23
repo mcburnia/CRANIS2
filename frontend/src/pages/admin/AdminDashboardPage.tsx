@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, Users, AlertTriangle, CheckCircle, Activity, Loader } from 'lucide-react';
+import { Shield, Users, AlertTriangle, CheckCircle, Activity, Loader, Database } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import './AdminDashboardPage.css';
@@ -8,7 +8,7 @@ interface DashboardData {
   users: { total: number; active30d: number; platformAdmins: number; verified: number; unverified: number };
   organisations: { total: number };
   products: { total: number; withRepos: number; withSboms: number; totalPackages: number; byCategory: Record<string, number> };
-  vulnerabilities: { total: number; critical: number; high: number; medium: number; low: number; open: number; dismissed: number; lastScanAt: string | null; scansLast7d: number };
+  vulnerabilities: { total: number; critical: number; high: number; medium: number; low: number; open: number; dismissed: number; lastScanAt: string | null; scansLast7d: number; lastDbSyncAt: string | null };
   compliance: { obligationsTotal: number; obligationsMet: number; obligationsInProgress: number; techFileSections: number; techFileSectionsCompleted: number; techFileSectionsInProgress: number };
   recentActivity: { eventsLast7d: number; loginsLast7d: number; scansLast7d: number; events: Array<{ eventType: string; userEmail: string; createdAt: string; metadata: any }> };
 }
@@ -146,6 +146,12 @@ export default function AdminDashboardPage() {
                   <div className="ad-metric-row">
                     <span className="ad-metric-label">Last scan</span>
                     <span className="ad-metric-value ad-small">{new Date(data.vulnerabilities.lastScanAt).toLocaleString()}</span>
+                  </div>
+                )}
+                {data.vulnerabilities.lastDbSyncAt && (
+                  <div className="ad-metric-row">
+                    <span className="ad-metric-label ad-db-sync-label"><Database size={13} /> Last DB sync</span>
+                    <span className="ad-metric-value ad-small">{new Date(data.vulnerabilities.lastDbSyncAt).toLocaleString()}</span>
                   </div>
                 )}
               </>

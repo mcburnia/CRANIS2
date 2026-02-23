@@ -3,7 +3,7 @@ import { Outlet, Navigate, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Building2, Users, ScrollText, Activity,
-  ArrowLeft, Menu, X, Loader, Shield
+  ArrowLeft, Menu, X, Loader, Shield, Database
 } from 'lucide-react';
 import './AdminLayout.css';
 
@@ -27,6 +27,7 @@ const adminNavSections = [
       { to: '/admin/audit-log', icon: ScrollText, label: 'Audit Log' },
       { to: '/admin/system', icon: Activity, label: 'System Health' },
       { to: '/admin/vuln-scan', icon: Shield, label: 'Vuln Scanning' },
+      { to: '/admin/vuln-db', icon: Database, label: 'Vuln Database' },
     ],
   },
 ];

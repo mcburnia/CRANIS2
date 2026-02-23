@@ -27,6 +27,7 @@
 .as-purple { color: var(--purple); }
 .as-green { color: var(--green); }
 .as-red { color: var(--red); }
+.as-accent { color: var(--accent); }
 
 .as-card-body { padding: 1rem 1.25rem; }
 
@@ -42,6 +43,10 @@
   letter-spacing: 0.04em; margin-bottom: 0.25rem;
 }
 
+/* Historical API latency - dimmed */
+.as-historical-label { opacity: 0.6; }
+.as-historical { opacity: 0.5; }
+
 /* Scans table */
 .as-scans-section { margin-top: 0.5rem; }
 .as-scans-section h3 { font-size: 0.95rem; margin: 0 0 1rem; }
@@ -51,14 +56,14 @@
 }
 
 .as-scans-header {
-  display: grid; grid-template-columns: 1.5fr 0.8fr 0.7fr 0.7fr 1fr 1fr 1fr 0.8fr;
+  display: grid; grid-template-columns: 1.5fr 0.8fr 0.7fr 0.7fr 0.8fr 1.2fr 0.8fr;
   gap: 0.3rem; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
   font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .as-scan-row {
-  display: grid; grid-template-columns: 1.5fr 0.8fr 0.7fr 0.7fr 1fr 1fr 1fr 0.8fr;
+  display: grid; grid-template-columns: 1.5fr 0.8fr 0.7fr 0.7fr 0.8fr 1.2fr 0.8fr;
   gap: 0.3rem; padding: 0.5rem 1rem; align-items: center;
   border-bottom: 1px solid var(--border); font-size: 0.8rem;
 }
@@ -75,6 +80,16 @@
 .as-scan-duration { color: var(--muted); }
 .as-scan-source { color: var(--muted); font-size: 0.75rem; font-family: monospace; }
 .as-scan-time { color: var(--muted); font-size: 0.75rem; }
+
+/* Local DB column - accent color */
+.as-scan-localdb { font-size: 0.75rem; font-family: monospace; }
+.as-localdb-value { color: var(--accent); font-weight: 600; }
+
+/* Source breakdown - compact, muted */
+.as-scan-sources {
+  display: flex; gap: 0.5rem; flex-wrap: wrap;
+  font-size: 0.7rem; color: var(--muted); font-family: monospace; opacity: 0.7;
+}
 
 .as-findings-badge {
   display: inline-flex; align-items: center; gap: 0.2rem; color: var(--amber);

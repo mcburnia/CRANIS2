@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Shield, Play, Loader2, Clock, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Shield, Play, Loader2, Clock, AlertTriangle, CheckCircle, XCircle, Database } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import './AdminVulnScanPage.css';
@@ -26,6 +26,8 @@ interface ScanRun {
   githubFindings: number;
   nvdDurationMs: number | null;
   nvdFindings: number;
+  localDbDurationMs: number | null;
+  localDbFindings: number;
   errorMessage: string | null;
 }
 
@@ -206,15 +208,17 @@ export default function AdminVulnScanPage() {
                 {currentRun.totalFindings === 0 && <span style={{ color: 'var(--green)' }}>No vulnerabilities found</span>}
               </div>
               <div className="avs-source-timing">
-                {currentRun.osvDurationMs !== null && (
-                  <span>OSV: {currentRun.osvDurationMs}ms ({currentRun.osvFindings} findings)</span>
+                {currentRun.localDbDurationMs !== null && (
+                  <span className="avs-local-db-timing">
+                    <Database size={13} />
+                    Local DB: {currentRun.localDbDurationMs}ms ({currentRun.localDbFindings} findings)
+                  </span>
                 )}
-                {currentRun.githubDurationMs !== null && (
-                  <span>GitHub: {currentRun.githubDurationMs}ms ({currentRun.githubFindings} findings)</span>
-                )}
-                {currentRun.nvdDurationMs !== null && (
-                  <span>NVD: {currentRun.nvdDurationMs}ms ({currentRun.nvdFindings} findings)</span>
-                )}
+                <span className="avs-legacy-sources">
+                  {currentRun.osvFindings > 0 && <span>OSV: {currentRun.osvFindings}</span>}
+                  {currentRun.githubFindings > 0 && <span>GitHub: {currentRun.githubFindings}</span>}
+                  {currentRun.nvdFindings > 0 && <span>NVD: {currentRun.nvdFindings}</span>}
+                </span>
               </div>
             </div>
           )}

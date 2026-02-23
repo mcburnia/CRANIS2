@@ -19,6 +19,8 @@ interface ScanEntry {
   githubFindings: number | null;
   nvdDurationMs: number | null;
   nvdFindings: number | null;
+  localDbDurationMs: number | null;
+  localDbFindings: number | null;
   triggeredBy: string | null;
   errorMessage: string | null;
 }
@@ -38,6 +40,7 @@ interface SystemData {
     avgOsvMs: number | null;
     avgGithubMs: number | null;
     avgNvdMs: number | null;
+    avgLocalDbMs: number | null;
   };
   recentScans: ScanEntry[];
   tableCounts: Record<string, number>;
@@ -65,6 +68,8 @@ const TABLE_LABELS: Record<string, string> = {
   stakeholders: 'Stakeholders',
   github_connections: 'GitHub Connections',
   sync_records: 'Sync History',
+  vuln_db_advisories: 'Vuln DB Advisories',
+  vuln_db_nvd: 'Vuln DB CVEs',
 };
 
 export default function AdminSystemPage() {
@@ -126,16 +131,26 @@ export default function AdminSystemPage() {
               <span className="as-metric-value as-red">{data.scanPerformance.failedScans}</span>
             </div>
             <div className="as-divider" />
-            <div className="as-perf-header">Avg Source Latency</div>
-            <div className="as-metric-row">
+            {data.scanPerformance.avgLocalDbMs != null && (
+              <>
+                <div className="as-perf-header">Local DB Query</div>
+                <div className="as-metric-row">
+                  <span className="as-metric-label">Avg Latency</span>
+                  <span className="as-metric-value as-accent">{data.scanPerformance.avgLocalDbMs}ms</span>
+                </div>
+                <div className="as-divider" />
+              </>
+            )}
+            <div className="as-perf-header as-historical-label">Historical API Latency</div>
+            <div className="as-metric-row as-historical">
               <span className="as-metric-label">OSV.dev</span>
               <span className="as-metric-value">{data.scanPerformance.avgOsvMs != null ? `${data.scanPerformance.avgOsvMs}ms` : 'N/A'}</span>
             </div>
-            <div className="as-metric-row">
+            <div className="as-metric-row as-historical">
               <span className="as-metric-label">GitHub Advisory</span>
               <span className="as-metric-value">{data.scanPerformance.avgGithubMs != null ? `${data.scanPerformance.avgGithubMs}ms` : 'N/A'}</span>
             </div>
-            <div className="as-metric-row">
+            <div className="as-metric-row as-historical">
               <span className="as-metric-label">NVD/NIST</span>
               <span className="as-metric-value">{data.scanPerformance.avgNvdMs != null ? `${data.scanPerformance.avgNvdMs}ms` : 'N/A'}</span>
             </div>
@@ -168,9 +183,8 @@ export default function AdminSystemPage() {
             <span>Status</span>
             <span>Duration</span>
             <span>Findings</span>
-            <span>OSV</span>
-            <span>GitHub</span>
-            <span>NVD</span>
+            <span>Local DB</span>
+            <span>Source Breakdown</span>
             <span>When</span>
           </div>
           {data.recentScans.length === 0 ? (
@@ -194,9 +208,16 @@ export default function AdminSystemPage() {
                     <span className="as-findings-badge"><AlertTriangle size={12} /> {scan.findingsCount}</span>
                   ) : '0'}
                 </span>
-                <span className="as-scan-source">{scan.osvDurationMs != null ? `${scan.osvDurationMs}ms (${scan.osvFindings || 0})` : '—'}</span>
-                <span className="as-scan-source">{scan.githubDurationMs != null ? `${scan.githubDurationMs}ms (${scan.githubFindings || 0})` : '—'}</span>
-                <span className="as-scan-source">{scan.nvdDurationMs != null ? `${scan.nvdDurationMs}ms (${scan.nvdFindings || 0})` : '—'}</span>
+                <span className="as-scan-localdb">
+                  {scan.localDbDurationMs != null ? (
+                    <span className="as-localdb-value">{scan.localDbDurationMs}ms</span>
+                  ) : '—'}
+                </span>
+                <span className="as-scan-sources">
+                  {scan.osvFindings != null && <span>OSV:{scan.osvFindings}</span>}
+                  {scan.githubFindings != null && <span>GH:{scan.githubFindings}</span>}
+                  {scan.nvdFindings != null && <span>NVD:{scan.nvdFindings}</span>}
+                </span>
                 <span className="as-scan-time">{timeAgo(scan.startedAt)}</span>
               </div>
             ))

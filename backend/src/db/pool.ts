@@ -308,6 +308,106 @@ export async function initDb() {
     await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS platform_scan_run_id UUID REFERENCES platform_scan_runs(id)`);
 
     console.log('Database schema initialized');
+
+    // New columns on platform_scan_runs for local DB metrics
+    await client.query(`ALTER TABLE platform_scan_runs ADD COLUMN IF NOT EXISTS local_db_duration_ms INT`);
+    await client.query(`ALTER TABLE platform_scan_runs ADD COLUMN IF NOT EXISTS local_db_findings INT DEFAULT 0`);
+
+    // Local vulnerability database — OSV/GHSA advisories cache
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS vuln_db_advisories (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        source VARCHAR(20) NOT NULL,
+        advisory_id VARCHAR(255) NOT NULL,
+        ecosystem VARCHAR(50) NOT NULL,
+        package_name VARCHAR(255) NOT NULL,
+        package_purl VARCHAR(1000),
+        severity VARCHAR(20),
+        cvss_score DECIMAL(3,1),
+        cvss_vector VARCHAR(200),
+        title VARCHAR(500),
+        description TEXT,
+        affected_ranges JSONB DEFAULT '[]',
+        affected_versions JSONB DEFAULT '[]',
+        fixed_version VARCHAR(255),
+        aliases JSONB DEFAULT '[]',
+        references_json JSONB DEFAULT '[]',
+        published_at TIMESTAMPTZ,
+        modified_at TIMESTAMPTZ,
+        withdrawn_at TIMESTAMPTZ,
+        sync_batch_id UUID,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_vuln_db_adv_unique ON vuln_db_advisories(source, advisory_id, ecosystem, package_name)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_adv_lookup ON vuln_db_advisories(ecosystem, LOWER(package_name))`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_adv_modified ON vuln_db_advisories(modified_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_adv_batch ON vuln_db_advisories(ecosystem, sync_batch_id)`);
+
+    // Local vulnerability database — NVD CVE cache
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS vuln_db_nvd (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        cve_id VARCHAR(30) NOT NULL UNIQUE,
+        description TEXT,
+        description_tsv TSVECTOR,
+        severity VARCHAR(20),
+        cvss_score DECIMAL(3,1),
+        cvss_vector VARCHAR(200),
+        cvss_data JSONB,
+        cpe_matches JSONB DEFAULT '[]',
+        references_json JSONB DEFAULT '[]',
+        affected_versions TEXT,
+        fixed_version VARCHAR(100),
+        published_at TIMESTAMPTZ,
+        modified_at TIMESTAMPTZ,
+        vuln_status VARCHAR(30),
+        sync_batch_id UUID,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_nvd_tsv ON vuln_db_nvd USING gin(description_tsv)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_nvd_batch ON vuln_db_nvd(sync_batch_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_nvd_modified ON vuln_db_nvd(modified_at DESC)`);
+
+    // Flattened CPE index for fast NVD vulnerability matching
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS vuln_db_nvd_cpe_index (
+        id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+        cve_id VARCHAR(30) NOT NULL,
+        vendor VARCHAR(200),
+        product VARCHAR(200) NOT NULL,
+        target_sw VARCHAR(100),
+        version_exact VARCHAR(100),
+        version_start_incl VARCHAR(100),
+        version_start_excl VARCHAR(100),
+        version_end_incl VARCHAR(100),
+        version_end_excl VARCHAR(100)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_nvd_cpe_product ON vuln_db_nvd_cpe_index(product)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_nvd_cpe_target ON vuln_db_nvd_cpe_index(target_sw)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_nvd_cpe_product_target ON vuln_db_nvd_cpe_index(product, target_sw)`);
+
+    // Vulnerability DB sync status tracking
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS vuln_db_sync_status (
+        ecosystem VARCHAR(50) PRIMARY KEY,
+        last_sync_at TIMESTAMPTZ,
+        last_full_sync_at TIMESTAMPTZ,
+        last_modified_marker TIMESTAMPTZ,
+        advisory_count INT DEFAULT 0,
+        package_count INT DEFAULT 0,
+        status VARCHAR(20) DEFAULT 'pending',
+        duration_seconds NUMERIC(10,2),
+        error_message TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
   } finally {
     client.release();
   }

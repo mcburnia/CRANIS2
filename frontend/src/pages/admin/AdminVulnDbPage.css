@@ -1,0 +1,146 @@
+/* Sync button */
+.avdb-sync-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+.avdb-sync-btn:hover { opacity: 0.9; }
+.avdb-sync-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.avdb-spinner { animation: avdb-spin 1s linear infinite; }
+@keyframes avdb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* Stat row */
+.avdb-stat-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Section */
+.avdb-section {
+  margin-bottom: 1.5rem;
+}
+
+.avdb-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+}
+
+/* Table */
+.avdb-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.avdb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.avdb-table thead tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.avdb-table th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.avdb-table td {
+  padding: 0.5rem 0.75rem;
+  color: var(--text);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.avdb-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.avdb-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.avdb-eco-name {
+  font-weight: 500;
+}
+
+.avdb-muted {
+  color: var(--muted);
+}
+
+.avdb-na {
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+/* Status badges */
+.avdb-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.avdb-status-badge.completed { background: rgba(76, 175, 80, 0.15); color: var(--green); }
+.avdb-status-badge.running { background: rgba(234, 179, 8, 0.15); color: var(--amber); }
+.avdb-status-badge.error { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+
+.avdb-error-hint {
+  margin-left: 0.4rem;
+  color: var(--red);
+  cursor: help;
+}
+
+/* Info card */
+.avdb-info-card {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  color: var(--text);
+  margin-bottom: 1.5rem;
+}
+
+.avdb-info-card svg {
+  flex-shrink: 0;
+  color: var(--accent);
+  margin-top: 0.1rem;
+}
+
+.avdb-info-card strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.avdb-info-card p {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}

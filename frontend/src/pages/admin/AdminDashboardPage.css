@@ -89,6 +89,13 @@
 .ad-amber { color: var(--amber); }
 .ad-red { color: var(--red); }
 
+/* DB sync label with icon */
+.ad-db-sync-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 /* Severity bar */
 .ad-severity-bar {
   display: flex;

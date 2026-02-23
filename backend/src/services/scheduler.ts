@@ -3,6 +3,7 @@ import { getDriver } from '../db/neo4j.js';
 import { decrypt } from '../utils/encryption.js';
 import { createNotification } from './notifications.js';
 import { runPlatformScan } from './vulnerability-scanner.js';
+import { syncVulnDatabases } from './vuln-db-sync.js';
 import {
   getRepo, getContributors, getLanguages, getSBOM, getReleases, getTags, parseRepoUrl,
 } from '../services/github.js';
@@ -17,8 +18,12 @@ const AUTO_SYNC_HOUR = 2;
 // Hour of the day to run platform-wide vulnerability scan (0-23, default: 3 AM — after SBOM sync)
 const VULN_SCAN_HOUR = 3;
 
+// Hour of the day to sync vulnerability databases (0-23, default: 1 AM — before SBOM sync)
+const VULN_DB_SYNC_HOUR = 1;
+
 let lastSyncDate = '';
 let lastVulnScanDate = '';
+let lastVulnDbSyncDate = '';
 
 async function getProductGitHubToken(productId: string): Promise<{ token: string; userId: string } | null> {
   // Find the user who owns this product (via org) and has a GitHub connection
@@ -285,11 +290,32 @@ async function runDailyVulnScan(): Promise<void> {
   }
 }
 
-export function startScheduler(): void {
-  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, auto-sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00');
 
-  // Run check periodically
+async function runDailyVulnDbSync(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (lastVulnDbSyncDate === todayStr) return; // Already ran today
+
+  const now = new Date();
+  if (now.getHours() < VULN_DB_SYNC_HOUR) return; // Not yet time
+
+  lastVulnDbSyncDate = todayStr;
+  console.log('[VULN-DB-SCHEDULER] Starting daily vulnerability database sync...');
+
+  try {
+    await syncVulnDatabases();
+    console.log('[VULN-DB-SCHEDULER] Daily DB sync complete');
+  } catch (err: any) {
+    console.error('[VULN-DB-SCHEDULER] Daily DB sync failed:', err.message);
+  }
+}
+
+export function startScheduler(): void {
+  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00');
+
+  // Run check periodically — all three have hour-gating and date-tracking
   setInterval(() => {
-    runDailySync().catch(err => console.error('[SCHEDULER] Uncaught error:', err));
+    runDailyVulnDbSync().catch(err => console.error('[SCHEDULER] Uncaught error in DB sync:', err));
+    runDailySync().catch(err => console.error('[SCHEDULER] Uncaught error in SBOM sync:', err));
+    runDailyVulnScan().catch(err => console.error('[SCHEDULER] Uncaught error in vuln scan:', err));
   }, CHECK_INTERVAL_MS);
 }

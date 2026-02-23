@@ -6,6 +6,7 @@ import { generateVerificationToken } from '../utils/token.js';
 import { sendInviteEmail } from '../services/email.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { runPlatformScan } from '../services/vulnerability-scanner.js';
+import { syncVulnDatabases, getVulnDbStats } from '../services/vuln-db-sync.js';
 
 const router = Router();
 
@@ -114,6 +115,12 @@ router.get('/dashboard', requirePlatformAdmin, async (req: Request, res: Respons
     `);
     const scansLast7d = parseInt(scansWeekResult.rows[0]?.cnt) || 0;
 
+    // Last vuln DB sync
+    const dbSyncResult = await pool.query(`
+      SELECT MAX(last_sync_at) AS last_db_sync FROM vuln_db_sync_status
+    `);
+    const lastDbSyncAt = dbSyncResult.rows[0]?.last_db_sync || null;
+
     // --- Postgres: compliance stats ---
     const obligationsResult = await pool.query(`
       SELECT
@@ -194,6 +201,7 @@ router.get('/dashboard', requirePlatformAdmin, async (req: Request, res: Respons
         dismissed: parseInt(vulnStats.dismissed) || 0,
         lastScanAt,
         scansLast7d,
+        lastDbSyncAt,
       },
       compliance: {
         obligationsTotal: parseInt(oblStats.total) || 0,
@@ -732,7 +740,7 @@ router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) 
     );
     const eventsToday = parseInt(todayResult.rows[0].cnt);
 
-    // Scan stats
+    // Scan stats (per-product scans)
     const scanStatsResult = await pool.query(`
       SELECT
         COUNT(*) AS total_scans,
@@ -745,6 +753,12 @@ router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) 
         AVG(nvd_duration_ms) FILTER (WHERE status = 'completed') AS avg_nvd_ms
       FROM vulnerability_scans
     `);
+
+    // Avg local DB latency (from platform_scan_runs where the column lives)
+    const localDbAvgResult = await pool.query(`
+      SELECT AVG(local_db_duration_ms) FILTER (WHERE status = 'completed') AS avg_local_db_ms
+      FROM platform_scan_runs
+    `);
     const scanStats = scanStatsResult.rows[0];
 
     // Error rate
@@ -752,15 +766,17 @@ router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) 
     const failedScans = parseInt(scanStats.failed_scans) || 0;
     const errorRate = totalScans > 0 ? ((failedScans / totalScans) * 100).toFixed(1) : '0.0';
 
-    // Recent scans with performance data
+    // Recent scans with performance data (join platform_scan_runs for local DB fields)
     const recentScansResult = await pool.query(`
       SELECT vs.id, vs.product_id, vs.started_at, vs.completed_at, vs.status,
              vs.findings_count, vs.duration_seconds, vs.dependency_count,
              vs.osv_duration_ms, vs.osv_findings,
              vs.github_duration_ms, vs.github_findings,
              vs.nvd_duration_ms, vs.nvd_findings,
+             psr.local_db_duration_ms, psr.local_db_findings,
              vs.triggered_by, vs.error_message
       FROM vulnerability_scans vs
+      LEFT JOIN platform_scan_runs psr ON vs.platform_scan_run_id = psr.id
       ORDER BY vs.started_at DESC
       LIMIT 20
     `);
@@ -799,6 +815,8 @@ router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) 
       githubFindings: r.github_findings,
       nvdDurationMs: r.nvd_duration_ms,
       nvdFindings: r.nvd_findings,
+      localDbDurationMs: r.local_db_duration_ms,
+      localDbFindings: r.local_db_findings,
       triggeredBy: r.triggered_by,
       errorMessage: r.error_message,
     }));
@@ -815,7 +833,9 @@ router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) 
         (SELECT COUNT(*) FROM obligations) AS obligations,
         (SELECT COUNT(*) FROM stakeholders) AS stakeholders,
         (SELECT COUNT(*) FROM github_connections) AS github_connections,
-        (SELECT COUNT(*) FROM sync_history) AS sync_records
+        (SELECT COUNT(*) FROM sync_history) AS sync_records,
+        (SELECT COUNT(*) FROM vuln_db_advisories) AS vuln_db_advisories,
+        (SELECT COUNT(*) FROM vuln_db_nvd) AS vuln_db_nvd
     `);
     const tableCounts = tableCountsResult.rows[0];
 
@@ -834,6 +854,7 @@ router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) 
         avgOsvMs: scanStats.avg_osv_ms ? Math.round(parseFloat(scanStats.avg_osv_ms)) : null,
         avgGithubMs: scanStats.avg_github_ms ? Math.round(parseFloat(scanStats.avg_github_ms)) : null,
         avgNvdMs: scanStats.avg_nvd_ms ? Math.round(parseFloat(scanStats.avg_nvd_ms)) : null,
+        avgLocalDbMs: localDbAvgResult.rows[0]?.avg_local_db_ms ? Math.round(parseFloat(localDbAvgResult.rows[0].avg_local_db_ms)) : null,
       },
       recentScans,
       tableCounts: Object.fromEntries(
@@ -1031,7 +1052,7 @@ router.get('/vulnerability-scan/status', requirePlatformAdmin, async (req: Reque
       'total_findings, critical_count, high_count, medium_count, low_count, new_findings_count, ' +
       'started_at, completed_at, duration_seconds, ' +
       'osv_duration_ms, osv_findings, github_duration_ms, github_findings, ' +
-      'nvd_duration_ms, nvd_findings, error_message ' +
+      'nvd_duration_ms, nvd_findings, local_db_duration_ms, local_db_findings, error_message ' +
       'FROM platform_scan_runs ORDER BY started_at DESC LIMIT 1'
     );
 
@@ -1092,6 +1113,8 @@ router.get('/vulnerability-scan/status', requirePlatformAdmin, async (req: Reque
         githubFindings: run.github_findings,
         nvdDurationMs: run.nvd_duration_ms,
         nvdFindings: run.nvd_findings,
+        localDbDurationMs: run.local_db_duration_ms,
+        localDbFindings: run.local_db_findings,
         errorMessage: run.error_message,
       },
       products: productsResult.rows.map((r: any) => ({
@@ -1126,7 +1149,7 @@ router.get('/vulnerability-scan/history', requirePlatformAdmin, async (req: Requ
       'total_findings, critical_count, high_count, medium_count, low_count, new_findings_count, ' +
       'started_at, completed_at, duration_seconds, ' +
       'osv_duration_ms, osv_findings, github_duration_ms, github_findings, ' +
-      'nvd_duration_ms, nvd_findings, error_message ' +
+      'nvd_duration_ms, nvd_findings, local_db_duration_ms, local_db_findings, error_message ' +
       'FROM platform_scan_runs ORDER BY started_at DESC LIMIT $1 OFFSET $2',
       [limit, offset]
     );
@@ -1154,6 +1177,8 @@ router.get('/vulnerability-scan/history', requirePlatformAdmin, async (req: Requ
         githubFindings: row.github_findings,
         nvdDurationMs: row.nvd_duration_ms,
         nvdFindings: row.nvd_findings,
+        localDbDurationMs: row.local_db_duration_ms,
+        localDbFindings: row.local_db_findings,
         errorMessage: row.error_message,
       })),
       pagination: {
@@ -1166,6 +1191,32 @@ router.get('/vulnerability-scan/history', requirePlatformAdmin, async (req: Requ
   } catch (err) {
     console.error('Admin vulnerability scan history error:', err);
     res.status(500).json({ error: 'Failed to fetch vulnerability scan history' });
+  }
+});
+
+
+// POST /api/admin/vulnerability-db/sync — trigger manual vulnerability database sync
+router.post('/vulnerability-db/sync', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    // Run async — don't block the response
+    syncVulnDatabases().catch(err => {
+      console.error('Manual vuln DB sync failed:', err);
+    });
+    res.json({ message: 'Vulnerability database sync started' });
+  } catch (err) {
+    console.error('Admin vuln DB sync trigger error:', err);
+    res.status(500).json({ error: 'Failed to trigger vulnerability database sync' });
+  }
+});
+
+// GET /api/admin/vulnerability-db/status — get sync status per ecosystem
+router.get('/vulnerability-db/status', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const stats = await getVulnDbStats();
+    res.json(stats);
+  } catch (err) {
+    console.error('Admin vuln DB status error:', err);
+    res.status(500).json({ error: 'Failed to fetch vulnerability database status' });
   }
 });
 
