@@ -7,6 +7,9 @@ import { encrypt, decrypt } from '../utils/encryption.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { createNotification, sendComplianceGapNotification } from '../services/notifications.js';
 import { enrichDependencyHashes } from '../services/hash-enrichment.js';
+import { enrichDependencyLicenses } from '../services/license-enrichment.js';
+import { scanProductLicenses } from '../services/license-scanner.js';
+import { createSnapshot } from '../services/ip-proof.js';
 import { resolveLockfileVersions } from '../services/lockfile-resolver.js';
 import {
   exchangeCodeForToken,
@@ -191,6 +194,57 @@ async function storeSBOM(
       }
     );
   }
+
+
+  // ── Tag direct vs transitive depth on DEPENDS_ON relationships ──
+  // Parse SPDX relationships to identify which deps are direct (from root package)
+  const relationships = sbom.relationships || [];
+  if (relationships.length > 0) {
+    // Find root package: the element that SPDXRef-DOCUMENT DESCRIBES
+    const describesRel = relationships.find(
+      (r: any) => r.spdxElementId === 'SPDXRef-DOCUMENT' && r.relationshipType === 'DESCRIBES'
+    );
+    const rootSpdxId = describesRel?.relatedSpdxElement;
+
+    if (rootSpdxId) {
+      // Build SPDXID → PURL map from all packages
+      const spdxIdToPurl = new Map<string, string>();
+      for (const pkg of sbom.packages) {
+        const purlRef = pkg.externalRefs?.find((r: any) => r.referenceType === 'purl');
+        if (purlRef) {
+          spdxIdToPurl.set(pkg.SPDXID, purlRef.referenceLocator);
+        }
+      }
+
+      // Collect direct dependency PURLs (root DEPENDS_ON → these are direct)
+      const directPurls = new Set<string>();
+      for (const rel of relationships) {
+        if (rel.spdxElementId === rootSpdxId && rel.relationshipType === 'DEPENDS_ON') {
+          const purl = spdxIdToPurl.get(rel.relatedSpdxElement);
+          if (purl) directPurls.add(purl);
+        }
+      }
+
+      // Batch-update Neo4j: set depth on DEPENDS_ON relationships and Dependency nodes
+      if (directPurls.size > 0) {
+        const allPurls = packages.map(p => p.purl);
+        const depthEntries = allPurls.map(purl => ({
+          purl,
+          depth: directPurls.has(purl) ? 'direct' : 'transitive'
+        }));
+
+        await neo4jSession.run(
+          `UNWIND $entries AS entry
+           MATCH (p:Product {id: $productId})-[r:DEPENDS_ON]->(d:Dependency {purl: entry.purl})
+           SET r.depth = entry.depth, d.depth = entry.depth`,
+          { productId, entries: depthEntries }
+        );
+
+        console.log(`[SBOM] Depth tagged: ${directPurls.size} direct, ${allPurls.length - directPurls.size} transitive`);
+      }
+    }
+  }
+
 
   return { packageCount: packages.length, packages };
 }
@@ -533,6 +587,24 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
             // 3. Send compliance gap notifications
             const totalDeps = enrichResult.enriched + enrichResult.gaps.noVersion + enrichResult.gaps.unsupportedEcosystem + enrichResult.gaps.notFound + enrichResult.gaps.fetchError;
             await sendComplianceGapNotification(pipelineProductId, pipelineOrgId, pipelineProductName, enrichResult.gaps, totalDeps);
+            // 4. Enrich licenses from npm registry (for NOASSERTION deps)
+            await enrichDependencyLicenses(pipelineProductId, pipelinePackages);
+            // 5. Auto license scan
+            if (pipelineOrgId) {
+              try {
+                await scanProductLicenses(pipelineProductId, pipelineOrgId);
+                console.log("[SYNC] License scan completed for", pipelineProductId);
+              } catch (lsErr: any) {
+                console.error("[SYNC] License scan failed:", lsErr.message);
+              }
+              // 6. IP proof timestamp
+              try {
+                await createSnapshot(pipelineProductId, pipelineOrgId, pipelineUserId, 'sync');
+                console.log("[SYNC] IP proof snapshot created for", pipelineProductId);
+              } catch (ipErr: any) {
+                console.error("[SYNC] IP proof snapshot failed:", ipErr.message);
+              }
+            }
           } catch (err: any) {
             console.error("[SYNC] Post-SBOM pipeline failed:", err.message);
           }
@@ -798,6 +870,22 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
         const enrichResult = await enrichDependencyHashes(productId, refreshPackages);
         const totalDeps = enrichResult.enriched + enrichResult.gaps.noVersion + enrichResult.gaps.unsupportedEcosystem + enrichResult.gaps.notFound + enrichResult.gaps.fetchError;
         await sendComplianceGapNotification(productId, orgId, productName, enrichResult.gaps, totalDeps);
+        // 4. Enrich licenses from npm registry (for NOASSERTION deps)
+        await enrichDependencyLicenses(productId, refreshPackages);
+        // 5. Auto license scan
+        try {
+          await scanProductLicenses(productId, orgId);
+          console.log("[SBOM-REFRESH] License scan completed for", productId);
+        } catch (lsErr: any) {
+          console.error("[SBOM-REFRESH] License scan failed:", lsErr.message);
+        }
+        // 6. IP proof timestamp
+        try {
+          await createSnapshot(productId, orgId, userId, 'sync');
+          console.log("[SBOM-REFRESH] IP proof snapshot created for", productId);
+        } catch (ipErr: any) {
+          console.error("[SBOM-REFRESH] IP proof snapshot failed:", ipErr.message);
+        }
       } catch (err: any) {
         console.error("[SBOM-REFRESH] Post-SBOM pipeline failed:", err.message);
       }

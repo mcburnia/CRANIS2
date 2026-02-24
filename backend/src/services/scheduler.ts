@@ -9,8 +9,11 @@ import {
 } from '../services/github.js';
 import type { GitHubRelease } from '../services/github.js';
 import { enrichDependencyHashes } from './hash-enrichment.js';
+import { enrichDependencyLicenses } from './license-enrichment.js';
 import { resolveLockfileVersions } from './lockfile-resolver.js';
 import { sendComplianceGapNotification } from './notifications.js';
+import { scanProductLicenses } from './license-scanner.js';
+import { createSnapshot } from './ip-proof.js';
 import { extractPackageInfo } from '../routes/github.js';
 
 // How often to check for stale SBOMs (default: every hour)
@@ -167,6 +170,27 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
           const totalDeps = enrichResult.enriched + enrichResult.gaps.noVersion + enrichResult.gaps.unsupportedEcosystem + enrichResult.gaps.notFound + enrichResult.gaps.fetchError;
           if (schedOrgId) {
             await sendComplianceGapNotification(schedProductId, schedOrgId, schedProductName, enrichResult.gaps, totalDeps);
+          }
+          // Auto license enrichment + scan + IP proof timestamp after SBOM enrichment
+          if (schedOrgId) {
+            try {
+              await enrichDependencyLicenses(schedProductId, extractedPackages);
+              console.log("[AUTO-SYNC] License enrichment completed for", schedProductId);
+            } catch (leErr: any) {
+              console.error("[AUTO-SYNC] License enrichment failed:", leErr.message);
+            }
+            try {
+              await scanProductLicenses(schedProductId, schedOrgId);
+              console.log("[AUTO-SYNC] License scan completed for", schedProductId);
+            } catch (lsErr: any) {
+              console.error("[AUTO-SYNC] License scan failed:", lsErr.message);
+            }
+            try {
+              await createSnapshot(schedProductId, schedOrgId, null, 'sync');
+              console.log("[AUTO-SYNC] IP proof snapshot created for", schedProductId);
+            } catch (ipErr: any) {
+              console.error("[AUTO-SYNC] IP proof snapshot failed:", ipErr.message);
+            }
           }
         } catch (err: any) {
           console.error("[AUTO-SYNC] Post-SBOM pipeline failed:", err.message);

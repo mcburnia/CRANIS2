@@ -473,6 +473,89 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_stages_report ON cra_report_stages(report_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_stages_stage ON cra_report_stages(report_id, stage)`);
 
+    // IP Proof — timestamped SBOM snapshots
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS ip_proof_snapshots (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        created_by UUID REFERENCES users(id),
+        snapshot_type VARCHAR(20) NOT NULL DEFAULT 'manual',
+        content_hash VARCHAR(64) NOT NULL,
+        content_summary JSONB DEFAULT '{}',
+        rfc3161_token BYTEA,
+        rfc3161_tsa_url VARCHAR(255),
+        ots_proof BYTEA,
+        ots_bitcoin_block INT,
+        ots_confirmed_at TIMESTAMPTZ,
+        verified BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_ip_proof_org ON ip_proof_snapshots(org_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_ip_proof_product ON ip_proof_snapshots(product_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_ip_proof_hash ON ip_proof_snapshots(content_hash)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_ip_proof_created ON ip_proof_snapshots(created_at DESC)`);
+
+    // License scans — per-product scan runs
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS license_scans (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'running',
+        total_deps INT DEFAULT 0,
+        permissive_count INT DEFAULT 0,
+        copyleft_count INT DEFAULT 0,
+        unknown_count INT DEFAULT 0,
+        critical_count INT DEFAULT 0,
+        started_at TIMESTAMPTZ DEFAULT NOW(),
+        direct_count INT DEFAULT 0,
+        transitive_count INT DEFAULT 0,
+        completed_at TIMESTAMPTZ,
+        duration_ms INT
+      );
+    `);
+    // Add direct/transitive count columns if they don't exist (migration for existing installs)
+    await client.query(`ALTER TABLE license_scans ADD COLUMN IF NOT EXISTS direct_count INT DEFAULT 0`);
+    await client.query(`ALTER TABLE license_scans ADD COLUMN IF NOT EXISTS transitive_count INT DEFAULT 0`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_license_scans_org ON license_scans(org_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_license_scans_product ON license_scans(product_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_license_scans_started ON license_scans(started_at DESC)`);
+
+    // License findings — per-dependency license risk
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS license_findings (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        scan_id UUID REFERENCES license_scans(id),
+        dependency_purl VARCHAR(500) NOT NULL,
+        dependency_name VARCHAR(255) NOT NULL,
+        dependency_version VARCHAR(100),
+        license_declared VARCHAR(500),
+        license_category VARCHAR(20) NOT NULL DEFAULT 'unknown',
+        risk_level VARCHAR(10) NOT NULL DEFAULT 'ok',
+        risk_reason TEXT,
+        status VARCHAR(20) NOT NULL DEFAULT 'open',
+        acknowledged_by UUID REFERENCES users(id),
+        acknowledged_at TIMESTAMPTZ,
+        waiver_reason TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        dependency_depth VARCHAR(15),
+        UNIQUE(product_id, dependency_purl)
+      );
+    `);
+    // Add dependency_depth column if it doesn't exist (migration for existing installs)
+    await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS dependency_depth VARCHAR(15)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_license_findings_org ON license_findings(org_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_license_findings_depth ON license_findings(dependency_depth)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_license_findings_product ON license_findings(product_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_license_findings_risk ON license_findings(risk_level)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_license_findings_status ON license_findings(status)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_license_findings_scan ON license_findings(scan_id)`);
+
   } finally {
     client.release();
   }

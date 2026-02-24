@@ -20,6 +20,8 @@ import ObligationsPage from './pages/compliance/ObligationsPage';
 import TechnicalFilesPage from './pages/compliance/TechnicalFilesPage';
 import VulnerabilityReportsPage from './pages/compliance/VulnerabilityReportsPage';
 import ReportDetailPage from './pages/compliance/ReportDetailPage';
+import LicenseCompliancePage from './pages/compliance/LicenseCompliancePage';
+import IpProofPage from './pages/compliance/IpProofPage';
 import ReposPage from './pages/repositories/ReposPage';
 import ContributorsPage from './pages/repositories/ContributorsPage';
 import DependenciesPage from './pages/repositories/DependenciesPage';
@@ -68,6 +70,8 @@ const router = createBrowserRouter([
           { path: '/technical-files', element: <TechnicalFilesPage /> },
           { path: '/vulnerability-reports', element: <VulnerabilityReportsPage /> },
           { path: '/vulnerability-reports/:id', element: <ReportDetailPage /> },
+          { path: '/license-compliance', element: <LicenseCompliancePage /> },
+          { path: '/ip-proof', element: <IpProofPage /> },
           { path: '/repos', element: <ReposPage /> },
           { path: '/contributors', element: <ContributorsPage /> },
           { path: '/dependencies', element: <DependenciesPage /> },

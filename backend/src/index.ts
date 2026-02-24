@@ -22,6 +22,8 @@ import notificationRoutes from "./routes/notifications.js";
 import feedbackRoutes from "./routes/feedback.js";
 import sbomExportRoutes from "./routes/sbom-export.js";
 import craReportsRoutes from "./routes/cra-reports.js";
+import licenseScanRoutes from "./routes/license-scan.js";
+import ipProofRoutes from "./routes/ip-proof.js";
 import { startScheduler } from './services/scheduler.js';
 
 const app = express();
@@ -55,6 +57,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/sbom', sbomExportRoutes);
 app.use('/api/cra-reports', craReportsRoutes);
+app.use('/api/license-scan', licenseScanRoutes);
+app.use('/api/ip-proof', ipProofRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
