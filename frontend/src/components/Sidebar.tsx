@@ -30,6 +30,7 @@ const navSections = [
       { to: '/products', icon: Package, label: 'Products' },
       { to: '/obligations', icon: ClipboardList, label: 'Obligations' },
       { to: '/technical-files', icon: FileText, label: 'Technical Files' },
+      { to: '/vulnerability-reports', icon: Shield, label: 'ENISA Reporting' },
     ],
   },
   {

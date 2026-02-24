@@ -432,6 +432,47 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC)`);
 
+    // CRA Article 14 — vulnerability & incident reports
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS cra_reports (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        report_type VARCHAR(20) NOT NULL DEFAULT 'vulnerability',
+        status VARCHAR(30) NOT NULL DEFAULT 'draft',
+        awareness_at TIMESTAMPTZ,
+        early_warning_deadline TIMESTAMPTZ,
+        notification_deadline TIMESTAMPTZ,
+        final_report_deadline TIMESTAMPTZ,
+        csirt_country VARCHAR(2),
+        member_states_affected TEXT[] DEFAULT '{}',
+        linked_finding_id UUID REFERENCES vulnerability_findings(id),
+        enisa_reference VARCHAR(255),
+        sensitivity_tlp VARCHAR(10) DEFAULT 'AMBER',
+        created_by UUID REFERENCES users(id),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_org ON cra_reports(org_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_product ON cra_reports(product_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_status ON cra_reports(status)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_deadlines ON cra_reports(early_warning_deadline, notification_deadline, final_report_deadline)`);
+
+    // CRA Article 14 — report stage submissions
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS cra_report_stages (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        report_id UUID NOT NULL REFERENCES cra_reports(id) ON DELETE CASCADE,
+        stage VARCHAR(20) NOT NULL,
+        content JSONB NOT NULL DEFAULT '{}',
+        submitted_by UUID REFERENCES users(id),
+        submitted_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_stages_report ON cra_report_stages(report_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_stages_stage ON cra_report_stages(report_id, stage)`);
+
   } finally {
     client.release();
   }

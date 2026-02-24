@@ -337,13 +337,139 @@ async function runDailyVulnDbSync(): Promise<void> {
   }
 }
 
+
+async function checkCraDeadlines(): Promise<void> {
+  try {
+    // Find reports with approaching or overdue deadlines
+    const result = await pool.query(
+      `SELECT r.id, r.org_id, r.product_id, r.report_type, r.status,
+              r.early_warning_deadline, r.notification_deadline, r.final_report_deadline,
+              r.created_by
+       FROM cra_reports r
+       WHERE r.status NOT IN ('closed', 'final_report_sent')`
+    );
+
+    if (result.rows.length === 0) return;
+
+    const now = new Date();
+
+    // Get product names from Neo4j
+    const driver = getDriver();
+    const session = driver.session();
+    const productNames: Record<string, string> = {};
+    try {
+      const productIds = [...new Set(result.rows.map((r: any) => r.product_id))];
+      const neo = await session.run(
+        'UNWIND $ids AS pid MATCH (p:Product {id: pid}) RETURN p.id AS id, p.name AS name',
+        { ids: productIds }
+      );
+      for (const rec of neo.records) {
+        productNames[rec.get('id')] = rec.get('name');
+      }
+    } finally {
+      await session.close();
+    }
+
+    for (const row of result.rows) {
+      let deadline: Date | null = null;
+      let stageName = '';
+
+      if (row.status === 'draft' && row.early_warning_deadline) {
+        deadline = new Date(row.early_warning_deadline);
+        stageName = 'Early Warning';
+      } else if (row.status === 'early_warning_sent' && row.notification_deadline) {
+        deadline = new Date(row.notification_deadline);
+        stageName = 'Full Notification';
+      } else if (row.status === 'notification_sent' && row.final_report_deadline) {
+        deadline = new Date(row.final_report_deadline);
+        stageName = 'Final Report';
+      }
+
+      if (!deadline) continue;
+
+      const hoursRemaining = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
+      const productName = productNames[row.product_id] || 'Unknown Product';
+
+      // Notification thresholds: 12h, 4h, 1h before, and overdue
+      let shouldNotify = false;
+      let severity: 'info' | 'medium' | 'high' | 'critical' = 'info';
+
+      if (hoursRemaining < 0) {
+        shouldNotify = true;
+        severity = 'critical';
+      } else if (hoursRemaining <= 1) {
+        shouldNotify = true;
+        severity = 'high';
+      } else if (hoursRemaining <= 4) {
+        shouldNotify = true;
+        severity = 'medium';
+      } else if (hoursRemaining <= 12) {
+        shouldNotify = true;
+        severity = 'info';
+      }
+
+      if (!shouldNotify) continue;
+
+      // Debounce: check if we already sent a notification at this severity level recently
+      const recentNotif = await pool.query(
+        `SELECT id FROM notifications
+         WHERE type = 'cra_deadline' AND metadata->>'reportId' = $1 AND severity = $2
+           AND created_at > NOW() - INTERVAL '4 hours'
+         LIMIT 1`,
+        [row.id, severity]
+      );
+
+      if (recentNotif.rows.length > 0) continue;
+
+      const isOverdue = hoursRemaining < 0;
+      const timeStr = isOverdue
+        ? `${Math.ceil(Math.abs(hoursRemaining))}h overdue`
+        : hoursRemaining < 1 ? `${Math.ceil(hoursRemaining * 60)}m remaining` : `${Math.ceil(hoursRemaining)}h remaining`;
+
+      const title = isOverdue
+        ? `OVERDUE: ${stageName} for ${productName}`
+        : `${stageName} deadline approaching for ${productName}`;
+      const body = `CRA Article 14 ${stageName} ${isOverdue ? 'was due' : 'is due'} — ${timeStr}. ${isOverdue ? 'Submit immediately to remain compliant.' : 'Prepare and submit before the deadline.'}`;
+
+      // Send to report creator
+      if (row.created_by) {
+        await createNotification({
+          orgId: row.org_id,
+          userId: row.created_by,
+          type: 'cra_deadline',
+          severity,
+          title,
+          body,
+          link: '/vulnerability-reports/' + row.id,
+          metadata: { reportId: row.id, stageName, hoursRemaining: Math.round(hoursRemaining), productId: row.product_id },
+        });
+      }
+
+      // Broadcast for org
+      await createNotification({
+        orgId: row.org_id,
+        type: 'cra_deadline',
+        severity,
+        title,
+        body,
+        link: '/vulnerability-reports/' + row.id,
+        metadata: { reportId: row.id, stageName, hoursRemaining: Math.round(hoursRemaining), productId: row.product_id },
+      });
+
+      console.log('[CRA-DEADLINE] ' + (isOverdue ? 'OVERDUE' : 'Approaching') + ': ' + stageName + ' for ' + productName + ' (' + timeStr + ')');
+    }
+  } catch (err: any) {
+    console.error('[CRA-DEADLINE] Error checking deadlines:', err.message);
+  }
+}
 export function startScheduler(): void {
-  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00');
+  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, CRA deadline checks every hour');
 
   // Run check periodically — all three have hour-gating and date-tracking
   setInterval(() => {
     runDailyVulnDbSync().catch(err => console.error('[SCHEDULER] Uncaught error in DB sync:', err));
     runDailySync().catch(err => console.error('[SCHEDULER] Uncaught error in SBOM sync:', err));
     runDailyVulnScan().catch(err => console.error('[SCHEDULER] Uncaught error in vuln scan:', err));
+    checkCraDeadlines().catch(err => console.error("[SCHEDULER] Uncaught error in CRA deadline check:", err));
   }, CHECK_INTERVAL_MS);
 }
