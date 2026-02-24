@@ -40,15 +40,18 @@ function toNumber(val: any): number {
 }
 
 // Helper: query gap breakdown from Neo4j for a product
+// Categorises directly from dep properties (not hashGapReason) so gaps
+// are always accurate even for deps not processed by the enrichment pipeline.
 async function queryGapBreakdown(neo4jSession: any, productId: string) {
   const result = await neo4jSession.run(
     `MATCH (p:Product {id: $productId})-[:DEPENDS_ON]->(d:Dependency)
      RETURN count(d) AS total,
             count(d.hash) AS enriched,
-            count(CASE WHEN d.hashGapReason = 'no_version' THEN 1 END) AS noVersion,
-            count(CASE WHEN d.hashGapReason = 'unsupported_ecosystem' THEN 1 END) AS unsupportedEcosystem,
-            count(CASE WHEN d.hashGapReason = 'not_found' THEN 1 END) AS notFound,
-            count(CASE WHEN d.hashGapReason = 'fetch_error' THEN 1 END) AS fetchError,
+            count(CASE WHEN d.hash IS NULL AND (d.version IS NULL OR d.version = '') THEN 1 END) AS noVersion,
+            count(CASE WHEN d.hash IS NULL AND d.version IS NOT NULL AND d.version <> '' AND NOT d.ecosystem IN ['npm', 'pip', 'pypi'] THEN 1 END) AS unsupportedEcosystem,
+            count(CASE WHEN d.hash IS NULL AND d.version IS NOT NULL AND d.version <> '' AND d.ecosystem IN ['npm', 'pip', 'pypi'] AND d.hashGapReason = 'not_found' THEN 1 END) AS notFound,
+            count(CASE WHEN d.hash IS NULL AND d.version IS NOT NULL AND d.version <> '' AND d.ecosystem IN ['npm', 'pip', 'pypi'] AND d.hashGapReason = 'fetch_error' THEN 1 END) AS fetchError,
+            count(CASE WHEN d.hash IS NULL AND d.version IS NOT NULL AND d.version <> '' AND d.ecosystem IN ['npm', 'pip', 'pypi'] AND (d.hashGapReason IS NULL OR NOT d.hashGapReason IN ['not_found', 'fetch_error']) THEN 1 END) AS pending,
             count(CASE WHEN d.versionSource = 'lockfile' THEN 1 END) AS lockfileResolved,
             max(d.hashEnrichedAt) AS lastEnrichedAt`,
     { productId }
@@ -62,6 +65,7 @@ async function queryGapBreakdown(neo4jSession: any, productId: string) {
     unsupportedEcosystem: toNumber(record.get('unsupportedEcosystem')),
     notFound: toNumber(record.get('notFound')),
     fetchError: toNumber(record.get('fetchError')),
+    pending: toNumber(record.get('pending')),
     lockfileResolved: toNumber(record.get('lockfileResolved')),
     lastEnrichedAt: record.get('lastEnrichedAt') || null,
   };
@@ -89,6 +93,9 @@ function buildComplianceRiskNote(g: ReturnType<typeof Object>, total: number, en
   }
   if (gaps.fetchError > 0) {
     parts.push(`${gaps.fetchError} had registry fetch errors (will retry on next sync).`);
+  }
+  if (gaps.pending > 0) {
+    parts.push(`${gaps.pending} eligible for enrichment (will be processed on next sync).`);
   }
 
   return parts.join(' ');
@@ -268,6 +275,7 @@ router.get('/:productId/export/cyclonedx', requireAuth, async (req: Request, res
               unsupportedEcosystem: gapData.unsupportedEcosystem,
               notFound: gapData.notFound,
               fetchError: gapData.fetchError,
+              pending: gapData.pending,
             }),
           },
         ],
@@ -413,7 +421,7 @@ router.get('/:productId/export/spdx', requireAuth, async (req: Request, res: Res
         const parts: string[] = [];
         parts.push(`SBOM enriched by CRANIS2. Hash coverage: ${spdxHashCount}/${spdxTotalPkgs} (${pct}%).`);
         parts.push(`WARNING: ${gapCount} packages have compliance gaps that may not meet CRA Article 13 SBOM requirements.`);
-        parts.push(`Gap breakdown: ${gapData.noVersion} missing versions, ${gapData.unsupportedEcosystem} unsupported ecosystems, ${gapData.notFound} not found, ${gapData.fetchError} fetch errors.`);
+        parts.push(`Gap breakdown: ${gapData.noVersion} missing versions, ${gapData.unsupportedEcosystem} unsupported ecosystems, ${gapData.notFound} not found, ${gapData.fetchError} fetch errors, ${gapData.pending} pending enrichment.`);
         sbom.creationInfo.comment = parts.join(' ');
       }
     }
@@ -492,6 +500,7 @@ router.get('/:productId/export/status', requireAuth, async (req: Request, res: R
         unsupportedEcosystem: gapData.unsupportedEcosystem,
         notFound: gapData.notFound,
         fetchError: gapData.fetchError,
+        pending: gapData.pending,
       },
       lockfileResolved: gapData.lockfileResolved,
       lastEnrichedAt: gapData.lastEnrichedAt,

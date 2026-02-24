@@ -1473,7 +1473,7 @@ function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, o
 
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showHashInfo, setShowHashInfo] = useState(false);
-  const [exportStatus, setExportStatus] = useState<{ totalDependencies: number; enrichedDependencies: number; enrichmentComplete: boolean; gaps?: { noVersion: number; unsupportedEcosystem: number; notFound: number; fetchError: number }; lockfileResolved?: number; lastEnrichedAt?: string } | null>(null);
+  const [exportStatus, setExportStatus] = useState<{ totalDependencies: number; enrichedDependencies: number; enrichmentComplete: boolean; gaps?: { noVersion: number; unsupportedEcosystem: number; notFound: number; fetchError: number; pending: number }; lockfileResolved?: number; lastEnrichedAt?: string } | null>(null);
   const productId = useParams().productId;
 
   // Fetch hash enrichment status when SBOM is available
@@ -1542,7 +1542,7 @@ function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, o
                         <button className="sbom-hash-info-close" onClick={() => setShowHashInfo(false)}><X size={14} /></button>
                       </div>
                       <p>CRA Article 13 requires SBOMs with cryptographic hashes for all components. <strong>{exportStatus.enrichedDependencies}</strong> of <strong>{exportStatus.totalDependencies}</strong> have verified hashes.</p>
-                      {exportStatus.gaps && (Number(exportStatus.gaps.noVersion || 0) + Number(exportStatus.gaps.unsupportedEcosystem || 0) + Number(exportStatus.gaps.notFound || 0) + Number(exportStatus.gaps.fetchError || 0)) > 0 && (
+                      {exportStatus.gaps && (Number(exportStatus.gaps.noVersion || 0) + Number(exportStatus.gaps.unsupportedEcosystem || 0) + Number(exportStatus.gaps.notFound || 0) + Number(exportStatus.gaps.fetchError || 0) + Number(exportStatus.gaps.pending || 0)) > 0 && (
                         <div className="gap-breakdown">
                           {exportStatus.gaps.noVersion > 0 && (
                             <div className="gap-row gap-warning">
@@ -1570,6 +1570,13 @@ function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, o
                               <AlertTriangle size={13} />
                               <span><strong>{exportStatus.gaps.fetchError}</strong> registry errors</span>
                               <span className="gap-action">Will retry on next sync</span>
+                            </div>
+                          )}
+                          {(exportStatus.gaps.pending ?? 0) > 0 && (
+                            <div className="gap-row gap-info">
+                              <Info size={13} />
+                              <span><strong>{exportStatus.gaps.pending}</strong> pending enrichment</span>
+                              <span className="gap-action">Will process on next sync</span>
                             </div>
                           )}
                         </div>
