@@ -1542,7 +1542,7 @@ function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, o
                         <button className="sbom-hash-info-close" onClick={() => setShowHashInfo(false)}><X size={14} /></button>
                       </div>
                       <p>CRA Article 13 requires SBOMs with cryptographic hashes for all components. <strong>{exportStatus.enrichedDependencies}</strong> of <strong>{exportStatus.totalDependencies}</strong> have verified hashes.</p>
-                      {exportStatus.gaps && (exportStatus.gaps.noVersion + exportStatus.gaps.unsupportedEcosystem + exportStatus.gaps.notFound + exportStatus.gaps.fetchError) > 0 && (
+                      {exportStatus.gaps && (Number(exportStatus.gaps.noVersion || 0) + Number(exportStatus.gaps.unsupportedEcosystem || 0) + Number(exportStatus.gaps.notFound || 0) + Number(exportStatus.gaps.fetchError || 0)) > 0 && (
                         <div className="gap-breakdown">
                           {exportStatus.gaps.noVersion > 0 && (
                             <div className="gap-row gap-warning">
@@ -1574,7 +1574,7 @@ function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, o
                           )}
                         </div>
                       )}
-                      {exportStatus.lockfileResolved && exportStatus.lockfileResolved > 0 && (
+                      {Number(exportStatus.lockfileResolved) > 0 && (
                         <div className="gap-row gap-success">
                           <CheckCircle2 size={13} />
                           <span><strong>{exportStatus.lockfileResolved}</strong> versions resolved from lockfile</span>

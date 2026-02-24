@@ -25,37 +25,32 @@ export interface EnrichmentResult {
  * Returns null if package not found or private.
  */
 async function fetchNpmHash(name: string, version: string): Promise<RegistryInfo | null> {
-  try {
-    // Handle scoped packages: @types/node -> @types%2Fnode
-    const encodedName = name.startsWith('@') ? name.replace('/', '%2F') : name;
-    const url = `https://registry.npmjs.org/${encodedName}/${version}`;
+  // Handle scoped packages: @types/node -> @types%2Fnode
+  const encodedName = name.startsWith('@') ? name.replace('/', '%2F') : name;
+  const url = `https://registry.npmjs.org/${encodedName}/${version}`;
 
-    const res = await fetch(url, {
-      headers: { 'Accept': 'application/json', 'User-Agent': 'CRANIS2/1.0' },
-      signal: AbortSignal.timeout(10000),
-    });
+  const res = await fetch(url, {
+    headers: { 'Accept': 'application/json', 'User-Agent': 'CRANIS2/1.0' },
+    signal: AbortSignal.timeout(10000),
+  });
 
-    if (!res.ok) return null;
+  if (!res.ok) return null;
 
-    const data = await res.json() as any;
-    const integrity = data?.dist?.integrity;
-    const tarball = data?.dist?.tarball;
+  const data = await res.json() as any;
+  const integrity = data?.dist?.integrity;
+  const tarball = data?.dist?.tarball;
 
-    if (!integrity) return null;
+  if (!integrity) return null;
 
-    // Parse SRI format: "sha512-abc123..." -> { hash: "abc123...", algorithm: "SHA-512" }
-    const match = integrity.match(/^(sha\d+)-(.+)$/);
-    if (!match) return null;
+  // Parse SRI format: "sha512-abc123..." -> { hash: "abc123...", algorithm: "SHA-512" }
+  const match = integrity.match(/^(sha\d+)-(.+)$/);
+  if (!match) return null;
 
-    return {
-      hash: match[2],
-      hashAlgorithm: match[1].toUpperCase().replace('SHA', 'SHA-'),
-      downloadUrl: tarball || '',
-    };
-  } catch (err) {
-    // Re-throw to distinguish fetch errors from not-found
-    throw err;
-  }
+  return {
+    hash: match[2],
+    hashAlgorithm: match[1].toUpperCase().replace('SHA', 'SHA-'),
+    downloadUrl: tarball || '',
+  };
 }
 
 /**
@@ -63,43 +58,40 @@ async function fetchNpmHash(name: string, version: string): Promise<RegistryInfo
  * Returns null if package not found.
  */
 async function fetchPypiHash(name: string, version: string): Promise<RegistryInfo | null> {
-  try {
-    const url = `https://pypi.org/pypi/${encodeURIComponent(name)}/${version}/json`;
+  const url = `https://pypi.org/pypi/${encodeURIComponent(name)}/${version}/json`;
 
-    const res = await fetch(url, {
-      headers: { 'Accept': 'application/json', 'User-Agent': 'CRANIS2/1.0' },
-      signal: AbortSignal.timeout(10000),
-    });
+  const res = await fetch(url, {
+    headers: { 'Accept': 'application/json', 'User-Agent': 'CRANIS2/1.0' },
+    signal: AbortSignal.timeout(10000),
+  });
 
-    if (!res.ok) return null;
+  if (!res.ok) return null;
 
-    const data = await res.json() as any;
-    const files = data?.urls || [];
-    // Prefer sdist, fall back to first wheel
-    const file = files.find((f: any) => f.packagetype === 'sdist') || files[0];
+  const data = await res.json() as any;
+  const files = data?.urls || [];
+  // Prefer sdist, fall back to first wheel
+  const file = files.find((f: any) => f.packagetype === 'sdist') || files[0];
 
-    if (!file?.digests?.sha256) return null;
+  if (!file?.digests?.sha256) return null;
 
-    return {
-      hash: file.digests.sha256,
-      hashAlgorithm: 'SHA-256',
-      downloadUrl: file.url || '',
-    };
-  } catch (err) {
-    // Re-throw to distinguish fetch errors from not-found
-    throw err;
-  }
+  return {
+    hash: file.digests.sha256,
+    hashAlgorithm: 'SHA-256',
+    downloadUrl: file.url || '',
+  };
 }
 
 /**
  * Enrich Dependency nodes with cryptographic hashes and download URLs.
  * Fetches from package registries in batches to avoid hammering.
  *
- * Designed to be called fire-and-forget after storeSBOM completes.
- * Never throws — logs warnings and continues on failure.
+ * Registry fetches run in parallel (network I/O), but Neo4j writes
+ * run sequentially to avoid concurrent session transaction errors.
  *
- * Now categorises WHY each dependency is missing its hash, storing
+ * Categorises WHY each dependency is missing its hash, storing
  * a hashGapReason on the Neo4j Dependency node for compliance reporting.
+ *
+ * Never throws — logs warnings and continues on failure.
  */
 export async function enrichDependencyHashes(
   productId: string,
@@ -193,34 +185,51 @@ export async function enrichDependencyHashes(
     for (let i = 0; i < needsEnrichment.length; i += BATCH_SIZE) {
       const batch = needsEnrichment.slice(i, i + BATCH_SIZE);
 
-      const results = await Promise.allSettled(
+      // Phase 1: Fetch from registries IN PARALLEL (network I/O is the bottleneck)
+      const fetchResults = await Promise.allSettled(
         batch.map(async (pkg) => {
-          let info: RegistryInfo | null = null;
-
           try {
+            let info: RegistryInfo | null = null;
             if (pkg.ecosystem === 'npm') {
               info = await fetchNpmHash(pkg.name, pkg.version);
             } else if (pkg.ecosystem === 'pip' || pkg.ecosystem === 'pypi') {
               info = await fetchPypiHash(pkg.name, pkg.version);
             }
+            return { pkg, info, fetchError: false };
           } catch (err) {
-            // Network/timeout errors
-            stats.gaps.fetchError++;
-            stats.failed++;
-            gapEntries.push({ purl: pkg.purl, reason: 'fetch_error' });
             console.warn(`[HASH] Fetch error for ${pkg.name}@${pkg.version}:`, (err as Error).message);
-            return;
+            return { pkg, info: null, fetchError: true };
           }
+        })
+      );
 
-          if (!info) {
-            // Registry returned 404 or no hash in response
-            stats.gaps.notFound++;
-            stats.failed++;
-            gapEntries.push({ purl: pkg.purl, reason: 'not_found' });
-            return;
-          }
+      // Phase 2: Write to Neo4j SEQUENTIALLY (avoids concurrent session conflicts)
+      for (const result of fetchResults) {
+        if (result.status === 'rejected') {
+          stats.gaps.fetchError++;
+          stats.failed++;
+          console.warn('[HASH] Batch item rejected:', (result as PromiseRejectedResult).reason?.message);
+          continue;
+        }
 
-          // Update Neo4j Dependency node with hash
+        const { pkg, info, fetchError } = result.value;
+
+        if (fetchError) {
+          stats.gaps.fetchError++;
+          stats.failed++;
+          gapEntries.push({ purl: pkg.purl, reason: 'fetch_error' });
+          continue;
+        }
+
+        if (!info) {
+          stats.gaps.notFound++;
+          stats.failed++;
+          gapEntries.push({ purl: pkg.purl, reason: 'not_found' });
+          continue;
+        }
+
+        // Write hash to Neo4j (sequential — no concurrent session conflicts)
+        try {
           await neo4jSession.run(
             `MATCH (d:Dependency {purl: $purl})
              SET d.hash = $hash,
@@ -236,15 +245,11 @@ export async function enrichDependencyHashes(
           );
           stats.enriched++;
           successPurls.push(pkg.purl);
-        })
-      );
-
-      // Count rejections as fetch errors
-      for (const r of results) {
-        if (r.status === 'rejected') {
+        } catch (writeErr) {
+          console.warn(`[HASH] Neo4j write error for ${pkg.name}:`, (writeErr as Error).message);
           stats.gaps.fetchError++;
           stats.failed++;
-          console.warn('[HASH] Batch item rejected:', (r as PromiseRejectedResult).reason?.message);
+          gapEntries.push({ purl: pkg.purl, reason: 'fetch_error' });
         }
       }
 
