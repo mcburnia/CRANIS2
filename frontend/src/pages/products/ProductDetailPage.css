@@ -604,3 +604,167 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
   color: var(--amber);
   white-space: nowrap;
 }
+
+/* Hash Info */
+.sbom-hash-info-wrapper {
+  position: relative;
+}
+
+.sbom-hash-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.hash-partial {
+  color: var(--amber);
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.hash-partial:hover {
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.hash-complete {
+  color: var(--green);
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.hash-complete:hover {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.sbom-hash-info-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 20;
+  padding: 1rem;
+}
+
+.sbom-hash-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.sbom-hash-info-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.1rem;
+  display: flex;
+}
+
+.sbom-hash-info-close:hover {
+  color: var(--text);
+}
+
+.sbom-hash-info-panel p {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0 0 0.5rem 0;
+}
+
+.sbom-hash-info-panel p:last-child {
+  margin-bottom: 0;
+}
+
+.sbom-hash-info-panel strong {
+  color: var(--text);
+}
+
+.sbom-hash-info-panel code {
+  font-size: 0.72rem;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  color: var(--accent);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+/* Compliance Gap Breakdown */
+.gap-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.5rem 0;
+}
+
+.gap-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid;
+}
+
+.gap-row span {
+  white-space: nowrap;
+}
+
+.gap-row strong {
+  color: var(--text);
+}
+
+.gap-warning {
+  color: var(--amber);
+  background: rgba(245, 158, 11, 0.06);
+  border-color: rgba(245, 158, 11, 0.15);
+}
+
+.gap-info {
+  color: var(--muted);
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.12);
+}
+
+.gap-error {
+  color: var(--red);
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.15);
+}
+
+.gap-success {
+  color: var(--green);
+  background: rgba(34, 197, 94, 0.06);
+  border-color: rgba(34, 197, 94, 0.15);
+  font-size: 0.75rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.35rem 0;
+}
+
+.gap-action {
+  margin-left: auto;
+  font-size: 0.68rem;
+  opacity: 0.7;
+  font-style: italic;
+}

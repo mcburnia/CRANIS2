@@ -42,7 +42,7 @@ export interface GitHubUser {
 
 const GITHUB_API = 'https://api.github.com';
 
-async function githubGet<T>(path: string, token: string): Promise<T> {
+export async function githubGet<T>(path: string, token: string): Promise<T> {
   const res = await fetch(`${GITHUB_API}${path}`, {
     headers: {
       Authorization: `Bearer ${token}`,

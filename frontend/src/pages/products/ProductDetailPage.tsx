@@ -6,7 +6,7 @@ import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
   CheckCircle2, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
-  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download
+  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info
 } from 'lucide-react';
 import './ProductDetailPage.css';
 
@@ -1472,7 +1472,8 @@ function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, o
   }
 
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [exportStatus, setExportStatus] = useState<{ totalDependencies: number; enrichedDependencies: number; enrichmentComplete: boolean } | null>(null);
+  const [showHashInfo, setShowHashInfo] = useState(false);
+  const [exportStatus, setExportStatus] = useState<{ totalDependencies: number; enrichedDependencies: number; enrichmentComplete: boolean; gaps?: { noVersion: number; unsupportedEcosystem: number; notFound: number; fetchError: number }; lockfileResolved?: number; lastEnrichedAt?: string } | null>(null);
   const productId = useParams().productId;
 
   // Fetch hash enrichment status when SBOM is available
@@ -1527,10 +1528,62 @@ function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, o
             <h3>Software Bill of Materials ({sbomData.packageCount} packages)</h3>
             <div className="sbom-header-actions">
               {sbomData.isStale && <span className="sbom-stale-badge">Outdated</span>}
-              {exportStatus && !exportStatus.enrichmentComplete && (
-                <span className="sbom-hash-warning" title={`${exportStatus.enrichedDependencies}/${exportStatus.totalDependencies} packages have cryptographic hashes`}>
-                  <AlertTriangle size={12} /> Hashes: {exportStatus.enrichedDependencies}/{exportStatus.totalDependencies}
-                </span>
+              {exportStatus && (
+                <div className="sbom-hash-info-wrapper">
+                  <button className={`sbom-hash-badge ${exportStatus.enrichmentComplete ? 'hash-complete' : 'hash-partial'}`} onClick={() => setShowHashInfo(!showHashInfo)}>
+                    {exportStatus.enrichmentComplete ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+                    Hashes: {exportStatus.enrichedDependencies}/{exportStatus.totalDependencies}
+                    <Info size={11} />
+                  </button>
+                  {showHashInfo && (
+                    <div className="sbom-hash-info-panel">
+                      <div className="sbom-hash-info-header">
+                        <strong>SBOM Compliance Status</strong>
+                        <button className="sbom-hash-info-close" onClick={() => setShowHashInfo(false)}><X size={14} /></button>
+                      </div>
+                      <p>CRA Article 13 requires SBOMs with cryptographic hashes for all components. <strong>{exportStatus.enrichedDependencies}</strong> of <strong>{exportStatus.totalDependencies}</strong> have verified hashes.</p>
+                      {exportStatus.gaps && (exportStatus.gaps.noVersion + exportStatus.gaps.unsupportedEcosystem + exportStatus.gaps.notFound + exportStatus.gaps.fetchError) > 0 && (
+                        <div className="gap-breakdown">
+                          {exportStatus.gaps.noVersion > 0 && (
+                            <div className="gap-row gap-warning">
+                              <AlertTriangle size={13} />
+                              <span><strong>{exportStatus.gaps.noVersion}</strong> missing version</span>
+                              <span className="gap-action">Lockfile resolution recommended</span>
+                            </div>
+                          )}
+                          {exportStatus.gaps.unsupportedEcosystem > 0 && (
+                            <div className="gap-row gap-info">
+                              <Info size={13} />
+                              <span><strong>{exportStatus.gaps.unsupportedEcosystem}</strong> unsupported ecosystem</span>
+                              <span className="gap-action">npm and PyPI supported</span>
+                            </div>
+                          )}
+                          {exportStatus.gaps.notFound > 0 && (
+                            <div className="gap-row gap-warning">
+                              <AlertTriangle size={13} />
+                              <span><strong>{exportStatus.gaps.notFound}</strong> not found in registry</span>
+                              <span className="gap-action">May be private packages</span>
+                            </div>
+                          )}
+                          {exportStatus.gaps.fetchError > 0 && (
+                            <div className="gap-row gap-error">
+                              <AlertTriangle size={13} />
+                              <span><strong>{exportStatus.gaps.fetchError}</strong> registry errors</span>
+                              <span className="gap-action">Will retry on next sync</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {exportStatus.lockfileResolved && exportStatus.lockfileResolved > 0 && (
+                        <div className="gap-row gap-success">
+                          <CheckCircle2 size={13} />
+                          <span><strong>{exportStatus.lockfileResolved}</strong> versions resolved from lockfile</span>
+                        </div>
+                      )}
+                      <p>Hash coverage is noted in both CycloneDX and SPDX export metadata. Gaps are flagged as compliance risks.</p>
+                    </div>
+                  )}
+                </div>
               )}
               <div className="sbom-export-dropdown">
                 <button className="pd-sync-btn sbom-export-btn" onClick={() => setShowExportMenu(!showExportMenu)}>

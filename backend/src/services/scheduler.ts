@@ -9,6 +9,8 @@ import {
 } from '../services/github.js';
 import type { GitHubRelease } from '../services/github.js';
 import { enrichDependencyHashes } from './hash-enrichment.js';
+import { resolveLockfileVersions } from './lockfile-resolver.js';
+import { sendComplianceGapNotification } from './notifications.js';
 import { extractPackageInfo } from '../routes/github.js';
 
 // How often to check for stale SBOMs (default: every hour)
@@ -73,12 +75,13 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
   try {
     // Get repo URL from product
     const productResult = await neo4jSession.run(
-      `MATCH (p:Product {id: $productId}) RETURN p.repoUrl as repoUrl, p.name as name`,
+      `MATCH (p:Product {id: $productId})-[:BELONGS_TO]->(o:Organisation) RETURN p.repoUrl as repoUrl, p.name as name, o.id as orgId`,
       { productId }
     );
     if (productResult.records.length === 0) return false;
 
     const repoUrl = productResult.records[0].get('repoUrl');
+    const schedulerProductName = productResult.records[0].get("name") || "Unknown";    const schedulerOrgId = productResult.records[0].get("orgId");
     if (!repoUrl) return false;
 
     const parsed = parseRepoUrl(repoUrl);
@@ -147,13 +150,28 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
         { productId, spdxVersion: sbomData.sbom?.spdxVersion, packageCount: packages.length }
       );
 
-      // Fire-and-forget hash enrichment
+      // Post-SBOM compliance pipeline (non-blocking)
       const extractedPackages = packages
         .filter((p: any) => p.SPDXID !== 'SPDXRef-DOCUMENT' && !p.name?.startsWith('com.github.'))
         .map((p: any) => extractPackageInfo(p));
-      enrichDependencyHashes(productId, extractedPackages).catch(err => {
-        console.error('[AUTO-SYNC] Hash enrichment failed (non-blocking):', err.message);
-      });
+      const schedToken = auth.token;
+      const schedProductId = productId;
+      const schedOrgId = schedulerOrgId;
+      const schedProductName = schedulerProductName;
+      (async () => {
+        try {
+          if (schedToken) {
+            await resolveLockfileVersions(schedProductId, schedToken);
+          }
+          const enrichResult = await enrichDependencyHashes(schedProductId, extractedPackages);
+          const totalDeps = enrichResult.enriched + enrichResult.gaps.noVersion + enrichResult.gaps.unsupportedEcosystem + enrichResult.gaps.notFound + enrichResult.gaps.fetchError;
+          if (schedOrgId) {
+            await sendComplianceGapNotification(schedProductId, schedOrgId, schedProductName, enrichResult.gaps, totalDeps);
+          }
+        } catch (err: any) {
+          console.error("[AUTO-SYNC] Post-SBOM pipeline failed:", err.message);
+        }
+      })();
     }
 
     // Store GitHub releases

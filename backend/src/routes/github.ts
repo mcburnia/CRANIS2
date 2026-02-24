@@ -5,8 +5,9 @@ import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { encrypt, decrypt } from '../utils/encryption.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
-import { createNotification } from '../services/notifications.js';
+import { createNotification, sendComplianceGapNotification } from '../services/notifications.js';
 import { enrichDependencyHashes } from '../services/hash-enrichment.js';
+import { resolveLockfileVersions } from '../services/lockfile-resolver.js';
 import {
   exchangeCodeForToken,
   getAuthenticatedUser,
@@ -62,7 +63,7 @@ async function getUserOrgId(userId: string): Promise<string | null> {
 }
 
 // Helper: get user's decrypted GitHub token
-async function getUserGitHubToken(userId: string): Promise<string | null> {
+export async function getUserGitHubToken(userId: string): Promise<string | null> {
   const result = await pool.query(
     'SELECT access_token_encrypted FROM github_connections WHERE user_id = $1',
     [userId]
@@ -513,11 +514,29 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
     if (sbomData) {
       sbomResult = await storeSBOM(productId, sbomData, neo4jSession);
 
-      // Fire-and-forget hash enrichment (non-blocking)
+      // Post-SBOM compliance pipeline (non-blocking)
       if (sbomResult) {
-        enrichDependencyHashes(productId, sbomResult.packages).catch(err => {
-          console.error('[SYNC] Hash enrichment failed (non-blocking):', err.message);
-        });
+        const pipelinePackages = sbomResult.packages;
+        const pipelineProductId = productId;
+        const pipelineOrgId = orgId;
+        const pipelineProductName = productName;
+        const pipelineUserId = userId;
+        const pipelineGhToken = ghToken;
+        (async () => {
+          try {
+            // 1. Resolve version gaps from lockfile
+            if (pipelineGhToken) {
+              await resolveLockfileVersions(pipelineProductId, pipelineGhToken);
+            }
+            // 2. Enrich hashes (newly-versioned deps now eligible)
+            const enrichResult = await enrichDependencyHashes(pipelineProductId, pipelinePackages);
+            // 3. Send compliance gap notifications
+            const totalDeps = enrichResult.enriched + enrichResult.gaps.noVersion + enrichResult.gaps.unsupportedEcosystem + enrichResult.gaps.notFound + enrichResult.gaps.fetchError;
+            await sendComplianceGapNotification(pipelineProductId, pipelineOrgId, pipelineProductName, enrichResult.gaps, totalDeps);
+          } catch (err: any) {
+            console.error("[SYNC] Post-SBOM pipeline failed:", err.message);
+          }
+        })();
       }
     }
 
@@ -768,10 +787,21 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
 
     const sbomResult = await storeSBOM(productId, sbomData, neo4jSession);
 
-    // Fire-and-forget hash enrichment (non-blocking)
-    enrichDependencyHashes(productId, sbomResult.packages).catch(err => {
-      console.error('[SBOM-REFRESH] Hash enrichment failed (non-blocking):', err.message);
-    });
+    // Post-SBOM compliance pipeline (non-blocking)
+    const refreshPackages = sbomResult.packages;
+    const refreshGhToken = ghToken;
+    (async () => {
+      try {
+        if (refreshGhToken) {
+          await resolveLockfileVersions(productId, refreshGhToken);
+        }
+        const enrichResult = await enrichDependencyHashes(productId, refreshPackages);
+        const totalDeps = enrichResult.enriched + enrichResult.gaps.noVersion + enrichResult.gaps.unsupportedEcosystem + enrichResult.gaps.notFound + enrichResult.gaps.fetchError;
+        await sendComplianceGapNotification(productId, orgId, productName, enrichResult.gaps, totalDeps);
+      } catch (err: any) {
+        console.error("[SBOM-REFRESH] Post-SBOM pipeline failed:", err.message);
+      }
+    })();
 
     // Record telemetry
     const reqData = extractRequestData(req);

@@ -33,6 +33,67 @@ async function getUserOrgId(userId: string): Promise<string | null> {
   return result.rows[0]?.org_id || null;
 }
 
+// Helper: extract Neo4j integer safely
+function toNumber(val: any): number {
+  if (val && typeof val.toNumber === 'function') return val.toNumber();
+  return typeof val === 'number' ? val : parseInt(val) || 0;
+}
+
+// Helper: query gap breakdown from Neo4j for a product
+async function queryGapBreakdown(neo4jSession: any, productId: string) {
+  const result = await neo4jSession.run(
+    `MATCH (p:Product {id: $productId})-[:DEPENDS_ON]->(d:Dependency)
+     RETURN count(d) AS total,
+            count(d.hash) AS enriched,
+            count(CASE WHEN d.hashGapReason = 'no_version' THEN 1 END) AS noVersion,
+            count(CASE WHEN d.hashGapReason = 'unsupported_ecosystem' THEN 1 END) AS unsupportedEcosystem,
+            count(CASE WHEN d.hashGapReason = 'not_found' THEN 1 END) AS notFound,
+            count(CASE WHEN d.hashGapReason = 'fetch_error' THEN 1 END) AS fetchError,
+            count(CASE WHEN d.versionSource = 'lockfile' THEN 1 END) AS lockfileResolved,
+            max(d.hashEnrichedAt) AS lastEnrichedAt`,
+    { productId }
+  );
+
+  const record = result.records[0];
+  return {
+    total: toNumber(record.get('total')),
+    enriched: toNumber(record.get('enriched')),
+    noVersion: toNumber(record.get('noVersion')),
+    unsupportedEcosystem: toNumber(record.get('unsupportedEcosystem')),
+    notFound: toNumber(record.get('notFound')),
+    fetchError: toNumber(record.get('fetchError')),
+    lockfileResolved: toNumber(record.get('lockfileResolved')),
+    lastEnrichedAt: record.get('lastEnrichedAt') || null,
+  };
+}
+
+// Helper: build compliance risk note for export metadata
+function buildComplianceRiskNote(g: ReturnType<typeof Object>, total: number, enriched: number): string {
+  const gapCount = total - enriched;
+  if (gapCount === 0) {
+    return 'All components have verified cryptographic hashes. SBOM meets CRA Article 13 hash requirements.';
+  }
+
+  const parts: string[] = [];
+  parts.push(`${gapCount} of ${total} components have SBOM compliance gaps requiring action under CRA Article 13.`);
+
+  const gaps = g as any;
+  if (gaps.noVersion > 0) {
+    parts.push(`${gaps.noVersion} missing version information (lockfile resolution recommended).`);
+  }
+  if (gaps.unsupportedEcosystem > 0) {
+    parts.push(`${gaps.unsupportedEcosystem} use ecosystems not yet supported for hash verification.`);
+  }
+  if (gaps.notFound > 0) {
+    parts.push(`${gaps.notFound} not found in their package registry.`);
+  }
+  if (gaps.fetchError > 0) {
+    parts.push(`${gaps.fetchError} had registry fetch errors (will retry on next sync).`);
+  }
+
+  return parts.join(' ');
+}
+
 // ─── GET /api/sbom/:productId/export/cyclonedx ──────────────────────
 // Export SBOM as CycloneDX 1.6 JSON
 router.get('/:productId/export/cyclonedx', requireAuth, async (req: Request, res: Response) => {
@@ -155,7 +216,12 @@ router.get('/:productId/export/cyclonedx', requireAuth, async (req: Request, res
       });
     }
 
-    // 8. Assemble CycloneDX 1.6 document
+    // 8. Query gap breakdown for compliance metadata
+    const gapData = await queryGapBreakdown(neo4jSession, productId);
+    const hashCount = gapData.enriched;
+    const pct = components.length > 0 ? Math.round((hashCount / components.length) * 100) : 0;
+
+    // 9. Assemble CycloneDX 1.6 document
     const cyclonedx: any = {
       bomFormat: 'CycloneDX',
       specVersion: '1.6',
@@ -182,19 +248,42 @@ router.get('/:productId/export/cyclonedx', requireAuth, async (req: Request, res
           ...(org.website ? { url: [org.website] } : {}),
           ...(contacts.length > 0 ? { contact: contacts } : {}),
         },
+        properties: [
+          {
+            name: 'cranis2:hash-coverage',
+            value: `${hashCount}/${components.length}`,
+          },
+          {
+            name: 'cranis2:hash-coverage-percentage',
+            value: `${pct}%`,
+          },
+          {
+            name: 'cranis2:compliance-risk-note',
+            value: buildComplianceRiskNote(gapData, components.length, hashCount),
+          },
+          {
+            name: 'cranis2:compliance-gaps',
+            value: JSON.stringify({
+              noVersion: gapData.noVersion,
+              unsupportedEcosystem: gapData.unsupportedEcosystem,
+              notFound: gapData.notFound,
+              fetchError: gapData.fetchError,
+            }),
+          },
+        ],
       },
       components,
       dependencies,
     };
 
-    // 9. Send as downloadable JSON
+    // 10. Send as downloadable JSON
     const safeName = (product.name || 'product').replace(/[^a-zA-Z0-9_-]/g, '_');
     const version = product.version || 'latest';
     const filename = `${safeName}-${version}-cyclonedx-1.6.json`;
 
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.json(cyclonedx);
+    res.send(JSON.stringify(cyclonedx, null, 2));
 
     // Record telemetry (non-blocking)
     const reqData = extractRequestData(req);
@@ -303,22 +392,40 @@ router.get('/:productId/export/spdx', requireAuth, async (req: Request, res: Res
       }
     }
 
-    // 5. Enrich creator info
+    // 5. Query gap breakdown for compliance metadata
+    const gapData = await queryGapBreakdown(neo4jSession, productId);
+    const spdxHashCount = Array.from(hashMap.keys()).length;
+    const spdxTotalPkgs = (sbom.packages || []).filter((p: any) => p.SPDXID !== 'SPDXRef-DOCUMENT').length;
+
+    // 6. Enrich creator info with compliance-risk framing
     if (sbom.creationInfo) {
       if (!sbom.creationInfo.creators) sbom.creationInfo.creators = [];
       sbom.creationInfo.creators.push('Tool: CRANIS2-1.0.0');
       sbom.creationInfo.creators.push(`Organization: ${org.name}`);
       sbom.creationInfo.created = new Date().toISOString();
+
+      const pct = spdxTotalPkgs > 0 ? Math.round((spdxHashCount / spdxTotalPkgs) * 100) : 0;
+      const gapCount = spdxTotalPkgs - spdxHashCount;
+
+      if (gapCount === 0) {
+        sbom.creationInfo.comment = `SBOM enriched by CRANIS2. Hash coverage: ${spdxHashCount}/${spdxTotalPkgs} (100%). All packages have verified cryptographic hashes sourced from package registries (npm SHA-512, PyPI SHA-256).`;
+      } else {
+        const parts: string[] = [];
+        parts.push(`SBOM enriched by CRANIS2. Hash coverage: ${spdxHashCount}/${spdxTotalPkgs} (${pct}%).`);
+        parts.push(`WARNING: ${gapCount} packages have compliance gaps that may not meet CRA Article 13 SBOM requirements.`);
+        parts.push(`Gap breakdown: ${gapData.noVersion} missing versions, ${gapData.unsupportedEcosystem} unsupported ecosystems, ${gapData.notFound} not found, ${gapData.fetchError} fetch errors.`);
+        sbom.creationInfo.comment = parts.join(' ');
+      }
     }
 
-    // 6. Send as downloadable JSON
+    // 7. Send as downloadable JSON
     const safeName = (product.name || 'product').replace(/[^a-zA-Z0-9_-]/g, '_');
     const version = product.version || 'latest';
     const filename = `${safeName}-${version}-spdx-2.3.json`;
 
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.json(enrichedSpdx);
+    res.send(JSON.stringify(enrichedSpdx, null, 2));
 
     // Record telemetry (non-blocking)
     const reqData = extractRequestData(req);
@@ -340,7 +447,7 @@ router.get('/:productId/export/spdx', requireAuth, async (req: Request, res: Res
 });
 
 // ─── GET /api/sbom/:productId/export/status ─────────────────────────
-// Returns hash enrichment status for UI warnings
+// Returns hash enrichment status with categorised gap breakdown
 router.get('/:productId/export/status', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const orgId = await getUserOrgId(userId);
@@ -365,17 +472,8 @@ router.get('/:productId/export/status', requireAuth, async (req: Request, res: R
       return;
     }
 
-    // Count total deps vs enriched deps
-    const result = await neo4jSession.run(
-      `MATCH (p:Product {id: $productId})-[:DEPENDS_ON]->(d:Dependency)
-       RETURN count(d) AS total,
-              count(d.hash) AS enriched`,
-      { productId }
-    );
-
-    const record = result.records[0];
-    const total = record.get('total').toNumber ? record.get('total').toNumber() : record.get('total');
-    const enriched = record.get('enriched').toNumber ? record.get('enriched').toNumber() : record.get('enriched');
+    // Query categorised gap breakdown
+    const gapData = await queryGapBreakdown(neo4jSession, productId);
 
     // Check if SBOM exists
     const sbomRow = await pool.query(
@@ -386,9 +484,17 @@ router.get('/:productId/export/status', requireAuth, async (req: Request, res: R
     res.json({
       hasSBOM: sbomRow.rows.length > 0,
       sbomSyncedAt: sbomRow.rows[0]?.synced_at || null,
-      totalDependencies: total,
-      enrichedDependencies: enriched,
-      enrichmentComplete: total > 0 && enriched >= total,
+      totalDependencies: gapData.total,
+      enrichedDependencies: gapData.enriched,
+      enrichmentComplete: gapData.total > 0 && gapData.enriched >= gapData.total,
+      gaps: {
+        noVersion: gapData.noVersion,
+        unsupportedEcosystem: gapData.unsupportedEcosystem,
+        notFound: gapData.notFound,
+        fetchError: gapData.fetchError,
+      },
+      lockfileResolved: gapData.lockfileResolved,
+      lastEnrichedAt: gapData.lastEnrichedAt,
     });
   } catch (err) {
     console.error('Export status check failed:', err);

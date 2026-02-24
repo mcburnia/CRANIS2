@@ -6,6 +6,20 @@ interface RegistryInfo {
   downloadUrl: string;
 }
 
+export interface GapBreakdown {
+  noVersion: number;
+  unsupportedEcosystem: number;
+  notFound: number;
+  fetchError: number;
+}
+
+export interface EnrichmentResult {
+  enriched: number;
+  skipped: number;
+  failed: number;
+  gaps: GapBreakdown;
+}
+
 /**
  * Fetch SHA-512 hash from npm registry for a specific package@version.
  * Returns null if package not found or private.
@@ -39,8 +53,8 @@ async function fetchNpmHash(name: string, version: string): Promise<RegistryInfo
       downloadUrl: tarball || '',
     };
   } catch (err) {
-    console.warn(`[HASH] Failed to fetch npm hash for ${name}@${version}:`, (err as Error).message);
-    return null;
+    // Re-throw to distinguish fetch errors from not-found
+    throw err;
   }
 }
 
@@ -72,8 +86,8 @@ async function fetchPypiHash(name: string, version: string): Promise<RegistryInf
       downloadUrl: file.url || '',
     };
   } catch (err) {
-    console.warn(`[HASH] Failed to fetch PyPI hash for ${name}@${version}:`, (err as Error).message);
-    return null;
+    // Re-throw to distinguish fetch errors from not-found
+    throw err;
   }
 }
 
@@ -83,30 +97,64 @@ async function fetchPypiHash(name: string, version: string): Promise<RegistryInf
  *
  * Designed to be called fire-and-forget after storeSBOM completes.
  * Never throws — logs warnings and continues on failure.
+ *
+ * Now categorises WHY each dependency is missing its hash, storing
+ * a hashGapReason on the Neo4j Dependency node for compliance reporting.
  */
 export async function enrichDependencyHashes(
   productId: string,
   packages: Array<{ name: string; version: string; ecosystem: string; purl: string }>
-): Promise<{ enriched: number; skipped: number; failed: number }> {
-  const stats = { enriched: 0, skipped: 0, failed: 0 };
+): Promise<EnrichmentResult> {
+  const stats: EnrichmentResult = {
+    enriched: 0,
+    skipped: 0,
+    failed: 0,
+    gaps: { noVersion: 0, unsupportedEcosystem: 0, notFound: 0, fetchError: 0 },
+  };
   const BATCH_SIZE = 10;
   const BATCH_DELAY_MS = 200;
 
   console.log(`[HASH] Starting enrichment for ${packages.length} deps (product: ${productId})`);
   const startMs = Date.now();
 
+  // Collect gap reasons for batch Neo4j write at the end
+  const gapEntries: Array<{ purl: string; reason: string }> = [];
+  const successPurls: string[] = [];
+
   // Filter to only packages that need enrichment (supported ecosystems with versions)
-  const toEnrich = packages.filter(pkg => {
-    if (!pkg.version) { stats.skipped++; return false; }
-    if (pkg.ecosystem !== 'npm' && pkg.ecosystem !== 'pip' && pkg.ecosystem !== 'pypi') {
+  const toEnrich: typeof packages = [];
+  for (const pkg of packages) {
+    if (!pkg.version) {
+      stats.gaps.noVersion++;
       stats.skipped++;
-      return false;
+      gapEntries.push({ purl: pkg.purl, reason: 'no_version' });
+      continue;
     }
-    return true;
-  });
+    if (pkg.ecosystem !== 'npm' && pkg.ecosystem !== 'pip' && pkg.ecosystem !== 'pypi') {
+      stats.gaps.unsupportedEcosystem++;
+      stats.skipped++;
+      gapEntries.push({ purl: pkg.purl, reason: 'unsupported_ecosystem' });
+      continue;
+    }
+    toEnrich.push(pkg);
+  }
 
   if (toEnrich.length === 0) {
     console.log(`[HASH] No enrichable packages found (${stats.skipped} skipped)`);
+    // Still persist gap reasons even if nothing to enrich
+    if (gapEntries.length > 0) {
+      const neo4jSession = getDriver().session();
+      try {
+        await neo4jSession.run(
+          `UNWIND $entries AS entry
+           MATCH (d:Dependency {purl: entry.purl})
+           SET d.hashGapReason = entry.reason`,
+          { entries: gapEntries }
+        );
+      } finally {
+        await neo4jSession.close();
+      }
+    }
     return stats;
   }
 
@@ -128,6 +176,15 @@ export async function enrichDependencyHashes(
 
     if (needsEnrichment.length === 0) {
       console.log(`[HASH] All packages already enriched (${stats.skipped} skipped)`);
+      // Still persist gap reasons for pre-filtered packages
+      if (gapEntries.length > 0) {
+        await neo4jSession.run(
+          `UNWIND $entries AS entry
+           MATCH (d:Dependency {purl: entry.purl})
+           SET d.hashGapReason = entry.reason`,
+          { entries: gapEntries }
+        );
+      }
       return stats;
     }
 
@@ -140,15 +197,30 @@ export async function enrichDependencyHashes(
         batch.map(async (pkg) => {
           let info: RegistryInfo | null = null;
 
-          if (pkg.ecosystem === 'npm') {
-            info = await fetchNpmHash(pkg.name, pkg.version);
-          } else if (pkg.ecosystem === 'pip' || pkg.ecosystem === 'pypi') {
-            info = await fetchPypiHash(pkg.name, pkg.version);
+          try {
+            if (pkg.ecosystem === 'npm') {
+              info = await fetchNpmHash(pkg.name, pkg.version);
+            } else if (pkg.ecosystem === 'pip' || pkg.ecosystem === 'pypi') {
+              info = await fetchPypiHash(pkg.name, pkg.version);
+            }
+          } catch (err) {
+            // Network/timeout errors
+            stats.gaps.fetchError++;
+            stats.failed++;
+            gapEntries.push({ purl: pkg.purl, reason: 'fetch_error' });
+            console.warn(`[HASH] Fetch error for ${pkg.name}@${pkg.version}:`, (err as Error).message);
+            return;
           }
 
-          if (!info) { stats.failed++; return; }
+          if (!info) {
+            // Registry returned 404 or no hash in response
+            stats.gaps.notFound++;
+            stats.failed++;
+            gapEntries.push({ purl: pkg.purl, reason: 'not_found' });
+            return;
+          }
 
-          // Update Neo4j Dependency node
+          // Update Neo4j Dependency node with hash
           await neo4jSession.run(
             `MATCH (d:Dependency {purl: $purl})
              SET d.hash = $hash,
@@ -163,12 +235,14 @@ export async function enrichDependencyHashes(
             }
           );
           stats.enriched++;
+          successPurls.push(pkg.purl);
         })
       );
 
-      // Count rejections as failures
+      // Count rejections as fetch errors
       for (const r of results) {
         if (r.status === 'rejected') {
+          stats.gaps.fetchError++;
           stats.failed++;
           console.warn('[HASH] Batch item rejected:', (r as PromiseRejectedResult).reason?.message);
         }
@@ -179,12 +253,37 @@ export async function enrichDependencyHashes(
         await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
       }
     }
+
+    // Batch-write all gap reasons to Neo4j
+    if (gapEntries.length > 0) {
+      await neo4jSession.run(
+        `UNWIND $entries AS entry
+         MATCH (d:Dependency {purl: entry.purl})
+         SET d.hashGapReason = entry.reason`,
+        { entries: gapEntries }
+      );
+    }
+
+    // Clear gap reason for successfully enriched deps
+    if (successPurls.length > 0) {
+      await neo4jSession.run(
+        `UNWIND $purls AS purl
+         MATCH (d:Dependency {purl: purl})
+         SET d.hashGapReason = null`,
+        { purls: successPurls }
+      );
+    }
+
   } finally {
     await neo4jSession.close();
   }
 
   const durationSeconds = ((Date.now() - startMs) / 1000).toFixed(2);
-  console.log(`[HASH] Enrichment complete: ${stats.enriched} enriched, ${stats.skipped} skipped, ${stats.failed} failed (${durationSeconds}s)`);
+  console.log(
+    `[HASH] Enrichment complete: ${stats.enriched} enriched, ${stats.skipped} skipped, ${stats.failed} failed ` +
+    `(gaps: ${stats.gaps.noVersion} no-version, ${stats.gaps.unsupportedEcosystem} unsupported, ` +
+    `${stats.gaps.notFound} not-found, ${stats.gaps.fetchError} fetch-error) (${durationSeconds}s)`
+  );
 
   return stats;
 }
