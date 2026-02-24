@@ -6,6 +6,7 @@ import { verifySessionToken } from '../utils/token.js';
 import { encrypt, decrypt } from '../utils/encryption.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { createNotification } from '../services/notifications.js';
+import { enrichDependencyHashes } from '../services/hash-enrichment.js';
 import {
   exchangeCodeForToken,
   getAuthenticatedUser,
@@ -78,13 +79,14 @@ async function getUserGitHubToken(userId: string): Promise<string | null> {
  * Parse a purl (Package URL) or construct one from SPDX package data.
  * SPDX packages from GitHub have externalRefs with purl references.
  */
-function extractPackageInfo(pkg: SpdxPackage): {
+export function extractPackageInfo(pkg: SpdxPackage): {
   purl: string;
   name: string;
   version: string;
   ecosystem: string;
   license: string;
   supplier: string;
+  downloadLocation: string;
 } {
   // Try to get purl from externalRefs
   let purl = '';
@@ -116,6 +118,7 @@ function extractPackageInfo(pkg: SpdxPackage): {
     ecosystem,
     license: pkg.licenseDeclared || pkg.licenseConcluded || 'NOASSERTION',
     supplier: pkg.supplier || '',
+    downloadLocation: pkg.downloadLocation || 'NOASSERTION',
   };
 }
 
@@ -164,7 +167,8 @@ async function storeSBOM(
            d.version = $version,
            d.ecosystem = $ecosystem,
            d.license = $license,
-           d.supplier = $supplier
+           d.supplier = $supplier,
+           d.downloadLocation = $downloadLocation
 
        WITH d
        MATCH (p:Product {id: $productId})
@@ -181,6 +185,7 @@ async function storeSBOM(
         ecosystem: pkg.ecosystem,
         license: pkg.license,
         supplier: pkg.supplier,
+        downloadLocation: pkg.downloadLocation,
         productId,
       }
     );
@@ -507,6 +512,13 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
     console.log("[SYNC] SBOM result:", sbomData ? `Found ${sbomData.sbom?.packages?.length || 0} packages` : "null - no SBOM available");
     if (sbomData) {
       sbomResult = await storeSBOM(productId, sbomData, neo4jSession);
+
+      // Fire-and-forget hash enrichment (non-blocking)
+      if (sbomResult) {
+        enrichDependencyHashes(productId, sbomResult.packages).catch(err => {
+          console.error('[SYNC] Hash enrichment failed (non-blocking):', err.message);
+        });
+      }
     }
 
     // ── Store GitHub releases in product_versions ──
@@ -756,6 +768,10 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
 
     const sbomResult = await storeSBOM(productId, sbomData, neo4jSession);
 
+    // Fire-and-forget hash enrichment (non-blocking)
+    enrichDependencyHashes(productId, sbomResult.packages).catch(err => {
+      console.error('[SBOM-REFRESH] Hash enrichment failed (non-blocking):', err.message);
+    });
 
     // Record telemetry
     const reqData = extractRequestData(req);

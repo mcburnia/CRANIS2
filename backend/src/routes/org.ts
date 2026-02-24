@@ -156,6 +156,12 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         companySize: org.companySize,
         craRole: org.craRole,
         industry: org.industry,
+        website: org.website || '',
+        contactEmail: org.contactEmail || '',
+        contactPhone: org.contactPhone || '',
+        street: org.street || '',
+        city: org.city || '',
+        postcode: org.postcode || '',
         userRole: userResult.rows[0].org_role,
       });
     } finally {
@@ -164,6 +170,115 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Failed to fetch organisation:', err);
     res.status(500).json({ error: 'Failed to fetch organisation' });
+  }
+});
+
+// PUT /api/org — Update organisation details
+router.put('/', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const userEmail = (req as any).email;
+
+  try {
+    const userResult = await pool.query(
+      'SELECT org_id, org_role FROM users WHERE id = $1',
+      [userId]
+    );
+
+    const orgId = userResult.rows[0]?.org_id;
+    if (!orgId) {
+      res.status(404).json({ error: 'No organisation found' });
+      return;
+    }
+
+    // Only admins can update org
+    if (userResult.rows[0].org_role !== 'admin') {
+      res.status(403).json({ error: 'Only org admins can update organisation details' });
+      return;
+    }
+
+    const {
+      name, country, companySize, craRole, industry,
+      website, contactEmail, contactPhone,
+      street, city, postcode,
+    } = req.body;
+
+    if (!name?.trim()) {
+      res.status(400).json({ error: 'Organisation name is required' });
+      return;
+    }
+
+    const neo4jSession = getDriver().session();
+    try {
+      const result = await neo4jSession.run(
+        `MATCH (o:Organisation {id: $orgId})
+         SET o.name = $name,
+             o.country = $country,
+             o.companySize = $companySize,
+             o.craRole = $craRole,
+             o.industry = $industry,
+             o.website = $website,
+             o.contactEmail = $contactEmail,
+             o.contactPhone = $contactPhone,
+             o.street = $street,
+             o.city = $city,
+             o.postcode = $postcode,
+             o.updatedAt = datetime()
+         RETURN o`,
+        {
+          orgId,
+          name: name.trim(),
+          country: country || '',
+          companySize: companySize || '',
+          craRole: craRole || '',
+          industry: industry || '',
+          website: website?.trim() || '',
+          contactEmail: contactEmail?.trim() || '',
+          contactPhone: contactPhone?.trim() || '',
+          street: street?.trim() || '',
+          city: city?.trim() || '',
+          postcode: postcode?.trim() || '',
+        }
+      );
+
+      if (result.records.length === 0) {
+        res.status(404).json({ error: 'Organisation not found' });
+        return;
+      }
+
+      const org = result.records[0].get('o').properties;
+
+      // Record telemetry
+      const reqData = extractRequestData(req);
+      await recordEvent({
+        userId,
+        email: userEmail,
+        eventType: 'org_updated',
+        ipAddress: reqData.ipAddress,
+        userAgent: reqData.userAgent,
+        metadata: { orgId, orgName: name.trim() },
+      });
+
+      res.json({
+        id: org.id,
+        name: org.name,
+        country: org.country,
+        companySize: org.companySize,
+        craRole: org.craRole,
+        industry: org.industry,
+        website: org.website || '',
+        contactEmail: org.contactEmail || '',
+        contactPhone: org.contactPhone || '',
+        street: org.street || '',
+        city: org.city || '',
+        postcode: org.postcode || '',
+        userRole: userResult.rows[0].org_role,
+      });
+    } finally {
+      await neo4jSession.close();
+    }
+  } catch (err) {
+    console.error('Failed to update organisation:', err);
+    res.status(500).json({ error: 'Failed to update organisation' });
   }
 });
 

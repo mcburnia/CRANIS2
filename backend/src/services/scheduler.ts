@@ -8,6 +8,8 @@ import {
   getRepo, getContributors, getLanguages, getSBOM, getReleases, getTags, parseRepoUrl,
 } from '../services/github.js';
 import type { GitHubRelease } from '../services/github.js';
+import { enrichDependencyHashes } from './hash-enrichment.js';
+import { extractPackageInfo } from '../routes/github.js';
 
 // How often to check for stale SBOMs (default: every hour)
 const CHECK_INTERVAL_MS = 60 * 60 * 1000;
@@ -144,6 +146,14 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
              sbom.isStale = false, sbom.syncedAt = datetime()`,
         { productId, spdxVersion: sbomData.sbom?.spdxVersion, packageCount: packages.length }
       );
+
+      // Fire-and-forget hash enrichment
+      const extractedPackages = packages
+        .filter((p: any) => p.SPDXID !== 'SPDXRef-DOCUMENT' && !p.name?.startsWith('com.github.'))
+        .map((p: any) => extractPackageInfo(p));
+      enrichDependencyHashes(productId, extractedPackages).catch(err => {
+        console.error('[AUTO-SYNC] Hash enrichment failed (non-blocking):', err.message);
+      });
     }
 
     // Store GitHub releases

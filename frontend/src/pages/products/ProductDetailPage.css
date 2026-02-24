@@ -550,3 +550,57 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
 .sh-version { font-family: monospace; font-size: 0.7rem; color: var(--muted); }
 .sh-packages { color: var(--muted); }
 .sh-date { color: var(--muted); }
+
+/* SBOM Export */
+.sbom-export-dropdown {
+  position: relative;
+}
+
+.sbom-export-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sbom-export-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  min-width: 180px;
+  overflow: hidden;
+}
+
+.sbom-export-menu button {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: none;
+  border: none;
+  text-align: left;
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  font-family: inherit;
+}
+
+.sbom-export-menu button:last-child {
+  border-bottom: none;
+}
+
+.sbom-export-menu button:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.sbom-hash-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: var(--amber);
+  white-space: nowrap;
+}

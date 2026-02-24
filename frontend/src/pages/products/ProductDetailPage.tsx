@@ -6,7 +6,7 @@ import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
   CheckCircle2, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
-  GitFork, Eye, RefreshCw, Users, Unplug, Loader2
+  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download
 } from 'lucide-react';
 import './ProductDetailPage.css';
 
@@ -1471,6 +1471,52 @@ function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, o
     );
   }
 
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exportStatus, setExportStatus] = useState<{ totalDependencies: number; enrichedDependencies: number; enrichmentComplete: boolean } | null>(null);
+  const productId = useParams().productId;
+
+  // Fetch hash enrichment status when SBOM is available
+  useEffect(() => {
+    if (sbomData.hasSBOM && productId) {
+      const token = localStorage.getItem('session_token');
+      fetch(`/api/sbom/${productId}/export/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) setExportStatus(data); })
+        .catch(() => {});
+    }
+  }, [sbomData.hasSBOM, productId]);
+
+  async function handleExport(format: 'cyclonedx' | 'spdx') {
+    setShowExportMenu(false);
+    const token = localStorage.getItem('session_token');
+    try {
+      const res = await fetch(`/api/sbom/${productId}/export/${format}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || 'Export failed');
+        return;
+      }
+      const disposition = res.headers.get('Content-Disposition');
+      const filenameMatch = disposition?.match(/filename="(.+)"/);
+      const filename = filenameMatch?.[1] || `sbom-${format}.json`;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to export SBOM');
+    }
+  }
+
   return (
     <div className="deps-content">
       {/* SBOM Section */}
@@ -1481,6 +1527,22 @@ function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, o
             <h3>Software Bill of Materials ({sbomData.packageCount} packages)</h3>
             <div className="sbom-header-actions">
               {sbomData.isStale && <span className="sbom-stale-badge">Outdated</span>}
+              {exportStatus && !exportStatus.enrichmentComplete && (
+                <span className="sbom-hash-warning" title={`${exportStatus.enrichedDependencies}/${exportStatus.totalDependencies} packages have cryptographic hashes`}>
+                  <AlertTriangle size={12} /> Hashes: {exportStatus.enrichedDependencies}/{exportStatus.totalDependencies}
+                </span>
+              )}
+              <div className="sbom-export-dropdown">
+                <button className="pd-sync-btn sbom-export-btn" onClick={() => setShowExportMenu(!showExportMenu)}>
+                  <Download size={14} /> Export SBOM
+                </button>
+                {showExportMenu && (
+                  <div className="sbom-export-menu">
+                    <button onClick={() => handleExport('cyclonedx')}>CycloneDX 1.6 (JSON)</button>
+                    <button onClick={() => handleExport('spdx')}>SPDX 2.3 (JSON)</button>
+                  </div>
+                )}
+              </div>
               <button className="pd-sync-btn" onClick={onRefreshSBOM} disabled={sbomLoading}>
                 {sbomLoading ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
                 {sbomLoading ? 'Refreshing...' : 'Refresh SBOM'}

@@ -20,6 +20,7 @@ import riskFindingsRoutes from "./routes/risk-findings.js";
 import adminRoutes from "./routes/admin.js";
 import notificationRoutes from "./routes/notifications.js";
 import feedbackRoutes from "./routes/feedback.js";
+import sbomExportRoutes from "./routes/sbom-export.js";
 import { startScheduler } from './services/scheduler.js';
 
 const app = express();
@@ -51,6 +52,7 @@ app.use('/api/risk-findings', riskFindingsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/sbom', sbomExportRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import PageHeader from '../../components/PageHeader';
 import {
   Building2, Globe, Users, Shield, Factory, Briefcase,
-  Calendar, Mail, Crown
+  Calendar, Mail, Crown, MapPin, Phone, Edit3, Save, X
 } from 'lucide-react';
 import './OrganisationPage.css';
 
@@ -14,6 +14,12 @@ interface OrgData {
   craRole: string;
   industry: string;
   userRole: string;
+  website: string;
+  contactEmail: string;
+  contactPhone: string;
+  street: string;
+  city: string;
+  postcode: string;
 }
 
 interface Member {
@@ -26,8 +32,8 @@ interface Member {
 
 const SIZE_LABELS: Record<string, string> = {
   micro: 'Micro (< 10 employees)',
-  small: 'Small (10–49 employees)',
-  medium: 'Medium (50–249 employees)',
+  small: 'Small (10\u201349 employees)',
+  medium: 'Medium (50\u2013249 employees)',
   large: 'Large (250+ employees)',
 };
 
@@ -53,7 +59,7 @@ function formatDate(iso: string): string {
 }
 
 function formatLanguage(lang: string | null): string {
-  if (!lang) return '—';
+  if (!lang) return '\u2014';
   const code = lang.split('-')[0].toLowerCase();
   return LANG_LABELS[code] || lang.toUpperCase();
 }
@@ -62,6 +68,14 @@ export default function OrganisationPage() {
   const [org, setOrg] = useState<OrgData | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Manufacturer details edit state
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    website: '', contactEmail: '', contactPhone: '',
+    street: '', city: '', postcode: '',
+  });
 
   useEffect(() => {
     fetchData();
@@ -78,7 +92,16 @@ export default function OrganisationPage() {
       ]);
 
       if (orgRes.ok) {
-        setOrg(await orgRes.json());
+        const data = await orgRes.json();
+        setOrg(data);
+        setEditForm({
+          website: data.website || '',
+          contactEmail: data.contactEmail || '',
+          contactPhone: data.contactPhone || '',
+          street: data.street || '',
+          city: data.city || '',
+          postcode: data.postcode || '',
+        });
       }
       if (membersRes.ok) {
         const data = await membersRes.json();
@@ -88,6 +111,57 @@ export default function OrganisationPage() {
       // Silently fail
     } finally {
       setLoading(false);
+    }
+  }
+
+  function startEditing() {
+    if (!org) return;
+    setEditForm({
+      website: org.website || '',
+      contactEmail: org.contactEmail || '',
+      contactPhone: org.contactPhone || '',
+      street: org.street || '',
+      city: org.city || '',
+      postcode: org.postcode || '',
+    });
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    setEditing(false);
+  }
+
+  async function handleSave() {
+    if (!org) return;
+    setSaving(true);
+    const token = localStorage.getItem('session_token');
+
+    try {
+      const res = await fetch('/api/org', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: org.name,
+          country: org.country,
+          companySize: org.companySize,
+          craRole: org.craRole,
+          industry: org.industry,
+          ...editForm,
+        }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setOrg(updated);
+        setEditing(false);
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -111,6 +185,7 @@ export default function OrganisationPage() {
 
   const roleInfo = ROLE_LABELS[org.craRole] || { label: org.craRole, icon: Shield };
   const RoleIcon = roleInfo.icon;
+  const hasManufacturerData = org.website || org.contactEmail || org.contactPhone || org.street || org.city || org.postcode;
 
   return (
     <>
@@ -190,11 +265,139 @@ export default function OrganisationPage() {
             <div className="cra-info">
               As a <strong>{roleInfo.label.toLowerCase()}</strong> in the <strong>{org.country}</strong>,
               your organisation is subject to CRA obligations under{' '}
-              {org.craRole === 'manufacturer' ? 'Articles 13–16' :
+              {org.craRole === 'manufacturer' ? 'Articles 13\u201316' :
                org.craRole === 'importer' ? 'Article 19' :
                org.craRole === 'distributor' ? 'Article 20' :
                'Article 24'} of the Cyber Resilience Act.
             </div>
+          </div>
+        </div>
+
+        {/* Manufacturer Details Card */}
+        <div className="org-card org-manufacturer-card">
+          <div className="org-card-header">
+            <MapPin size={20} />
+            <h3>Manufacturer Details</h3>
+            {org.userRole === 'admin' && !editing && (
+              <button className="org-edit-btn" onClick={startEditing}>
+                <Edit3 size={14} /> Edit
+              </button>
+            )}
+            {editing && (
+              <div className="org-edit-actions">
+                <button className="org-save-btn" onClick={handleSave} disabled={saving}>
+                  <Save size={14} /> {saving ? 'Saving...' : 'Save'}
+                </button>
+                <button className="org-cancel-btn" onClick={cancelEditing} disabled={saving}>
+                  <X size={14} /> Cancel
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="org-card-body">
+            {editing ? (
+              <div className="org-edit-form">
+                <div className="org-field">
+                  <label><Globe size={14} /> Website</label>
+                  <input
+                    type="url"
+                    className="org-input"
+                    placeholder="https://example.com"
+                    value={editForm.website}
+                    onChange={e => setEditForm({ ...editForm, website: e.target.value })}
+                  />
+                </div>
+                <div className="org-field">
+                  <label><Mail size={14} /> Contact Email</label>
+                  <input
+                    type="email"
+                    className="org-input"
+                    placeholder="compliance@example.com"
+                    value={editForm.contactEmail}
+                    onChange={e => setEditForm({ ...editForm, contactEmail: e.target.value })}
+                  />
+                </div>
+                <div className="org-field">
+                  <label><Phone size={14} /> Contact Phone</label>
+                  <input
+                    type="tel"
+                    className="org-input"
+                    placeholder="+44 20 1234 5678"
+                    value={editForm.contactPhone}
+                    onChange={e => setEditForm({ ...editForm, contactPhone: e.target.value })}
+                  />
+                </div>
+                <div className="org-field">
+                  <label><MapPin size={14} /> Street</label>
+                  <input
+                    type="text"
+                    className="org-input"
+                    placeholder="123 High Street"
+                    value={editForm.street}
+                    onChange={e => setEditForm({ ...editForm, street: e.target.value })}
+                  />
+                </div>
+                <div className="org-field">
+                  <label><MapPin size={14} /> City</label>
+                  <input
+                    type="text"
+                    className="org-input"
+                    placeholder="London"
+                    value={editForm.city}
+                    onChange={e => setEditForm({ ...editForm, city: e.target.value })}
+                  />
+                </div>
+                <div className="org-field">
+                  <label><MapPin size={14} /> Postcode</label>
+                  <input
+                    type="text"
+                    className="org-input"
+                    placeholder="SW1A 1AA"
+                    value={editForm.postcode}
+                    onChange={e => setEditForm({ ...editForm, postcode: e.target.value })}
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                {!hasManufacturerData ? (
+                  <div className="org-empty-manufacturer">
+                    <p>No manufacturer details configured yet.</p>
+                    <p className="org-empty-hint">These details appear as the manufacturer in exported SBOMs and compliance packages.</p>
+                  </div>
+                ) : (
+                  <>
+                    {org.website && (
+                      <div className="org-field">
+                        <label><Globe size={14} /> Website</label>
+                        <span><a href={org.website} target="_blank" rel="noopener noreferrer" className="org-link">{org.website}</a></span>
+                      </div>
+                    )}
+                    {org.contactEmail && (
+                      <div className="org-field">
+                        <label><Mail size={14} /> Contact Email</label>
+                        <span>{org.contactEmail}</span>
+                      </div>
+                    )}
+                    {org.contactPhone && (
+                      <div className="org-field">
+                        <label><Phone size={14} /> Phone</label>
+                        <span>{org.contactPhone}</span>
+                      </div>
+                    )}
+                    {(org.street || org.city || org.postcode) && (
+                      <div className="org-field">
+                        <label><MapPin size={14} /> Address</label>
+                        <span>{[org.street, org.city, org.postcode].filter(Boolean).join(', ')}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div className="org-manufacturer-info">
+                  These details appear as the manufacturer in exported SBOMs and compliance packages.
+                </div>
+              </>
+            )}
           </div>
         </div>
 

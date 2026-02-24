@@ -28,6 +28,7 @@
   font-size: 0.95rem;
   font-weight: 600;
   margin: 0;
+  flex: 1;
 }
 
 .org-card-body {
@@ -76,6 +77,139 @@
   font-size: 0.75rem !important;
   color: var(--muted) !important;
   word-break: break-all;
+}
+
+/* Manufacturer Details Card */
+.org-edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.org-edit-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.org-edit-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.org-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 6px;
+  color: var(--green);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.org-save-btn:hover {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.org-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.org-cancel-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(139, 141, 152, 0.1);
+  border: 1px solid rgba(139, 141, 152, 0.2);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.org-cancel-btn:hover {
+  background: rgba(139, 141, 152, 0.2);
+}
+
+.org-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.org-input {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  background: var(--bg, #0f1117);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.org-input:focus {
+  border-color: var(--accent);
+}
+
+.org-input::placeholder {
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+.org-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.org-link:hover {
+  text-decoration: underline;
+}
+
+.org-empty-manufacturer {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.org-empty-manufacturer p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.org-empty-hint {
+  font-size: 0.75rem !important;
+  margin-top: 0.3rem !important;
+  opacity: 0.7;
+}
+
+.org-manufacturer-info {
+  margin-top: 1rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 /* CRA Card */
