@@ -16,6 +16,7 @@ export interface DueDiligenceData {
     version: string | null;
     description: string | null;
     craCategory: string | null;
+    distributionModel: string | null;
   };
   organisation: {
     name: string;
@@ -122,7 +123,8 @@ export async function gatherReportData(orgId: string, productId: string): Promis
       // 4. All licence findings
       pool.query(
         `SELECT dependency_name, dependency_version, license_declared, license_category,
-                risk_level, risk_reason, dependency_depth, status, waiver_reason
+                risk_level, risk_reason, dependency_depth, status, waiver_reason,
+                compatibility_verdict, compatibility_reason
          FROM license_findings
          WHERE product_id = $1 AND org_id = $2
          ORDER BY CASE risk_level WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END, dependency_name`,
@@ -184,6 +186,8 @@ export async function gatherReportData(orgId: string, productId: string): Promis
       dependencyDepth: r.dependency_depth || 'unknown',
       status: r.status,
       waiverReason: r.waiver_reason,
+      compatibilityVerdict: r.compatibility_verdict || null,
+      compatibilityReason: r.compatibility_reason || null,
     }));
 
     // Process vulnerability findings
@@ -218,6 +222,7 @@ export async function gatherReportData(orgId: string, productId: string): Promis
         version: product.version || null,
         description: product.description || null,
         craCategory: product.craCategory || null,
+        distributionModel: product.distributionModel || null,
       },
       organisation: {
         name: org.name || 'Unknown Organisation',
@@ -421,6 +426,22 @@ export async function generatePDF(data: DueDiligenceData): Promise<Buffer> {
       }
 
       // Non-permissive findings table
+
+      // Compatibility matrix summary
+      const incompatible = data.licenseFindings?.filter((f: any) => f.compatibilityVerdict === "incompatible").length || 0;
+      const reviewNeeded = data.licenseFindings?.filter((f: any) => f.compatibilityVerdict === "review_needed").length || 0;
+      if (incompatible > 0 || reviewNeeded > 0) {
+        doc.moveDown(0.5);
+        subHeading("Licence Compatibility Analysis");
+        const distModel = data.product.distributionModel || "not set";
+        bodyText("Distribution model: " + distModel + ". Based on this distribution model:");
+        if (incompatible > 0) {
+          statLine("Incompatible Licences", String(incompatible), redColour);
+        }
+        if (reviewNeeded > 0) {
+          statLine("Review Needed", String(reviewNeeded), amberColour);
+        }
+      }
       const nonPermissive = data.licenseFindings.filter(f => f.riskLevel !== 'ok');
       if (nonPermissive.length > 0) {
         doc.moveDown(0.5);

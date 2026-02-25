@@ -7,6 +7,8 @@ import { recordEvent, extractRequestData } from '../services/telemetry.js';
 
 const router = Router();
 
+const VALID_DIST_MODELS = ['proprietary_binary', 'saas_hosted', 'source_available', 'library_component', 'internal_only'];
+
 async function requireAuth(req: Request, res: Response, next: Function) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) { res.status(401).json({ error: 'No token provided' }); return; }
@@ -51,6 +53,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         productType: p.productType || '',
         craCategory: p.craCategory || 'default',
         repoUrl: p.repoUrl || '',
+        distributionModel: p.distributionModel || null,
         status: p.status || 'active',
         createdAt: p.createdAt?.toString() || '',
       };
@@ -89,6 +92,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       productType: p.productType || '',
       craCategory: p.craCategory || 'default',
       repoUrl: p.repoUrl || '',
+      distributionModel: p.distributionModel || null,
       status: p.status || 'active',
       createdAt: p.createdAt?.toString() || '',
       updatedAt: p.updatedAt?.toString() || '',
@@ -105,7 +109,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId(userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-  const { name, description, version, productType, craCategory, repoUrl } = req.body;
+  const { name, description, version, productType, craCategory, repoUrl, distributionModel } = req.body;
 
   if (!name?.trim()) {
     res.status(400).json({ error: 'Product name is required' });
@@ -128,6 +132,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
          productType: $productType,
          craCategory: $craCategory,
          repoUrl: $repoUrl,
+         distributionModel: $distributionModel,
          status: 'active',
          createdAt: datetime(),
          updatedAt: datetime()
@@ -143,6 +148,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         productType: validTypes.includes(productType) ? productType : 'other',
         craCategory: validCategories.includes(craCategory) ? craCategory : 'default',
         repoUrl: repoUrl?.trim() || '',
+        distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
       }
     );
 
@@ -166,6 +172,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       productType: validTypes.includes(productType) ? productType : 'other',
       craCategory: validCategories.includes(craCategory) ? craCategory : 'default',
       repoUrl: repoUrl?.trim() || '',
+      distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
       status: 'active',
     });
   } catch (err) {
@@ -181,7 +188,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId((req as any).userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-  const { name, description, version, productType, craCategory, repoUrl } = req.body;
+  const { name, description, version, productType, craCategory, repoUrl, distributionModel } = req.body;
   if (!name?.trim()) { res.status(400).json({ error: 'Product name is required' }); return; }
 
   const session = getDriver().session();
@@ -190,7 +197,8 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
        SET p.name = $name, p.description = $description, p.version = $version,
            p.productType = $productType, p.craCategory = $craCategory,
-           p.repoUrl = $repoUrl, p.updatedAt = datetime()
+           p.repoUrl = $repoUrl, p.distributionModel = $distributionModel,
+           p.updatedAt = datetime()
        RETURN p`,
       {
         orgId,
@@ -201,6 +209,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
         productType: productType || 'other',
         craCategory: craCategory || 'default',
         repoUrl: repoUrl?.trim() || '',
+        distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
       }
     );
 
@@ -218,6 +227,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       productType: p.productType || '',
       craCategory: p.craCategory || 'default',
       repoUrl: p.repoUrl || '',
+      distributionModel: p.distributionModel || null,
     });
   } finally {
     await session.close();

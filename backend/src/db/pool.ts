@@ -555,6 +555,8 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_license_findings_risk ON license_findings(risk_level)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_license_findings_status ON license_findings(status)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_license_findings_scan ON license_findings(scan_id)`);
+await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compatibility_verdict VARCHAR(20) DEFAULT NULL`);
+    await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compatibility_reason TEXT DEFAULT NULL`);
 
 
     // ── BILLING TABLES ──

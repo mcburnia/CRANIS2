@@ -152,7 +152,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 
 **Neo4j** (graph data — supply chain relationships):
 - Organisation nodes (name, country, size, CRA role, industry)
-- Product nodes (name, version, category, description, repoUrl, lifecycle status)
+- Product nodes (name, version, category, description, repoUrl, distributionModel, lifecycle status)
 - GitHubRepo nodes (owner, name, description, stars, forks, language, visibility)
 - Contributor nodes (githubLogin, avatarUrl, contributions count)
 - Relationships: (Organisation)-[:BELONGS_TO]-(Product), (Product)-[:HAS_REPO]->(GitHubRepo), (GitHubRepo)-[:HAS_CONTRIBUTOR]->(Contributor)
@@ -210,6 +210,7 @@ marketplace.ts     ← Marketplace endpoints (listings, profile, contact, admin)
         vulnerability-scanner.ts ← Platform-wide CVE scanner (local Postgres DB with CPE matching, deduplication)
         vuln-db-sync.ts    ← Local vulnerability database sync (OSV.dev + NVD feeds → Postgres, CPE index rebuild)
 marketplace.ts     ← Compliance badge computation for marketplace profiles
+        license-compatibility.ts ← License compatibility rules engine (distribution model + FSF conflicts)
       middleware/
         requirePlatformAdmin.ts ← Platform admin auth middleware (JWT + DB check)
       utils/
@@ -365,6 +366,7 @@ marketplace.ts     ← Compliance badge computation for marketplace profiles
 | PUT | /api/marketplace/profile | Auth: Upsert marketplace listing |
 | POST | /api/marketplace/contact/:orgId | Auth: Send introduction email (rate-limited) |
 | GET | /api/marketplace/contact-history | Auth: Contacts sent by current user |
+| POST | /api/license-scan/:productId/recheck-compatibility | Re-run compatibility checks without full rescan |
 
 ## Database Schema
 
@@ -674,7 +676,7 @@ CREATE CONSTRAINT vulnerability_cve_unique IF NOT EXISTS FOR (v:Vulnerability) R
 (:Organisation {id, name, country, companySize, craRole, industry, createdAt, updatedAt})
 
 -- Product node
-(:Product {id, name, version, category, description, repoUrl, lifecycleStatus, createdAt, updatedAt})
+(:Product {id, name, version, category, description, repoUrl, distributionModel, lifecycleStatus, createdAt, updatedAt})
 -- Relationships: (Product)-[:BELONGS_TO]->(Organisation)
 
 -- GitHubRepo node (created on repo sync)
@@ -916,7 +918,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-02-25 (session 6)
+**Last updated:** 2026-02-25 (session 7)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -986,6 +988,8 @@ sudo systemctl restart cloudflared
 - **Landing page** -- Hero, feature cards, audience cards, pricing CTA, regulation sections (CRA, NIS2, GDPR, EU Sovereignty, ISO)
 - **Compliance Marketplace** -- Public marketplace for companies to list themselves with products and compliance badges. marketplace_profiles + marketplace_contact_log tables. Public browse page (/marketplace) with search/filter, detail page (/marketplace/:orgId) with contact modal, settings page (/marketplace/settings) with toggle/editor. Contact rate limiting (3/day, 1/org/7d). 10 categories. Admin approval controls.
 - **Admin pages updated for local DB** — Dashboard shows last DB sync time, System Health shows Local DB Query avg latency (historical API latencies dimmed), Vuln Scan shows local DB timing as primary display
+- **License Compatibility Matrix** -- Distribution model awareness on products (proprietary_binary, saas_hosted, source_available, library_component, internal_only). Pure rules engine (license-compatibility.ts) with FSF cross-license conflict table (14 known incompatibilities). Verdicts: compatible/incompatible/review_needed per finding. AGPL/SSPL network copyleft detection. Integrated into license scanner, recheck endpoint for distribution model changes. Frontend: distribution model select on product edit, verdict badges/filters on LicenseCompliancePage. Due diligence PDF includes compatibility analysis section.
+- **Landing page polish** -- Alternating section backgrounds (nth-of-type(even) #363d4f), CRANIS2 logo "2" blue on public pages, Log In nav link, marketplace cards full-width list layout, hero text simplified
 
 **Known Issues / Gotchas:**
 - **PRODUCTION MIGRATION**: `FRONTEND_URL` in `.env` is currently `https://dev.cranis2.dev`. When moving to production, this MUST be changed to `https://cranis2.com` (or equivalent production URL). This affects all email links (verification, invitations) and OAuth callback URLs.
@@ -999,7 +1003,6 @@ sudo systemctl restart cloudflared
 - **GENERIC_CPE_NAMES blocklist** in vulnerability-scanner.ts prevents scoped npm short names (core, connect, debug, etc.) from matching unrelated CPE products
 
 **Next Steps:**
-- License compatibility matrix (distribution model on products, FSF rules, conflict detection)
 - Historical compliance timeline (per-scan findings, timeline visualisation)
 - Escrow capability
 - Remove dev routes before production deployment

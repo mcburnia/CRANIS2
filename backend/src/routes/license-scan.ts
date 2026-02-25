@@ -3,6 +3,7 @@ import pool from '../db/pool.js';
 import { verifySessionToken } from '../utils/token.js';
 import { scanProductLicenses, classifyLicense } from '../services/license-scanner.js';
 import neo4j from 'neo4j-driver';
+import { checkCompatibility, type DistributionModel, type LicenseCategory } from '../services/license-compatibility.js';
 
 const router = Router();
 
@@ -73,7 +74,9 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
          COUNT(*) FILTER (WHERE risk_level = 'critical') AS critical,
          COUNT(*) FILTER (WHERE risk_level = 'warning') AS warning,
          COUNT(*) FILTER (WHERE risk_level = 'ok') AS ok,
-         COUNT(*) FILTER (WHERE status = 'open') AS open_count
+         COUNT(*) FILTER (WHERE status = 'open') AS open_count,
+         COUNT(*) FILTER (WHERE compatibility_verdict = 'incompatible') AS incompatible_count,
+         COUNT(*) FILTER (WHERE compatibility_verdict = 'review_needed') AS review_count
        FROM license_findings
        WHERE org_id = $1
        GROUP BY product_id`,
@@ -85,6 +88,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
     // Aggregate totals
     let totalDeps = 0, totalPermissive = 0, totalCopyleft = 0, totalUnknown = 0, totalCritical = 0;
     let totalDirect = 0, totalTransitive = 0;
+    let totalIncompatible = 0, totalReviewNeeded = 0;
 
     const productSummaries = products.map(p => {
       const scan = scansByProduct.get(p.id);
@@ -100,6 +104,9 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
         totalTransitive += parseInt(scan.transitive_count) || 0;
       }
 
+      totalIncompatible += parseInt(findings?.incompatible_count) || 0;
+      totalReviewNeeded += parseInt(findings?.review_count) || 0;
+
       return {
         productId: p.id,
         productName: p.name,
@@ -111,6 +118,8 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
         directCount: scan ? parseInt(scan.direct_count) : 0,
         transitiveCount: scan ? parseInt(scan.transitive_count) : 0,
         openFindings: findings ? parseInt(findings.open_count) : 0,
+        incompatibleCount: findings ? parseInt(findings.incompatible_count) : 0,
+        reviewNeededCount: findings ? parseInt(findings.review_count) : 0,
         lastScanAt: scan?.completed_at || null,
         scanStatus: scan?.status || 'never'
       };
@@ -125,6 +134,8 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
         criticalCount: totalCritical,
         directCount: totalDirect,
         transitiveCount: totalTransitive,
+        incompatibleCount: totalIncompatible,
+        reviewNeededCount: totalReviewNeeded,
         permissivePercent: totalDeps > 0 ? Math.round((totalPermissive / totalDeps) * 100) : 0,
         productCount: products.length,
         scannedCount: scansResult.rows.length
@@ -182,6 +193,77 @@ router.post('/:productId/scan', requireAuth, async (req: Request, res: Response)
   }
 });
 
+// POST /:productId/recheck-compatibility — re-run compatibility checks without full scan
+router.post('/:productId/recheck-compatibility', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(400).json({ error: 'No organisation' }); return; }
+
+    const productId = req.params.productId as string;
+
+    // Get product's distribution model from Neo4j
+    const session = neo4jDriver.session({ defaultAccessMode: neo4j.session.READ });
+    let distributionModel: DistributionModel | null = null;
+    try {
+      const result = await session.run(
+        `MATCH (p:Product {id: $productId})-[:BELONGS_TO]->(o:Organisation {id: $orgId}) RETURN p.distributionModel AS dm`,
+        { productId, orgId }
+      );
+      if (result.records.length === 0) { res.status(404).json({ error: 'Product not found' }); return; }
+      const dm = result.records[0].get('dm');
+      if (dm) distributionModel = dm as DistributionModel;
+    } finally {
+      await session.close();
+    }
+
+    if (!distributionModel) {
+      // Clear any existing verdicts
+      await pool.query(
+        `UPDATE license_findings SET compatibility_verdict = NULL, compatibility_reason = NULL WHERE product_id = $1 AND org_id = $2`,
+        [productId, orgId]
+      );
+      res.json({ message: 'No distribution model set — compatibility verdicts cleared', counts: { compatible: 0, incompatible: 0, reviewNeeded: 0 } });
+      return;
+    }
+
+    // Get all findings for this product
+    const findings = await pool.query(
+      `SELECT id, license_declared, license_category, dependency_depth FROM license_findings WHERE product_id = $1 AND org_id = $2`,
+      [productId, orgId]
+    );
+
+    let compatible = 0, incompatible = 0, reviewNeeded = 0;
+
+    for (const f of findings.rows) {
+      const result = checkCompatibility(
+        distributionModel,
+        f.license_category as LicenseCategory,
+        f.license_declared || '',
+        f.dependency_depth || 'unknown'
+      );
+
+      await pool.query(
+        `UPDATE license_findings SET compatibility_verdict = $1, compatibility_reason = $2 WHERE id = $3`,
+        [result.verdict, result.reason, f.id]
+      );
+
+      if (result.verdict === 'compatible') compatible++;
+      else if (result.verdict === 'incompatible') incompatible++;
+      else reviewNeeded++;
+    }
+
+    res.json({
+      message: 'Compatibility rechecked',
+      distributionModel,
+      counts: { compatible, incompatible, reviewNeeded, total: findings.rows.length }
+    });
+  } catch (err) {
+    console.error('Failed to recheck compatibility:', err);
+    res.status(500).json({ error: 'Failed to recheck compatibility' });
+  }
+});
+
 // GET /:productId — list license findings for a product
 router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
   try {
@@ -204,6 +286,12 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
     if (statusFilter && ['open', 'acknowledged', 'waived'].includes(statusFilter)) {
       params.push(statusFilter);
       query += ` AND status = $${params.length}`;
+    }
+
+    const verdictFilter = req.query.verdict as string | undefined;
+    if (verdictFilter && ['compatible', 'incompatible', 'review_needed'].includes(verdictFilter)) {
+      params.push(verdictFilter);
+      query += ` AND compatibility_verdict = $${params.length}`;
     }
 
     query += ` ORDER BY CASE risk_level WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END, dependency_name`;

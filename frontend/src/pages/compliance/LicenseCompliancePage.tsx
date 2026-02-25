@@ -12,6 +12,8 @@ interface ProductSummary {
   copyleftCount: number;
   unknownCount: number;
   criticalCount: number;
+  incompatibleCount: number;
+  reviewNeededCount: number;
   directCount: number;
   transitiveCount: number;
   openFindings: number;
@@ -25,6 +27,8 @@ interface Totals {
   copyleftCount: number;
   unknownCount: number;
   criticalCount: number;
+  incompatibleCount: number;
+  reviewNeededCount: number;
   directCount: number;
   transitiveCount: number;
   permissivePercent: number;
@@ -46,6 +50,8 @@ interface Finding {
   acknowledged_by: string | null;
   acknowledged_at: string | null;
   waiver_reason: string | null;
+  compatibility_verdict: string | null;
+  compatibility_reason: string | null;
 }
 
 interface LatestScan {
@@ -73,6 +79,7 @@ export default function LicenseCompliancePage() {
   const [findingsLoading, setFindingsLoading] = useState(false);
   const [scanningProduct, setScanningProduct] = useState<string | null>(null);
   const [riskFilter, setRiskFilter] = useState<string>('all');
+  const [verdictFilter, setVerdictFilter] = useState<string>('all');
   const [waiverModal, setWaiverModal] = useState<{ findingId: string; name: string } | null>(null);
   const [waiverReason, setWaiverReason] = useState('');
 
@@ -99,8 +106,11 @@ export default function LicenseCompliancePage() {
   async function fetchFindings(productId: string) {
     setFindingsLoading(true);
     try {
-      const params = riskFilter !== 'all' ? `?risk=${riskFilter}` : '';
-      const res = await fetch(`/api/license-scan/${productId}${params}`, {
+      const params = new URLSearchParams();
+      if (riskFilter !== 'all') params.set('risk', riskFilter);
+      if (verdictFilter !== 'all') params.set('verdict', verdictFilter);
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      const res = await fetch(`/api/license-scan/${productId}${qs}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (!res.ok) throw new Error('Failed to fetch');
@@ -158,13 +168,14 @@ export default function LicenseCompliancePage() {
     } else {
       setExpandedProduct(productId);
       setRiskFilter('all');
+      setVerdictFilter('all');
       fetchFindings(productId);
     }
   }
 
   useEffect(() => {
     if (expandedProduct) fetchFindings(expandedProduct);
-  }, [riskFilter]);
+  }, [riskFilter, verdictFilter]);
 
   function categoryBadge(category: string) {
     const map: Record<string, { label: string; className: string }> = {
@@ -194,6 +205,17 @@ export default function LicenseCompliancePage() {
     return <span className="lc-depth lc-depth-transitive">Transitive</span>;
   }
 
+  function verdictBadge(verdict: string | null, reason?: string | null) {
+    if (!verdict) return <span className="lc-verdict lc-verdict-none">—</span>;
+    const map: Record<string, { label: string; className: string }> = {
+      compatible: { label: 'Compatible', className: 'lc-verdict lc-verdict-ok' },
+      incompatible: { label: 'Incompatible', className: 'lc-verdict lc-verdict-bad' },
+      review_needed: { label: 'Review', className: 'lc-verdict lc-verdict-review' },
+    };
+    const info = map[verdict] || { label: verdict, className: 'lc-verdict' };
+    return <span className={info.className} title={reason || undefined}>{info.label}</span>;
+  }
+
   if (loading) return <div className="lc-page"><div className="lc-loading">Loading license data...</div></div>;
 
   return (
@@ -218,6 +240,8 @@ export default function LicenseCompliancePage() {
           <StatCard label="Permissive" value={`${totals.permissivePercent}%`} color="green" sub={`${totals.permissiveCount} deps`} />
           <StatCard label="Copyleft Issues" value={totals.copyleftCount} color="red" sub={totals.criticalCount > 0 ? `${totals.criticalCount} critical` : 'None critical'} />
           <StatCard label="Unknown Licenses" value={totals.unknownCount} color="amber" sub="Need review" />
+          <StatCard label="Incompatible" value={totals.incompatibleCount} color="red" sub="Licence conflicts" />
+          <StatCard label="Review Needed" value={totals.reviewNeededCount} color="amber" sub="Manual review" />
         </div>
       )}
 
@@ -238,6 +262,8 @@ export default function LicenseCompliancePage() {
                 <th>Copyleft</th>
                 <th>Unknown</th>
                 <th>Critical</th>
+                <th>Incompatible</th>
+                <th>Review</th>
                 <th>Last Scan</th>
                 <th></th>
               </tr>
@@ -245,7 +271,7 @@ export default function LicenseCompliancePage() {
             <tbody>
               {products.map(p => (
                 <>{/* Fragment for product row + expansion */}
-                  <tr key={p.productId} className={`lc-product-row ${expandedProduct === p.productId ? 'lc-expanded' : ''}`} onClick={() => toggleProduct(p.productId)}>
+                  <tr key={p.productId} className={`lc-product-row ${expandedProduct === p.productId ? 'lc-expanded' : ''}` } onClick={() => toggleProduct(p.productId)}>
                     <td className="lc-expand-icon">
                       {expandedProduct === p.productId ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </td>
@@ -257,6 +283,8 @@ export default function LicenseCompliancePage() {
                     <td className={p.copyleftCount > 0 ? 'lc-cell-red' : ''}>{p.copyleftCount || '—'}</td>
                     <td className={p.unknownCount > 0 ? 'lc-cell-amber' : ''}>{p.unknownCount || '—'}</td>
                     <td className={p.criticalCount > 0 ? 'lc-cell-red lc-cell-bold' : ''}>{p.criticalCount || '—'}</td>
+                    <td className={p.incompatibleCount > 0 ? 'lc-cell-red lc-cell-bold' : ''}>{p.incompatibleCount || '—'}</td>
+                    <td className={p.reviewNeededCount > 0 ? 'lc-cell-amber' : ''}>{p.reviewNeededCount || '—'}</td>
                     <td className="lc-cell-muted">{p.lastScanAt ? new Date(p.lastScanAt).toLocaleDateString() : 'Never'}</td>
                     <td>
                       <button
@@ -264,14 +292,14 @@ export default function LicenseCompliancePage() {
                         onClick={(e) => { e.stopPropagation(); triggerScan(p.productId); }}
                         disabled={scanningProduct === p.productId}
                       >
-                        <RefreshCw size={14} className={scanningProduct === p.productId ? 'lc-spinning' : ''} />
+                        <RefreshCw size={14} className={scanningProduct === p.productId ? 'lc-spinning' : ''}  />
                         {scanningProduct === p.productId ? 'Scanning...' : 'Scan'}
                       </button>
                     </td>
                   </tr>
                   {expandedProduct === p.productId && (
                     <tr key={`${p.productId}-detail`}>
-                      <td colSpan={11} className="lc-findings-cell">
+                      <td colSpan={13} className="lc-findings-cell">
                         <div className="lc-findings-panel">
                           <div className="lc-findings-header">
                             <h4>License Findings — {p.productName}</h4>
@@ -279,10 +307,21 @@ export default function LicenseCompliancePage() {
                               {['all', 'critical', 'warning', 'ok'].map(f => (
                                 <button
                                   key={f}
-                                  className={`lc-pill ${riskFilter === f ? 'lc-pill-active' : ''}`}
+                                  className={`lc-pill ${riskFilter === f ? 'lc-pill-active' : ''}` }
                                   onClick={() => setRiskFilter(f)}
                                 >
                                   {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="lc-filter-pills" style={{ marginLeft: 16 }}>
+                              {['all', 'incompatible', 'review_needed', 'compatible'].map(f => (
+                                <button
+                                  key={f}
+                                  className={`lc-pill ${verdictFilter === f ? 'lc-pill-active' : ''}` }
+                                  onClick={() => setVerdictFilter(f)}
+                                >
+                                  {f === 'all' ? 'All Verdicts' : f === 'review_needed' ? 'Review' : f.charAt(0).toUpperCase() + f.slice(1)}
                                 </button>
                               ))}
                             </div>
@@ -308,19 +347,21 @@ export default function LicenseCompliancePage() {
                                   <th>License</th>
                                   <th>Category</th>
                                   <th>Risk</th>
+                                  <th>Compat.</th>
                                   <th>Status</th>
                                   <th>Actions</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {findings.map(finding => (
-                                  <tr key={finding.id} className={finding.risk_level === 'critical' ? 'lc-row-critical' : finding.risk_level === 'warning' ? 'lc-row-warning' : ''}>
+                                  <tr key={finding.id} className={finding.risk_level === 'critical' ? 'lc-row-critical' : finding.risk_level === 'warning' ? 'lc-row-warning' : ''}  >
                                     <td className="lc-dep-name">{finding.dependency_name}</td>
                                     <td className="lc-dep-version">{finding.dependency_version || '—'}</td>
                                     <td>{depthBadge(finding.dependency_depth)}</td>
                                     <td className="lc-dep-license">{finding.license_declared || 'NOASSERTION'}</td>
                                     <td>{categoryBadge(finding.license_category)}</td>
                                     <td>{riskBadge(finding.risk_level)}</td>
+                                    <td>{verdictBadge(finding.compatibility_verdict, finding.compatibility_reason)}</td>
                                     <td>
                                       {finding.status === 'open' && <span className="lc-status lc-status-open">Open</span>}
                                       {finding.status === 'acknowledged' && <span className="lc-status lc-status-ack"><CheckCircle2 size={12} /> Acknowledged</span>}
@@ -329,12 +370,12 @@ export default function LicenseCompliancePage() {
                                     <td className="lc-actions">
                                       {finding.status === 'open' && (
                                         <>
-                                          <button className="lc-action-btn lc-ack" onClick={() => updateFindingStatus(finding.id, 'acknowledged')}>Acknowledge</button>
+                                          <button className="lc-action-btn lc-ack" onClick={() => updateFindingStatus(finding.id, 'acknowledged')} >Acknowledge</button>
                                           <button className="lc-action-btn lc-waive" onClick={() => { setWaiverModal({ findingId: finding.id, name: finding.dependency_name }); setWaiverReason(''); }}>Waive</button>
                                         </>
                                       )}
                                       {(finding.status === 'acknowledged' || finding.status === 'waived') && (
-                                        <button className="lc-action-btn lc-reopen" onClick={() => updateFindingStatus(finding.id, 'open')}>Reopen</button>
+                                        <button className="lc-action-btn lc-reopen" onClick={() => updateFindingStatus(finding.id, 'open')} >Reopen</button>
                                       )}
                                     </td>
                                   </tr>

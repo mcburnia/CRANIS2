@@ -1,3 +1,4 @@
+import { checkCompatibility, type DistributionModel, type CompatibilityResult } from './license-compatibility.js';
 import pool from '../db/pool.js';
 import neo4j from 'neo4j-driver';
 import { createNotification } from './notifications.js';
@@ -206,6 +207,20 @@ export async function scanProductLicenses(
       await session.close();
     }
 
+    // Get product's distribution model for compatibility checks
+    let distributionModel: DistributionModel | null = null;
+    const writeSession = neo4jDriver.session({ defaultAccessMode: neo4j.session.READ });
+    try {
+      const prodResult = await writeSession.run(
+        `MATCH (p:Product {id: $productId}) RETURN p.distributionModel AS dm`,
+        { productId }
+      );
+      const dm = prodResult.records[0]?.get('dm');
+      if (dm) distributionModel = dm as DistributionModel;
+    } finally {
+      await writeSession.close();
+    }
+
     let permissiveCount = 0;
     let copyleftCount = 0;
     let unknownCount = 0;
@@ -232,13 +247,23 @@ export async function scanProductLicenses(
         case 'no_assertion': unknownCount++; break;
       }
 
-      // Upsert finding (now includes dependency_depth)
+      // Compute compatibility verdict
+      let compatVerdict: string | null = null;
+      let compatReason: string | null = null;
+      if (distributionModel) {
+        const compat = checkCompatibility(distributionModel, classification.category, dep.license, dep.depth);
+        compatVerdict = compat.verdict;
+        compatReason = compat.reason;
+      }
+
+      // Upsert finding (now includes dependency_depth and compatibility)
       const upsertResult = await pool.query(
         `INSERT INTO license_findings (
            org_id, product_id, scan_id, dependency_purl, dependency_name,
            dependency_version, license_declared, license_category, risk_level,
-           risk_reason, dependency_depth, status, updated_at
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'open', NOW())
+           risk_reason, dependency_depth, compatibility_verdict, compatibility_reason,
+           status, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'open', NOW())
          ON CONFLICT (product_id, dependency_purl) DO UPDATE SET
            scan_id = $3,
            dependency_version = $6,
@@ -247,18 +272,26 @@ export async function scanProductLicenses(
            risk_level = $9,
            risk_reason = $10,
            dependency_depth = $11,
+           compatibility_verdict = $12,
+           compatibility_reason = $13,
            updated_at = NOW()
          RETURNING (xmax = 0) AS is_new`,
         [
           orgId, productId, scanId, dep.purl, dep.name,
           dep.version, dep.license, classification.category,
-          classification.riskLevel, classification.reason, dep.depth
+          classification.riskLevel, classification.reason, dep.depth,
+          compatVerdict, compatReason
         ]
       );
 
       // Track new critical findings for notifications
       if (classification.riskLevel === 'critical' && upsertResult.rows[0]?.is_new) {
         newCriticalFindings.push(`${dep.name}@${dep.version} (${dep.license})`);
+      }
+
+      // Track new incompatible findings
+      if (compatVerdict === 'incompatible' && upsertResult.rows[0]?.is_new) {
+        newCriticalFindings.push(`${dep.name}@${dep.version} — incompatible: ${compatReason}`);
       }
     }
 

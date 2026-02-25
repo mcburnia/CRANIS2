@@ -18,6 +18,7 @@ interface Product {
   productType: string;
   craCategory: string;
   repoUrl: string;
+  distributionModel: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -207,7 +208,7 @@ export default function ProductDetailPage() {
   const initialTab = (searchParams.get('tab') as TabKey) || 'overview';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '' });
+  const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '', distributionModel: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -266,6 +267,7 @@ export default function ProductDetailPage() {
           name: data.name, description: data.description || '', version: data.version || '',
           productType: data.productType || 'other', craCategory: data.craCategory || 'default',
           repoUrl: data.repoUrl || '',
+          distributionModel: data.distributionModel || '',
         });
       } else {
         setError('Product not found');
@@ -514,7 +516,7 @@ export default function ProductDetailPage() {
               </button>
             ) : (
               <>
-                <button className="pd-cancel-btn" onClick={() => { setEditing(false); setEditForm({ name: product.name, description: product.description, version: product.version, productType: product.productType, craCategory: product.craCategory, repoUrl: product.repoUrl }); }}>
+                <button className="pd-cancel-btn" onClick={() => { setEditing(false); setEditForm({ name: product.name, description: product.description, version: product.version, productType: product.productType, craCategory: product.craCategory, repoUrl: product.repoUrl, distributionModel: product.distributionModel || '' }); }}>
                   <X size={14} /> Cancel
                 </button>
                 <button className="btn btn-primary pd-save-btn" onClick={handleSave} disabled={saving || !editForm.name.trim()}>
@@ -587,6 +589,17 @@ export default function ProductDetailPage() {
                   <option value="default">Default</option>
                   <option value="class_i">Class I (Important)</option>
                   <option value="class_ii">Class II (Critical)</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Distribution Model</label>
+                <select className="form-input" value={editForm.distributionModel} onChange={e => setEditForm({ ...editForm, distributionModel: e.target.value })}>
+                  <option value="">Not set</option>
+                  <option value="proprietary_binary">Proprietary Binary</option>
+                  <option value="saas_hosted">SaaS / Cloud Hosted</option>
+                  <option value="source_available">Source Available</option>
+                  <option value="library_component">Library / Component</option>
+                  <option value="internal_only">Internal Only</option>
                 </select>
               </div>
             </div>
