@@ -1,0 +1,250 @@
+/* ── Due Diligence Report Page (dd- prefix) ─────────── */
+
+/* Actions row */
+.dd-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.dd-product-select { display: flex; flex-direction: column; gap: 0.375rem; flex: 1; max-width: 360px; }
+.dd-product-select label { font-size: 0.8125rem; font-weight: 500; color: var(--muted); }
+.dd-product-select select {
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.875rem;
+}
+.dd-product-select select:focus { border-color: var(--accent); outline: none; }
+
+.dd-export-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.dd-export-btn:hover { opacity: 0.9; }
+.dd-export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.dd-spin { animation: dd-spin 1s linear infinite; }
+@keyframes dd-spin { to { transform: rotate(360deg); } }
+
+/* Error */
+.dd-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--red);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  margin-bottom: 1rem;
+}
+
+/* Loading */
+.dd-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* Empty state */
+.dd-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+.dd-empty-state svg { color: var(--muted); opacity: 0.4; }
+.dd-empty-state h3 { color: var(--text); margin: 0; font-size: 1.125rem; }
+.dd-empty-state p { color: var(--muted); max-width: 480px; line-height: 1.6; font-size: 0.875rem; }
+
+/* Preview container */
+.dd-preview { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* Contents section */
+.dd-contents { margin-top: 0.5rem; }
+
+.dd-section-title {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.dd-section-desc {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.dd-contents-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.dd-content-card {
+  display: flex;
+  gap: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.dd-content-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 8px;
+  color: var(--accent);
+}
+
+.dd-content-card strong {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.dd-content-card p {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Section */
+.dd-section { margin-top: 0.5rem; }
+
+/* Table */
+.dd-table-wrapper {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 0.75rem;
+}
+
+.dd-table { width: 100%; border-collapse: collapse; }
+.dd-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.dd-table td {
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.dd-table tbody tr:last-child td { border-bottom: none; }
+.dd-table tbody tr:hover { background: rgba(99, 102, 241, 0.03); }
+
+.dd-table-more {
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+/* Badges */
+.dd-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.dd-risk-critical { background: rgba(239, 68, 68, 0.12); color: var(--red); }
+.dd-risk-warning { background: rgba(245, 158, 11, 0.12); color: var(--amber); }
+.dd-risk-ok { background: rgba(34, 197, 94, 0.12); color: var(--green); }
+
+.dd-depth-badge {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.dd-depth-direct { background: rgba(99, 102, 241, 0.12); color: var(--accent); }
+.dd-depth-transitive { background: rgba(148, 163, 184, 0.12); color: var(--muted); }
+.dd-depth-unknown { background: rgba(148, 163, 184, 0.08); color: var(--muted); }
+
+.dd-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.dd-status-open { background: rgba(245, 158, 11, 0.12); color: var(--amber); }
+.dd-status-acknowledged { background: rgba(99, 102, 241, 0.12); color: var(--accent); }
+.dd-status-waived { background: rgba(34, 197, 94, 0.12); color: var(--green); }
+
+/* Obligations list */
+.dd-obligations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+}
+
+.dd-obligation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}
+
+.dd-obl-icon { flex-shrink: 0; display: flex; }
+.dd-obl-met .dd-obl-icon { color: var(--green); }
+.dd-obl-in_progress .dd-obl-icon { color: var(--amber); }
+.dd-obl-not_started .dd-obl-icon { color: var(--muted); }
+
+.dd-obl-label { flex: 1; color: var(--text); }
+.dd-obl-status { font-size: 0.75rem; color: var(--muted); text-transform: capitalize; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dd-actions { flex-direction: column; align-items: stretch; }
+  .dd-product-select { max-width: 100%; }
+  .dd-contents-grid { grid-template-columns: 1fr; }
+}
