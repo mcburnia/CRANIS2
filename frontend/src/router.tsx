@@ -25,6 +25,7 @@ import ReportDetailPage from './pages/compliance/ReportDetailPage';
 import LicenseCompliancePage from './pages/compliance/LicenseCompliancePage';
 import IpProofPage from './pages/compliance/IpProofPage';
 import DueDiligencePage from "./pages/compliance/DueDiligencePage";
+import ComplianceTimelinePage from "./pages/compliance/ComplianceTimelinePage";
 import ReposPage from './pages/repositories/ReposPage';
 import ContributorsPage from './pages/repositories/ContributorsPage';
 import DependenciesPage from './pages/repositories/DependenciesPage';
@@ -73,6 +74,7 @@ const router = createBrowserRouter([
           { path: '/notifications', element: <NotificationsPage /> },
           { path: '/products', element: <ProductsPage /> },
           { path: '/products/:productId', element: <ProductDetailPage /> },
+          { path: '/products/:productId/timeline', element: <ComplianceTimelinePage /> },
           { path: '/obligations', element: <ObligationsPage /> },
           { path: '/technical-files', element: <TechnicalFilesPage /> },
           { path: '/vulnerability-reports', element: <VulnerabilityReportsPage /> },

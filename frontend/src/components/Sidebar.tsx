@@ -6,7 +6,7 @@ import { useUnreadCount } from '../hooks/useNotifications';
 import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
   FolderGit2, Users, Box, AlertTriangle, CreditCard,
-  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2, Shield, MessageSquareMore, Scale, Fingerprint, FileBarChart2, Store
+  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2, Shield, MessageSquareMore, Scale, Fingerprint, FileBarChart2, Store, History
 } from 'lucide-react';
 import FeedbackModal from './FeedbackModal';
 import './Sidebar.css';
@@ -34,6 +34,7 @@ const navSections = [
       { to: '/license-compliance', icon: Scale, label: 'Licenses' },
       { to: '/ip-proof', icon: Fingerprint, label: 'IP Proof' },
       { to: '/due-diligence', icon: FileBarChart2, label: 'Due Diligence' },
+      { to: '/products', icon: History, label: 'Timeline' },
     ],
   },
   {

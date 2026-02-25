@@ -27,6 +27,7 @@ import ipProofRoutes from "./routes/ip-proof.js";
 import dueDiligenceRoutes from "./routes/due-diligence.js";
 import billingRoutes from './routes/billing.js';
 import marketplaceRoutes from "./routes/marketplace.js";
+import complianceTimelineRoutes from "./routes/compliance-timeline.js";
 import { startScheduler } from './services/scheduler.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
 
@@ -83,6 +84,7 @@ app.use('/api/ip-proof', ipProofRoutes);
 app.use('/api/due-diligence', dueDiligenceRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
+app.use('/api/compliance-timeline', complianceTimelineRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

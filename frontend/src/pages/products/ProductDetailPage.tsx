@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 
 import PageHeader from '../../components/PageHeader';
 import {
-  ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch,
+  ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
   CheckCircle2, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
   GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info
@@ -510,6 +510,9 @@ export default function ProductDetailPage() {
                 {syncing ? 'Syncing...' : sbomData.isStale ? 'Update Available' : 'Sync'}
               </button>
             )}
+            <Link to={`/products/${product.id}/timeline`} className="pd-edit-btn" style={{ textDecoration: "none" }}>
+                <History size={14} /> Timeline
+              </Link>
             {!editing ? (
               <button className="pd-edit-btn" onClick={() => setEditing(true)}>
                 <Edit3 size={14} /> Edit
