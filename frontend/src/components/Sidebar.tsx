@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUnreadCount } from '../hooks/useNotifications';
 import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
   FolderGit2, Users, Box, AlertTriangle, CreditCard,
-  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2, Shield, MessageSquareMore, Scale, Fingerprint
+  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2, Shield, MessageSquareMore, Scale, Fingerprint, FileBarChart2
 } from 'lucide-react';
 import FeedbackModal from './FeedbackModal';
 import './Sidebar.css';
@@ -33,6 +33,7 @@ const navSections = [
       { to: '/vulnerability-reports', icon: Shield, label: 'ENISA Reporting' },
       { to: '/license-compliance', icon: Scale, label: 'Licenses' },
       { to: '/ip-proof', icon: Fingerprint, label: 'IP Proof' },
+      { to: '/due-diligence', icon: FileBarChart2, label: 'Due Diligence' },
     ],
   },
   {
@@ -103,7 +104,7 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
 
   return (
     <>
-      <div className="sidebar-logo">CRANIS<span>2</span></div>
+      <Link to="/" className="sidebar-logo">CRANIS<span>2</span></Link>
       <div className="sidebar-org">{orgName || 'My Organisation'}</div>
       {navSections.map((section) => (
         <div className="nav-section" key={section.label}>

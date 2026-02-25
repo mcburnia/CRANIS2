@@ -1,3 +1,7 @@
+/* ══════════════════════════════════════
+   EXISTING STYLES (preserved)
+   ══════════════════════════════════════ */
+
 .landing-nav {
   display: flex;
   justify-content: space-between;
@@ -11,9 +15,9 @@
 }
 .nav-logo {
   font-size: 1.4rem;
-  font-weight: 700;
+  font-weight: 800;
 }
-.nav-logo span { color: var(--accent); }
+.nav-logo span { color: var(--purple); }
 .nav-links {
   display: flex;
   gap: 2rem;
@@ -23,6 +27,7 @@
   color: var(--muted);
   text-decoration: none;
   font-size: 0.9rem;
+  transition: color 0.15s;
 }
 .nav-links a:not(.btn):hover { color: var(--text); }
 
@@ -167,6 +172,17 @@
   margin-bottom: 2rem;
   line-height: 1.7;
 }
+.cta-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.cta-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+}
 
 /* Footer */
 .landing-footer {
@@ -177,7 +193,237 @@
   font-size: 0.8rem;
 }
 
-/* Mobile responsive */
+
+/* ══════════════════════════════════════
+   NEW: Compliance / Regulation Sections
+   ══════════════════════════════════════ */
+
+/* Compliance intro banner */
+.compliance-intro {
+  text-align: center;
+  padding: 4rem 2rem 2rem;
+  max-width: 700px;
+  margin: 0 auto;
+  border-top: 1px solid var(--border);
+}
+.compliance-intro h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+.compliance-intro p {
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+/* Regulation section */
+.reg-section {
+  padding: 3.5rem 2rem;
+  border-top: 1px solid var(--border);
+}
+.reg-section.reg-alt {
+  background: var(--surface);
+}
+.reg-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* Header: icon + title */
+.reg-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.reg-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.reg-header h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.reg-subtitle {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.1rem;
+  font-weight: 400;
+}
+
+/* Intro paragraph */
+.reg-intro {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+  max-width: 750px;
+}
+.reg-principle {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+/* Two-column grid */
+.reg-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+.reg-col h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+/* Bullet lists */
+.reg-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.reg-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+.reg-bullet {
+  color: var(--muted);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.reg-check {
+  color: var(--green);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.reg-list-accent li {
+  color: var(--text);
+}
+
+/* Tag pills */
+.reg-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.reg-tags-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+.reg-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Callout boxes */
+.reg-callout {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.reg-callout-note {
+  background: rgba(245, 158, 11, 0.06);
+  border-left: 3px solid var(--amber);
+  color: var(--text);
+}
+.reg-callout-highlight {
+  background: rgba(59, 130, 246, 0.06);
+  border-left: 3px solid var(--accent);
+  color: var(--text);
+}
+
+/* §7: Is / Is Not grid */
+.is-isnot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin: 2rem 0;
+}
+.is-col {
+  padding: 1.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.is-col h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.is-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.is-col li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+.is-yes {
+  background: rgba(34, 197, 94, 0.04);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+.is-yes h3 { color: var(--green); }
+.is-check {
+  color: var(--green);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.is-no {
+  background: rgba(239, 68, 68, 0.04);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.is-no h3 { color: var(--red); }
+.is-x {
+  color: var(--red);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.is-tagline {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+
+/* ══════════════════════════════════════
+   RESPONSIVE (existing + new)
+   ══════════════════════════════════════ */
+
 @media (max-width: 768px) {
   .hero h1 { font-size: 2rem; }
   .hero { padding: 3rem 1.5rem 2rem; }
@@ -187,6 +433,7 @@
   .audience { padding: 2rem 1.5rem; }
   .audience h2 { font-size: 1.5rem; }
   .cta-section h2 { font-size: 1.5rem; }
+  .cta-buttons { flex-direction: column; align-items: center; }
   .landing-nav { padding: 1rem 1.5rem; }
 
   .mobile-menu-btn { display: flex; }
@@ -203,9 +450,20 @@
     gap: 1rem;
   }
   .nav-links.open { display: flex; }
+
+  /* Regulation sections responsive */
+  .reg-columns { grid-template-columns: 1fr; gap: 1.5rem; }
+  .reg-header h2 { font-size: 1.3rem; }
+  .reg-section { padding: 2.5rem 1.5rem; }
+  .compliance-intro { padding: 3rem 1.5rem 1.5rem; }
+  .compliance-intro h2 { font-size: 1.5rem; }
+  .is-isnot-grid { grid-template-columns: 1fr; gap: 1rem; }
 }
 
 @media (max-width: 480px) {
   .hero h1 { font-size: 1.6rem; }
   .features { grid-template-columns: 1fr; }
+  .reg-header { gap: 0.35rem; }
+  .reg-header h2 { font-size: 1.15rem; }
+  .reg-tags { flex-direction: column; align-items: flex-start; }
 }
