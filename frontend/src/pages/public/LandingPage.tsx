@@ -226,7 +226,7 @@ export default function LandingPage() {
       </section>
 
       {/* §0: Dogfooding — FIRST, before regulations */}
-      <section id="dogfooding" className="reg-section reg-alt">
+      <section id="dogfooding" className="reg-section">
         <div className="reg-inner">
           <div className="reg-header">
             <Fingerprint size={32} className="reg-icon" />
@@ -263,11 +263,11 @@ export default function LandingPage() {
       </section>
 
       {/* §1–§4: Regulation sections */}
-      {regulations.map((reg, i) => (
+      {regulations.map((reg) => (
         <section
           key={reg.id}
           id={reg.id}
-          className={`reg-section ${i % 2 !== 0 ? 'reg-alt' : ''}`}
+          className="reg-section"
         >
           <div className="reg-inner">
             <div className="reg-header">
@@ -317,7 +317,7 @@ export default function LandingPage() {
       ))}
 
       {/* §5: ISO / Good Practice */}
-      <section id="iso" className="reg-section reg-alt">
+      <section id="iso" className="reg-section">
         <div className="reg-inner">
           <div className="reg-header">
             <Award size={32} className="reg-icon" />

@@ -1,3 +1,8 @@
+/* Alternating section backgrounds */
+.landing > section:nth-of-type(even) {
+  background: #363d4f;
+}
+
 /* ══════════════════════════════════════
    EXISTING STYLES (preserved)
    ══════════════════════════════════════ */
@@ -221,9 +226,6 @@
 .reg-section {
   padding: 3.5rem 2rem;
   border-top: 1px solid var(--border);
-}
-.reg-section.reg-alt {
-  background: var(--surface);
 }
 .reg-inner {
   max-width: 960px;
