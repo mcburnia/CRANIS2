@@ -169,6 +169,7 @@ export default function LandingPage() {
           <a href="#features">Features</a>
           <a href="#compliance">Compliance</a>
           <a href="#pricing">Pricing</a>
+          <Link to="/marketplace" className="nav-marketplace-link">Marketplace</Link>
           <Link to="/signup" className="btn btn-primary">Try CRANIS2 Free</Link>
         </div>
         <button className="mobile-menu-btn" onClick={() => {

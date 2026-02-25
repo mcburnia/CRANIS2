@@ -26,6 +26,7 @@ import licenseScanRoutes from "./routes/license-scan.js";
 import ipProofRoutes from "./routes/ip-proof.js";
 import dueDiligenceRoutes from "./routes/due-diligence.js";
 import billingRoutes from './routes/billing.js';
+import marketplaceRoutes from "./routes/marketplace.js";
 import { startScheduler } from './services/scheduler.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
 
@@ -81,6 +82,7 @@ app.use('/api/license-scan', licenseScanRoutes);
 app.use('/api/ip-proof', ipProofRoutes);
 app.use('/api/due-diligence', dueDiligenceRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

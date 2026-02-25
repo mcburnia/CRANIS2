@@ -9,6 +9,8 @@ import SignupPage from './pages/public/SignupPage';
 import CheckEmailPage from './pages/public/CheckEmailPage';
 import VerifyEmailPage from './pages/public/VerifyEmailPage';
 import AcceptInvitePage from './pages/public/AcceptInvitePage';
+import MarketplacePage from './pages/public/MarketplacePage';
+import MarketplaceDetailPage from './pages/public/MarketplaceDetailPage';
 import WelcomePage from './pages/setup/WelcomePage';
 import OrgSetupPage from './pages/setup/OrgSetupPage';
 
@@ -32,6 +34,7 @@ import ReportsPage from './pages/billing/ReportsPage';
 import StakeholdersPage from './pages/settings/StakeholdersPage';
 import OrganisationPage from './pages/settings/OrganisationPage';
 import AuditLogPage from './pages/settings/AuditLogPage';
+import MarketplaceSettingsPage from './pages/settings/MarketplaceSettingsPage';
 
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -57,6 +60,8 @@ const router = createBrowserRouter([
           { path: '/check-email', element: <CheckEmailPage /> },
           { path: '/verify-email', element: <VerifyEmailPage /> },
           { path: '/accept-invite', element: <AcceptInvitePage /> },
+          { path: '/marketplace', element: <MarketplacePage /> },
+          { path: '/marketplace/:orgId', element: <MarketplaceDetailPage /> },
           { path: '/welcome', element: <WelcomePage /> },
           { path: '/setup/org', element: <OrgSetupPage /> },
         ],
@@ -84,6 +89,7 @@ const router = createBrowserRouter([
           { path: '/stakeholders', element: <StakeholdersPage /> },
           { path: '/organisation', element: <OrganisationPage /> },
           { path: '/audit-log', element: <AuditLogPage /> },
+          { path: '/marketplace/settings', element: <MarketplaceSettingsPage /> },
         ],
       },
       {

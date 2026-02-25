@@ -621,6 +621,36 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_billing_events_org ON billing_events(org_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_org_billing_status ON org_billing(status)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_org_billing_stripe ON org_billing(stripe_customer_id)`);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS marketplace_profiles (
+        id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id                 UUID NOT NULL UNIQUE,
+        listed                 BOOLEAN NOT NULL DEFAULT false,
+        tagline                VARCHAR(160) NOT NULL DEFAULT '',
+        description            TEXT NOT NULL DEFAULT '',
+        logo_url               VARCHAR(500) DEFAULT '',
+        categories             JSONB NOT NULL DEFAULT '[]',
+        featured_product_ids   JSONB NOT NULL DEFAULT '[]',
+        compliance_badges      JSONB NOT NULL DEFAULT '{}',
+        listing_approved       BOOLEAN NOT NULL DEFAULT true,
+        contact_requests_count INTEGER NOT NULL DEFAULT 0,
+        created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_marketplace_listed ON marketplace_profiles(listed) WHERE listed = true`);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS marketplace_contact_log (
+        id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        from_user_id UUID NOT NULL REFERENCES users(id),
+        from_org_id  UUID NOT NULL,
+        to_org_id    UUID NOT NULL,
+        message      TEXT NOT NULL DEFAULT '',
+        sent_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_marketplace_contact_from ON marketplace_contact_log(from_user_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_marketplace_contact_to ON marketplace_contact_log(to_org_id)`);
   } finally {
     client.release();
   }

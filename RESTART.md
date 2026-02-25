@@ -197,6 +197,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         risk-findings.ts   ← Vulnerability scanning + findings CRUD (5 endpoints)
         admin.ts           ← Platform admin endpoints (dashboard, orgs, users, invite, audit, system, vuln-scan, vuln-db)
         dev.ts             ← Dev-only routes (nuke button — MUST REMOVE BEFORE PRODUCTION)
+marketplace.ts     ← Marketplace endpoints (listings, profile, contact, admin)
       db/
         pool.ts            ← Postgres pool + schema init (all tables including vuln_db_* and CPE index)
         neo4j.ts           ← Neo4j driver + graph schema init (constraints/indexes)
@@ -208,6 +209,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         scheduler.ts       ← Daily scheduler (vuln DB sync 1 AM, SBOM sync 2 AM, vuln scan 3 AM)
         vulnerability-scanner.ts ← Platform-wide CVE scanner (local Postgres DB with CPE matching, deduplication)
         vuln-db-sync.ts    ← Local vulnerability database sync (OSV.dev + NVD feeds → Postgres, CPE index rebuild)
+marketplace.ts     ← Compliance badge computation for marketplace profiles
       middleware/
         requirePlatformAdmin.ts ← Platform admin auth middleware (JWT + DB check)
       utils/
@@ -237,14 +239,14 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
         PageHeader.tsx     ← Page title + timestamp
         StatCard.tsx       ← Metric display card
       pages/
-        public/            ← LandingPage, LoginPage, SignupPage, CheckEmailPage, VerifyEmailPage, AcceptInvitePage
+        public/            ← LandingPage, LoginPage, SignupPage, CheckEmailPage, VerifyEmailPage, AcceptInvitePage, MarketplacePage, MarketplaceDetailPage
         setup/             ← WelcomePage, OrgSetupPage (wizard with CRA role selection)
         dashboard/         ← DashboardPage (fully migrated)
         products/          ← ProductsPage (list + add modal), ProductDetailPage (tabs + GitHub UI)
         compliance/        ← ObligationsPage (live), TechnicalFilesPage (live)
         repositories/      ← ReposPage (live), ContributorsPage (live), DependenciesPage (live), RiskFindingsPage (live)
         billing/           ← BillingPage, ReportsPage (stubs)
-        settings/          ← StakeholdersPage (live), OrganisationPage (live), AuditLogPage (live)
+        settings/          ← StakeholdersPage (live), OrganisationPage (live), AuditLogPage (live), MarketplaceSettingsPage (live)
         notifications/     ← NotificationsPage (live — filters, mark-read, severity badges)
         admin/             ← AdminDashboardPage, AdminOrgsPage, AdminUsersPage, AdminAuditLogPage, AdminSystemPage, AdminVulnScanPage, AdminVulnDbPage
 ```
@@ -260,6 +262,8 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 - `/welcome` → Post-verification welcome page (links to org setup)
 - `/accept-invite?token=xxx` → Accept invitation, set password, activate account
 - `/setup/org` → Organisation setup wizard
+- `/marketplace` → Public compliance marketplace (browse companies, search/filter)
+- `/marketplace/:orgId` → Company detail page (products, compliance badges, contact modal)
 
 **Admin (platform admins only, separate layout):**
 - `/admin` → Admin dashboard (cross-org platform statistics)
@@ -287,6 +291,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 - `/stakeholders` → CRA stakeholder management (live — org + product contacts)
 - `/organisation` → Organisation settings (live — editable)
 - `/audit-log` → Audit trail (live — paginated event log)
+- `/marketplace/settings` → Marketplace settings (toggle listing, edit profile, compliance badges)
 
 ## API Endpoints
 
@@ -353,6 +358,13 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 | POST | /api/auth/accept-invite | Accept invitation — set password, activate account |
 | GET | /api/admin/vulnerability-db/status | Local vuln DB status (ecosystems, advisory counts, sync times) |
 | POST | /api/admin/vulnerability-db/sync | Trigger manual vuln DB sync (admin only) |
+| GET | /api/marketplace/listings | Public: Browse marketplace listings (paginated, filterable) |
+| GET | /api/marketplace/categories | Public: Static category list |
+| GET | /api/marketplace/listings/:orgId | Public: Company detail with products |
+| GET | /api/marketplace/profile | Auth: Current org marketplace profile |
+| PUT | /api/marketplace/profile | Auth: Upsert marketplace listing |
+| POST | /api/marketplace/contact/:orgId | Auth: Send introduction email (rate-limited) |
+| GET | /api/marketplace/contact-history | Auth: Contacts sent by current user |
 
 ## Database Schema
 
@@ -610,6 +622,32 @@ CREATE TABLE vuln_db_nvd_cpe_index (
   version_end_excl VARCHAR(100)
 );
 -- Indexes: idx_nvd_cpe_product, idx_nvd_cpe_target, idx_nvd_cpe_product_target
+n-- Marketplace profiles (opt-in company listings)
+CREATE TABLE marketplace_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID UNIQUE NOT NULL,
+  listed BOOLEAN DEFAULT FALSE,
+  tagline VARCHAR(160) DEFAULT '',
+  description TEXT DEFAULT '',
+  logo_url VARCHAR(500) DEFAULT '',
+  categories JSONB DEFAULT '[]',
+  featured_product_ids JSONB DEFAULT '[]',
+  compliance_badges JSONB DEFAULT '{}',
+  listing_approved BOOLEAN DEFAULT TRUE,
+  contact_requests_count INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Marketplace contact log (intro emails)
+CREATE TABLE marketplace_contact_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  from_user_id UUID NOT NULL,
+  from_org_id UUID,
+  to_org_id UUID NOT NULL,
+  message TEXT NOT NULL,
+  sent_at TIMESTAMPTZ DEFAULT NOW()
+);
 
 -- Vulnerability database sync status (per-ecosystem tracking)
 CREATE TABLE vuln_db_sync_status (
@@ -878,7 +916,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-02-23 (session 4)
+**Last updated:** 2026-02-25 (session 6)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -938,6 +976,15 @@ sudo systemctl restart cloudflared
 - **CPE-based NVD matching** — Flattened CPE index (1M+ entries) with ecosystem-strict matching (node.js target_sw only, no wildcards). GENERIC_CPE_NAMES blocklist prevents false positives from scoped package short names
 - **Severity normalisation** — normaliseSeverity() maps GitHub "moderate" to standard "medium". All severities standardised to critical/high/medium/low
 - **Admin Vuln Database page** — `/admin/vuln-db` showing ecosystem stats, advisory/CVE counts, sync controls, architecture info card
+- **CRA Article 14 ENISA Reporting** -- Two report types (Actively Exploited Vulnerability, Severe Incident), three-stage timeline (Early Warning 24h, Notification 72h, Final Report 14d/1m), cra_reports + cra_report_stages tables, deadline monitoring, CSIRT country selection, TLP classification
+- **IP/Copyright Proof system** -- RFC 3161 timestamping (FreeTSA.org, pure Node.js ASN.1 DER encoding), license compliance scanning (SPDX classification, copyleft detection), ip_proof_snapshots table, scheduler auto-triggers after SBOM sync
+- **Transitive dependency enrichment** -- SPDX relationship parsing, npm registry fallback for NOASSERTION deps, depth tracking (direct/transitive)
+- **Due Diligence Report export** -- Per-product investor-ready ZIP: PDF report + CycloneDX SBOM + licence findings CSV + vulnerability summary JSON + full licence texts
+- **Feedback and Bug Report system** -- In-app modal (3 categories), sidebar button, admin page for review/resolve
+- **User management (admin)** -- Edit user, suspend/unsuspend, delete with cascades, action menu per row
+- **Billing (Stripe)** -- Contributor-based pricing (EUR 6/month), 90-day trial, checkout sessions, customer portal, webhook, billing gate middleware, trial/payment lifecycle, billing emails (9 templates), admin controls (extend trial, exempt, pause)
+- **Landing page** -- Hero, feature cards, audience cards, pricing CTA, regulation sections (CRA, NIS2, GDPR, EU Sovereignty, ISO)
+- **Compliance Marketplace** -- Public marketplace for companies to list themselves with products and compliance badges. marketplace_profiles + marketplace_contact_log tables. Public browse page (/marketplace) with search/filter, detail page (/marketplace/:orgId) with contact modal, settings page (/marketplace/settings) with toggle/editor. Contact rate limiting (3/day, 1/org/7d). 10 categories. Admin approval controls.
 - **Admin pages updated for local DB** — Dashboard shows last DB sync time, System Health shows Local DB Query avg latency (historical API latencies dimmed), Vuln Scan shows local DB timing as primary display
 
 **Known Issues / Gotchas:**
@@ -952,8 +999,9 @@ sudo systemctl restart cloudflared
 - **GENERIC_CPE_NAMES blocklist** in vulnerability-scanner.ts prevents scoped npm short names (core, connect, debug, etc.) from matching unrelated CPE products
 
 **Next Steps:**
-- Stub pages remaining: Billing, Reports
-- Verify poste.cranis2.com DKIM in Resend, then confirm invite emails deliver
+- License compatibility matrix (distribution model on products, FSF rules, conflict detection)
+- Historical compliance timeline (per-scan findings, timeline visualisation)
+- Escrow capability
 - Remove dev routes before production deployment
 - Remove SBOM debug logging from services/github.ts
 - Production deployment planning (Infomaniak hosting, cranis2.com)
