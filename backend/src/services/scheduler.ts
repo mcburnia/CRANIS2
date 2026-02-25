@@ -15,6 +15,7 @@ import { sendComplianceGapNotification } from './notifications.js';
 import { scanProductLicenses } from './license-scanner.js';
 import { createSnapshot } from './ip-proof.js';
 import { extractPackageInfo } from '../routes/github.js';
+import { checkTrialExpiry, checkPaymentGrace } from './billing.js';
 
 // How often to check for stale SBOMs (default: every hour)
 const CHECK_INTERVAL_MS = 60 * 60 * 1000;
@@ -25,12 +26,16 @@ const AUTO_SYNC_HOUR = 2;
 // Hour of the day to run platform-wide vulnerability scan (0-23, default: 3 AM — after SBOM sync)
 const VULN_SCAN_HOUR = 3;
 
+// Hour of the day to run billing checks (0-23, default: 4 AM — after other tasks)
+const BILLING_CHECK_HOUR = 4;
+
 // Hour of the day to sync vulnerability databases (0-23, default: 1 AM — before SBOM sync)
 const VULN_DB_SYNC_HOUR = 1;
 
 let lastSyncDate = '';
 let lastVulnScanDate = '';
 let lastVulnDbSyncDate = '';
+let lastBillingCheckDate = '';
 
 async function getProductGitHubToken(productId: string): Promise<{ token: string; userId: string } | null> {
   // Find the user who owns this product (via org) and has a GitHub connection
@@ -362,6 +367,27 @@ async function runDailyVulnDbSync(): Promise<void> {
 }
 
 
+
+
+async function runDailyBillingChecks(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (lastBillingCheckDate === todayStr) return; // Already ran today
+
+  const now = new Date();
+  if (now.getHours() < BILLING_CHECK_HOUR) return; // Not yet time
+
+  lastBillingCheckDate = todayStr;
+  console.log('[BILLING-SCHEDULER] Starting daily billing checks...');
+
+  try {
+    await checkTrialExpiry();
+    await checkPaymentGrace();
+    console.log('[BILLING-SCHEDULER] Daily billing checks complete');
+  } catch (err: any) {
+    console.error('[BILLING-SCHEDULER] Daily billing checks failed:', err.message);
+  }
+}
+
 async function checkCraDeadlines(): Promise<void> {
   try {
     // Find reports with approaching or overdue deadlines
@@ -487,13 +513,14 @@ async function checkCraDeadlines(): Promise<void> {
   }
 }
 export function startScheduler(): void {
-  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, CRA deadline checks every hour');
+  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour');
 
   // Run check periodically — all three have hour-gating and date-tracking
   setInterval(() => {
     runDailyVulnDbSync().catch(err => console.error('[SCHEDULER] Uncaught error in DB sync:', err));
     runDailySync().catch(err => console.error('[SCHEDULER] Uncaught error in SBOM sync:', err));
     runDailyVulnScan().catch(err => console.error('[SCHEDULER] Uncaught error in vuln scan:', err));
+    runDailyBillingChecks().catch(err => console.error('[SCHEDULER] Uncaught error in billing checks:', err));
     checkCraDeadlines().catch(err => console.error("[SCHEDULER] Uncaught error in CRA deadline check:", err));
   }, CHECK_INTERVAL_MS);
 }

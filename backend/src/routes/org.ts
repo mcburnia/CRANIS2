@@ -92,6 +92,13 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       [orgId, 'admin', userId]
     );
 
+    // Initialise billing record for the new org (free trial)
+    await pool.query(
+      `INSERT INTO org_billing (org_id, status, trial_ends_at, trial_duration_days)
+       VALUES ($1, 'trial', NOW() + INTERVAL '90 days', 90)`,
+      [orgId]
+    );
+
     // Record org creation event
     const reqData = extractRequestData(req);
     await recordEvent({

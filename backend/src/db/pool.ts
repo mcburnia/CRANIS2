@@ -556,6 +556,71 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_license_findings_status ON license_findings(status)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_license_findings_scan ON license_findings(scan_id)`);
 
+
+    // ── BILLING TABLES ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS org_billing (
+        id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id            VARCHAR(255) NOT NULL UNIQUE,
+        stripe_customer_id VARCHAR(255),
+        stripe_subscription_id VARCHAR(255),
+        status            VARCHAR(30) NOT NULL DEFAULT 'trial',
+        trial_ends_at     TIMESTAMPTZ,
+        trial_duration_days INTEGER NOT NULL DEFAULT 90,
+        grace_ends_at     TIMESTAMPTZ,
+        current_period_end TIMESTAMPTZ,
+        contributor_count  INTEGER NOT NULL DEFAULT 0,
+        monthly_amount_cents INTEGER NOT NULL DEFAULT 0,
+        billing_email     VARCHAR(255),
+        company_name      VARCHAR(255),
+        billing_address   JSONB,
+        vat_number        VARCHAR(100),
+        payment_pause_until TIMESTAMPTZ,
+        payment_pause_reason TEXT,
+        exempt            BOOLEAN NOT NULL DEFAULT FALSE,
+        exempt_reason     TEXT,
+        cancelled_at      TIMESTAMPTZ,
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS contributor_snapshots (
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id      VARCHAR(255) NOT NULL,
+        snapshot_date DATE NOT NULL,
+        total_count INTEGER NOT NULL DEFAULT 0,
+        active_count INTEGER NOT NULL DEFAULT 0,
+        bot_count   INTEGER NOT NULL DEFAULT 0,
+        departed_count INTEGER NOT NULL DEFAULT 0,
+        contributors JSONB,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(org_id, snapshot_date)
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS departed_contributors (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id          VARCHAR(255) NOT NULL,
+        github_login    VARCHAR(255) NOT NULL,
+        departed_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        marked_by       UUID REFERENCES users(id),
+        UNIQUE(org_id, github_login)
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS billing_events (
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id      VARCHAR(255) NOT NULL,
+        event_type  VARCHAR(50) NOT NULL,
+        details     JSONB,
+        stripe_event_id VARCHAR(255),
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_billing_events_org ON billing_events(org_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_org_billing_status ON org_billing(status)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_org_billing_stripe ON org_billing(stripe_customer_id)`);
   } finally {
     client.release();
   }

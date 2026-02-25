@@ -24,7 +24,10 @@ import sbomExportRoutes from "./routes/sbom-export.js";
 import craReportsRoutes from "./routes/cra-reports.js";
 import licenseScanRoutes from "./routes/license-scan.js";
 import ipProofRoutes from "./routes/ip-proof.js";
+import dueDiligenceRoutes from "./routes/due-diligence.js";
+import billingRoutes from './routes/billing.js';
 import { startScheduler } from './services/scheduler.js';
+import { requireActiveBilling } from './middleware/requireActiveBilling.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,6 +38,23 @@ app.use(express.json({
     req.rawBody = buf;
   },
 }));
+
+// Global billing gate — blocks write operations for restricted accounts
+// Skips: auth, billing, admin, health, webhooks, and all GET/OPTIONS requests
+const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/dev'];
+app.use('/api', (req, res, next) => {
+  // Only gate write operations
+  if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
+    return next();
+  }
+  // Skip exempt paths
+  const fullPath = req.baseUrl + req.path;
+  if (BILLING_EXEMPT_PATHS.some(p => fullPath.startsWith(p))) {
+    return next();
+  }
+  // Run billing check
+  requireActiveBilling(req, res, next);
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -59,6 +79,8 @@ app.use('/api/sbom', sbomExportRoutes);
 app.use('/api/cra-reports', craReportsRoutes);
 app.use('/api/license-scan', licenseScanRoutes);
 app.use('/api/ip-proof', ipProofRoutes);
+app.use('/api/due-diligence', dueDiligenceRoutes);
+app.use('/api/billing', billingRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

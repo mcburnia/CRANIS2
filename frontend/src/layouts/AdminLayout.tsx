@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Outlet, Navigate, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, Navigate, NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  LayoutDashboard, Building2, Users, ScrollText, Activity,
+  LayoutDashboard, Building2, Users, ScrollText, Activity, CreditCard,
   ArrowLeft, Menu, X, Loader, Shield, Database, MessageSquareMore
 } from 'lucide-react';
 import './AdminLayout.css';
@@ -28,6 +28,12 @@ const adminNavSections = [
       { to: '/admin/system', icon: Activity, label: 'System Health' },
       { to: '/admin/vuln-scan', icon: Shield, label: 'Vuln Scanning' },
       { to: '/admin/vuln-db', icon: Database, label: 'Vuln Database' },
+    ],
+  },
+  {
+    label: 'Billing',
+    items: [
+      { to: '/admin/billing', icon: CreditCard, label: 'Billing' },
     ],
   },
   {
@@ -75,9 +81,9 @@ export default function AdminLayout() {
       </div>
       <div className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
       <aside className={`sidebar admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-logo admin-logo">
+        <Link to="/" className="sidebar-logo admin-logo" style={{ textDecoration: 'none' }}>
           <Shield size={16} className="admin-shield" /><span style={{ color: "var(--text)" }}>CRANIS<span style={{ color: "var(--purple)" }}>2</span></span>
-        </div>
+        </Link>
         <div className="sidebar-org admin-badge">Platform Admin</div>
         {adminNavSections.map((section) => (
           <div className="nav-section" key={section.label}>

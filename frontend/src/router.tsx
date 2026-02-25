@@ -22,6 +22,7 @@ import VulnerabilityReportsPage from './pages/compliance/VulnerabilityReportsPag
 import ReportDetailPage from './pages/compliance/ReportDetailPage';
 import LicenseCompliancePage from './pages/compliance/LicenseCompliancePage';
 import IpProofPage from './pages/compliance/IpProofPage';
+import DueDiligencePage from "./pages/compliance/DueDiligencePage";
 import ReposPage from './pages/repositories/ReposPage';
 import ContributorsPage from './pages/repositories/ContributorsPage';
 import DependenciesPage from './pages/repositories/DependenciesPage';
@@ -41,6 +42,7 @@ import AdminSystemPage from './pages/admin/AdminSystemPage';
 import AdminVulnScanPage from './pages/admin/AdminVulnScanPage';
 import AdminVulnDbPage from './pages/admin/AdminVulnDbPage';
 import AdminFeedbackPage from './pages/admin/AdminFeedbackPage';
+import AdminBillingPage from './pages/admin/AdminBillingPage';
 
 const router = createBrowserRouter([
   {
@@ -72,6 +74,7 @@ const router = createBrowserRouter([
           { path: '/vulnerability-reports/:id', element: <ReportDetailPage /> },
           { path: '/license-compliance', element: <LicenseCompliancePage /> },
           { path: '/ip-proof', element: <IpProofPage /> },
+          { path: '/due-diligence', element: <DueDiligencePage /> },
           { path: '/repos', element: <ReposPage /> },
           { path: '/contributors', element: <ContributorsPage /> },
           { path: '/dependencies', element: <DependenciesPage /> },
@@ -95,6 +98,7 @@ const router = createBrowserRouter([
           { path: '/admin/vuln-scan', element: <AdminVulnScanPage /> },
           { path: '/admin/vuln-db', element: <AdminVulnDbPage /> },
           { path: '/admin/feedback', element: <AdminFeedbackPage /> },
+          { path: '/admin/billing', element: <AdminBillingPage /> },
         ],
       },
     ],

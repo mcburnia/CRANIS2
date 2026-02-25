@@ -3,6 +3,7 @@ import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { Menu, X, Loader } from 'lucide-react';
+import BillingBanner from '../components/BillingBanner';
 import './AuthenticatedLayout.css';
 
 export default function AuthenticatedLayout() {
@@ -65,6 +66,7 @@ export default function AuthenticatedLayout() {
         <Sidebar onNavigate={() => setSidebarOpen(false)} orgName={orgName} />
       </aside>
       <main className="main">
+        <BillingBanner />
         <Outlet />
       </main>
     </div>
