@@ -142,7 +142,7 @@ const dogfoodingBullets = [
 
 const dogfoodingWhy = [
   'We face the same compliance challenges as our customers',
-  'The product is shaped by lived experience, not just theory',
+  'The product is shaped by our own experience, not just theory',
   'There is no separate internal tool or shortcut for our own team',
   'What we recommend to you is exactly what we rely on ourselves',
 ];
@@ -169,7 +169,8 @@ export default function LandingPage() {
           <a href="#features">Features</a>
           <a href="#compliance">Compliance</a>
           <a href="#pricing">Pricing</a>
-          <Link to="/marketplace" className="nav-marketplace-link">Marketplace</Link>
+          <Link to="/marketplace">Marketplace</Link>
+          <Link to="/login">Log In</Link>
           <Link to="/signup" className="btn btn-primary">Try CRANIS2 Free</Link>
         </div>
         <button className="mobile-menu-btn" onClick={() => {
@@ -181,7 +182,7 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="hero">
-        <h1>Software compliance<br /><span>without the chaos</span></h1>
+        <h1>Compliance<br /><span>without the chaos</span></h1>
         <p>Know who's building your software, what's in it, and whether it meets EU requirements. Affordable at any scale.</p>
         <div className="hero-actions">
           <Link to="/signup" className="btn btn-primary btn-lg">Try CRANIS2 Free</Link>

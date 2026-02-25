@@ -196,20 +196,30 @@ export default function MarketplacePage() {
         {!loading && !error && listings.length > 0 && (
           <>
             <p className="mp-results-count">{total} {total === 1 ? 'company' : 'companies'} found</p>
-            <div className="mp-grid">
+            <div className="mp-list">
               {listings.map(item => (
                 <Link key={item.orgId} to={`/marketplace/${item.orgId}`} className="mp-card">
-                  <div className="mp-card-header">
-                    <h3 className="mp-card-name">{item.orgName}</h3>
-                    {item.country && <span className="mp-card-country"><MapPin size={12} />{item.country}</span>}
-                  </div>
-                  {item.tagline && <p className="mp-card-tagline">{item.tagline}</p>}
-                  {item.categories.length > 0 && (
-                    <div className="mp-card-categories">
-                      {item.categories.map(cat => <span key={cat} className="mp-card-cat">{cat}</span>)}
+                  <div className="mp-card-info">
+                    <div className="mp-card-header">
+                      <h3 className="mp-card-name">{item.orgName}</h3>
+                      {item.country && <span className="mp-card-country"><MapPin size={12} />{item.country}</span>}
                     </div>
-                  )}
-                  <div className="mp-card-badges">
+                    {item.tagline && <p className="mp-card-tagline">{item.tagline}</p>}
+                    <div className="mp-card-meta">
+                      {item.categories.length > 0 && (
+                        <div className="mp-card-categories">
+                          {item.categories.map(cat => <span key={cat} className="mp-card-cat">{cat}</span>)}
+                        </div>
+                      )}
+                      {item.products.length > 0 && (
+                        <div className="mp-card-products">
+                          {item.products.slice(0, 3).map(p => <span key={p.id} className="mp-card-product">{p.name}</span>)}
+                          {item.products.length > 3 && <span className="mp-card-product mp-card-product--more">+{item.products.length - 3} more</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mp-card-compliance">
                     <span className={`mp-badge mp-badge-${craStatusColor(item.complianceBadges.craStatus)}`}>
                       <ShieldCheck size={14} />{craStatusLabel(item.complianceBadges.craStatus)}
                     </span>
@@ -223,12 +233,6 @@ export default function MarketplacePage() {
                       {formatScanDate(item.complianceBadges.lastVulnScan)}
                     </span>
                   </div>
-                  {item.products.length > 0 && (
-                    <div className="mp-card-products">
-                      {item.products.slice(0, 3).map(p => <span key={p.id} className="mp-card-product">{p.name}</span>)}
-                      {item.products.length > 3 && <span className="mp-card-product mp-card-product--more">+{item.products.length - 3} more</span>}
-                    </div>
-                  )}
                 </Link>
               ))}
             </div>
