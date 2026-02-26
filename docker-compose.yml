@@ -43,6 +43,8 @@ services:
       STRIPE_PRODUCT_ID: ${STRIPE_PRODUCT_ID}
       STRIPE_PRICE_ID: ${STRIPE_PRICE_ID}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      FORGEJO_ADMIN_TOKEN: ${FORGEJO_ADMIN_TOKEN}
+      FORGEJO_URL: ${FORGEJO_URL}
     deploy:
       resources:
         limits:
@@ -72,6 +74,7 @@ services:
           memory: 512M
     volumes:
       - cranis2_pg_data:/var/lib/postgresql/data
+      - ./postgres/init-forgejo-db.sh:/docker-entrypoint-initdb.d/init-forgejo-db.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -108,7 +111,38 @@ services:
       - cranis2_net
     restart: unless-stopped
 
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:10
+    container_name: cranis2_forgejo
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - FORGEJO__database__DB_TYPE=postgres
+      - FORGEJO__database__HOST=postgres:5432
+      - FORGEJO__database__NAME=forgejo
+      - FORGEJO__database__USER=forgejo
+      - FORGEJO__database__PASSWD=forgejo_dev_2026
+      - FORGEJO__server__ROOT_URL=https://escrow.cranis2.dev
+      - FORGEJO__server__HTTP_PORT=3000
+      - FORGEJO__server__DISABLE_SSH=true
+      - FORGEJO__service__DISABLE_REGISTRATION=true
+      - FORGEJO__service__REQUIRE_SIGNIN_VIEW=true
+      - FORGEJO__openid__ENABLE_OPENID_SIGNIN=false
+    volumes:
+      - cranis2_forgejo_data:/data
+    networks:
+      - cranis2_net
+    ports:
+      - "3003:3000"
+
 volumes:
+  cranis2_forgejo_data:
   cranis2_pg_data:
   cranis2_neo4j_data:
     external: true

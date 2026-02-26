@@ -16,6 +16,8 @@ import { scanProductLicenses } from './license-scanner.js';
 import { createSnapshot } from './ip-proof.js';
 import { extractPackageInfo } from '../routes/github.js';
 import { checkTrialExpiry, checkPaymentGrace } from './billing.js';
+import { runAllEscrowDeposits } from './escrow-service.js';
+
 
 // How often to check for stale SBOMs (default: every hour)
 const CHECK_INTERVAL_MS = 60 * 60 * 1000;
@@ -28,6 +30,7 @@ const VULN_SCAN_HOUR = 3;
 
 // Hour of the day to run billing checks (0-23, default: 4 AM — after other tasks)
 const BILLING_CHECK_HOUR = 4;
+const ESCROW_DEPOSIT_HOUR = 5;
 
 // Hour of the day to sync vulnerability databases (0-23, default: 1 AM — before SBOM sync)
 const VULN_DB_SYNC_HOUR = 1;
@@ -36,6 +39,7 @@ let lastSyncDate = '';
 let lastVulnScanDate = '';
 let lastVulnDbSyncDate = '';
 let lastBillingCheckDate = '';
+let lastEscrowDepositDate = '';
 
 async function getProductGitHubToken(productId: string): Promise<{ token: string; userId: string } | null> {
   // Find the user who owns this product (via org) and has a GitHub connection
@@ -512,8 +516,27 @@ async function checkCraDeadlines(): Promise<void> {
     console.error('[CRA-DEADLINE] Error checking deadlines:', err.message);
   }
 }
+
+async function runDailyEscrowDeposits(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (lastEscrowDepositDate === todayStr) return;
+
+  const now = new Date();
+  if (now.getHours() < ESCROW_DEPOSIT_HOUR) return;
+
+  lastEscrowDepositDate = todayStr;
+  console.log('[ESCROW-SCHEDULER] Starting daily escrow deposits...');
+
+  try {
+    await runAllEscrowDeposits();
+    console.log('[ESCROW-SCHEDULER] Daily escrow deposits complete');
+  } catch (err: any) {
+    console.error('[ESCROW-SCHEDULER] Daily escrow deposits failed:', err.message);
+  }
+}
+
 export function startScheduler(): void {
-  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour');
+  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00');
 
   // Run check periodically — all three have hour-gating and date-tracking
   setInterval(() => {
@@ -522,5 +545,6 @@ export function startScheduler(): void {
     runDailyVulnScan().catch(err => console.error('[SCHEDULER] Uncaught error in vuln scan:', err));
     runDailyBillingChecks().catch(err => console.error('[SCHEDULER] Uncaught error in billing checks:', err));
     checkCraDeadlines().catch(err => console.error("[SCHEDULER] Uncaught error in CRA deadline check:", err));
+    runDailyEscrowDeposits().catch(err => console.error('[SCHEDULER] Uncaught error in escrow deposits:', err));
   }, CHECK_INTERVAL_MS);
 }

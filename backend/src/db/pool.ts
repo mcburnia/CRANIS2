@@ -653,6 +653,48 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_marketplace_contact_from ON marketplace_contact_log(from_user_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_marketplace_contact_to ON marketplace_contact_log(to_org_id)`);
+
+    // ── Escrow tables ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS escrow_configs (
+        id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id                 UUID NOT NULL,
+        product_id             VARCHAR(255) NOT NULL,
+        enabled                BOOLEAN NOT NULL DEFAULT false,
+        forgejo_org            VARCHAR(255),
+        forgejo_repo           VARCHAR(255),
+        setup_completed        BOOLEAN NOT NULL DEFAULT false,
+        include_sbom_cyclonedx BOOLEAN NOT NULL DEFAULT true,
+        include_sbom_spdx      BOOLEAN NOT NULL DEFAULT true,
+        include_vuln_report    BOOLEAN NOT NULL DEFAULT false,
+        include_license_audit  BOOLEAN NOT NULL DEFAULT true,
+        include_ip_proof       BOOLEAN NOT NULL DEFAULT true,
+        include_cra_docs       BOOLEAN NOT NULL DEFAULT true,
+        include_timeline       BOOLEAN NOT NULL DEFAULT true,
+        created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(product_id)
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS escrow_deposits (
+        id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id            UUID NOT NULL,
+        product_id        VARCHAR(255) NOT NULL,
+        escrow_config_id  UUID REFERENCES escrow_configs(id),
+        status            VARCHAR(30) NOT NULL DEFAULT 'pending',
+        trigger           VARCHAR(30) NOT NULL DEFAULT 'scheduled',
+        commit_sha        VARCHAR(64),
+        artifacts_included TEXT[],
+        artifact_count    INTEGER NOT NULL DEFAULT 0,
+        error_message     TEXT,
+        started_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        completed_at      TIMESTAMPTZ,
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_escrow_deposits_product ON escrow_deposits(product_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_escrow_deposits_org ON escrow_deposits(org_id)`);
   } finally {
     client.release();
   }

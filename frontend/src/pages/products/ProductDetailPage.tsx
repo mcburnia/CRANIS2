@@ -6,7 +6,7 @@ import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
   CheckCircle2, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
-  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info
+  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive
 } from 'lucide-react';
 import './ProductDetailPage.css';
 
@@ -512,6 +512,9 @@ export default function ProductDetailPage() {
             )}
             <Link to={`/products/${product.id}/timeline`} className="pd-edit-btn" style={{ textDecoration: "none" }}>
                 <History size={14} /> Timeline
+              </Link>
+            <Link to={`/products/${product.id}/escrow`} className="pd-edit-btn" style={{ textDecoration: "none" }}>
+                <Archive size={14} /> Escrow
               </Link>
             {!editing ? (
               <button className="pd-edit-btn" onClick={() => setEditing(true)}>

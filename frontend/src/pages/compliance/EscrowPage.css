@@ -1,0 +1,340 @@
+/* Escrow Page — prefix: esc- */
+
+.esc-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  transition: color 0.15s;
+}
+.esc-back-link:hover { color: var(--accent); }
+
+.esc-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 80px 0;
+  color: var(--muted);
+}
+.esc-spin { animation: esc-rotate 1s linear infinite; }
+@keyframes esc-rotate { to { transform: rotate(360deg); } }
+
+.esc-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--red);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+/* ─── Setup wizard ─── */
+.esc-setup-wizard {
+  text-align: center;
+  padding: 60px 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-width: 600px;
+  margin: 40px auto;
+}
+.esc-setup-icon {
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.esc-setup-wizard h2 {
+  font-size: 1.3rem;
+  margin-bottom: 12px;
+}
+.esc-setup-wizard > p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.esc-setup-features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  margin-bottom: 28px;
+}
+.esc-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 8px;
+}
+.esc-feature svg {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.esc-feature div {
+  display: flex;
+  flex-direction: column;
+}
+.esc-feature strong {
+  font-size: 0.85rem;
+  margin-bottom: 2px;
+}
+.esc-feature span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.esc-setup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.esc-setup-btn:hover { opacity: 0.9; }
+.esc-setup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Status banner ─── */
+.esc-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+.esc-status-active {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: var(--green);
+}
+.esc-status-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--red);
+}
+.esc-status-disabled {
+  background: rgba(156, 163, 175, 0.1);
+  border: 1px solid rgba(156, 163, 175, 0.3);
+  color: var(--muted);
+}
+.esc-toggle-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.esc-toggle-btn:hover { background: rgba(255, 255, 255, 0.15); }
+
+/* ─── Repo link ─── */
+.esc-repo-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+.esc-repo-link svg { color: var(--muted); flex-shrink: 0; }
+.esc-repo-link span { color: var(--muted); }
+.esc-repo-link a {
+  color: var(--accent);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.esc-repo-link a:hover { text-decoration: underline; }
+
+/* ─── Columns layout ─── */
+.esc-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 800px) {
+  .esc-columns { grid-template-columns: 1fr; }
+}
+
+/* ─── Cards ─── */
+.esc-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.esc-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.esc-card-header svg { color: var(--accent); }
+.esc-card-header h3 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+.esc-card-desc {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+/* ─── Toggles ─── */
+.esc-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.esc-toggle-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.esc-toggle-item:hover { background: rgba(255, 255, 255, 0.03); }
+.esc-toggle-item input[type="checkbox"] {
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+.esc-toggle-item div {
+  display: flex;
+  flex-direction: column;
+}
+.esc-toggle-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.esc-toggle-desc {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.esc-save-btn {
+  width: 100%;
+  padding: 8px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.esc-save-btn:hover { opacity: 0.9; }
+.esc-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Deposit button ─── */
+.esc-deposit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.esc-deposit-btn:hover { opacity: 0.9; }
+.esc-deposit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── History table ─── */
+.esc-history-card { margin-bottom: 24px; }
+.esc-empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 20px;
+}
+.esc-table-wrap { overflow-x: auto; }
+.esc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.esc-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.esc-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.esc-table tr:last-child td { border-bottom: none; }
+
+.esc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.esc-badge-completed {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--green);
+}
+.esc-badge-failed {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--red);
+}
+.esc-badge-running {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--accent);
+}
+.esc-badge-pending {
+  background: rgba(156, 163, 175, 0.1);
+  color: var(--muted);
+}
+
+.esc-trigger {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.esc-sha {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
