@@ -4,7 +4,8 @@ import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import {
   ArrowLeft, Archive, CheckCircle2, XCircle, Clock, Loader2,
-  ExternalLink, RefreshCw, Settings2, Shield
+  ExternalLink, RefreshCw, Settings2, Shield, Users, UserPlus,
+  UserX, Copy, Key, Eye, EyeOff, Mail
 } from 'lucide-react';
 import './EscrowPage.css';
 
@@ -58,17 +59,41 @@ interface Deposit {
   createdAt: string;
 }
 
+interface EscrowUser {
+  id: string;
+  email: string;
+  displayName: string | null;
+  forgejoUsername: string | null;
+  role: string;
+  permission: string;
+  status: string;
+  agentReference: string | null;
+  createdAt: string;
+  revokedAt: string | null;
+}
+
 export default function EscrowPage() {
   const { productId } = useParams<{ productId: string }>();
   const [productName, setProductName] = useState('');
+  const [productRepoUrl, setProductRepoUrl] = useState('');
   const [config, setConfig] = useState<EscrowConfig | null>(null);
   const [status, setStatus] = useState<EscrowStatus | null>(null);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [agents, setAgents] = useState<EscrowUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [settingUp, setSettingUp] = useState(false);
   const [depositing, setDepositing] = useState(false);
   const [savingToggles, setSavingToggles] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [revoking, setRevoking] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteDisplayName, setInviteDisplayName] = useState('');
+  const [inviteReference, setInviteReference] = useState('');
+  const [setupCredentials, setSetupCredentials] = useState<{ username: string; password: string } | null>(null);
+  const [agentCredentials, setAgentCredentials] = useState<{ email: string; username: string; password: string; isNew: boolean } | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [copiedField, setCopiedField] = useState('');
   const [toggles, setToggles] = useState({
     includeSbomCyclonedx: true,
     includeSbomSpdx: true,
@@ -92,13 +117,15 @@ export default function EscrowPage() {
       if (prodRes.ok) {
         const prodData = await prodRes.json();
         setProductName(prodData.name || '');
+        setProductRepoUrl(prodData.repoUrl || '');
       }
 
-      // Fetch config + status + deposits in parallel
-      const [configRes, statusRes, depositsRes] = await Promise.all([
+      // Fetch config + status + deposits + agents in parallel
+      const [configRes, statusRes, depositsRes, agentsRes] = await Promise.all([
         fetch(`/api/escrow/${productId}/config`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`/api/escrow/${productId}/status`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`/api/escrow/${productId}/deposits?limit=20`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`/api/escrow/${productId}/agents`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       if (configRes.ok) {
@@ -113,6 +140,10 @@ export default function EscrowPage() {
       if (depositsRes.ok) {
         const depositsData = await depositsRes.json();
         setDeposits(depositsData.deposits || []);
+      }
+      if (agentsRes.ok) {
+        const agentsData = await agentsRes.json();
+        setAgents(agentsData.users || []);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load escrow data');
@@ -132,6 +163,11 @@ export default function EscrowPage() {
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Setup failed');
+      }
+      const data = await res.json();
+      // Show one-time credentials if returned
+      if (data.customerUsername && data.customerPassword) {
+        setSetupCredentials({ username: data.customerUsername, password: data.customerPassword });
       }
       await fetchData();
     } catch (err: any) {
@@ -193,6 +229,78 @@ export default function EscrowPage() {
     }
   }
 
+  async function handleInviteAgent(e: React.FormEvent) {
+    e.preventDefault();
+    if (!productId || !inviteEmail.trim()) return;
+    setInviting(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/escrow/${productId}/agents`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ email: inviteEmail.trim(), displayName: inviteDisplayName.trim() || undefined, reference: inviteReference.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Invite failed');
+      }
+      // Show credentials or access notification
+      if (data.agent?.newUser && data.agent?.forgejoPassword) {
+        // New Forgejo user — show one-time credentials banner
+        setAgentCredentials({
+          email: inviteEmail.trim(),
+          username: data.agent.forgejoUsername,
+          password: data.agent.forgejoPassword,
+          isNew: true,
+        });
+      } else {
+        // Existing Forgejo user — show access granted notice
+        setAgentCredentials({
+          email: inviteEmail.trim(),
+          username: data.agent.forgejoUsername,
+          password: '',
+          isNew: false,
+        });
+      }
+      setInviteEmail('');
+      setInviteDisplayName('');
+      setInviteReference('');
+      await fetchData();
+    } catch (err: any) {
+      setError(err.message || 'Invite failed');
+    } finally {
+      setInviting(false);
+    }
+  }
+
+  async function handleRevokeAgent(agentId: string) {
+    if (!productId) return;
+    if (!window.confirm('Are you sure you want to revoke this agent\'s access? They will no longer be able to view the escrow repository.')) return;
+    setRevoking(agentId);
+    setError('');
+    try {
+      const res = await fetch(`/api/escrow/${productId}/agents/${agentId}`, {
+        method: 'DELETE',
+        headers,
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Revoke failed');
+      }
+      await fetchData();
+    } catch (err: any) {
+      setError(err.message || 'Revoke failed');
+    } finally {
+      setRevoking(null);
+    }
+  }
+
+  function copyToClipboard(text: string, field: string) {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(''), 2000);
+  }
+
   function formatDate(d: string | null) {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -208,6 +316,10 @@ export default function EscrowPage() {
   }
 
   const isConfigured = config?.configured && config?.setupCompleted;
+  const ownerUser = agents.find(a => a.role === 'owner' && a.status === 'active');
+  const agentUsers = agents.filter(a => a.role === 'agent');
+  const activeAgents = agentUsers.filter(a => a.status === 'active');
+  const revokedAgents = agentUsers.filter(a => a.status === 'revoked');
 
   return (
     <>
@@ -219,8 +331,141 @@ export default function EscrowPage() {
 
       {error && <div className="esc-error">{error}</div>}
 
+      {/* ─── One-time credentials display ─── */}
+      {setupCredentials && (
+        <div className="esc-credentials-banner">
+          <div className="esc-credentials-header">
+            <Key size={20} />
+            <div>
+              <strong>Escrow Repository Credentials</strong>
+              <span>Save these now — the password will not be shown again</span>
+            </div>
+          </div>
+          <div className="esc-credentials-grid">
+            <div className="esc-credential-row">
+              <label>Forgejo URL</label>
+              <div className="esc-credential-value">
+                <code>https://escrow.cranis2.dev</code>
+                <button onClick={() => copyToClipboard('https://escrow.cranis2.dev', 'url')} title="Copy">
+                  {copiedField === 'url' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+            <div className="esc-credential-row">
+              <label>Username</label>
+              <div className="esc-credential-value">
+                <code>{setupCredentials.username}</code>
+                <button onClick={() => copyToClipboard(setupCredentials.username, 'username')} title="Copy">
+                  {copiedField === 'username' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+            <div className="esc-credential-row">
+              <label>Password</label>
+              <div className="esc-credential-value">
+                <code>{showPassword ? setupCredentials.password : '••••••••••••'}</code>
+                <button onClick={() => setShowPassword(!showPassword)} title={showPassword ? 'Hide' : 'Show'}>
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+                <button onClick={() => copyToClipboard(setupCredentials.password, 'password')} title="Copy">
+                  {copiedField === 'password' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <button className="esc-credentials-dismiss" onClick={() => setSetupCredentials(null)}>
+            I've saved these credentials
+          </button>
+        </div>
+      )}
+
+      {/* ─── Agent credentials / access notification ─── */}
+      {agentCredentials && agentCredentials.isNew && (
+        <div className="esc-credentials-banner esc-credentials-agent">
+          <div className="esc-credentials-header">
+            <Key size={20} />
+            <div>
+              <strong>New Agent Credentials — {agentCredentials.email}</strong>
+              <span>Share these with the agent — the password will not be shown again</span>
+            </div>
+          </div>
+          <div className="esc-credentials-grid">
+            <div className="esc-credential-row">
+              <label>Forgejo URL</label>
+              <div className="esc-credential-value">
+                <code>https://escrow.cranis2.dev</code>
+                <button onClick={() => copyToClipboard('https://escrow.cranis2.dev', 'agent-url')} title="Copy">
+                  {copiedField === 'agent-url' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+            <div className="esc-credential-row">
+              <label>Username</label>
+              <div className="esc-credential-value">
+                <code>{agentCredentials.username}</code>
+                <button onClick={() => copyToClipboard(agentCredentials.username, 'agent-username')} title="Copy">
+                  {copiedField === 'agent-username' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+            <div className="esc-credential-row">
+              <label>Password</label>
+              <div className="esc-credential-value">
+                <code>{showPassword ? agentCredentials.password : '••••••••••••'}</code>
+                <button onClick={() => setShowPassword(!showPassword)} title={showPassword ? 'Hide' : 'Show'}>
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+                <button onClick={() => copyToClipboard(agentCredentials.password, 'agent-password')} title="Copy">
+                  {copiedField === 'agent-password' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <button className="esc-credentials-dismiss" onClick={() => { setAgentCredentials(null); setShowPassword(false); }}>
+            I've shared these credentials
+          </button>
+        </div>
+      )}
+
+      {agentCredentials && !agentCredentials.isNew && (
+        <div className="esc-credentials-banner esc-credentials-existing">
+          <div className="esc-credentials-header">
+            <CheckCircle2 size={20} />
+            <div>
+              <strong>Access Granted — {agentCredentials.email}</strong>
+              <span>This agent already has a Forgejo account and has been notified by email</span>
+            </div>
+          </div>
+          <p className="esc-existing-note">
+            <strong>{agentCredentials.username}</strong> has been granted read-only access to this product's escrow repository.
+            They can log in with their existing credentials.
+          </p>
+          <button className="esc-credentials-dismiss" onClick={() => setAgentCredentials(null)}>
+            Got it
+          </button>
+        </div>
+      )}
+
+      {/* ─── No repo URL — show message ─── */}
+      {!isConfigured && !setupCredentials && !productRepoUrl && (
+        <div className="esc-setup-wizard">
+          <div className="esc-setup-icon" style={{ color: 'var(--amber)' }}>
+            <Archive size={48} />
+          </div>
+          <h2>Repository Required</h2>
+          <p>
+            A repository URL must be set on this product before escrow can be enabled.
+            Escrow deposits archive your compliance artifacts from your source repository.
+          </p>
+          <Link to={`/products/${productId}`} className="esc-setup-btn" style={{ textDecoration: 'none' }}>
+            <Settings2 size={16} />
+            Go to Product Settings
+          </Link>
+        </div>
+      )}
+
       {/* ─── Not configured — Setup wizard ─── */}
-      {!isConfigured && (
+      {!isConfigured && !setupCredentials && productRepoUrl && (
         <div className="esc-setup-wizard">
           <div className="esc-setup-icon">
             <Archive size={48} />
@@ -359,6 +604,186 @@ export default function EscrowPage() {
                 {depositing ? <Loader2 size={16} className="esc-spin" /> : <RefreshCw size={16} />}
                 {depositing ? 'Depositing...' : 'Run Deposit Now'}
               </button>
+            </div>
+          </div>
+
+          {/* ─── Escrow Access ─── */}
+          <div className="esc-card esc-access-card">
+            <div className="esc-card-header">
+              <Users size={18} />
+              <h3>Escrow Access</h3>
+            </div>
+            <p className="esc-card-desc">
+              Manage who can access this product's escrow repository. The product owner has write access.
+              Escrow agents (third parties) receive read-only access.
+            </p>
+
+            {/* Owner row */}
+            {ownerUser && (
+              <div className="esc-owner-row">
+                <div className="esc-owner-info">
+                  <div className="esc-owner-avatar">
+                    <Shield size={16} />
+                  </div>
+                  <div className="esc-owner-details">
+                    <span className="esc-owner-name">{ownerUser.displayName || ownerUser.email}</span>
+                    <span className="esc-owner-email">{ownerUser.email}</span>
+                  </div>
+                </div>
+                <div className="esc-owner-meta">
+                  <span className="esc-badge esc-badge-owner">Owner</span>
+                  <span className="esc-badge esc-badge-write">Write</span>
+                  {ownerUser.forgejoUsername && (
+                    <span className="esc-forgejo-user">
+                      <code>{ownerUser.forgejoUsername}</code>
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Agent list */}
+            {activeAgents.length > 0 && (
+              <div className="esc-agents-section">
+                <h4 className="esc-section-title">Escrow Agents</h4>
+                <div className="esc-table-wrap">
+                  <table className="esc-table">
+                    <thead>
+                      <tr>
+                        <th>Agent</th>
+                        <th>Reference</th>
+                        <th>Forgejo User</th>
+                        <th>Permission</th>
+                        <th>Invited</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeAgents.map(agent => (
+                        <tr key={agent.id}>
+                          <td>
+                            <div className="esc-agent-cell">
+                              <span className="esc-agent-name">{agent.displayName || '—'}</span>
+                              <span className="esc-agent-email">{agent.email}</span>
+                            </div>
+                          </td>
+                          <td><code className="esc-sha">{agent.agentReference || '—'}</code></td>
+                          <td><code className="esc-sha">{agent.forgejoUsername || '—'}</code></td>
+                          <td><span className="esc-badge esc-badge-read">Read-only</span></td>
+                          <td className="esc-trigger">{formatDate(agent.createdAt)}</td>
+                          <td>
+                            <button
+                              className="esc-revoke-btn"
+                              onClick={() => handleRevokeAgent(agent.id)}
+                              disabled={revoking === agent.id}
+                              title="Revoke access"
+                            >
+                              {revoking === agent.id ? <Loader2 size={14} className="esc-spin" /> : <UserX size={14} />}
+                              Revoke
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Revoked agents (collapsed) */}
+            {revokedAgents.length > 0 && (
+              <details className="esc-revoked-section">
+                <summary className="esc-revoked-summary">
+                  {revokedAgents.length} revoked agent{revokedAgents.length !== 1 ? 's' : ''}
+                </summary>
+                <div className="esc-table-wrap">
+                  <table className="esc-table">
+                    <thead>
+                      <tr>
+                        <th>Agent</th>
+                        <th>Forgejo User</th>
+                        <th>Status</th>
+                        <th>Revoked</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {revokedAgents.map(agent => (
+                        <tr key={agent.id} className="esc-row-revoked">
+                          <td>
+                            <div className="esc-agent-cell">
+                              <span className="esc-agent-name">{agent.displayName || '—'}</span>
+                              <span className="esc-agent-email">{agent.email}</span>
+                            </div>
+                          </td>
+                          <td><code className="esc-sha">{agent.forgejoUsername || '—'}</code></td>
+                          <td><span className="esc-badge esc-badge-revoked">Revoked</span></td>
+                          <td className="esc-trigger">{formatDate(agent.revokedAt)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            )}
+
+            {/* Invite form */}
+            <div className="esc-invite-section">
+              <h4 className="esc-section-title">
+                <UserPlus size={15} />
+                Invite Escrow Agent
+              </h4>
+              <form className="esc-invite-form" onSubmit={handleInviteAgent}>
+                <div className="esc-invite-fields">
+                  <div className="esc-invite-field">
+                    <label htmlFor="agent-email">
+                      <Mail size={14} />
+                      Email address
+                    </label>
+                    <input
+                      id="agent-email"
+                      type="email"
+                      placeholder="agent@escrow-firm.com"
+                      value={inviteEmail}
+                      onChange={e => setInviteEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="esc-invite-field">
+                    <label htmlFor="agent-name">
+                      <Users size={14} />
+                      Display name (optional)
+                    </label>
+                    <input
+                      id="agent-name"
+                      type="text"
+                      placeholder="Escrow Firm AG"
+                      value={inviteDisplayName}
+                      onChange={e => setInviteDisplayName(e.target.value)}
+                    />
+                  </div>
+                  <div className="esc-invite-field">
+                    <label htmlFor="agent-ref">
+                      <Archive size={14} />
+                      Agent reference (optional)
+                    </label>
+                    <input
+                      id="agent-ref"
+                      type="text"
+                      placeholder="e.g. ENG-2026-001, Case #4412"
+                      value={inviteReference}
+                      onChange={e => setInviteReference(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <button type="submit" className="esc-invite-btn" disabled={inviting || !inviteEmail.trim()}>
+                  {inviting ? <Loader2 size={15} className="esc-spin" /> : <UserPlus size={15} />}
+                  {inviting ? 'Inviting...' : 'Invite Agent'}
+                </button>
+              </form>
+              <p className="esc-invite-note">
+                The agent will receive read-only access to this product's escrow repository and be notified by email.
+                If this is their first invitation, a Forgejo account will be created automatically.
+              </p>
             </div>
           </div>
 

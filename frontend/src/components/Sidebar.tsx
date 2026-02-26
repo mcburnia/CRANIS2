@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUnreadCount } from '../hooks/useNotifications';
 import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
-  FolderGit2, Users, Box, AlertTriangle, CreditCard, Archive,
-  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2, Shield, MessageSquareMore, Scale, Fingerprint, FileBarChart2, Store, History
+  FolderGit2, Users, Box, AlertTriangle, CreditCard,
+  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2, Shield, MessageSquareMore, Scale, Fingerprint, FileBarChart2, Store,
+  ChevronRight
 } from 'lucide-react';
 import FeedbackModal from './FeedbackModal';
 import './Sidebar.css';
@@ -34,8 +35,7 @@ const navSections = [
       { to: '/license-compliance', icon: Scale, label: 'Licenses' },
       { to: '/ip-proof', icon: Fingerprint, label: 'IP Proof' },
       { to: '/due-diligence', icon: FileBarChart2, label: 'Due Diligence' },
-      { to: '/products', icon: History, label: 'Timeline' },
-      { to: '/products', icon: Archive, label: 'Escrow' },
+
     ],
   },
   {
@@ -70,10 +70,27 @@ const navSections = [
 export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { unreadCount } = useUnreadCount();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Determine which section the current route belongs to
+  const activeSection = useMemo(() => {
+    for (const section of navSections) {
+      if (section.items.some(item => location.pathname === item.to || location.pathname.startsWith(item.to + '/'))) {
+        return section.label;
+      }
+    }
+    return navSections[0].label; // default to Overview
+  }, [location.pathname]);
+
+  const [expandedSection, setExpandedSection] = useState<string>(activeSection);
+
+  function toggleSection(label: string) {
+    setExpandedSection(prev => prev === label ? '' : label);
+  }
 
   function handleLogout() {
     logout();
@@ -109,25 +126,38 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
     <>
       <Link to="/" className="sidebar-logo">CRANIS<span>2</span></Link>
       <div className="sidebar-org">{orgName || 'My Organisation'}</div>
-      {navSections.map((section) => (
-        <div className="nav-section" key={section.label}>
-          <div className="nav-section-label">{section.label}</div>
-          {section.items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-              onClick={onNavigate}
+      {navSections.map((section) => {
+        const isExpanded = expandedSection === section.label;
+        const hasActive = section.items.some(item => location.pathname === item.to || location.pathname.startsWith(item.to + '/'));
+        return (
+          <div className={`nav-section${isExpanded ? ' nav-section-expanded' : ''}`} key={section.label}>
+            <button
+              className={`nav-section-label${hasActive ? ' nav-section-active' : ''}`}
+              onClick={() => toggleSection(section.label)}
             >
-              <item.icon size={18} className="nav-icon" />
-              {item.label}
-              {'badge' in item && item.badge && unreadCount > 0 && (
-                <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
-              )}
-            </NavLink>
-          ))}
-        </div>
-      ))}
+              <ChevronRight size={14} className={`nav-section-chevron${isExpanded ? ' nav-section-chevron-open' : ''}`} />
+              {section.label}
+              {!isExpanded && hasActive && <span className="nav-section-dot" />}
+            </button>
+            <div className={`nav-section-items${isExpanded ? ' nav-section-items-open' : ''}`} style={{ '--item-count': section.items.length } as React.CSSProperties}>
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                  onClick={onNavigate}
+                >
+                  <item.icon size={18} className="nav-icon" />
+                  {item.label}
+                  {'badge' in item && item.badge && unreadCount > 0 && (
+                    <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        );
+      })}
       <div className="nav-section">
         <button className="nav-item feedback-btn" onClick={() => { setShowFeedback(true); if (onNavigate) onNavigate(); }}>
           <MessageSquareMore size={18} className="nav-icon" />

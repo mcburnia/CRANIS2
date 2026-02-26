@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
 
 import PageHeader from '../../components/PageHeader';
 import {
-  ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History,
+  ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
   CheckCircle2, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
   GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive
@@ -210,6 +211,12 @@ export default function ProductDetailPage() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '', distributionModel: '' });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [hasEscrow, setHasEscrow] = useState(false);
+  const navigate = useNavigate();
   const [error, setError] = useState('');
 
   // GitHub state
@@ -228,6 +235,16 @@ export default function ProductDetailPage() {
   useEffect(() => {
     fetchProduct();
     fetchGitHubStatus();
+  }, [productId]);
+
+  // Check if escrow is configured for this product
+  useEffect(() => {
+    if (!productId) return;
+    const token = localStorage.getItem('session_token');
+    fetch(`/api/escrow/${productId}/config`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.configured && data?.setupCompleted) setHasEscrow(true); })
+      .catch(() => {});
   }, [productId]);
 
   // After product loads, fetch cached repo data
@@ -459,6 +476,52 @@ export default function ProductDetailPage() {
     } catch { /* silent */ } finally { setSaving(false); }
   }
 
+  async function handleExportProduct() {
+    if (!product) return;
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/products/${product.id}/export`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('session_token')}` },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-export.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to download export');
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleDeleteProduct() {
+    if (!product) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/products/${product.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${localStorage.getItem('session_token')}` },
+      });
+      if (res.ok) {
+        navigate('/products');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete product');
+      }
+    } catch {
+      alert('Network error');
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  }
+
   if (loading) {
     return (
       <>
@@ -516,6 +579,9 @@ export default function ProductDetailPage() {
             <Link to={`/products/${product.id}/escrow`} className="pd-edit-btn" style={{ textDecoration: "none" }}>
                 <Archive size={14} /> Escrow
               </Link>
+            <button className="pd-delete-btn" onClick={() => { setShowDeleteModal(true); setDeleteConfirmed(false); }} title="Delete product">
+              <Trash2 size={14} /> Delete
+            </button>
             {!editing ? (
               <button className="pd-edit-btn" onClick={() => setEditing(true)}>
                 <Edit3 size={14} /> Edit
@@ -638,6 +704,64 @@ export default function ProductDetailPage() {
         {activeTab === 'risk-findings' && <RiskFindingsTab productId={product.id} />}
         {activeTab === 'dependencies' && <DependenciesTab ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} sbomLoading={sbomLoading} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onRefreshSBOM={handleRefreshSBOM} />}
       </div>
+
+      {/* Delete Product Modal */}
+      {showDeleteModal && createPortal(
+        <div className="pd-delete-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="pd-delete-modal" onClick={e => e.stopPropagation()}>
+            <div className="pd-delete-modal-icon">
+              <AlertTriangle size={32} />
+            </div>
+            <h3>Delete {product?.name}</h3>
+            <p className="pd-delete-modal-desc">
+              This will permanently remove this product and all its compliance data from CRANIS2,
+              including vulnerability scans, license audits, SBOMs, technical files, and escrow records.
+            </p>
+
+            {hasEscrow && (
+              <div className="pd-delete-escrow-note">
+                <Archive size={16} />
+                <span>
+                  Your escrow repository at <strong>escrow.cranis2.dev</strong> will be preserved.
+                  A final deposit will be made before deletion. Existing users will retain access.
+                </span>
+              </div>
+            )}
+
+            <div className="pd-delete-export-section">
+              <button className="pd-export-btn" onClick={handleExportProduct} disabled={exporting}>
+                {exporting ? <Loader2 size={16} className="spin" /> : <Download size={16} />}
+                {exporting ? 'Generating export...' : 'Download Data Export'}
+              </button>
+              <span className="pd-export-hint">ZIP archive with all product data as JSON files</span>
+            </div>
+
+            <label className="pd-delete-confirm-label">
+              <input
+                type="checkbox"
+                checked={deleteConfirmed}
+                onChange={e => setDeleteConfirmed(e.target.checked)}
+              />
+              I have downloaded my data or no longer need it
+            </label>
+
+            <div className="pd-delete-modal-actions">
+              <button className="btn-cancel" onClick={() => setShowDeleteModal(false)} disabled={deleting}>
+                Cancel
+              </button>
+              <button
+                className="pd-delete-confirm-btn"
+                onClick={handleDeleteProduct}
+                disabled={!deleteConfirmed || deleting}
+              >
+                {deleting ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
+                {deleting ? 'Deleting...' : 'Delete Product'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   );
 }

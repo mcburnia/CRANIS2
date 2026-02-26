@@ -17,15 +17,60 @@
   margin-bottom: 1.5rem;
 }
 
-.nav-section { margin-bottom: 1.5rem; }
+.nav-section { margin-bottom: 0.25rem; }
 
 .nav-section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: inherit;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
-  padding: 0 1.25rem;
-  margin-bottom: 0.5rem;
+  padding: 0.45rem 1.25rem;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  text-align: left;
+}
+.nav-section-label:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.02);
+}
+.nav-section-active {
+  color: var(--accent);
+}
+
+/* Chevron rotation */
+.nav-section-chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.nav-section-chevron-open {
+  transform: rotate(90deg);
+}
+
+/* Active dot — shows when section is collapsed but contains active route */
+.nav-section-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Collapsible items container */
+.nav-section-items {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+}
+.nav-section-items-open {
+  max-height: calc(var(--item-count) * 2.5rem);
 }
 
 .nav-item {

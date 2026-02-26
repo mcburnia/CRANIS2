@@ -3,7 +3,8 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
-import { setupProductEscrow, runEscrowDeposit } from '../services/escrow-service.js';
+import { setupProductEscrow, runEscrowDeposit, inviteEscrowAgent, revokeEscrowAgent, listEscrowUsers } from '../services/escrow-service.js';
+import { sendEscrowAgentInviteEmail, sendEscrowAgentAccessEmail } from '../services/email.js';
 
 const router = Router();
 
@@ -37,12 +38,12 @@ async function getOrgId(userId: string): Promise<string | null> {
 }
 
 // Helper: verify product belongs to org and return product name + org name
-async function verifyProductOwnership(orgId: string, productId: string): Promise<{ owned: boolean; productName?: string; orgName?: string }> {
+async function verifyProductOwnership(orgId: string, productId: string): Promise<{ owned: boolean; productName?: string; orgName?: string; repoUrl?: string }> {
   const session = getDriver().session();
   try {
     const result = await session.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
-       RETURN p.name AS productName, o.name AS orgName`,
+       RETURN p.name AS productName, o.name AS orgName, p.repoUrl AS repoUrl`,
       { orgId, productId }
     );
     if (result.records.length === 0) return { owned: false };
@@ -50,6 +51,7 @@ async function verifyProductOwnership(orgId: string, productId: string): Promise
       owned: true,
       productName: result.records[0].get('productName'),
       orgName: result.records[0].get('orgName'),
+      repoUrl: result.records[0].get('repoUrl') || '',
     };
   } finally {
     await session.close();
@@ -186,8 +188,14 @@ router.post('/:productId/setup', requireAuth, async (req: Request, res: Response
     if (!orgId) { res.status(400).json({ error: 'No organisation' }); return; }
 
     const productId = req.params.productId as string;
-    const { owned, productName, orgName } = await verifyProductOwnership(orgId, productId);
+    const { owned, productName, orgName, repoUrl } = await verifyProductOwnership(orgId, productId);
     if (!owned) { res.status(404).json({ error: 'Product not found' }); return; }
+
+    // Require a repository URL before escrow can be enabled
+    if (!repoUrl) {
+      res.status(400).json({ error: 'A repository URL must be set on this product before enabling escrow. Add one in the product settings.' });
+      return;
+    }
 
     // Check not already set up
     const existing = await pool.query(
@@ -199,10 +207,17 @@ router.post('/:productId/setup', requireAuth, async (req: Request, res: Response
       return;
     }
 
+    // Get customer email
+    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [(req as any).userId]);
+    const customerEmail = userResult.rows[0]?.email || 'unknown@unknown.com';
+    const customerDisplayName = customerEmail.split('@')[0];
+
     const result = await setupProductEscrow(
       orgId, productId,
       orgName || 'unknown-org',
-      productName || 'unknown-product'
+      productName || 'unknown-product',
+      customerEmail,
+      customerDisplayName
     );
 
     // Trigger initial deposit
@@ -214,6 +229,8 @@ router.post('/:productId/setup', requireAuth, async (req: Request, res: Response
       success: true,
       forgejoOrg: result.forgejoOrg,
       forgejoRepo: result.forgejoRepo,
+      customerUsername: result.customerUsername,
+      customerPassword: result.customerPassword,
     });
 
     // Telemetry
@@ -385,6 +402,138 @@ router.get('/:productId/status', requireAuth, async (req: Request, res: Response
   } catch (err) {
     console.error('Escrow status fetch failed:', err);
     res.status(500).json({ error: 'Failed to fetch escrow status' });
+  }
+});
+
+
+// ─── GET /:productId/agents ─────────────────────────────────────────
+// List all escrow users (customer + agents) for a product
+router.get('/:productId/agents', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(400).json({ error: 'No organisation' }); return; }
+
+    const productId = req.params.productId as string;
+    const { owned } = await verifyProductOwnership(orgId, productId);
+    if (!owned) { res.status(404).json({ error: 'Product not found' }); return; }
+
+    const users = await listEscrowUsers(productId);
+    res.json({ users });
+  } catch (err) {
+    console.error('Escrow agents list failed:', err);
+    res.status(500).json({ error: 'Failed to list escrow users' });
+  }
+});
+
+// ─── POST /:productId/agents ────────────────────────────────────────
+// Invite an escrow agent with read-only access
+router.post('/:productId/agents', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const email = (req as any).email;
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(400).json({ error: 'No organisation' }); return; }
+
+    const productId = req.params.productId as string;
+    const { owned, productName, orgName } = await verifyProductOwnership(orgId, productId);
+    if (!owned) { res.status(404).json({ error: 'Product not found' }); return; }
+
+    const { email: agentEmail, displayName, reference } = req.body;
+    if (!agentEmail) {
+      res.status(400).json({ error: 'Agent email is required' });
+      return;
+    }
+
+    const result = await inviteEscrowAgent(orgId, productId, agentEmail, displayName || '', reference || '', userId);
+
+    // Send email to the agent (fire-and-forget)
+    if (result.created && result.password) {
+      // New Forgejo user — send full credentials email
+      sendEscrowAgentInviteEmail(
+        agentEmail,
+        result.username,
+        result.password,
+        productName || 'Unknown Product',
+        orgName || 'Unknown Organisation',
+        reference || '',
+        result.repoUrl,
+        email
+      ).catch(err => {
+        console.error('[ESCROW] Agent invite email failed:', err.message);
+      });
+    } else {
+      // Existing Forgejo user — send access notification (no password)
+      sendEscrowAgentAccessEmail(
+        agentEmail,
+        result.username,
+        productName || 'Unknown Product',
+        orgName || 'Unknown Organisation',
+        reference || '',
+        result.repoUrl,
+        email
+      ).catch(err => {
+        console.error('[ESCROW] Agent access email failed:', err.message);
+      });
+    }
+
+    res.json({
+      success: true,
+      agent: {
+        id: result.id,
+        forgejoUsername: result.username,
+        forgejoPassword: result.created ? result.password : undefined,
+        newUser: result.created,
+      },
+    });
+
+    // Telemetry
+    const reqData = extractRequestData(req);
+    recordEvent({
+      userId, email,
+      eventType: 'escrow_agent_invited',
+      ipAddress: reqData.ipAddress,
+      userAgent: reqData.userAgent,
+      metadata: { productId, agentEmail, agentUsername: result.username },
+    }).catch(() => {});
+
+  } catch (err: any) {
+    console.error('Escrow agent invite failed:', err);
+    res.status(500).json({ error: err.message || 'Failed to invite agent' });
+  }
+});
+
+// ─── DELETE /:productId/agents/:agentId ─────────────────────────────
+// Revoke an escrow agent's access
+router.delete('/:productId/agents/:agentId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const email = (req as any).email;
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(400).json({ error: 'No organisation' }); return; }
+
+    const productId = req.params.productId as string;
+    const { owned } = await verifyProductOwnership(orgId, productId);
+    if (!owned) { res.status(404).json({ error: 'Product not found' }); return; }
+
+    const agentId = req.params.agentId as string;
+    await revokeEscrowAgent(agentId);
+
+    res.json({ success: true });
+
+    // Telemetry
+    const reqData = extractRequestData(req);
+    recordEvent({
+      userId, email,
+      eventType: 'escrow_agent_revoked',
+      ipAddress: reqData.ipAddress,
+      userAgent: reqData.userAgent,
+      metadata: { productId, agentId },
+    }).catch(() => {});
+
+  } catch (err: any) {
+    console.error('Escrow agent revoke failed:', err);
+    res.status(500).json({ error: err.message || 'Failed to revoke agent' });
   }
 });
 

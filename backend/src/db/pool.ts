@@ -671,6 +671,7 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
         include_ip_proof       BOOLEAN NOT NULL DEFAULT true,
         include_cra_docs       BOOLEAN NOT NULL DEFAULT true,
         include_timeline       BOOLEAN NOT NULL DEFAULT true,
+        forgejo_customer_username VARCHAR(255),
         created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         UNIQUE(product_id)
@@ -695,6 +696,31 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_escrow_deposits_product ON escrow_deposits(product_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_escrow_deposits_org ON escrow_deposits(org_id)`);
+
+    // Escrow users (customer + agent access to Forgejo repos)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS escrow_users (
+        id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        escrow_config_id  UUID REFERENCES escrow_configs(id),
+        org_id            UUID NOT NULL,
+        product_id        VARCHAR(255) NOT NULL,
+        email             VARCHAR(255) NOT NULL,
+        display_name      VARCHAR(255),
+        forgejo_username  VARCHAR(255),
+        role              VARCHAR(30) NOT NULL DEFAULT 'owner',
+        permission        VARCHAR(30) NOT NULL DEFAULT 'read',
+        status            VARCHAR(30) NOT NULL DEFAULT 'active',
+        invited_by        UUID,
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        revoked_at        TIMESTAMPTZ,
+        UNIQUE(escrow_config_id, email)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_escrow_users_product ON escrow_users(product_id)`);
+
+    // Add forgejo_customer_username column to existing escrow_configs (migration for existing installs)
+    await client.query(`ALTER TABLE escrow_configs ADD COLUMN IF NOT EXISTS forgejo_customer_username VARCHAR(255)`);
+    await client.query(`ALTER TABLE escrow_users ADD COLUMN IF NOT EXISTS agent_reference VARCHAR(255)`);
   } finally {
     client.release();
   }

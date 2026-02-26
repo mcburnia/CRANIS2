@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
     "asn1js": "^3.0.7",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",
+    "@types/archiver": "^7.0.0",
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
