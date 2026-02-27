@@ -60,6 +60,29 @@ export async function githubGet<T>(path: string, token: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** Fetch raw file content from a GitHub repo via Contents API. Returns null if file not found. */
+export async function getFileContent(
+  token: string,
+  owner: string,
+  repo: string,
+  branch: string,
+  filepath: string
+): Promise<string | null> {
+  try {
+    const data = await githubGet<{ content: string; encoding: string }>(
+      `/repos/${owner}/${repo}/contents/${filepath}?ref=${encodeURIComponent(branch)}`,
+      token
+    );
+    if (data.encoding === 'base64') {
+      return Buffer.from(data.content.replace(/\n/g, ''), 'base64').toString('utf-8');
+    }
+    return data.content;
+  } catch (err: any) {
+    if (err.message?.includes('404')) return null;
+    throw err;
+  }
+}
+
 /**
  * Parse owner/repo from a GitHub URL
  * Supports: https://github.com/owner/repo, https://github.com/owner/repo.git

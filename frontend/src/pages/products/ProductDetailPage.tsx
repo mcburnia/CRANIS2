@@ -7,9 +7,54 @@ import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
   CheckCircle2, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
-  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive
+  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive, Server
 } from 'lucide-react';
 import './ProductDetailPage.css';
+
+// Codeberg SVG icon (not available in lucide)
+function CodebergIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2L2 19.5h20L12 2z" />
+      <path d="M12 8v6" />
+      <circle cx="12" cy="17" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+
+/** Generic self-hosted forge icon */
+function ForgeIcon({ size = 16 }: { size?: number }) {
+  return <Server size={size} />;
+}
+
+/** GitLab icon */
+function GitLabIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 0 1-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 0 1 4.82 2a.43.43 0 0 1 .58 0 .42.42 0 0 1 .11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0 1 18.6 2a.43.43 0 0 1 .58 0 .42.42 0 0 1 .11.18l2.44 7.51L23 13.45a.84.84 0 0 1-.35.94z" />
+    </svg>
+  );
+}
+
+/** Return the right icon component for a repo provider */
+function ProviderIcon({ provider, size = 16 }: { provider: string; size?: number }) {
+  switch (provider) {
+    case 'codeberg': return <CodebergIcon size={size} />;
+    case 'gitlab': return <GitLabIcon size={size} />;
+    case 'gitea':
+    case 'forgejo': return <ForgeIcon size={size} />;
+    default: return <Github size={size} />;
+  }
+}
+
+/** Human-readable provider label */
+const PROVIDER_LABELS: Record<string, string> = {
+  github: 'GitHub', codeberg: 'Codeberg', gitea: 'Gitea', forgejo: 'Forgejo', gitlab: 'GitLab',
+};
+function providerLabel(provider: string): string {
+  return PROVIDER_LABELS[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
+}
 
 interface Product {
   id: string;
@@ -19,16 +64,27 @@ interface Product {
   productType: string;
   craCategory: string;
   repoUrl: string;
+  provider: string;
+  instanceUrl: string;
   distributionModel: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
 }
 
+interface RepoConnection {
+  provider: string;
+  username: string;
+  avatarUrl: string;
+  scope: string;
+  connectedAt: string;
+}
+
 interface GitHubStatus {
   connected: boolean;
   githubUsername?: string;
   githubAvatarUrl?: string;
+  connections?: RepoConnection[];
 }
 
 interface RepoData {
@@ -61,6 +117,14 @@ interface LanguageData {
   percentage: number;
 }
 
+
+interface ProviderInfo {
+  id: string;
+  label: string;
+  selfHosted: boolean;
+  oauthSupported: boolean;
+  supportsApiSbom: boolean;
+}
 
 interface SBOMPackage {
   purl: string;
@@ -130,6 +194,7 @@ interface SyncStats {
 
 interface GitHubData {
   synced: boolean;
+  provider?: string;
   repo?: RepoData;
   contributors?: ContributorData[];
   languages?: LanguageData[];
@@ -209,7 +274,8 @@ export default function ProductDetailPage() {
   const initialTab = (searchParams.get('tab') as TabKey) || 'overview';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '', distributionModel: '' });
+  const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '', distributionModel: '', provider: '', instanceUrl: '' });
+  const [availableProviders, setAvailableProviders] = useState<ProviderInfo[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -235,6 +301,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     fetchProduct();
     fetchGitHubStatus();
+    fetchProviders();
   }, [productId]);
 
   // Check if escrow is configured for this product
@@ -262,7 +329,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (event.origin !== window.location.origin) return;
-      if (event.data?.type === 'github-oauth-success') {
+      if (event.data?.type === 'repo-oauth-success' || event.data?.type === 'github-oauth-success') {
         fetchGitHubStatus();
         if (product?.repoUrl) handleSync();
       }
@@ -285,6 +352,8 @@ export default function ProductDetailPage() {
           productType: data.productType || 'other', craCategory: data.craCategory || 'default',
           repoUrl: data.repoUrl || '',
           distributionModel: data.distributionModel || '',
+          provider: data.provider || detectProvider(data.repoUrl || ''),
+          instanceUrl: data.instanceUrl || '',
         });
       } else {
         setError('Product not found');
@@ -303,6 +372,17 @@ export default function ProductDetailPage() {
       if (res.ok) {
         const data = await res.json();
         setGhStatus(data);
+      }
+    } catch { /* silent */ }
+  }
+
+  async function fetchProviders() {
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch('/api/repo/providers', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableProviders(data);
       }
     } catch { /* silent */ }
   }
@@ -424,16 +504,28 @@ export default function ProductDetailPage() {
     }
   }
 
-  async function handleConnectGitHub() {
+  // Detect repo provider from URL
+  function detectProvider(url: string): string {
+    try {
+      const hostname = new URL(url.includes('://') ? url : `https://${url}`).hostname;
+      if (hostname === 'codeberg.org') return 'codeberg';
+      if (hostname === 'gitlab.com') return 'gitlab';
+    } catch { /* ignore */ }
+    return 'github';
+  }
+
+  async function handleConnectGitHub(providerOverride?: string) {
+    const repoProvider = providerOverride || detectProvider(product?.repoUrl || '');
     try {
       const token = localStorage.getItem('session_token');
       const res = await fetch('/api/github/connect-init', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ provider: repoProvider }),
       });
       if (!res.ok) {
         const err = await res.json();
-        setSyncError(err.error || 'Failed to initiate GitHub connection');
+        setSyncError(err.error || `Failed to initiate ${providerLabel(repoProvider)} connection`);
         return;
       }
       const { connectionToken } = await res.json();
@@ -441,19 +533,21 @@ export default function ProductDetailPage() {
       const left = window.screenX + (window.outerWidth - w) / 2;
       const top = window.screenY + (window.outerHeight - h) / 2;
       window.open(
-        `/api/github/connect?connectionToken=${connectionToken}`,
-        'github-oauth',
+        `/api/github/connect/${repoProvider}?connectionToken=${connectionToken}`,
+        'repo-oauth',
         `width=${w},height=${h},left=${left},top=${top}`
       );
     } catch {
-      setSyncError('Failed to initiate GitHub connection');
+      setSyncError(`Failed to initiate ${providerLabel(repoProvider)} connection`);
     }
   }
 
-  async function handleDisconnectGitHub() {
-    if (!confirm('Disconnect GitHub? You can reconnect at any time.')) return;
+  async function handleDisconnectGitHub(providerOverride?: string) {
+    const repoProvider = providerOverride || detectProvider(product?.repoUrl || '');
+    const label = providerLabel(repoProvider);
+    if (!confirm(`Disconnect ${label}? You can reconnect at any time.`)) return;
     const token = localStorage.getItem('session_token');
-    await fetch('/api/github/disconnect', { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await fetch(`/api/github/disconnect/${repoProvider}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     setGhStatus({ connected: false });
     setGhData({ synced: false });
   }
@@ -547,6 +641,13 @@ export default function ProductDetailPage() {
   const TypeIcon = getTypeIcon(product.productType);
   const catInfo = CATEGORY_INFO[product.craCategory] || CATEGORY_INFO.default;
 
+  // Check if the product's specific repo provider is connected
+  const currentProvider = editForm.provider || (product.repoUrl ? detectProvider(product.repoUrl) : 'github');
+  const isProviderConnected = ghStatus.connections?.some(c => c.provider === currentProvider) || (currentProvider === 'github' && ghStatus.connected);
+
+  // Find the matching connection for display
+  const providerConnection = ghStatus.connections?.find(c => c.provider === currentProvider);
+
   return (
     <>
       {/* Back nav */}
@@ -561,13 +662,13 @@ export default function ProductDetailPage() {
             <TypeIcon size={28} />
           </div>
           <div className="pd-header-actions">
-            {/* GitHub connection buttons */}
-            {product.repoUrl && !ghStatus.connected && (
-              <button className="pd-github-btn" onClick={handleConnectGitHub}>
-                <Github size={14} /> Connect GitHub
+            {/* Repo connection buttons */}
+            {product.repoUrl && !isProviderConnected && (
+              <button className="pd-github-btn" onClick={() => handleConnectGitHub()}>
+                <ProviderIcon provider={currentProvider} size={14} /> Connect {providerLabel(currentProvider)}
               </button>
             )}
-            {ghStatus.connected && product.repoUrl && (
+            {isProviderConnected && product.repoUrl && (
               <button className={`pd-sync-btn ${sbomData.isStale ? 'pd-sync-stale' : 'pd-sync-fresh'}`} onClick={handleSync} disabled={syncing}>
                 {syncing ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
                 {syncing ? 'Syncing...' : sbomData.isStale ? 'Update Available' : 'Sync'}
@@ -588,7 +689,7 @@ export default function ProductDetailPage() {
               </button>
             ) : (
               <>
-                <button className="pd-cancel-btn" onClick={() => { setEditing(false); setEditForm({ name: product.name, description: product.description, version: product.version, productType: product.productType, craCategory: product.craCategory, repoUrl: product.repoUrl, distributionModel: product.distributionModel || '' }); }}>
+                <button className="pd-cancel-btn" onClick={() => { setEditing(false); setEditForm({ name: product.name, description: product.description, version: product.version, productType: product.productType, craCategory: product.craCategory, repoUrl: product.repoUrl, distributionModel: product.distributionModel || '', provider: product.provider || detectProvider(product.repoUrl), instanceUrl: product.instanceUrl || '' }); }}>
                   <X size={14} /> Cancel
                 </button>
                 <button className="btn btn-primary pd-save-btn" onClick={handleSave} disabled={saving || !editForm.name.trim()}>
@@ -614,9 +715,9 @@ export default function ProductDetailPage() {
                   <GitBranch size={12} /> Repository <ExternalLink size={10} />
                 </a>
               )}
-              {ghStatus.connected && (
+              {isProviderConnected && (
                 <span className="pd-github-connected-badge">
-                  <Github size={12} /> {ghStatus.githubUsername}
+                  <ProviderIcon provider={currentProvider} size={12} /> {providerConnection?.username || ghStatus.githubUsername}
                 </span>
               )}
               {ghData.synced && ghData.repo && (
@@ -640,10 +741,43 @@ export default function ProductDetailPage() {
               <label className="form-label">Description</label>
               <textarea className="form-input" rows={2} value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
             </div>
-            <div className="form-group">
-              <label className="form-label">Repository URL</label>
-              <input className="form-input" type="url" placeholder="e.g. https://github.com/your-org/your-repo" value={editForm.repoUrl} onChange={e => setEditForm({ ...editForm, repoUrl: e.target.value })} />
+            <div className="form-row">
+              <div className="form-group" style={{ flex: '0 0 180px' }}>
+                <label className="form-label">Provider</label>
+                <select className="form-input" value={editForm.provider} onChange={e => {
+                  const prov = e.target.value;
+                  const provInfo = availableProviders.find(p => p.id === prov);
+                  setEditForm({ ...editForm, provider: prov, instanceUrl: provInfo?.selfHosted ? editForm.instanceUrl : '' });
+                }}>
+                  {availableProviders.length > 0 ? (
+                    availableProviders.map(p => <option key={p.id} value={p.id}>{p.label}</option>)
+                  ) : (
+                    <>
+                      <option value="github">GitHub</option>
+                      <option value="codeberg">Codeberg</option>
+                      <option value="gitea">Gitea (self-hosted)</option>
+                      <option value="forgejo">Forgejo (self-hosted)</option>
+                      <option value="gitlab">GitLab (self-hosted)</option>
+                    </>
+                  )}
+                </select>
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Repository URL</label>
+                <input className="form-input" type="url" placeholder={(() => {
+                  const prov = availableProviders.find(p => p.id === editForm.provider);
+                  if (prov?.selfHosted) return 'e.g. https://git.mycompany.com/org/repo';
+                  if (editForm.provider === 'codeberg') return 'e.g. https://codeberg.org/org/repo';
+                  return 'e.g. https://github.com/org/repo';
+                })()} value={editForm.repoUrl} onChange={e => setEditForm({ ...editForm, repoUrl: e.target.value })} />
+              </div>
             </div>
+            {availableProviders.find(p => p.id === editForm.provider)?.selfHosted && (
+              <div className="form-group">
+                <label className="form-label">Instance URL <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(base URL of your self-hosted instance)</span></label>
+                <input className="form-input" type="url" placeholder="e.g. https://git.mycompany.com" value={editForm.instanceUrl} onChange={e => setEditForm({ ...editForm, instanceUrl: e.target.value })} />
+              </div>
+            )}
             <div className="form-row">
               <div className="form-group" style={{ flex: 1 }}>
                 <label className="form-label">Version</label>
@@ -698,11 +832,11 @@ export default function ProductDetailPage() {
 
       {/* Tab content */}
       <div className="pd-tab-content">
-        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} syncHistory={syncHistory} syncStats={syncStats} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} />}
+        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} syncHistory={syncHistory} syncStats={syncStats} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} repoProvider={currentProvider} isProviderConnected={isProviderConnected} providerConnection={providerConnection} />}
         {activeTab === 'obligations' && <ObligationsTab product={product} />}
         {activeTab === 'technical-file' && <TechnicalFileTab productId={productId!} techFileData={techFileData} loading={techFileLoading} onUpdate={fetchTechFileData} />}
         {activeTab === 'risk-findings' && <RiskFindingsTab productId={product.id} />}
-        {activeTab === 'dependencies' && <DependenciesTab ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} sbomLoading={sbomLoading} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onRefreshSBOM={handleRefreshSBOM} />}
+        {activeTab === 'dependencies' && <DependenciesTab ghData={ghData} sbomData={sbomData} sbomLoading={sbomLoading} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onRefreshSBOM={handleRefreshSBOM} repoProvider={currentProvider} isProviderConnected={isProviderConnected} />}
       </div>
 
       {/* Delete Product Modal */}
@@ -767,22 +901,26 @@ export default function ProductDetailPage() {
 }
 
 /* ── Overview Tab ─────────────────────────────────────── */
-function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFileProgress, versionHistory, syncHistory, syncStats, onConnect, onSync, syncing, onDisconnect }: {
+function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFileProgress, versionHistory, syncHistory, syncStats, onConnect, onSync, syncing, onDisconnect, repoProvider, isProviderConnected, providerConnection }: {
   product: Product; catInfo: { label: string; color: string; desc: string };
   ghStatus: GitHubStatus; ghData: GitHubData; sbomData: SBOMData;
   techFileProgress: { total: number; completed: number; inProgress: number; notStarted: number };
   versionHistory: VersionEntry[];
   syncHistory: SyncHistoryEntry[];
   syncStats: SyncStats | null;
-  onConnect: () => void; onSync: () => void; syncing: boolean; onDisconnect: () => void;
+  onConnect: (provider?: string) => void; onSync: () => void; syncing: boolean; onDisconnect: (provider?: string) => void;
+  repoProvider: string;
+  isProviderConnected: boolean;
+  providerConnection?: RepoConnection;
 }) {
+  const pLabel = providerLabel(repoProvider);
   return (
     <div className="pd-overview-grid">
       {/* GitHub Repo Card — only if synced */}
       {ghData.synced && ghData.repo && (
         <div className="pd-card pd-card-github">
           <div className="pd-card-header">
-            <Github size={18} />
+            <ProviderIcon provider={repoProvider} size={18} />
             <h3>Repository</h3>
             <a href={ghData.repo.url} target="_blank" rel="noopener noreferrer" className="pd-card-external">
               <ExternalLink size={14} />
@@ -823,12 +961,12 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFilePro
               </div>
             )}
           </div>
-          {/* GitHub account info */}
-          {ghStatus.connected && (
+          {/* Repo account info */}
+          {isProviderConnected && (
             <div className="gh-account-row">
-              {ghStatus.githubAvatarUrl && <img src={ghStatus.githubAvatarUrl} alt="" className="gh-account-avatar" />}
-              <span className="gh-account-name">Connected as {ghStatus.githubUsername}</span>
-              <button className="gh-disconnect-btn" onClick={onDisconnect} title="Disconnect GitHub">
+              {(providerConnection?.avatarUrl || ghStatus.githubAvatarUrl) && <img src={providerConnection?.avatarUrl || ghStatus.githubAvatarUrl || ''} alt="" className="gh-account-avatar" />}
+              <span className="gh-account-name">Connected as {providerConnection?.username || ghStatus.githubUsername}</span>
+              <button className="gh-disconnect-btn" onClick={() => onDisconnect(repoProvider)} title={`Disconnect ${pLabel}`}>
                 <Unplug size={12} />
               </button>
             </div>
@@ -836,29 +974,29 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFilePro
         </div>
       )}
 
-      {/* GitHub Connect Card — if not connected and has repoUrl */}
-      {!ghStatus.connected && product.repoUrl && (
+      {/* Repo Connect Card — if not connected and has repoUrl */}
+      {!isProviderConnected && product.repoUrl && (
         <div className="pd-card pd-card-connect">
           <div className="pd-card-header">
-            <Github size={18} />
-            <h3>Connect GitHub</h3>
+            <ProviderIcon provider={repoProvider} size={18} />
+            <h3>Connect {pLabel}</h3>
           </div>
-          <p className="gh-connect-desc">Connect your GitHub account to sync repository data, discover contributors, and analyse dependencies.</p>
-          <button className="btn btn-primary gh-connect-btn" onClick={onConnect}>
-            <Github size={16} /> Connect GitHub
+          <p className="gh-connect-desc">Connect your {pLabel} account to sync repository data, discover contributors, and analyse dependencies.</p>
+          <button className="btn btn-primary gh-connect-btn" onClick={() => onConnect(repoProvider)}>
+            <ProviderIcon provider={repoProvider} size={16} /> Connect {pLabel}
           </button>
           <p className="gh-connect-note">Read-only access — CRANIS2 will never write to your repositories.</p>
         </div>
       )}
 
-      {/* GitHub Sync Prompt — if connected but not synced */}
-      {ghStatus.connected && !ghData.synced && product.repoUrl && (
+      {/* Repo Sync Prompt — if connected but not synced */}
+      {isProviderConnected && !ghData.synced && product.repoUrl && (
         <div className="pd-card pd-card-connect">
           <div className="pd-card-header">
-            <Github size={18} />
+            <ProviderIcon provider={repoProvider} size={18} />
             <h3>Sync Repository</h3>
           </div>
-          <p className="gh-connect-desc">Your GitHub account is connected. Sync to pull repository metadata, contributors, and language data.</p>
+          <p className="gh-connect-desc">Your {pLabel} account is connected. Sync to pull repository metadata, contributors, and language data.</p>
           <button className="btn btn-primary gh-connect-btn" onClick={onSync} disabled={syncing}>
             {syncing ? <Loader2 size={16} className="spin" /> : <RefreshCw size={16} />}
             {syncing ? 'Syncing...' : 'Sync Now'}
@@ -1584,18 +1722,22 @@ function RiskFindingsTab({ productId }: { productId: string }) {
 }
 
 /* ── Dependencies Tab (with SBOM + Contributors + Languages) ───────── */
-function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, onSync, syncing, onRefreshSBOM }: {
-  ghStatus: GitHubStatus; ghData: GitHubData; sbomData: SBOMData; sbomLoading: boolean;
-  onConnect: () => void; onSync: () => void; syncing: boolean; onRefreshSBOM: () => void;
+function DependenciesTab({ ghData, sbomData, sbomLoading, onConnect, onSync, syncing, onRefreshSBOM, repoProvider, isProviderConnected }: {
+  ghData: GitHubData; sbomData: SBOMData; sbomLoading: boolean;
+  onConnect: (provider?: string) => void; onSync: () => void; syncing: boolean; onRefreshSBOM: () => void;
+  repoProvider: string;
+  isProviderConnected: boolean;
 }) {
-  if (!ghStatus.connected) {
+  const pLabel = providerLabel(repoProvider);
+
+  if (!isProviderConnected) {
     return (
       <div className="pd-placeholder">
-        <Github size={48} strokeWidth={1} />
-        <h3>Connect GitHub to Discover Dependencies</h3>
-        <p>Connect your GitHub account to scan the repository for dependencies, generate SBOMs, and identify contributors. The CRA requires a machine-readable SBOM (Article 13(11)).</p>
-        <button className="btn btn-primary" onClick={onConnect}>
-          <Github size={18} /> Connect GitHub
+        <ProviderIcon provider={repoProvider} size={48} />
+        <h3>Connect {pLabel} to Discover Dependencies</h3>
+        <p>Connect your {pLabel} account to scan the repository for dependencies, generate SBOMs, and identify contributors. The CRA requires a machine-readable SBOM (Article 13(11)).</p>
+        <button className="btn btn-primary" onClick={() => onConnect(repoProvider)}>
+          <ProviderIcon provider={repoProvider} size={18} /> Connect {pLabel}
         </button>
       </div>
     );
@@ -1606,7 +1748,7 @@ function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, o
       <div className="pd-placeholder">
         <RefreshCw size={48} strokeWidth={1} />
         <h3>Sync Repository</h3>
-        <p>Your GitHub account is connected. Sync the repository to generate the SBOM, discover languages, and identify contributors.</p>
+        <p>Your {pLabel} account is connected. Sync the repository to generate the SBOM, discover languages, and identify contributors.</p>
         <button className="btn btn-primary" onClick={onSync} disabled={syncing}>
           {syncing ? <Loader2 size={18} className="spin" /> : <RefreshCw size={18} />}
           {syncing ? 'Syncing...' : 'Sync Repository'}
@@ -1791,10 +1933,19 @@ function DependenciesTab({ ghStatus, ghData, sbomData, sbomLoading, onConnect, o
             <Package size={18} />
             <h3>No SBOM Available</h3>
           </div>
-          <p className="gh-connect-desc">No dependency data was found for this repository. Ensure the repository contains dependency manifests (package.json, requirements.txt, go.mod, etc.).</p>
+          <p className="gh-connect-desc">
+            No dependency data was found for this repository. Ensure the repository contains a lockfile
+            (package-lock.json, yarn.lock, Pipfile.lock, poetry.lock, go.sum, Cargo.lock, or Gemfile.lock).
+          </p>
+          {repoProvider !== 'github' && (
+            <div className="pd-codeberg-sbom-note">
+              <Info size={14} />
+              <span>{providerLabel(repoProvider)} repos use lockfile-based SBOM generation. If no lockfile is found, source imports will be scanned automatically. Push a lockfile for best results.</span>
+            </div>
+          )}
           <button className="pd-sync-btn" onClick={onRefreshSBOM} disabled={sbomLoading}>
             {sbomLoading ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
-            Try Again
+            {repoProvider !== 'github' ? 'Generate SBOM' : 'Try Again'}
           </button>
         </div>
       )}

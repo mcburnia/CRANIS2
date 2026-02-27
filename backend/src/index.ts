@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { initDb } from './db/pool.js';
-import { initGraph, closeDriver } from './db/neo4j.js';
+import { initGraph, getDriver, closeDriver } from './db/neo4j.js';
 import authRoutes from './routes/auth.js';
 import orgRoutes from './routes/org.js';
 import auditRoutes from './routes/audit.js';
@@ -44,7 +44,7 @@ app.use(express.json({
 
 // Global billing gate — blocks write operations for restricted accounts
 // Skips: auth, billing, admin, health, webhooks, and all GET/OPTIONS requests
-const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/dev'];
+const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/dev'];
 app.use('/api', (req, res, next) => {
   // Only gate write operations
   if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
@@ -66,6 +66,7 @@ app.use('/api/audit-log', auditRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/dev', devRoutes);  // DEV ONLY — REMOVE BEFORE PRODUCTION
 app.use('/api/github', githubRoutes);
+app.use('/api/repo', githubRoutes);  // Unified repo routes (same router, canonical path)
 app.use('/api/technical-file', technicalFileRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/stakeholders', stakeholderRoutes);
@@ -98,6 +99,24 @@ async function start() {
   try {
     await initDb();
     await initGraph();
+
+    // One-time Neo4j migration: GitHubRepo → Repository, GITHUB_CONNECTED → REPO_CONNECTED
+    const migrationSession = getDriver().session();
+    try {
+      const labelCheck = await migrationSession.run(`MATCH (r:GitHubRepo) RETURN count(r) as cnt`);
+      const oldCount = labelCheck.records[0]?.get('cnt')?.toNumber?.() ?? labelCheck.records[0]?.get('cnt') ?? 0;
+      if (oldCount > 0) {
+        console.log(`[MIGRATION] Relabeling ${oldCount} GitHubRepo nodes → Repository`);
+        await migrationSession.run(`MATCH (r:GitHubRepo) SET r:Repository, r.provider = 'github' REMOVE r:GitHubRepo`);
+        await migrationSession.run(`MATCH (u:User)-[old:GITHUB_CONNECTED]->(r:Repository) CREATE (u)-[:REPO_CONNECTED]->(r) DELETE old`);
+        console.log('[MIGRATION] Neo4j label migration complete');
+      }
+    } catch (migErr: any) {
+      console.error('[MIGRATION] Neo4j label migration error (non-fatal):', migErr.message);
+    } finally {
+      await migrationSession.close();
+    }
+
     app.listen(PORT, () => {
       console.log(`CRANIS2 backend listening on port ${PORT}`);
       startScheduler();

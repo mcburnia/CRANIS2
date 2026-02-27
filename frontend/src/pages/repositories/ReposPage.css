@@ -1,9 +1,9 @@
 .rp-stats { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-.rp-filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+.rp-filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .rp-filter-btn {
   padding: 0.4rem 1rem; border-radius: 6px; border: 1px solid var(--border);
   background: var(--surface); color: var(--muted); cursor: pointer; font-size: 0.85rem;
-  transition: all 0.15s ease;
+  transition: all 0.15s ease; display: flex; align-items: center; gap: 0.35rem;
 }
 .rp-filter-btn:hover { border-color: var(--accent); color: var(--text); }
 .rp-filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -26,6 +26,19 @@
 .rp-badge.public { background: rgba(76, 175, 80, 0.15); color: var(--green); }
 .rp-badge.private { background: rgba(255, 152, 0, 0.15); color: var(--amber); }
 .rp-badge.disconnected { background: rgba(255, 255, 255, 0.08); color: var(--muted); }
+
+/* Provider badges */
+.rp-badge-provider {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.65rem; padding: 0.15rem 0.5rem; border-radius: 4px;
+  font-weight: 600; text-transform: uppercase;
+}
+.rp-badge-github {
+  background: rgba(255, 255, 255, 0.08); color: var(--text);
+}
+.rp-badge-codeberg {
+  background: rgba(45, 136, 255, 0.12); color: #5b9eff;
+}
 
 .rp-repo-details {
   padding: 0 1.25rem 1rem; display: flex; gap: 2rem; flex-wrap: wrap;

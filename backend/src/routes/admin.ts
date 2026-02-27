@@ -62,7 +62,7 @@ router.get('/dashboard', requirePlatformAdmin, async (req: Request, res: Respons
 
       const prodResult = await session.run(`
         MATCH (p:Product)
-        OPTIONAL MATCH (p)-[:HAS_REPO]->(r:GitHubRepo)
+        OPTIONAL MATCH (p)-[:HAS_REPO]->(r:Repository)
         RETURN p.craCategory AS category, r IS NOT NULL AS hasRepo, count(p) AS cnt
       `);
       for (const record of prodResult.records) {
@@ -238,7 +238,7 @@ router.get('/orgs', requirePlatformAdmin, async (req: Request, res: Response) =>
       const result = await session.run(`
         MATCH (o:Organisation)
         OPTIONAL MATCH (o)<-[:BELONGS_TO]-(p:Product)
-        OPTIONAL MATCH (p)-[:HAS_REPO]->(r:GitHubRepo)
+        OPTIONAL MATCH (p)-[:HAS_REPO]->(r:Repository)
         RETURN o.id AS id, o.name AS name, o.country AS country, o.craRole AS craRole,
                o.industry AS industry, o.companySize AS companySize, o.createdAt AS createdAt,
                count(DISTINCT p) AS productCount, count(DISTINCT r) AS repoCount
@@ -377,7 +377,7 @@ router.get('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Respo
       // Get products with repo + contributor + dependency counts
       const prodResult = await session.run(
         `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product)
-         OPTIONAL MATCH (p)-[:HAS_REPO]->(r:GitHubRepo)
+         OPTIONAL MATCH (p)-[:HAS_REPO]->(r:Repository)
          OPTIONAL MATCH (r)-[:HAS_CONTRIBUTOR]->(c:Contributor)
          OPTIONAL MATCH (p)-[:DEPENDS_ON]->(d:Dependency)
          RETURN p.id AS id, p.name AS name, p.craCategory AS category,
@@ -759,7 +759,7 @@ router.delete('/users/:userId', requirePlatformAdmin, async (req: Request, res: 
     await pool.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
     await pool.query('DELETE FROM user_events WHERE user_id = $1', [userId]);
     await pool.query('DELETE FROM feedback WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM github_connections WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM repo_connections WHERE user_id = $1', [userId]);
     await pool.query('DELETE FROM users WHERE id = $1', [userId]);
 
     const { recordEvent, extractRequestData } = await import('../services/telemetry.js');
@@ -985,7 +985,7 @@ router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) 
         (SELECT COUNT(*) FROM technical_file_sections) AS tech_sections,
         (SELECT COUNT(*) FROM obligations) AS obligations,
         (SELECT COUNT(*) FROM stakeholders) AS stakeholders,
-        (SELECT COUNT(*) FROM github_connections) AS github_connections,
+        (SELECT COUNT(*) FROM repo_connections) AS repo_connections,
         (SELECT COUNT(*) FROM sync_history) AS sync_records,
         (SELECT COUNT(*) FROM vuln_db_advisories) AS vuln_db_advisories,
         (SELECT COUNT(*) FROM vuln_db_nvd) AS vuln_db_nvd

@@ -1,5 +1,5 @@
 import { getDriver } from '../db/neo4j.js';
-import { githubGet, parseRepoUrl } from '../services/github.js';
+import * as repoProvider from '../services/repo-provider.js';
 
 export interface LockfileResult {
   resolved: number;
@@ -26,10 +26,10 @@ export async function resolveLockfileVersions(
 
   const neo4jSession = getDriver().session();
   try {
-    // 1. Get repo URL from Neo4j
+    // 1. Get repo URL + default branch from Neo4j
     const repoResult = await neo4jSession.run(
-      `MATCH (p:Product {id: $productId})-[:HAS_REPO]->(r:GitHubRepo)
-       RETURN r.url AS url`,
+      `MATCH (p:Product {id: $productId})-[:HAS_REPO]->(r:Repository)
+       RETURN r.url AS url, r.defaultBranch AS defaultBranch, r.provider AS provider`,
       { productId }
     );
     if (repoResult.records.length === 0) {
@@ -38,7 +38,9 @@ export async function resolveLockfileVersions(
     }
 
     const repoUrl = repoResult.records[0].get('url');
-    const parsed = parseRepoUrl(repoUrl);
+    const defaultBranch = repoResult.records[0].get('defaultBranch') || 'main';
+    const detectedProvider = (repoResult.records[0].get('provider') as repoProvider.RepoProvider) || repoProvider.detectProvider(repoUrl) || 'github';
+    const parsed = repoProvider.parseRepoUrl(detectedProvider, repoUrl);
     if (!parsed) {
       console.log('[LOCKFILE] Could not parse repo URL:', repoUrl);
       return result;
@@ -60,24 +62,20 @@ export async function resolveLockfileVersions(
 
     console.log(`[LOCKFILE] Found ${result.totalNoVersion} deps without versions, fetching package-lock.json...`);
 
-    // 3. Fetch package-lock.json from GitHub Contents API
+    // 3. Fetch package-lock.json via provider-agnostic file API
     let lockfileContent: string;
     try {
-      const contentsResponse = await githubGet<{
-        content: string;
-        encoding: string;
-      }>(`/repos/${parsed.owner}/${parsed.repo}/contents/package-lock.json`, ghToken);
+      const content = await repoProvider.getFileContent(
+        detectedProvider, ghToken, parsed.owner, parsed.repo, defaultBranch, 'package-lock.json'
+      );
 
-      if (!contentsResponse || !contentsResponse.content) {
+      if (!content) {
         console.log('[LOCKFILE] No package-lock.json found in repo');
         return result;
       }
 
       result.lockfileFound = true;
-
-      // GitHub returns base64-encoded content (may have newlines)
-      const cleanBase64 = contentsResponse.content.replace(/\n/g, '');
-      lockfileContent = Buffer.from(cleanBase64, 'base64').toString('utf-8');
+      lockfileContent = content;
     } catch (err: any) {
       if (err.message?.includes('404')) {
         console.log('[LOCKFILE] No package-lock.json in repo (404)');

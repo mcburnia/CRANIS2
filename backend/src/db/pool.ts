@@ -54,19 +54,63 @@ export async function initDb() {
       );
     `);
 
-    // GitHub connections table — encrypted OAuth tokens
+    // Repo connections — encrypted OAuth tokens (renamed from github_connections)
+    // Migration: rename table if it still has the old name
     await client.query(`
-      CREATE TABLE IF NOT EXISTS github_connections (
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'github_connections') THEN
+          ALTER TABLE github_connections RENAME TO repo_connections;
+        END IF;
+      END $$;
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS repo_connections (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID REFERENCES users(id) NOT NULL,
-        github_user_id BIGINT NOT NULL,
-        github_username VARCHAR(255) NOT NULL,
+        provider VARCHAR(20) NOT NULL DEFAULT 'github',
+        provider_user_id VARCHAR(255),
+        provider_username VARCHAR(255),
+        provider_avatar_url TEXT,
+        github_user_id BIGINT,
+        github_username VARCHAR(255),
         github_avatar_url TEXT,
         access_token_encrypted TEXT NOT NULL,
         token_scope VARCHAR(255),
-        connected_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE(user_id)
+        connected_at TIMESTAMPTZ DEFAULT NOW()
       );
+    `);
+    // Migration: add provider columns and migrate data
+    await client.query(`
+      DO $$ BEGIN
+        ALTER TABLE repo_connections ADD COLUMN IF NOT EXISTS provider VARCHAR(20) DEFAULT 'github';
+        ALTER TABLE repo_connections ADD COLUMN IF NOT EXISTS provider_user_id VARCHAR(255);
+        ALTER TABLE repo_connections ADD COLUMN IF NOT EXISTS provider_username VARCHAR(255);
+        ALTER TABLE repo_connections ADD COLUMN IF NOT EXISTS provider_avatar_url TEXT;
+        ALTER TABLE repo_connections ADD COLUMN IF NOT EXISTS instance_url VARCHAR(500);
+      END $$;
+    `);
+    await client.query(`
+      UPDATE repo_connections SET
+        provider = 'github',
+        provider_user_id = github_user_id::text,
+        provider_username = github_username,
+        provider_avatar_url = github_avatar_url
+      WHERE provider_user_id IS NULL AND github_user_id IS NOT NULL;
+    `);
+    // Update constraint: was UNIQUE(user_id), now UNIQUE(user_id, provider)
+    await client.query(`
+      DO $$ BEGIN
+        ALTER TABLE repo_connections DROP CONSTRAINT IF EXISTS github_connections_user_id_key;
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'repo_connections_user_provider_unique') THEN
+          ALTER TABLE repo_connections ADD CONSTRAINT repo_connections_user_provider_unique UNIQUE(user_id, provider);
+        END IF;
+      END $$;
+    `);
+    // Allow NULL in legacy github_* columns (Codeberg connections don't use them)
+    await client.query(`
+      ALTER TABLE repo_connections ALTER COLUMN github_user_id DROP NOT NULL;
+      ALTER TABLE repo_connections ALTER COLUMN github_username DROP NOT NULL;
+      ALTER TABLE repo_connections ALTER COLUMN github_avatar_url DROP NOT NULL;
     `);
 
 
@@ -721,6 +765,9 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     // Add forgejo_customer_username column to existing escrow_configs (migration for existing installs)
     await client.query(`ALTER TABLE escrow_configs ADD COLUMN IF NOT EXISTS forgejo_customer_username VARCHAR(255)`);
     await client.query(`ALTER TABLE escrow_users ADD COLUMN IF NOT EXISTS agent_reference VARCHAR(255)`);
+
+    // Track SBOM source (api = GitHub dependency graph, lockfile:filename = generated from lockfile)
+    await client.query(`ALTER TABLE product_sboms ADD COLUMN IF NOT EXISTS sbom_source VARCHAR(50) DEFAULT 'api'`);
   } finally {
     client.release();
   }

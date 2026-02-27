@@ -45,7 +45,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
     try {
       const productResult = await session.run(
         `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product)
-         OPTIONAL MATCH (p)-[:HAS_REPO]->(r:GitHubRepo)
+         OPTIONAL MATCH (p)-[:HAS_REPO]->(r:Repository)
          OPTIONAL MATCH (p)-[:HAS_SBOM]->(s:SBOM)
          OPTIONAL MATCH (r)-[:HAS_CONTRIBUTOR]->(c:Contributor)
          RETURN p.id AS id, p.name AS name, p.craCategory AS category,
@@ -67,7 +67,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       }));
 
       const contribResult = await session.run(
-        `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product)-[:HAS_REPO]->(r:GitHubRepo)-[:HAS_CONTRIBUTOR]->(c:Contributor)
+        `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product)-[:HAS_REPO]->(r:Repository)-[:HAS_CONTRIBUTOR]->(c:Contributor)
          RETURN count(DISTINCT c) AS total`,
         { orgId }
       );

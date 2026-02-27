@@ -1,9 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { GitBranch, Star, GitFork, AlertCircle, Users, ExternalLink } from 'lucide-react';
+import { GitBranch, Star, GitFork, AlertCircle, Users, ExternalLink, Github } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import './ReposPage.css';
+
+// Codeberg SVG icon (not in lucide)
+function CodebergIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2L2 19.5h20L12 2z" />
+      <path d="M12 8v6" />
+      <circle cx="12" cy="17" r="1" fill="currentColor" />
+    </svg>
+  );
+}
 
 interface Repo {
   fullName: string;
@@ -23,6 +34,7 @@ interface Repo {
   lastSyncDuration?: number;
   lastSyncAt?: string;
   lastSyncStatus?: string;
+  provider?: string;
 }
 
 interface ProductRepo {
@@ -37,7 +49,7 @@ interface OverviewData {
   totals: { totalProducts: number; connectedRepos: number; disconnectedProducts: number; totalOpenIssues: number };
 }
 
-type Filter = 'all' | 'connected' | 'disconnected';
+type Filter = 'all' | 'connected' | 'disconnected' | 'github' | 'codeberg';
 
 function formatTimeAgo(dateStr: string | null): string {
   if (!dateStr) return 'Never';
@@ -59,6 +71,14 @@ const LANG_COLORS: Record<string, string> = {
   Ruby: '#701516', PHP: '#4F5D95', C: '#555555', 'C++': '#f34b7d',
   'C#': '#178600', Shell: '#89e051', Dockerfile: '#384d54',
 };
+
+function detectProvider(url: string): string {
+  try {
+    const hostname = new URL(url.includes('://') ? url : `https://${url}`).hostname;
+    if (hostname === 'codeberg.org') return 'codeberg';
+  } catch { /* ignore */ }
+  return 'github';
+}
 
 export default function ReposPage() {
   const [data, setData] = useState<OverviewData | null>(null);
@@ -84,8 +104,14 @@ export default function ReposPage() {
   const filtered = products.filter(p => {
     if (filter === 'connected') return p.repo !== null;
     if (filter === 'disconnected') return p.repo === null;
+    if (filter === 'github') return p.repo !== null && (p.repo.provider || detectProvider(p.repo.url)) === 'github';
+    if (filter === 'codeberg') return p.repo !== null && (p.repo.provider || detectProvider(p.repo.url)) === 'codeberg';
     return true;
   });
+
+  // Count providers for filter badges
+  const githubCount = products.filter(p => p.repo && (p.repo.provider || detectProvider(p.repo.url)) === 'github').length;
+  const codebergCount = products.filter(p => p.repo && (p.repo.provider || detectProvider(p.repo.url)) === 'codeberg').length;
 
   return (
     <>
@@ -98,77 +124,95 @@ export default function ReposPage() {
       </div>
 
       <div className="rp-filter-bar">
-        {(['all', 'connected', 'disconnected'] as Filter[]).map(f => (
-          <button key={f} className={`rp-filter-btn ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-            {f === 'all' ? 'All' : f === 'connected' ? 'Connected' : 'Not Connected'}
+        {([
+          { key: 'all' as Filter, label: 'All' },
+          { key: 'connected' as Filter, label: 'Connected' },
+          { key: 'disconnected' as Filter, label: 'Not Connected' },
+          { key: 'github' as Filter, label: `GitHub${githubCount > 0 ? ` (${githubCount})` : ''}` },
+          { key: 'codeberg' as Filter, label: `Codeberg${codebergCount > 0 ? ` (${codebergCount})` : ''}` },
+        ]).map(f => (
+          <button key={f.key} className={`rp-filter-btn ${filter === f.key ? 'active' : ''}`} onClick={() => setFilter(f.key)}>
+            {f.key === 'github' && <Github size={13} />}
+            {f.key === 'codeberg' && <CodebergIcon size={13} />}
+            {f.label}
           </button>
         ))}
       </div>
 
       {filtered.length === 0 && <p className="rp-empty">No products match this filter.</p>}
 
-      {filtered.map(product => (
-        <div key={product.id} className="rp-product-card">
-          <div className="rp-card-header">
-            <h3><Link to={`/products/${product.id}?tab=overview`}>{product.name}</Link></h3>
+      {filtered.map(product => {
+        const repoProvider = product.repo ? (product.repo.provider || detectProvider(product.repo.url)) : null;
+
+        return (
+          <div key={product.id} className="rp-product-card">
+            <div className="rp-card-header">
+              <h3><Link to={`/products/${product.id}?tab=overview`}>{product.name}</Link></h3>
+              {product.repo ? (
+                <>
+                  <span className={`rp-badge rp-badge-provider rp-badge-${repoProvider}`}>
+                    {repoProvider === 'codeberg' ? <CodebergIcon size={11} /> : <Github size={11} />}
+                    {repoProvider === 'codeberg' ? 'Codeberg' : 'GitHub'}
+                  </span>
+                  <span className={`rp-badge ${product.repo.isPrivate ? 'private' : 'public'}`}>
+                    {product.repo.visibility}
+                  </span>
+                </>
+              ) : (
+                <span className="rp-badge disconnected">No Repo</span>
+              )}
+              {product.repo && (
+                <a href={product.repo.url} target="_blank" rel="noopener noreferrer"
+                   style={{ color: 'var(--muted)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: 'auto' }}>
+                  {product.repo.fullName} <ExternalLink size={12} />
+                </a>
+              )}
+            </div>
+
             {product.repo ? (
-              <span className={`rp-badge ${product.repo.isPrivate ? 'private' : 'public'}`}>
-                {product.repo.visibility}
-              </span>
+              <>
+                {product.repo.description && (
+                  <div className="rp-description">{product.repo.description}</div>
+                )}
+                <div className="rp-repo-details">
+                  {product.repo.language && (
+                    <div className="rp-repo-detail">
+                      <span className="rp-lang-dot" style={{ background: LANG_COLORS[product.repo.language] || '#888' }} />
+                      <span className="value">{product.repo.language}</span>
+                    </div>
+                  )}
+                  <div className="rp-repo-detail">
+                    <Star size={14} /> <span className="value">{product.repo.stars}</span>
+                  </div>
+                  <div className="rp-repo-detail">
+                    <GitFork size={14} /> <span className="value">{product.repo.forks}</span>
+                  </div>
+                  <div className="rp-repo-detail">
+                    <AlertCircle size={14} /> <span className="value">{product.repo.openIssues}</span> <span className="label">issues</span>
+                  </div>
+                  <div className="rp-repo-detail">
+                    <Users size={14} /> <span className="value">{product.repo.contributorCount}</span> <span className="label">contributors</span>
+                  </div>
+                  <div className="rp-repo-detail">
+                    <GitBranch size={14} /> <span className="value">{product.repo.defaultBranch}</span>
+                  </div>
+                </div>
+                <div className="rp-repo-meta">
+                  <span>Last push: {formatTimeAgo(product.repo.lastPush)}</span>
+                  <span>Last sync: {formatTimeAgo(product.repo.syncedAt)}</span>
+                  {product.repo.lastSyncDuration != null && (
+                    <span>Sync duration: {product.repo.lastSyncDuration.toFixed(1)}s</span>
+                  )}
+                </div>
+              </>
             ) : (
-              <span className="rp-badge disconnected">No Repo</span>
-            )}
-            {product.repo && (
-              <a href={product.repo.url} target="_blank" rel="noopener noreferrer" 
-                 style={{ color: 'var(--muted)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: 'auto' }}>
-                {product.repo.fullName} <ExternalLink size={12} />
-              </a>
+              <div className="rp-disconnected">
+                No repository connected. <Link to={`/products/${product.id}`}>Go to product</Link> to connect a GitHub or Codeberg repository.
+              </div>
             )}
           </div>
-
-          {product.repo ? (
-            <>
-              {product.repo.description && (
-                <div className="rp-description">{product.repo.description}</div>
-              )}
-              <div className="rp-repo-details">
-                {product.repo.language && (
-                  <div className="rp-repo-detail">
-                    <span className="rp-lang-dot" style={{ background: LANG_COLORS[product.repo.language] || '#888' }} />
-                    <span className="value">{product.repo.language}</span>
-                  </div>
-                )}
-                <div className="rp-repo-detail">
-                  <Star size={14} /> <span className="value">{product.repo.stars}</span>
-                </div>
-                <div className="rp-repo-detail">
-                  <GitFork size={14} /> <span className="value">{product.repo.forks}</span>
-                </div>
-                <div className="rp-repo-detail">
-                  <AlertCircle size={14} /> <span className="value">{product.repo.openIssues}</span> <span className="label">issues</span>
-                </div>
-                <div className="rp-repo-detail">
-                  <Users size={14} /> <span className="value">{product.repo.contributorCount}</span> <span className="label">contributors</span>
-                </div>
-                <div className="rp-repo-detail">
-                  <GitBranch size={14} /> <span className="value">{product.repo.defaultBranch}</span>
-                </div>
-              </div>
-              <div className="rp-repo-meta">
-                <span>Last push: {formatTimeAgo(product.repo.lastPush)}</span>
-                <span>Last sync: {formatTimeAgo(product.repo.syncedAt)}</span>
-                {product.repo.lastSyncDuration != null && (
-                  <span>Sync duration: {product.repo.lastSyncDuration.toFixed(1)}s</span>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="rp-disconnected">
-              No repository connected. <Link to={`/products/${product.id}`}>Go to product</Link> to connect a GitHub repository.
-            </div>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 }

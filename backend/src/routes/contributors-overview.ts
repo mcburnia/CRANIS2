@@ -39,7 +39,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
     try {
       const result = await session.run(
         `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product)
-         OPTIONAL MATCH (p)-[:HAS_REPO]->(r:GitHubRepo)
+         OPTIONAL MATCH (p)-[:HAS_REPO]->(r:Repository)
          OPTIONAL MATCH (r)-[:HAS_CONTRIBUTOR]->(c:Contributor)
          RETURN p.id AS id, p.name AS name, p.craCategory AS craCategory,
                 r.fullName AS repoFullName,

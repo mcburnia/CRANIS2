@@ -11,26 +11,32 @@ import { enrichDependencyLicenses } from '../services/license-enrichment.js';
 import { scanProductLicenses } from '../services/license-scanner.js';
 import { createSnapshot } from '../services/ip-proof.js';
 import { resolveLockfileVersions } from '../services/lockfile-resolver.js';
+import { generateSBOMFromLockfiles } from '../services/lockfile-sbom-generator.js';
+import { generateSBOMFromImports } from '../services/import-scanner.js';
+import { PROVIDER_REGISTRY } from '../services/repo-provider.js';
 import {
-  exchangeCodeForToken,
-  getAuthenticatedUser,
-  getRepo,
-  getContributors,
-  getLanguages,
-  getSBOM,
-  getReleases,
-  getTags,
-  parseRepoUrl,
+  exchangeCodeForToken as githubExchangeCodeForToken,
+  getAuthenticatedUser as githubGetAuthenticatedUser,
+  getRepo as githubGetRepo,
+  getContributors as githubGetContributors,
+  getLanguages as githubGetLanguages,
+  getSBOM as githubGetSBOM,
+  getReleases as githubGetReleases,
+  getTags as githubGetTags,
+  parseRepoUrl as githubParseRepoUrl,
 } from '../services/github.js';
 import type { GitHubSBOMResponse, SpdxPackage, GitHubRelease, GitHubTag } from '../services/github.js';
+import * as provider from '../services/repo-provider.js';
+import type { RepoProvider, NormalisedRelease } from '../services/repo-provider.js';
+import { createRepo as codebergCreateRepo } from '../services/codeberg.js';
 
 const router = Router();
 
 // In-memory stores with automatic cleanup
 // OAuth state tokens for CSRF protection
-const pendingStates = new Map<string, { userId: string; expiresAt: number }>();
+const pendingStates = new Map<string, { userId: string; expiresAt: number; provider: RepoProvider }>();
 // Connection tokens — short-lived, single-use tokens for initiating OAuth
-const connectionTokens = new Map<string, { userId: string; expiresAt: number }>();
+const connectionTokens = new Map<string, { userId: string; expiresAt: number; provider: RepoProvider }>();
 
 // Clean up expired tokens every 5 minutes
 setInterval(() => {
@@ -59,18 +65,31 @@ async function requireAuth(req: Request, res: Response, next: Function) {
   }
 }
 
+// ── GET /providers — available providers for frontend dropdown ────
+router.get('/providers', requireAuth, (_req: Request, res: Response) => {
+  const providers = PROVIDER_REGISTRY.map(p => ({
+    id: p.id,
+    label: p.label,
+    selfHosted: p.selfHosted,
+    oauthSupported: p.oauthSupported,
+    supportsApiSbom: p.supportsApiSbom,
+  }));
+  res.json(providers);
+});
+
 // Helper: get user's org_id
 async function getUserOrgId(userId: string): Promise<string | null> {
   const result = await pool.query('SELECT org_id FROM users WHERE id = $1', [userId]);
   return result.rows[0]?.org_id || null;
 }
 
-// Helper: get user's decrypted GitHub token
-export async function getUserGitHubToken(userId: string): Promise<string | null> {
-  const result = await pool.query(
-    'SELECT access_token_encrypted FROM github_connections WHERE user_id = $1',
-    [userId]
-  );
+// Helper: get user's decrypted repo token for a specific provider
+export async function getUserRepoToken(userId: string, repoProvider?: RepoProvider): Promise<string | null> {
+  const query = repoProvider
+    ? 'SELECT access_token_encrypted FROM repo_connections WHERE user_id = $1 AND provider = $2'
+    : 'SELECT access_token_encrypted FROM repo_connections WHERE user_id = $1';
+  const params = repoProvider ? [userId, repoProvider] : [userId];
+  const result = await pool.query(query, params);
   if (result.rows.length === 0) return null;
   try {
     return decrypt(result.rows[0].access_token_encrypted);
@@ -78,6 +97,8 @@ export async function getUserGitHubToken(userId: string): Promise<string | null>
     return null;
   }
 }
+// Backward compat alias
+export const getUserGitHubToken = getUserRepoToken;
 
 /**
  * Parse a purl (Package URL) or construct one from SPDX package data.
@@ -132,7 +153,8 @@ export function extractPackageInfo(pkg: SpdxPackage): {
 async function storeSBOM(
   productId: string,
   sbomResponse: GitHubSBOMResponse,
-  neo4jSession: any
+  neo4jSession: any,
+  sbomSource: string = 'api'
 ): Promise<{ packageCount: number; packages: ReturnType<typeof extractPackageInfo>[] }> {
   const sbom = sbomResponse.sbom;
   // Filter out the root package (the repo itself)
@@ -141,12 +163,12 @@ async function storeSBOM(
 
   // Store full SPDX JSON in Postgres
   await pool.query(
-    `INSERT INTO product_sboms (product_id, spdx_json, spdx_version, package_count, is_stale, synced_at)
-     VALUES ($1, $2, $3, $4, FALSE, NOW())
+    `INSERT INTO product_sboms (product_id, spdx_json, spdx_version, package_count, is_stale, synced_at, sbom_source)
+     VALUES ($1, $2, $3, $4, FALSE, NOW(), $5)
      ON CONFLICT (product_id) DO UPDATE SET
        spdx_json = $2, spdx_version = $3, package_count = $4,
-       is_stale = FALSE, synced_at = NOW()`,
-    [productId, JSON.stringify(sbomResponse), sbom.spdxVersion, packages.length]
+       is_stale = FALSE, synced_at = NOW(), sbom_source = $5`,
+    [productId, JSON.stringify(sbomResponse), sbom.spdxVersion, packages.length, sbomSource]
   );
 
   // Create SBOM node in Neo4j
@@ -252,10 +274,22 @@ async function storeSBOM(
 // ─── POST /api/github/connect-init ──────────────────────────────
 router.post('/connect-init', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
+  const repoProvider = (req.body?.provider || 'github') as RepoProvider;
 
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  if (!clientId || clientId === 'PLACEHOLDER') {
-    res.status(500).json({ error: 'GitHub OAuth not configured. Please set GITHUB_CLIENT_ID in .env' });
+  if (repoProvider === 'github') {
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    if (!clientId || clientId === 'PLACEHOLDER') {
+      res.status(500).json({ error: 'GitHub OAuth not configured. Please set GITHUB_CLIENT_ID in .env' });
+      return;
+    }
+  } else if (repoProvider === 'codeberg') {
+    const clientId = process.env.CODEBERG_CLIENT_ID;
+    if (!clientId) {
+      res.status(500).json({ error: 'Codeberg OAuth not configured. Please set CODEBERG_CLIENT_ID in .env' });
+      return;
+    }
+  } else {
+    res.status(400).json({ error: 'Unsupported provider. Use "github" or "codeberg".' });
     return;
   }
 
@@ -263,103 +297,132 @@ router.post('/connect-init', requireAuth, async (req: Request, res: Response) =>
   connectionTokens.set(connectionToken, {
     userId,
     expiresAt: Date.now() + 10 * 60 * 1000,
+    provider: repoProvider,
   });
 
   res.json({ connectionToken });
 });
 
 // ─── GET /api/github/connect ────────────────────────────────────
-router.get('/connect', async (req: Request, res: Response) => {
+// Supports both /connect?connectionToken=... (legacy GitHub) and /connect/{:provider}connectionToken=...
+router.get('/connect/{:provider}', async (req: Request, res: Response) => {
   const { connectionToken } = req.query;
   const frontendUrl = process.env.FRONTEND_URL || 'http://192.168.1.107:3002';
 
   if (!connectionToken || typeof connectionToken !== 'string') {
-    res.status(400).send(renderOAuthResultPage(frontendUrl, false, 'Missing connection token. Please try again.'));
+    res.status(400).send(renderOAuthResultPage(frontendUrl, false, 'Missing connection token. Please try again.', 'github'));
     return;
   }
 
   const pending = connectionTokens.get(connectionToken);
   if (!pending || pending.expiresAt < Date.now()) {
     connectionTokens.delete(connectionToken);
-    res.status(401).send(renderOAuthResultPage(frontendUrl, false, 'Connection token expired. Please close this window and try again.'));
+    res.status(401).send(renderOAuthResultPage(frontendUrl, false, 'Connection token expired. Please close this window and try again.', 'github'));
     return;
   }
   connectionTokens.delete(connectionToken);
 
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  if (!clientId) {
-    res.status(500).send(renderOAuthResultPage(frontendUrl, false, 'GitHub OAuth not configured.'));
-    return;
-  }
+  // Provider from URL param overrides token's provider (for backward compat)
+  const repoProvider: RepoProvider = (req.params.provider as RepoProvider) || pending.provider || 'github';
 
   const state = crypto.randomBytes(32).toString('hex');
   pendingStates.set(state, {
     userId: pending.userId,
     expiresAt: Date.now() + 10 * 60 * 1000,
+    provider: repoProvider,
   });
 
-  const redirectUri = `${frontendUrl}/api/github/callback`;
-  const scope = 'read:user,repo';
-
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=${scope}&state=${state}&redirect_uri=${encodeURIComponent(redirectUri)}`;
-
-  res.redirect(githubAuthUrl);
+  if (repoProvider === 'codeberg') {
+    const clientId = process.env.CODEBERG_CLIENT_ID;
+    if (!clientId) {
+      res.status(500).send(renderOAuthResultPage(frontendUrl, false, 'Codeberg OAuth not configured.', 'codeberg'));
+      return;
+    }
+    const redirectUri = `${frontendUrl}/api/repo/callback/codeberg`;
+    const codebergAuthUrl = `https://codeberg.org/login/oauth/authorize?client_id=${clientId}&response_type=code&state=${state}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    res.redirect(codebergAuthUrl);
+  } else {
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    if (!clientId) {
+      res.status(500).send(renderOAuthResultPage(frontendUrl, false, 'GitHub OAuth not configured.', 'github'));
+      return;
+    }
+    const redirectUri = `${frontendUrl}/api/github/callback`;
+    const scope = 'read:user,repo';
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=${scope}&state=${state}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    res.redirect(githubAuthUrl);
+  }
 });
 
-// ─── GET /api/github/callback ───────────────────────────────────
-router.get('/callback', async (req: Request, res: Response) => {
+// ─── GET /api/github/callback/{:provider} ────────────────────────
+router.get('/callback/{:provider}', async (req: Request, res: Response) => {
   const { code, state } = req.query;
   const frontendUrl = process.env.FRONTEND_URL || 'http://192.168.1.107:3002';
 
   if (!code || !state || typeof code !== 'string' || typeof state !== 'string') {
-    res.send(renderOAuthResultPage(frontendUrl, false, 'Invalid callback parameters.'));
+    res.send(renderOAuthResultPage(frontendUrl, false, 'Invalid callback parameters.', 'github'));
     return;
   }
 
   const pending = pendingStates.get(state);
   if (!pending || pending.expiresAt < Date.now()) {
     pendingStates.delete(state);
-    res.send(renderOAuthResultPage(frontendUrl, false, 'Session expired. Please close this window and try again.'));
+    res.send(renderOAuthResultPage(frontendUrl, false, 'Session expired. Please close this window and try again.', 'github'));
     return;
   }
   pendingStates.delete(state);
 
+  const repoProvider: RepoProvider = (req.params.provider as RepoProvider) || pending.provider || 'github';
+
   try {
-    const tokenData = await exchangeCodeForToken(code);
-    const ghUser = await getAuthenticatedUser(tokenData.access_token);
+    const redirectUri = repoProvider === 'codeberg'
+      ? `${frontendUrl}/api/repo/callback/codeberg`
+      : `${frontendUrl}/api/github/callback`;
+    const tokenData = await provider.exchangeCodeForToken(repoProvider, code, redirectUri);
+    const providerUser = await provider.getAuthenticatedUser(repoProvider, tokenData.access_token);
     const encryptedToken = encrypt(tokenData.access_token);
 
     await pool.query(
-      `INSERT INTO github_connections (user_id, github_user_id, github_username, github_avatar_url, access_token_encrypted, token_scope)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (user_id) DO UPDATE SET
-         github_user_id = $2, github_username = $3, github_avatar_url = $4,
-         access_token_encrypted = $5, token_scope = $6, connected_at = NOW()`,
-      [pending.userId, ghUser.id, ghUser.login, ghUser.avatar_url, encryptedToken, tokenData.scope]
+      `INSERT INTO repo_connections (user_id, provider, provider_user_id, provider_username, provider_avatar_url,
+         github_user_id, github_username, github_avatar_url, access_token_encrypted, token_scope)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       ON CONFLICT ON CONSTRAINT repo_connections_user_provider_unique DO UPDATE SET
+         provider_user_id = $3, provider_username = $4, provider_avatar_url = $5,
+         github_user_id = $6, github_username = $7, github_avatar_url = $8,
+         access_token_encrypted = $9, token_scope = $10, connected_at = NOW()`,
+      [
+        pending.userId, repoProvider,
+        String(providerUser.id), providerUser.login, providerUser.avatar_url,
+        repoProvider === 'github' ? providerUser.id : null,
+        repoProvider === 'github' ? providerUser.login : null,
+        repoProvider === 'github' ? providerUser.avatar_url : null,
+        encryptedToken, tokenData.scope || '',
+      ]
     );
 
     await recordEvent({
       userId: pending.userId,
       email: '',
-      eventType: 'github_connected',
-      metadata: { githubUsername: ghUser.login, scope: tokenData.scope },
+      eventType: `${repoProvider}_connected`,
+      metadata: { username: providerUser.login, provider: repoProvider, scope: tokenData.scope },
     });
 
-    res.send(renderOAuthResultPage(frontendUrl, true, `Connected as ${ghUser.login}`));
+    res.send(renderOAuthResultPage(frontendUrl, true, `Connected as ${providerUser.login}`, repoProvider));
   } catch (err) {
-    console.error('GitHub OAuth callback error:', err);
-    res.send(renderOAuthResultPage(frontendUrl, false, 'Failed to connect to GitHub. Please try again.'));
+    console.error(`${repoProvider} OAuth callback error:`, err);
+    res.send(renderOAuthResultPage(frontendUrl, false, `Failed to connect to ${repoProvider === 'codeberg' ? 'Codeberg' : 'GitHub'}. Please try again.`, repoProvider));
   }
 });
 
-function renderOAuthResultPage(frontendUrl: string, success: boolean, message: string): string {
+function renderOAuthResultPage(frontendUrl: string, success: boolean, message: string, repoProvider: string = 'github'): string {
   const escapedMessage = message.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  const providerLabel = repoProvider === 'codeberg' ? 'Codeberg' : 'GitHub';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CRANIS2 ${success ? '— GitHub Connected' : '— Connection Failed'}</title>
+  <title>CRANIS2 ${success ? `— ${providerLabel} Connected` : '— Connection Failed'}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -388,7 +451,7 @@ function renderOAuthResultPage(frontendUrl: string, success: boolean, message: s
 <body>
   <div class="card ${success ? 'success' : 'error'}">
     <div class="icon">${success ? '&#10003;' : '&#10007;'}</div>
-    <h2>${success ? 'GitHub Connected' : 'Connection Failed'}</h2>
+    <h2>${success ? `${providerLabel} Connected` : 'Connection Failed'}</h2>
     <p>${escapedMessage}</p>
     ${success
       ? '<p class="auto-close">This window will close automatically...</p>'
@@ -400,10 +463,10 @@ function renderOAuthResultPage(frontendUrl: string, success: boolean, message: s
       var success = ${success ? 'true' : 'false'};
       if (window.opener) {
         if (success) {
-          window.opener.postMessage({ type: 'github-oauth-success' }, '${frontendUrl}');
+          window.opener.postMessage({ type: 'repo-oauth-success', provider: '${repoProvider}' }, '${frontendUrl}');
           setTimeout(function() { window.close(); }, 1500);
         } else {
-          window.opener.postMessage({ type: 'github-oauth-error', message: '${escapedMessage}' }, '${frontendUrl}');
+          window.opener.postMessage({ type: 'repo-oauth-error', provider: '${repoProvider}', message: '${escapedMessage}' }, '${frontendUrl}');
         }
       }
     })();
@@ -417,22 +480,33 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
 
   const result = await pool.query(
-    'SELECT github_username, github_avatar_url, token_scope, connected_at FROM github_connections WHERE user_id = $1',
+    'SELECT provider, provider_username, provider_avatar_url, token_scope, connected_at FROM repo_connections WHERE user_id = $1',
     [userId]
   );
 
   if (result.rows.length === 0) {
-    res.json({ connected: false });
+    res.json({ connected: false, connections: [] });
     return;
   }
 
-  const conn = result.rows[0];
-  res.json({
-    connected: true,
-    githubUsername: conn.github_username,
-    githubAvatarUrl: conn.github_avatar_url,
+  // Build per-provider status
+  const connections = result.rows.map((conn: any) => ({
+    provider: conn.provider,
+    username: conn.provider_username,
+    avatarUrl: conn.provider_avatar_url,
     scope: conn.token_scope,
     connectedAt: conn.connected_at,
+  }));
+
+  // Backward compat: surface the GitHub connection at top level
+  const ghConn = result.rows.find((r: any) => r.provider === 'github');
+  res.json({
+    connected: !!ghConn,
+    githubUsername: ghConn?.provider_username || ghConn?.github_username || undefined,
+    githubAvatarUrl: ghConn?.provider_avatar_url || ghConn?.github_avatar_url || undefined,
+    scope: ghConn?.token_scope || undefined,
+    connectedAt: ghConn?.connected_at || undefined,
+    connections,
   });
 });
 
@@ -467,35 +541,42 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       return;
     }
 
-    const parsed = parseRepoUrl(repoUrl);
-    if (!parsed) {
-      res.status(400).json({ error: 'Invalid GitHub repository URL' });
+    // Auto-detect provider from repo URL
+    const detectedProvider = provider.detectProvider(repoUrl);
+    if (!detectedProvider) {
+      res.status(400).json({ error: 'Unsupported repository URL. Use a GitHub or Codeberg repository.' });
       return;
     }
 
-    const ghToken = await getUserGitHubToken(userId);
-    if (!ghToken) {
-      res.status(400).json({ error: 'GitHub not connected. Please connect your GitHub account first.' });
+    const parsed = provider.parseRepoUrl(detectedProvider, repoUrl);
+    if (!parsed) {
+      res.status(400).json({ error: `Invalid ${detectedProvider === 'codeberg' ? 'Codeberg' : 'GitHub'} repository URL` });
+      return;
+    }
+
+    const repoToken = await getUserRepoToken(userId, detectedProvider);
+    if (!repoToken) {
+      res.status(400).json({ error: `${detectedProvider === 'codeberg' ? 'Codeberg' : 'GitHub'} not connected. Please connect your account first.` });
       return;
     }
 
     const syncStartedAt = new Date();
     const syncStartMs = Date.now();
 
-    // Fetch ALL data from GitHub in parallel (ALL READ-ONLY GET requests)
-    console.log("[SYNC] Fetching SBOM for", parsed.owner, parsed.repo);
+    // Fetch ALL data from provider in parallel (ALL READ-ONLY GET requests)
+    console.log(`[SYNC] Fetching data from ${detectedProvider} for`, parsed.owner, parsed.repo);
     const [repoData, contributors, languages, sbomData, releases, tags] = await Promise.all([
-      getRepo(ghToken, parsed.owner, parsed.repo),
-      getContributors(ghToken, parsed.owner, parsed.repo),
-      getLanguages(ghToken, parsed.owner, parsed.repo),
-      getSBOM(ghToken, parsed.owner, parsed.repo),
-      getReleases(ghToken, parsed.owner, parsed.repo),
-      getTags(ghToken, parsed.owner, parsed.repo),
+      provider.getRepo(detectedProvider, repoToken, parsed.owner, parsed.repo),
+      provider.getContributors(detectedProvider, repoToken, parsed.owner, parsed.repo),
+      provider.getLanguages(detectedProvider, repoToken, parsed.owner, parsed.repo),
+      provider.getSBOM(detectedProvider, repoToken, parsed.owner, parsed.repo),
+      provider.getReleases(detectedProvider, repoToken, parsed.owner, parsed.repo),
+      provider.getTags(detectedProvider, repoToken, parsed.owner, parsed.repo),
     ]);
 
     // Store repo data in Neo4j
     await neo4jSession.run(
-      `MERGE (r:GitHubRepo {url: $url})
+      `MERGE (r:Repository {url: $url})
        ON CREATE SET r.createdAt = datetime()
        SET r.owner = $owner,
            r.name = $name,
@@ -510,6 +591,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
            r.lastPush = $lastPush,
            r.isPrivate = $isPrivate,
            r.languages = $languagesJson,
+           r.provider = $provider,
            r.syncedAt = datetime()
 
        WITH r
@@ -518,7 +600,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
 
        WITH r
        MATCH (u:User {id: $userId})
-       MERGE (u)-[:GITHUB_CONNECTED]->(r)`,
+       MERGE (u)-[:REPO_CONNECTED]->(r)`,
       {
         url: repoData.html_url,
         owner: parsed.owner,
@@ -534,6 +616,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
         lastPush: repoData.pushed_at,
         isPrivate: repoData.private,
         languagesJson: JSON.stringify(languages),
+        provider: detectedProvider,
         productId,
         userId,
       }
@@ -542,7 +625,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
     // Store contributors in Neo4j
     for (const contrib of contributors) {
       await neo4jSession.run(
-        `MATCH (r:GitHubRepo {url: $repoUrl})
+        `MATCH (r:Repository {url: $repoUrl})
          MERGE (c:Contributor {githubId: $githubId})
          ON CREATE SET c.createdAt = datetime()
          SET c.githubLogin = $login,
@@ -562,11 +645,45 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       );
     }
 
+    // Lockfile fallback: if provider API has no SBOM (e.g. Codeberg), generate from lockfiles
+    let effectiveSbomData = sbomData;
+    let sbomSource = 'api';
+    if (!effectiveSbomData) {
+      console.log("[SYNC] No API SBOM — trying lockfile fallback...");
+      const lockfileResult = await generateSBOMFromLockfiles(
+        parsed.owner, parsed.repo, repoData.default_branch,
+        detectedProvider, repoToken, repoData.html_url
+      );
+      if (lockfileResult) {
+        effectiveSbomData = lockfileResult.sbom as any;
+        sbomSource = `lockfile:${lockfileResult.lockfileUsed}`;
+        console.log(`[SYNC] Lockfile SBOM generated from ${lockfileResult.lockfileUsed}: ${lockfileResult.totalDependencies} dependencies`);
+      }
+    }
+
+    // Tier 3: Source import scanning (if no API SBOM and no lockfile found)
+    if (!effectiveSbomData) {
+      console.log("[SYNC] No lockfile SBOM — trying import scan (Tier 3)...");
+      try {
+        const importResult = await generateSBOMFromImports(
+          parsed.owner, parsed.repo, repoData.default_branch,
+          detectedProvider, repoToken, repoData.html_url
+        );
+        if (importResult) {
+          effectiveSbomData = { sbom: importResult.sbom } as any;
+          sbomSource = `import-scan:${importResult.languagesDetected.join('+')}`;
+          console.log(`[SYNC] Import scan SBOM: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages (confidence: ${importResult.confidence})`);
+        }
+      } catch (err: any) {
+        console.error(`[SYNC] Import scan failed: ${err.message}`);
+      }
+    }
+
     // Store SBOM in Postgres + Neo4j (if available)
     let sbomResult: { packageCount: number; packages: any[] } | null = null;
-    console.log("[SYNC] SBOM result:", sbomData ? `Found ${sbomData.sbom?.packages?.length || 0} packages` : "null - no SBOM available");
-    if (sbomData) {
-      sbomResult = await storeSBOM(productId, sbomData, neo4jSession);
+    console.log("[SYNC] SBOM result:", effectiveSbomData ? `Found ${effectiveSbomData.sbom?.packages?.length || 0} packages` : "null - no SBOM available");
+    if (effectiveSbomData) {
+      sbomResult = await storeSBOM(productId, effectiveSbomData, neo4jSession, sbomSource);
 
       // Post-SBOM compliance pipeline (non-blocking)
       if (sbomResult) {
@@ -575,7 +692,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
         const pipelineOrgId = orgId;
         const pipelineProductName = productName;
         const pipelineUserId = userId;
-        const pipelineGhToken = ghToken;
+        const pipelineGhToken = repoToken;
         (async () => {
           try {
             // 1. Resolve version gaps from lockfile
@@ -613,7 +730,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
     }
 
     // ── Store GitHub releases in product_versions ──
-    const publishedReleases = releases.filter((r: GitHubRelease) => !r.draft);
+    const publishedReleases = releases.filter((r: NormalisedRelease) => !r.draft);
     for (const rel of publishedReleases) {
       await pool.query(
         `INSERT INTO product_versions (product_id, cranis_version, github_tag, github_release_name, github_release_body, github_commit_sha, is_prerelease, source, created_at)
@@ -706,6 +823,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       .sort((a, b) => b.bytes - a.bytes);
 
     res.json({
+      provider: detectedProvider,
       repo: {
         name: repoData.name,
         fullName: repoData.full_name,
@@ -734,7 +852,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
         isStale: false,
       } : null,
       version: cranisVersion,
-      releases: publishedReleases.map((r: GitHubRelease) => ({
+      releases: publishedReleases.map((r: any) => ({
         tagName: r.tag_name,
         name: r.name,
         publishedAt: r.published_at,
@@ -839,29 +957,72 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
       return;
     }
 
-    const parsed = parseRepoUrl(repoUrl);
+    const sbomProvider = provider.detectProvider(repoUrl);
+    if (!sbomProvider) {
+      res.status(400).json({ error: 'Unsupported repository URL.' });
+      return;
+    }
+
+    const parsed = provider.parseRepoUrl(sbomProvider, repoUrl);
     if (!parsed) {
-      res.status(400).json({ error: 'Invalid GitHub repository URL' });
+      res.status(400).json({ error: 'Invalid repository URL' });
       return;
     }
 
-    const ghToken = await getUserGitHubToken(userId);
-    if (!ghToken) {
-      res.status(400).json({ error: 'GitHub not connected.' });
+    const sbomToken = await getUserRepoToken(userId, sbomProvider);
+    if (!sbomToken) {
+      res.status(400).json({ error: `${sbomProvider === 'codeberg' ? 'Codeberg' : 'GitHub'} not connected.` });
       return;
     }
 
-    const sbomData = await getSBOM(ghToken, parsed.owner, parsed.repo);
+    let sbomData = await provider.getSBOM(sbomProvider, sbomToken, parsed.owner, parsed.repo);
+    let refreshSbomSource = 'api';
+    // Fetch default branch for fallback SBOM generation
+    const repoNode = await neo4jSession.run(
+      'MATCH (p:Product {id: $productId})-[:HAS_REPO]->(r:Repository) RETURN r.defaultBranch as defaultBranch',
+      { productId }
+    );
+    const defaultBranch = repoNode.records[0]?.get('defaultBranch') || 'main';
     if (!sbomData) {
-      res.status(404).json({ error: 'No dependency data available for this repository.' });
+      // Lockfile fallback: generate SBOM from lockfiles
+      console.log("[SBOM-REFRESH] No API SBOM — trying lockfile fallback...");
+      const lockfileResult = await generateSBOMFromLockfiles(
+        parsed.owner, parsed.repo, defaultBranch,
+        sbomProvider, sbomToken, repoUrl
+      );
+      if (lockfileResult) {
+        sbomData = lockfileResult.sbom as any;
+        refreshSbomSource = `lockfile:${lockfileResult.lockfileUsed}`;
+        console.log(`[SBOM-REFRESH] Lockfile SBOM: ${lockfileResult.lockfileUsed} (${lockfileResult.totalDependencies} deps)`);
+      }
+    }
+    // Tier 3: Source import scanning
+    if (!sbomData) {
+      console.log("[SBOM-REFRESH] No lockfile SBOM — trying import scan (Tier 3)...");
+      try {
+        const importResult = await generateSBOMFromImports(
+          parsed.owner, parsed.repo, defaultBranch,
+          sbomProvider, sbomToken, repoUrl
+        );
+        if (importResult) {
+          sbomData = { sbom: importResult.sbom } as any;
+          refreshSbomSource = `import-scan:${importResult.languagesDetected.join('+')}`;
+          console.log(`[SBOM-REFRESH] Import scan: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages`);
+        }
+      } catch (err: any) {
+        console.error(`[SBOM-REFRESH] Import scan failed: ${err.message}`);
+      }
+    }
+    if (!sbomData) {
+      res.status(404).json({ error: 'No dependency data available for this repository. No lockfile or source imports found.' });
       return;
     }
 
-    const sbomResult = await storeSBOM(productId, sbomData, neo4jSession);
+    const sbomResult = await storeSBOM(productId, sbomData, neo4jSession, refreshSbomSource);
 
     // Post-SBOM compliance pipeline (non-blocking)
     const refreshPackages = sbomResult.packages;
-    const refreshGhToken = ghToken;
+    const refreshGhToken = sbomToken;
     (async () => {
       try {
         if (refreshGhToken) {
@@ -919,17 +1080,24 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
 });
 
 // ─── POST /api/github/webhook ─────────────────────────────────────
-// Receive GitHub push events and mark SBOM as stale
+// Receive push events from GitHub or Codeberg and mark SBOM as stale
 router.post('/webhook', async (req: Request, res: Response) => {
-  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+  // Detect provider from headers
+  const isGitHub = !!req.headers['x-github-event'];
+  const isForgejo = !!req.headers['x-forgejo-event'] || !!req.headers['x-gitea-event'];
+  const webhookProvider: RepoProvider = isForgejo ? 'codeberg' : 'github';
+
+  const webhookSecret = webhookProvider === 'codeberg'
+    ? process.env.CODEBERG_WEBHOOK_SECRET
+    : process.env.GITHUB_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    console.error('[WEBHOOK] No GITHUB_WEBHOOK_SECRET configured');
+    console.error(`[WEBHOOK] No ${webhookProvider.toUpperCase()}_WEBHOOK_SECRET configured`);
     res.status(500).json({ error: 'Webhook not configured' });
     return;
   }
 
   // Verify HMAC signature
-  const signature = req.headers['x-hub-signature-256'] as string;
+  const signature = (req.headers['x-hub-signature-256'] || req.headers['x-forgejo-signature']) as string;
   if (!signature) {
     res.status(401).json({ error: 'Missing signature' });
     return;
@@ -942,16 +1110,17 @@ router.post('/webhook', async (req: Request, res: Response) => {
   }
 
   const expectedSignature = 'sha256=' + crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
-    console.warn('[WEBHOOK] Invalid signature');
+  const sigToCompare = signature.startsWith('sha256=') ? signature : `sha256=${signature}`;
+  if (!crypto.timingSafeEqual(Buffer.from(sigToCompare), Buffer.from(expectedSignature))) {
+    console.warn(`[WEBHOOK] Invalid ${webhookProvider} signature`);
     res.status(401).json({ error: 'Invalid signature' });
     return;
   }
 
   // Only process push events
-  const event = req.headers['x-github-event'] as string;
+  const event = (req.headers['x-github-event'] || req.headers['x-forgejo-event'] || req.headers['x-gitea-event']) as string;
   if (event !== 'push') {
-    console.log(`[WEBHOOK] Ignoring event: ${event}`);
+    console.log(`[WEBHOOK] Ignoring ${webhookProvider} event: ${event}`);
     res.json({ status: 'ignored', event });
     return;
   }
@@ -962,13 +1131,13 @@ router.post('/webhook', async (req: Request, res: Response) => {
     return;
   }
 
-  console.log(`[WEBHOOK] Push event for ${repoUrl}`);
+  console.log(`[WEBHOOK] Push event from ${webhookProvider} for ${repoUrl}`);
 
   // Find product(s) linked to this repo
   const neo4jSession = getDriver().session();
   try {
     const result = await neo4jSession.run(
-      `MATCH (p:Product)-[:HAS_REPO]->(r:GitHubRepo)
+      `MATCH (p:Product)-[:HAS_REPO]->(r:Repository)
        WHERE r.url = $repoUrl OR r.url = $repoUrlGit
        RETURN p.id as productId`,
       { repoUrl, repoUrlGit: repoUrl + '.git' }
@@ -1027,7 +1196,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
               type: 'sbom_stale',
               severity: 'medium',
               title: 'SBOM is now stale for ' + productName,
-              body: 'A push to the GitHub repository was detected. The SBOM needs to be re-synced.',
+              body: `A push to the ${webhookProvider === 'codeberg' ? 'Codeberg' : 'GitHub'} repository was detected. The SBOM needs to be re-synced.`,
               link: '/products/' + productId + '?tab=dependencies',
               metadata: { productId, productName, repoUrl, event: 'push' },
             });
@@ -1163,18 +1332,19 @@ router.get('/sync-history/:productId', requireAuth, async (req: Request, res: Re
   }
 });
 
-// ─── DELETE /api/github/disconnect ──────────────────────────────
-router.delete('/disconnect', requireAuth, async (req: Request, res: Response) => {
+// ─── DELETE /api/github/disconnect/{:provider} ───────────────────
+router.delete('/disconnect/{:provider}', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const userEmail = (req as any).email;
+  const disconnectProvider = (req.params.provider || 'github') as RepoProvider;
 
   const result = await pool.query(
-    'DELETE FROM github_connections WHERE user_id = $1 RETURNING github_username',
-    [userId]
+    'DELETE FROM repo_connections WHERE user_id = $1 AND provider = $2 RETURNING provider_username',
+    [userId, disconnectProvider]
   );
 
   if (result.rows.length === 0) {
-    res.status(404).json({ error: 'No GitHub connection found' });
+    res.status(404).json({ error: `No ${disconnectProvider} connection found` });
     return;
   }
 
@@ -1182,14 +1352,14 @@ router.delete('/disconnect', requireAuth, async (req: Request, res: Response) =>
   await recordEvent({
     userId,
     email: userEmail,
-    eventType: 'github_disconnected',
+    eventType: `${disconnectProvider}_disconnected`,
     ipAddress: reqData.ipAddress,
     userAgent: reqData.userAgent,
     acceptLanguage: reqData.acceptLanguage,
-    metadata: { githubUsername: result.rows[0].github_username },
+    metadata: { username: result.rows[0].provider_username, provider: disconnectProvider },
   });
 
-  res.json({ message: 'GitHub disconnected' });
+  res.json({ message: `${disconnectProvider === 'codeberg' ? 'Codeberg' : 'GitHub'} disconnected` });
 });
 
 // ─── GET /api/github/repo/:productId ────────────────────────────
@@ -1202,7 +1372,7 @@ router.get('/repo/:productId', requireAuth, async (req: Request, res: Response) 
 
   try {
     const result = await session.run(
-      `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})-[:HAS_REPO]->(r:GitHubRepo)
+      `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})-[:HAS_REPO]->(r:Repository)
        OPTIONAL MATCH (r)-[hc:HAS_CONTRIBUTOR]->(c:Contributor)
        RETURN r, collect({
          login: c.githubLogin,
@@ -1239,6 +1409,7 @@ router.get('/repo/:productId', requireAuth, async (req: Request, res: Response) 
 
     res.json({
       synced: true,
+      provider: r.provider || 'github',
       repo: {
         name: r.name,
         fullName: r.fullName,
@@ -1262,6 +1433,37 @@ router.get('/repo/:productId', requireAuth, async (req: Request, res: Response) 
     });
   } finally {
     await session.close();
+  }
+});
+
+// ─── POST /api/github/codeberg/create-repo ──────────────────────
+// Create a new repo on Codeberg for EU-sovereign hosting
+router.post('/codeberg/create-repo', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const { name, description, isPrivate } = req.body;
+
+  if (!name || typeof name !== 'string') {
+    res.status(400).json({ error: 'Repository name is required' });
+    return;
+  }
+
+  const codebergToken = await getUserRepoToken(userId, 'codeberg');
+  if (!codebergToken) {
+    res.status(400).json({ error: 'Codeberg not connected. Please connect your Codeberg account first.' });
+    return;
+  }
+
+  try {
+    const repo = await codebergCreateRepo(codebergToken, name, description || '', !!isPrivate);
+    res.json({
+      url: repo.html_url,
+      fullName: repo.full_name,
+      name: repo.name,
+      isPrivate: repo.private,
+    });
+  } catch (err: any) {
+    console.error('Codeberg repo creation error:', err);
+    res.status(500).json({ error: err.message || 'Failed to create Codeberg repository' });
   }
 });
 

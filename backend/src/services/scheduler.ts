@@ -5,12 +5,19 @@ import { createNotification } from './notifications.js';
 import { runPlatformScan } from './vulnerability-scanner.js';
 import { syncVulnDatabases } from './vuln-db-sync.js';
 import {
-  getRepo, getContributors, getLanguages, getSBOM, getReleases, getTags, parseRepoUrl,
+  getRepo as githubGetRepo, getContributors as githubGetContributors,
+  getLanguages as githubGetLanguages, getSBOM as githubGetSBOM,
+  getReleases as githubGetReleases, getTags as githubGetTags,
+  parseRepoUrl as githubParseRepoUrl,
 } from '../services/github.js';
 import type { GitHubRelease } from '../services/github.js';
+import * as repoProvider from '../services/repo-provider.js';
+import type { RepoProvider, NormalisedRelease } from '../services/repo-provider.js';
 import { enrichDependencyHashes } from './hash-enrichment.js';
 import { enrichDependencyLicenses } from './license-enrichment.js';
 import { resolveLockfileVersions } from './lockfile-resolver.js';
+import { generateSBOMFromLockfiles } from './lockfile-sbom-generator.js';
+import { generateSBOMFromImports } from './import-scanner.js';
 import { sendComplianceGapNotification } from './notifications.js';
 import { scanProductLicenses } from './license-scanner.js';
 import { createSnapshot } from './ip-proof.js';
@@ -41,28 +48,34 @@ let lastVulnDbSyncDate = '';
 let lastBillingCheckDate = '';
 let lastEscrowDepositDate = '';
 
-async function getProductGitHubToken(productId: string): Promise<{ token: string; userId: string } | null> {
-  // Find the user who owns this product (via org) and has a GitHub connection
+async function getProductRepoToken(productId: string, forProvider?: RepoProvider): Promise<{ token: string; userId: string; provider: RepoProvider } | null> {
+  // Find the user who owns this product (via org) and has a repo connection
   const neo4jSession = getDriver().session();
   try {
+    // Also get repoUrl so we can auto-detect provider
     const result = await neo4jSession.run(
       `MATCH (p:Product {id: $productId})-[:BELONGS_TO]->(o:Organisation)<-[:BELONGS_TO]-(u:User)
-       RETURN u.id as userId`,
+       RETURN u.id as userId, p.repoUrl as repoUrl`,
       { productId }
     );
     if (result.records.length === 0) return null;
 
-    // Try each user until we find one with a GitHub token
+    // Auto-detect provider from repoUrl if not specified
+    const repoUrl = result.records[0].get('repoUrl');
+    const detectedProvider = forProvider || (repoUrl ? repoProvider.detectProvider(repoUrl) : null) || 'github';
+
+    // Try each user until we find one with a matching token
     for (const record of result.records) {
       const userId = record.get('userId');
       const tokenResult = await pool.query(
-        `SELECT access_token_encrypted FROM github_connections WHERE user_id = $1`,
-        [userId]
+        `SELECT access_token_encrypted FROM repo_connections WHERE user_id = $1 AND provider = $2`,
+        [userId, detectedProvider]
       );
       if (tokenResult.rows.length > 0) {
         return {
           token: decrypt(tokenResult.rows[0].access_token_encrypted),
           userId,
+          provider: detectedProvider,
         };
       }
     }
@@ -71,15 +84,17 @@ async function getProductGitHubToken(productId: string): Promise<{ token: string
     await neo4jSession.close();
   }
 }
+// Backward compat alias
+const getProductGitHubToken = getProductRepoToken;
 
 async function autoSyncProduct(productId: string): Promise<boolean> {
   console.log(`[AUTO-SYNC] Syncing product ${productId}`);
   const syncStartedAt = new Date();
   const syncStartMs = Date.now();
 
-  const auth = await getProductGitHubToken(productId);
+  const auth = await getProductRepoToken(productId);
   if (!auth) {
-    console.log(`[AUTO-SYNC] No GitHub token found for product ${productId}`);
+    console.log(`[AUTO-SYNC] No repo token found for product ${productId}`);
     return false;
   }
 
@@ -96,29 +111,30 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
     const schedulerProductName = productResult.records[0].get("name") || "Unknown";    const schedulerOrgId = productResult.records[0].get("orgId");
     if (!repoUrl) return false;
 
-    const parsed = parseRepoUrl(repoUrl);
+    const syncProvider = auth.provider;
+    const parsed = repoProvider.parseRepoUrl(syncProvider, repoUrl);
     if (!parsed) return false;
 
-    // Fetch all data from GitHub
+    // Fetch all data from provider
     const [repoData, contributors, languages, sbomData, releases, tags] = await Promise.all([
-      getRepo(auth.token, parsed.owner, parsed.repo),
-      getContributors(auth.token, parsed.owner, parsed.repo),
-      getLanguages(auth.token, parsed.owner, parsed.repo),
-      getSBOM(auth.token, parsed.owner, parsed.repo),
-      getReleases(auth.token, parsed.owner, parsed.repo),
-      getTags(auth.token, parsed.owner, parsed.repo),
+      repoProvider.getRepo(syncProvider, auth.token, parsed.owner, parsed.repo),
+      repoProvider.getContributors(syncProvider, auth.token, parsed.owner, parsed.repo),
+      repoProvider.getLanguages(syncProvider, auth.token, parsed.owner, parsed.repo),
+      repoProvider.getSBOM(syncProvider, auth.token, parsed.owner, parsed.repo),
+      repoProvider.getReleases(syncProvider, auth.token, parsed.owner, parsed.repo),
+      repoProvider.getTags(syncProvider, auth.token, parsed.owner, parsed.repo),
     ]);
 
     // Store repo data in Neo4j
     await neo4jSession.run(
-      `MERGE (r:GitHubRepo {url: $url})
+      `MERGE (r:Repository {url: $url})
        ON CREATE SET r.createdAt = datetime()
        SET r.owner = $owner, r.name = $name, r.fullName = $fullName,
            r.description = $description, r.language = $language,
            r.stars = $stars, r.forks = $forks, r.openIssues = $openIssues,
            r.visibility = $visibility, r.defaultBranch = $defaultBranch,
            r.lastPush = $lastPush, r.isPrivate = $isPrivate,
-           r.languages = $languagesJson, r.syncedAt = datetime()
+           r.languages = $languagesJson, r.provider = $provider, r.syncedAt = datetime()
        WITH r
        MATCH (p:Product {id: $productId})
        MERGE (p)-[:HAS_REPO]->(r)`,
@@ -137,20 +153,55 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
         lastPush: repoData.pushed_at,
         isPrivate: repoData.private,
         languagesJson: JSON.stringify(languages),
+        provider: syncProvider,
         productId,
       }
     );
 
+    // Lockfile fallback: if provider API has no SBOM (e.g. Codeberg), generate from lockfiles
+    let effectiveSbomData = sbomData;
+    let schedulerSbomSource = 'api';
+    if (!effectiveSbomData) {
+      console.log(`[SCHEDULER] No API SBOM for ${parsed.owner}/${parsed.repo} — trying lockfile fallback...`);
+      const lockfileResult = await generateSBOMFromLockfiles(
+        parsed.owner, parsed.repo, repoData.default_branch,
+        syncProvider, auth.token, repoUrl
+      );
+      if (lockfileResult) {
+        effectiveSbomData = lockfileResult.sbom as any;
+        schedulerSbomSource = `lockfile:${lockfileResult.lockfileUsed}`;
+        console.log(`[SCHEDULER] Lockfile SBOM: ${lockfileResult.lockfileUsed} (${lockfileResult.totalDependencies} deps)`);
+      }
+    }
+
+    // Tier 3: Source import scanning
+    if (!effectiveSbomData) {
+      console.log(`[SCHEDULER] No lockfile — trying import scan (Tier 3) for ${parsed.owner}/${parsed.repo}...`);
+      try {
+        const importResult = await generateSBOMFromImports(
+          parsed.owner, parsed.repo, repoData.default_branch,
+          syncProvider, auth.token, repoUrl
+        );
+        if (importResult) {
+          effectiveSbomData = { sbom: importResult.sbom } as any;
+          schedulerSbomSource = `import-scan:${importResult.languagesDetected.join('+')}`;
+          console.log(`[SCHEDULER] Import scan: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages`);
+        }
+      } catch (err: any) {
+        console.error(`[SCHEDULER] Import scan failed: ${err.message}`);
+      }
+    }
+
     // Store SBOM if available (this also sets is_stale = FALSE)
-    if (sbomData) {
+    if (effectiveSbomData) {
       // Inline storeSBOM logic for Postgres
-      const packages = sbomData.sbom?.packages || [];
+      const packages = effectiveSbomData.sbom?.packages || [];
       await pool.query(
-        `INSERT INTO product_sboms (product_id, spdx_json, spdx_version, package_count, is_stale, synced_at)
-         VALUES ($1, $2, $3, $4, FALSE, NOW())
+        `INSERT INTO product_sboms (product_id, spdx_json, spdx_version, package_count, is_stale, synced_at, sbom_source)
+         VALUES ($1, $2, $3, $4, FALSE, NOW(), $5)
          ON CONFLICT (product_id) DO UPDATE SET
-           spdx_json = $2, spdx_version = $3, package_count = $4, is_stale = FALSE, synced_at = NOW()`,
-        [productId, JSON.stringify(sbomData), sbomData.sbom?.spdxVersion, packages.length]
+           spdx_json = $2, spdx_version = $3, package_count = $4, is_stale = FALSE, synced_at = NOW(), sbom_source = $5`,
+        [productId, JSON.stringify(effectiveSbomData), effectiveSbomData.sbom?.spdxVersion, packages.length, schedulerSbomSource]
       );
 
       // Update Neo4j SBOM node
@@ -159,7 +210,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
          MERGE (p)-[:HAS_SBOM]->(sbom:SBOM {productId: $productId})
          SET sbom.spdxVersion = $spdxVersion, sbom.packageCount = $packageCount,
              sbom.isStale = false, sbom.syncedAt = datetime()`,
-        { productId, spdxVersion: sbomData.sbom?.spdxVersion, packageCount: packages.length }
+        { productId, spdxVersion: effectiveSbomData.sbom?.spdxVersion, packageCount: packages.length }
       );
 
       // Post-SBOM compliance pipeline (non-blocking)
@@ -208,7 +259,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
     }
 
     // Store GitHub releases
-    const publishedReleases = releases.filter((r: GitHubRelease) => !r.draft);
+    const publishedReleases = releases.filter((r: NormalisedRelease) => !r.draft);
     for (const rel of publishedReleases) {
       await pool.query(
         `INSERT INTO product_versions (product_id, cranis_version, github_tag, github_release_name, github_release_body, github_commit_sha, is_prerelease, source, created_at)
@@ -255,7 +306,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
     await pool.query(
       `INSERT INTO sync_history (product_id, sync_type, started_at, duration_seconds, package_count, contributor_count, release_count, cranis_version, triggered_by, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [productId, 'auto', syncStartedAt, syncDurationSeconds, sbomData?.sbom?.packages?.length || 0, 0, publishedReleases.length, cranisVersion, 'scheduler', 'success']
+      [productId, 'auto', syncStartedAt, syncDurationSeconds, effectiveSbomData?.sbom?.packages?.length || 0, 0, publishedReleases.length, cranisVersion, 'scheduler', 'success']
     );
     return true;
   } catch (err: any) {

@@ -64,7 +64,7 @@ export async function countActiveContributors(orgId: string): Promise<Contributo
   try {
     const result = await session.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product)
-             -[:HAS_REPO]->(r:GitHubRepo)-[:HAS_CONTRIBUTOR]->(c:Contributor)
+             -[:HAS_REPO]->(r:Repository)-[:HAS_CONTRIBUTOR]->(c:Contributor)
        RETURN DISTINCT c.githubLogin AS login, c.githubId AS githubId,
               c.avatarUrl AS avatarUrl, c.contributions AS contributions,
               c.type AS type

@@ -907,3 +907,23 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
 }
 .pd-delete-confirm-btn:hover { opacity: 0.9; }
 .pd-delete-confirm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Codeberg SBOM info note */
+.pd-codeberg-sbom-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  margin-top: 0.5rem;
+  background: rgba(45, 136, 255, 0.08);
+  border: 1px solid rgba(45, 136, 255, 0.2);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #5b9eff;
+}
+.pd-codeberg-sbom-note code {
+  background: rgba(255,255,255,0.08);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.78rem;
+}

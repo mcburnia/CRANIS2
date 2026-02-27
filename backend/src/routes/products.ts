@@ -345,6 +345,8 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       productType: p.productType || '',
       craCategory: p.craCategory || 'default',
       repoUrl: p.repoUrl || '',
+      provider: p.provider || '',
+      instanceUrl: p.instanceUrl || '',
       distributionModel: p.distributionModel || null,
       status: p.status || 'active',
       createdAt: p.createdAt?.toString() || '',
@@ -362,7 +364,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId(userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-  const { name, description, version, productType, craCategory, repoUrl, distributionModel } = req.body;
+  const { name, description, version, productType, craCategory, repoUrl, distributionModel, provider, instanceUrl } = req.body;
 
   if (!name?.trim()) {
     res.status(400).json({ error: 'Product name is required' });
@@ -402,6 +404,8 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         craCategory: validCategories.includes(craCategory) ? craCategory : 'default',
         repoUrl: repoUrl?.trim() || '',
         distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
+        provider: provider?.trim() || '',
+        instanceUrl: instanceUrl?.trim() || '',
       }
     );
 
@@ -426,6 +430,8 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       craCategory: validCategories.includes(craCategory) ? craCategory : 'default',
       repoUrl: repoUrl?.trim() || '',
       distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
+      provider: provider?.trim() || '',
+      instanceUrl: instanceUrl?.trim() || '',
       status: 'active',
     });
   } catch (err) {
@@ -441,7 +447,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId((req as any).userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-  const { name, description, version, productType, craCategory, repoUrl, distributionModel } = req.body;
+  const { name, description, version, productType, craCategory, repoUrl, distributionModel, provider, instanceUrl } = req.body;
   if (!name?.trim()) { res.status(400).json({ error: 'Product name is required' }); return; }
 
   const session = getDriver().session();
@@ -450,7 +456,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
        SET p.name = $name, p.description = $description, p.version = $version,
            p.productType = $productType, p.craCategory = $craCategory,
-           p.repoUrl = $repoUrl, p.distributionModel = $distributionModel,
+           p.repoUrl = $repoUrl, p.distributionModel = $distributionModel, p.provider = $provider, p.instanceUrl = $instanceUrl,
            p.updatedAt = datetime()
        RETURN p`,
       {
@@ -463,6 +469,8 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
         craCategory: craCategory || 'default',
         repoUrl: repoUrl?.trim() || '',
         distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
+        provider: provider?.trim() || '',
+        instanceUrl: instanceUrl?.trim() || '',
       }
     );
 
@@ -480,6 +488,8 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       productType: p.productType || '',
       craCategory: p.craCategory || 'default',
       repoUrl: p.repoUrl || '',
+      provider: p.provider || '',
+      instanceUrl: p.instanceUrl || '',
       distributionModel: p.distributionModel || null,
     });
   } finally {

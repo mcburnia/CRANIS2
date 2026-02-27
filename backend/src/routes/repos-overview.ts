@@ -40,7 +40,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
     try {
       const result = await session.run(
         `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product)
-         OPTIONAL MATCH (p)-[:HAS_REPO]->(r:GitHubRepo)
+         OPTIONAL MATCH (p)-[:HAS_REPO]->(r:Repository)
          OPTIONAL MATCH (r)-[:HAS_CONTRIBUTOR]->(c:Contributor)
          RETURN p.id AS id, p.name AS name, p.craCategory AS craCategory,
                 r.fullName AS repoFullName, r.url AS repoUrl, r.language AS language,
@@ -48,6 +48,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
                 r.visibility AS visibility, r.defaultBranch AS defaultBranch,
                 r.lastPush AS lastPush, r.syncedAt AS syncedAt, r.isPrivate AS isPrivate,
                 r.languages AS languages, r.description AS repoDescription,
+                r.provider AS provider,
                 count(c) AS contributorCount
          ORDER BY p.name`,
         { orgId }
@@ -59,6 +60,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
         repo: r.get('repoFullName') ? {
           fullName: r.get('repoFullName'),
           url: r.get('repoUrl'),
+          provider: r.get('provider') || 'github',
           description: r.get('repoDescription') || '',
           language: r.get('language') || '',
           languages: r.get('languages') || '{}',
