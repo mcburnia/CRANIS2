@@ -70,7 +70,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
           visibility: r.get('visibility') || 'unknown',
           defaultBranch: r.get('defaultBranch') || 'main',
           lastPush: r.get('lastPush') || null,
-          syncedAt: r.get('syncedAt') || null,
+          syncedAt: r.get('syncedAt')?.toString() || null,
           isPrivate: r.get('isPrivate') || false,
           contributorCount: typeof r.get('contributorCount') === 'object' ? (r.get('contributorCount') as any).toNumber?.() ?? 0 : r.get('contributorCount') || 0,
         } : null,
