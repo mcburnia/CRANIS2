@@ -48,6 +48,7 @@ import AdminVulnScanPage from './pages/admin/AdminVulnScanPage';
 import AdminVulnDbPage from './pages/admin/AdminVulnDbPage';
 import AdminFeedbackPage from './pages/admin/AdminFeedbackPage';
 import AdminBillingPage from './pages/admin/AdminBillingPage';
+import AdminTestResultsPage from './pages/admin/AdminTestResultsPage';
 
 const router = createBrowserRouter([
   {
@@ -109,6 +110,7 @@ const router = createBrowserRouter([
           { path: '/admin/vuln-db', element: <AdminVulnDbPage /> },
           { path: '/admin/feedback', element: <AdminFeedbackPage /> },
           { path: '/admin/billing', element: <AdminBillingPage /> },
+          { path: '/admin/test-results', element: <AdminTestResultsPage /> },
         ],
       },
     ],

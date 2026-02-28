@@ -1,0 +1,31 @@
+{
+  "name": "cranis2-tests",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts",
+    "test:unit": "vitest run --config vitest.config.ts unit/",
+    "test:routes": "vitest run --config vitest.config.ts routes/",
+    "test:services": "vitest run --config vitest.config.ts services/",
+    "test:integration": "vitest run --config vitest.config.ts integration/",
+    "test:security": "vitest run --config vitest.config.ts security/",
+    "test:break": "vitest run --config vitest.config.ts break/",
+    "test:webhooks": "vitest run --config vitest.config.ts webhooks/",
+    "seed": "tsx setup/seed-test-data.ts",
+    "cleanup": "tsx setup/cleanup.ts",
+    "test:watch": "vitest --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0",
+    "pg": "^8.13.0",
+    "neo4j-driver": "^6.0.1",
+    "bcrypt": "^6.0.0",
+    "uuid": "^13.0.0",
+    "@types/pg": "^8.11.0",
+    "@types/bcrypt": "^5.0.2",
+    "@types/uuid": "^10.0.0",
+    "@types/node": "^22.0.0"
+  }
+}

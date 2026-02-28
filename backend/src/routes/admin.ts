@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { readFileSync } from 'fs';
 import pool from '../db/pool.js';
+import { getTestPool } from '../db/test-pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { requirePlatformAdmin } from '../middleware/requirePlatformAdmin.js';
 import { generateVerificationToken } from '../utils/token.js';
@@ -1467,6 +1468,244 @@ router.put('/feedback/:id', requirePlatformAdmin, async (req: Request, res: Resp
   } catch (err) {
     console.error('Failed to update feedback:', err);
     res.status(500).json({ error: 'Failed to update feedback' });
+  }
+});
+
+// =====================================================================
+// Test Results endpoints (queries cranis2_test database)
+// =====================================================================
+
+const SCHEDULE_INTERVAL_DAYS = 7;
+
+// GET /api/admin/test-results — All suites with aggregated results
+router.get('/test-results', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const testPool = getTestPool();
+
+    // All suites with case counts
+    const suitesResult = await testPool.query(`
+      SELECT
+        ts.id, ts.name, ts.category, ts.executor, ts.description, ts.created_at,
+        COUNT(DISTINCT tc.id)::int AS total_cases
+      FROM test_suites ts
+      LEFT JOIN test_cases tc ON tc.suite_id = ts.id
+      GROUP BY ts.id
+      ORDER BY ts.category, ts.name
+    `);
+
+    // For each suite, get first run, last run, and last run's pass/fail counts
+    const suiteIds = suitesResult.rows.map((s: any) => s.id);
+
+    // Earliest and latest result timestamps per suite
+    let runStatsMap: Record<string, { firstRunAt: string | null; lastRunAt: string | null; lastPassed: number; lastFailed: number }> = {};
+
+    if (suiteIds.length > 0) {
+      // First and last run dates
+      const rangeResult = await testPool.query(`
+        SELECT
+          tc.suite_id,
+          MIN(tr.executed_at) AS first_run_at,
+          MAX(tr.executed_at) AS last_run_at
+        FROM test_results tr
+        JOIN test_cases tc ON tr.test_case_id = tc.id
+        WHERE tc.suite_id = ANY($1)
+        GROUP BY tc.suite_id
+      `, [suiteIds]);
+
+      for (const row of rangeResult.rows) {
+        runStatsMap[row.suite_id] = {
+          firstRunAt: row.first_run_at,
+          lastRunAt: row.last_run_at,
+          lastPassed: 0,
+          lastFailed: 0,
+        };
+      }
+
+      // For suites that have results, get the latest run's pass/fail
+      // Using DISTINCT ON to get the most recent result per test case per suite
+      const lastRunStatsResult = await testPool.query(`
+        WITH latest_per_case AS (
+          SELECT DISTINCT ON (tc.suite_id, tr.test_case_id)
+            tc.suite_id,
+            tr.status
+          FROM test_results tr
+          JOIN test_cases tc ON tr.test_case_id = tc.id
+          WHERE tc.suite_id = ANY($1)
+          ORDER BY tc.suite_id, tr.test_case_id, tr.executed_at DESC
+        )
+        SELECT
+          suite_id,
+          COUNT(*) FILTER (WHERE status = 'passed')::int AS passed,
+          COUNT(*) FILTER (WHERE status IN ('failed', 'error'))::int AS failed
+        FROM latest_per_case
+        GROUP BY suite_id
+      `, [suiteIds]);
+
+      for (const row of lastRunStatsResult.rows) {
+        if (runStatsMap[row.suite_id]) {
+          runStatsMap[row.suite_id].lastPassed = row.passed;
+          runStatsMap[row.suite_id].lastFailed = row.failed;
+        }
+      }
+    }
+
+    // Build suite list
+    const suites = suitesResult.rows.map((s: any) => {
+      const stats = runStatsMap[s.id];
+      const totalCases = s.total_cases;
+      const lastPassed = stats?.lastPassed ?? 0;
+      const lastFailed = stats?.lastFailed ?? 0;
+      const passRate = (lastPassed + lastFailed) > 0
+        ? Math.round((lastPassed / (lastPassed + lastFailed)) * 100)
+        : null;
+
+      let status: string;
+      if (!stats?.lastRunAt) status = 'never_run';
+      else if (lastFailed === 0 && lastPassed > 0) status = 'passing';
+      else if (lastPassed === 0 && lastFailed > 0) status = 'failing';
+      else status = 'mixed';
+
+      const nextDueAt = stats?.lastRunAt
+        ? new Date(new Date(stats.lastRunAt).getTime() + SCHEDULE_INTERVAL_DAYS * 86400000).toISOString()
+        : null;
+
+      return {
+        id: s.id,
+        name: s.name,
+        category: s.category,
+        executor: s.executor,
+        description: s.description,
+        totalCases,
+        firstRunAt: stats?.firstRunAt || null,
+        lastRunAt: stats?.lastRunAt || null,
+        lastPassed,
+        lastFailed,
+        passRate,
+        status,
+        nextDueAt,
+      };
+    });
+
+    // Summary
+    const totalSuites = suites.length;
+    const totalCases = suites.reduce((sum: number, s: any) => sum + s.totalCases, 0);
+    const totalPassed = suites.reduce((sum: number, s: any) => sum + s.lastPassed, 0);
+    const totalFailed = suites.reduce((sum: number, s: any) => sum + s.lastFailed, 0);
+    const overallPassRate = (totalPassed + totalFailed) > 0
+      ? Math.round((totalPassed / (totalPassed + totalFailed)) * 100)
+      : null;
+
+    // Last run info
+    const lastRunResult = await testPool.query(`
+      SELECT run_label, started_at FROM test_runs ORDER BY started_at DESC LIMIT 1
+    `);
+    const lastRun = lastRunResult.rows[0];
+
+    res.json({
+      summary: {
+        totalSuites,
+        totalCases,
+        totalPassed,
+        totalFailed,
+        passRate: overallPassRate,
+        lastRunAt: lastRun?.started_at || null,
+        lastRunLabel: lastRun?.run_label || null,
+      },
+      suites,
+      scheduleIntervalDays: SCHEDULE_INTERVAL_DAYS,
+    });
+
+  } catch (err) {
+    console.error('Admin test results error:', err);
+    res.status(500).json({ error: 'Failed to fetch test results' });
+  }
+});
+
+// GET /api/admin/test-results/:suiteId — Drill-down into suite's test cases
+
+// POST /api/admin/test-results/run — Trigger a test run (proxies to test-runner service)
+router.post('/test-results/run', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const adminEmail = (req as any).email || 'admin';
+    const upstream = await fetch('http://test-runner:3004/run', {
+      method: 'POST',
+      headers: { 'X-Triggered-By': adminEmail },
+    });
+    const data = await upstream.json();
+    res.json(data);
+  } catch (err) {
+    console.error('Admin test run trigger error:', err);
+    res.status(502).json({ error: 'Test runner service unavailable' });
+  }
+});
+
+// GET /api/admin/test-results/run-status — Poll test run status (proxies to test-runner service)
+router.get('/test-results/run-status', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const upstream = await fetch('http://test-runner:3004/status');
+    const data = await upstream.json();
+    res.json(data);
+  } catch (err) {
+    console.error('Admin test run status error:', err);
+    res.status(502).json({ error: 'Test runner service unavailable' });
+  }
+});
+
+router.get('/test-results/:suiteId', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const { suiteId } = req.params;
+    const testPool = getTestPool();
+
+    // Suite info
+    const suiteResult = await testPool.query(
+      'SELECT id, name, category, executor, description FROM test_suites WHERE id = $1',
+      [suiteId as string]
+    );
+    if (suiteResult.rows.length === 0) {
+      res.status(404).json({ error: 'Suite not found' });
+      return;
+    }
+
+    // Test cases with latest result
+    const casesResult = await testPool.query(`
+      SELECT
+        tc.id, tc.name, tc.priority, tc.tags, tc.description, tc.test_steps, tc.expected_result,
+        latest.status AS last_status,
+        latest.duration_ms AS last_duration_ms,
+        latest.executed_at AS last_run_at,
+        latest.error_message
+      FROM test_cases tc
+      LEFT JOIN LATERAL (
+        SELECT tr.status, tr.duration_ms, tr.executed_at, tr.error_message
+        FROM test_results tr
+        WHERE tr.test_case_id = tc.id
+        ORDER BY tr.executed_at DESC
+        LIMIT 1
+      ) latest ON true
+      WHERE tc.suite_id = $1
+      ORDER BY tc.priority DESC, tc.name
+    `, [suiteId as string]);
+
+    res.json({
+      suite: suiteResult.rows[0],
+      cases: casesResult.rows.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        priority: c.priority,
+        tags: c.tags,
+        description: c.description,
+        lastStatus: c.last_status || 'never_run',
+        lastDurationMs: c.last_duration_ms,
+        lastRunAt: c.last_run_at,
+        errorMessage: c.error_message,
+        testSteps: c.test_steps,
+        expectedResult: c.expected_result,
+      })),
+    });
+
+  } catch (err) {
+    console.error('Admin test results suite detail error:', err);
+    res.status(500).json({ error: 'Failed to fetch suite details' });
   }
 });
 

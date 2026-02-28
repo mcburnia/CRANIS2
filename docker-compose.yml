@@ -61,6 +61,33 @@ services:
       - cranis2_net
     restart: unless-stopped
 
+  test-runner:
+    build:
+      context: .
+      dockerfile: test-runner/Dockerfile
+    container_name: cranis2_test_runner
+    environment:
+      TEST_PG_HOST: postgres
+      TEST_PG_PORT: "5432"
+      TEST_PG_USER: ${POSTGRES_USER}
+      TEST_PG_PASSWORD: ${POSTGRES_PASSWORD}
+      TEST_NEO4J_URI: bolt://neo4j:7687
+      TEST_NEO4J_USER: ${NEO4J_USER}
+      TEST_NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      TEST_BASE_URL: https://dev.cranis2.dev
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    networks:
+      - cranis2_net
+    restart: unless-stopped
+
   postgres:
     image: postgres:16-alpine
     container_name: cranis2_postgres
