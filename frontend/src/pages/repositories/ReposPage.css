@@ -72,7 +72,148 @@
   width: 10px; height: 10px; border-radius: 50%; display: inline-block;
 }
 
+/* ── Provider Connections Panel ────────────────────────────── */
+
+.rp-connections {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 1.5rem; overflow: hidden;
+}
+
+.rp-conn-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1.25rem; cursor: pointer; transition: background 0.15s;
+}
+.rp-conn-header:hover { background: rgba(255, 255, 255, 0.03); }
+
+.rp-conn-title {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.9rem; font-weight: 600; color: var(--text);
+}
+.rp-conn-count {
+  font-weight: 400; font-size: 0.8rem; color: var(--muted);
+}
+
+.rp-conn-body {
+  padding: 0 1.25rem 1.25rem; border-top: 1px solid var(--border);
+}
+
+.rp-conn-list {
+  display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;
+}
+
+.rp-conn-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.6rem 0.75rem; border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
+}
+
+.rp-conn-item-left {
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.rp-conn-item-left > div {
+  display: flex; flex-direction: column; gap: 0.1rem;
+}
+.rp-conn-provider {
+  font-size: 0.85rem; font-weight: 600; color: var(--text);
+  text-transform: capitalize;
+}
+.rp-conn-username {
+  font-size: 0.8rem; color: var(--accent);
+}
+.rp-conn-instance {
+  font-size: 0.7rem; color: var(--muted);
+}
+
+.rp-conn-item-right {
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.rp-conn-status {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.75rem; font-weight: 600;
+}
+.rp-conn-status.connected { color: var(--green); }
+.rp-conn-disconnect {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.3rem; cursor: pointer; color: var(--muted);
+  transition: all 0.15s;
+}
+.rp-conn-disconnect:hover { color: var(--red); border-color: var(--red); }
+
+.rp-conn-add-btn {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-top: 1rem; padding: 0.5rem 1rem; border-radius: 8px;
+  border: 1px dashed var(--border); background: none;
+  color: var(--muted); cursor: pointer; font-size: 0.85rem;
+  transition: all 0.15s; width: 100%; justify-content: center;
+}
+.rp-conn-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── PAT Form ─────────────────────────────────────────────── */
+
+.rp-pat-form {
+  margin-top: 1rem; padding: 1rem; border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border);
+}
+
+.rp-pat-form-header {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.85rem; font-weight: 600; color: var(--text);
+  margin-bottom: 1rem;
+}
+.rp-pat-close {
+  margin-left: auto; background: none; border: none;
+  color: var(--muted); cursor: pointer; padding: 0.25rem;
+}
+.rp-pat-close:hover { color: var(--text); }
+
+.rp-pat-field {
+  margin-bottom: 0.75rem;
+}
+.rp-pat-field label {
+  display: block; font-size: 0.8rem; font-weight: 500;
+  color: var(--muted); margin-bottom: 0.25rem;
+}
+.rp-pat-field input,
+.rp-pat-field select {
+  width: 100%; padding: 0.5rem 0.75rem; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 0.85rem;
+}
+.rp-pat-field input:focus,
+.rp-pat-field select:focus {
+  outline: none; border-color: var(--accent);
+}
+.rp-pat-hint {
+  display: block; font-size: 0.7rem; color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.rp-pat-error {
+  padding: 0.5rem 0.75rem; border-radius: 6px;
+  background: rgba(239, 68, 68, 0.1); color: var(--red);
+  font-size: 0.8rem; margin-bottom: 0.75rem;
+}
+.rp-pat-success {
+  padding: 0.5rem 0.75rem; border-radius: 6px;
+  background: rgba(76, 175, 80, 0.1); color: var(--green);
+  font-size: 0.8rem; margin-bottom: 0.75rem;
+}
+
+.rp-pat-submit {
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  width: 100%; padding: 0.6rem 1rem; border-radius: 8px;
+  border: none; background: var(--accent); color: #fff;
+  font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.rp-pat-submit:hover:not(:disabled) { opacity: 0.9; }
+.rp-pat-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; }
+
 @media (max-width: 768px) {
   .rp-card-header { flex-direction: column; align-items: flex-start; }
   .rp-repo-details { flex-direction: column; gap: 0.5rem; }
+  .rp-conn-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
 }

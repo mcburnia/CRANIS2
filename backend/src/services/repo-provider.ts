@@ -1,11 +1,11 @@
 // Provider dispatcher — thin dispatch layer (no abstract classes, just functions)
-// Routes provider-specific calls to github.ts or codeberg.ts
+// Routes provider-specific calls to github.ts or codeberg.ts (+ self-hosted APIs)
 // PROVIDER_REGISTRY: data-driven provider configuration
 
 import * as github from './github.js';
 import * as codeberg from './codeberg.js';
 
-export type RepoProvider = 'github' | 'codeberg';
+export type RepoProvider = 'github' | 'codeberg' | 'gitea' | 'forgejo' | 'gitlab';
 
 // ══════════════════════════════════════════════════════════════════
 // PROVIDER REGISTRY — data-driven, adding a provider = one entry
@@ -129,30 +129,132 @@ export interface NormalisedUser {
 
 // ── Detection ────────────────────────────────────────────────────
 
-/** Detect provider from a repository URL hostname */
-export function detectProvider(repoUrl: string): RepoProvider | null {
+/** Parse owner/repo from any Git hosting URL (works for all providers) */
+export function parseRepoUrlGeneric(url: string): { owner: string; repo: string } | null {
+  try {
+    const u = new URL(url.includes('://') ? url : `https://${url}`);
+    const parts = u.pathname.replace(/^\//, '').replace(/\.git$/, '').split('/').filter(Boolean);
+    if (parts.length >= 2) return { owner: parts[0], repo: parts[1] };
+    return null;
+  } catch { return null; }
+}
+
+/**
+ * Detect provider from a repository URL hostname.
+ * For cloud providers, matches by hostname. For self-hosted, checks
+ * a map of known instanceUrl → provider from the user's connections.
+ */
+export function detectProvider(
+  repoUrl: string,
+  knownInstances?: Map<string, RepoProvider>
+): RepoProvider | null {
   if (!repoUrl) return null;
   try {
     const url = new URL(repoUrl.includes('://') ? repoUrl : `https://${repoUrl}`);
     if (url.hostname === 'github.com') return 'github';
     if (url.hostname === 'codeberg.org') return 'codeberg';
+
+    // Check self-hosted instances
+    if (knownInstances) {
+      for (const [instanceUrl, prov] of knownInstances) {
+        try {
+          if (new URL(instanceUrl).hostname === url.hostname) return prov;
+        } catch { /* skip malformed instance_url */ }
+      }
+    }
     return null;
   } catch {
     return null;
   }
 }
 
-// ── Dispatchers ──────────────────────────────────────────────────
+// ── PAT validation ───────────────────────────────────────────────
 
-export function parseRepoUrl(provider: RepoProvider, url: string): { owner: string; repo: string } | null {
-  switch (provider) {
-    case 'github': return github.parseRepoUrl(url);
-    case 'codeberg': return codeberg.parseRepoUrl(url);
+/**
+ * Validate a Personal Access Token by calling the provider's /user endpoint.
+ * Returns normalised user info on success, throws on failure.
+ */
+export async function validatePAT(
+  prov: RepoProvider,
+  token: string,
+  instanceUrl: string
+): Promise<NormalisedUser> {
+  const config = getProviderConfig(prov);
+  if (!config) throw new Error(`Unknown provider: ${prov}`);
+  const headers = config.authHeader(token);
+
+  if (prov === 'gitlab') {
+    const res = await fetch(`${instanceUrl}/api/v4/user`, {
+      headers: { ...headers, Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`GitLab PAT validation failed (${res.status}): ${body}`);
+    }
+    const u = await res.json() as any;
+    return { id: u.id, login: u.username, avatar_url: u.avatar_url || '' };
+  } else {
+    // Gitea / Forgejo: GET /api/v1/user
+    const res = await fetch(`${instanceUrl}/api/v1/user`, {
+      headers: { ...headers, Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`${prov} PAT validation failed (${res.status}): ${body}`);
+    }
+    const u = await res.json() as any;
+    return { id: u.id, login: u.login || u.username, avatar_url: u.avatar_url || '' };
   }
 }
 
-export async function getRepo(provider: RepoProvider, token: string, owner: string, repo: string): Promise<NormalisedRepo> {
-  switch (provider) {
+// ── Gitea/Forgejo API helpers ────────────────────────────────────
+
+async function giteaGet<T>(apiBase: string, path: string, token: string): Promise<T> {
+  const res = await fetch(`${apiBase}${path}`, {
+    headers: { Authorization: `token ${token}`, Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Gitea API ${res.status}: ${path} — ${body}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function gitlabGet<T>(apiBase: string, path: string, token: string): Promise<T> {
+  const res = await fetch(`${apiBase}${path}`, {
+    headers: { 'PRIVATE-TOKEN': token, Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`GitLab API ${res.status}: ${path} — ${body}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+// ── Dispatchers ──────────────────────────────────────────────────
+
+export function parseRepoUrl(
+  prov: RepoProvider,
+  url: string
+): { owner: string; repo: string } | null {
+  switch (prov) {
+    case 'github': return github.parseRepoUrl(url);
+    case 'codeberg': return codeberg.parseRepoUrl(url);
+    case 'gitea':
+    case 'forgejo':
+    case 'gitlab':
+      return parseRepoUrlGeneric(url);
+  }
+}
+
+export async function getRepo(
+  prov: RepoProvider,
+  token: string,
+  owner: string,
+  repo: string,
+  instanceUrl?: string
+): Promise<NormalisedRepo> {
+  switch (prov) {
     case 'github': {
       const r = await github.getRepo(token, owner, repo);
       return {
@@ -187,32 +289,142 @@ export async function getRepo(provider: RepoProvider, token: string, owner: stri
         private: r.private,
       };
     }
+    case 'gitea':
+    case 'forgejo': {
+      if (!instanceUrl) throw new Error(`${prov} requires instanceUrl`);
+      const apiBase = `${instanceUrl}/api/v1`;
+      const r = await giteaGet<any>(apiBase, `/repos/${owner}/${repo}`, token);
+      return {
+        html_url: r.html_url,
+        full_name: r.full_name,
+        name: r.name,
+        description: r.description || '',
+        language: r.language || '',
+        stargazers_count: r.stars_count || 0,
+        forks_count: r.forks_count || 0,
+        open_issues_count: r.open_issues_count || 0,
+        visibility: r.private ? 'private' : 'public',
+        default_branch: r.default_branch,
+        pushed_at: r.updated_at,
+        private: r.private,
+      };
+    }
+    case 'gitlab': {
+      if (!instanceUrl) throw new Error('gitlab requires instanceUrl');
+      const apiBase = `${instanceUrl}/api/v4`;
+      const projectId = encodeURIComponent(`${owner}/${repo}`);
+      const r = await gitlabGet<any>(apiBase, `/projects/${projectId}`, token);
+      return {
+        html_url: r.web_url,
+        full_name: r.path_with_namespace,
+        name: r.name,
+        description: r.description || '',
+        language: '',  // GitLab doesn't include in project endpoint
+        stargazers_count: r.star_count || 0,
+        forks_count: r.forks_count || 0,
+        open_issues_count: r.open_issues_count || 0,
+        visibility: r.visibility || 'private',
+        default_branch: r.default_branch || 'main',
+        pushed_at: r.last_activity_at || r.updated_at || '',
+        private: r.visibility === 'private',
+      };
+    }
   }
 }
 
-export async function getContributors(provider: RepoProvider, token: string, owner: string, repo: string): Promise<NormalisedContributor[]> {
-  switch (provider) {
+export async function getContributors(
+  prov: RepoProvider,
+  token: string,
+  owner: string,
+  repo: string,
+  instanceUrl?: string
+): Promise<NormalisedContributor[]> {
+  switch (prov) {
     case 'github': return github.getContributors(token, owner, repo);
     case 'codeberg': return codeberg.getContributors(token, owner, repo);
+    case 'gitea':
+    case 'forgejo': {
+      if (!instanceUrl) return [];
+      const apiBase = `${instanceUrl}/api/v1`;
+      try {
+        const contributors = await giteaGet<any[]>(apiBase, `/repos/${owner}/${repo}/contributors`, token);
+        return contributors.map((c: any) => ({
+          id: c.id,
+          login: c.login || c.username || '',
+          avatar_url: c.avatar_url || '',
+          html_url: c.html_url || `${instanceUrl}/${c.login || c.username}`,
+          contributions: c.contributions || 0,
+        }));
+      } catch { return []; }
+    }
+    case 'gitlab': {
+      if (!instanceUrl) return [];
+      const apiBase = `${instanceUrl}/api/v4`;
+      const projectId = encodeURIComponent(`${owner}/${repo}`);
+      try {
+        const members = await gitlabGet<any[]>(apiBase, `/projects/${projectId}/members/all?per_page=100`, token);
+        return members.map((m: any) => ({
+          id: m.id,
+          login: m.username,
+          avatar_url: m.avatar_url || '',
+          html_url: `${instanceUrl}/${m.username}`,
+          contributions: 0,  // GitLab members API doesn't include commit counts
+        }));
+      } catch { return []; }
+    }
   }
 }
 
-export async function getLanguages(provider: RepoProvider, token: string, owner: string, repo: string): Promise<Record<string, number>> {
-  switch (provider) {
+export async function getLanguages(
+  prov: RepoProvider,
+  token: string,
+  owner: string,
+  repo: string,
+  instanceUrl?: string
+): Promise<Record<string, number>> {
+  switch (prov) {
     case 'github': return github.getLanguages(token, owner, repo);
     case 'codeberg': return codeberg.getLanguages(token, owner, repo);
+    case 'gitea':
+    case 'forgejo': {
+      if (!instanceUrl) return {};
+      const apiBase = `${instanceUrl}/api/v1`;
+      try {
+        return await giteaGet<Record<string, number>>(apiBase, `/repos/${owner}/${repo}/languages`, token);
+      } catch { return {}; }
+    }
+    case 'gitlab': {
+      if (!instanceUrl) return {};
+      const apiBase = `${instanceUrl}/api/v4`;
+      const projectId = encodeURIComponent(`${owner}/${repo}`);
+      try {
+        // GitLab returns { "TypeScript": 45.2, "JavaScript": 30.1 } as percentages
+        const langs = await gitlabGet<Record<string, number>>(apiBase, `/projects/${projectId}/languages`, token);
+        // Convert percentages to approximate bytes (use 1000 as base)
+        const result: Record<string, number> = {};
+        for (const [lang, pct] of Object.entries(langs)) {
+          result[lang] = Math.round(pct * 1000);
+        }
+        return result;
+      } catch { return {}; }
+    }
   }
 }
 
 /** Fetch raw file content from a repo. Returns null if file not found (404). */
 export async function getFileContent(
-  provider: RepoProvider | string, token: string, owner: string, repo: string, branch: string, filepath: string,
+  prov: RepoProvider | string,
+  token: string,
+  owner: string,
+  repo: string,
+  branch: string,
+  filepath: string,
   instanceUrl?: string
 ): Promise<string | null> {
-  if (provider === 'github') return github.getFileContent(token, owner, repo, branch, filepath);
-  if (provider === 'codeberg') return codeberg.getRawFile(token, owner, repo, branch, filepath);
+  if (prov === 'github') return github.getFileContent(token, owner, repo, branch, filepath);
+  if (prov === 'codeberg') return codeberg.getRawFile(token, owner, repo, branch, filepath);
   // Self-hosted Gitea/Forgejo — use Gitea API
-  if (provider === 'gitea' || provider === 'forgejo') {
+  if (prov === 'gitea' || prov === 'forgejo') {
     if (!instanceUrl) return null;
     const apiBase = `${instanceUrl}/api/v1`;
     const url = `${apiBase}/repos/${owner}/${repo}/raw/${encodeURIComponent(filepath)}?ref=${encodeURIComponent(branch)}`;
@@ -223,7 +435,7 @@ export async function getFileContent(
     } catch { return null; }
   }
   // GitLab self-hosted
-  if (provider === 'gitlab') {
+  if (prov === 'gitlab') {
     if (!instanceUrl) return null;
     const projectId = encodeURIComponent(`${owner}/${repo}`);
     const url = `${instanceUrl}/api/v4/projects/${projectId}/repository/files/${encodeURIComponent(filepath)}/raw?ref=${encodeURIComponent(branch)}`;
@@ -236,15 +448,30 @@ export async function getFileContent(
   return null;
 }
 
-export async function getSBOM(provider: RepoProvider, token: string, owner: string, repo: string): Promise<any | null> {
-  switch (provider) {
+export async function getSBOM(
+  prov: RepoProvider,
+  token: string,
+  owner: string,
+  repo: string
+): Promise<any | null> {
+  switch (prov) {
     case 'github': return github.getSBOM(token, owner, repo);
-    case 'codeberg': return null; // Codeberg has no SBOM API
+    case 'codeberg': return null;
+    case 'gitea':
+    case 'forgejo':
+    case 'gitlab':
+      return null;  // No SBOM API for self-hosted providers
   }
 }
 
-export async function getReleases(provider: RepoProvider, token: string, owner: string, repo: string): Promise<NormalisedRelease[]> {
-  switch (provider) {
+export async function getReleases(
+  prov: RepoProvider,
+  token: string,
+  owner: string,
+  repo: string,
+  instanceUrl?: string
+): Promise<NormalisedRelease[]> {
+  switch (prov) {
     case 'github': return github.getReleases(token, owner, repo);
     case 'codeberg': {
       const releases = await codeberg.getReleases(token, owner, repo);
@@ -259,11 +486,53 @@ export async function getReleases(provider: RepoProvider, token: string, owner: 
         html_url: r.html_url,
       }));
     }
+    case 'gitea':
+    case 'forgejo': {
+      if (!instanceUrl) return [];
+      const apiBase = `${instanceUrl}/api/v1`;
+      try {
+        const releases = await giteaGet<any[]>(apiBase, `/repos/${owner}/${repo}/releases?limit=100`, token);
+        return releases.map((r: any) => ({
+          tag_name: r.tag_name,
+          name: r.name || r.tag_name,
+          body: r.body || '',
+          draft: r.draft,
+          prerelease: r.prerelease,
+          published_at: r.published_at || r.created_at,
+          target_commitish: r.target_commitish || '',
+          html_url: r.html_url || `${instanceUrl}/${owner}/${repo}/releases/tag/${r.tag_name}`,
+        }));
+      } catch { return []; }
+    }
+    case 'gitlab': {
+      if (!instanceUrl) return [];
+      const apiBase = `${instanceUrl}/api/v4`;
+      const projectId = encodeURIComponent(`${owner}/${repo}`);
+      try {
+        const releases = await gitlabGet<any[]>(apiBase, `/projects/${projectId}/releases?per_page=100`, token);
+        return releases.map((r: any) => ({
+          tag_name: r.tag_name,
+          name: r.name || r.tag_name,
+          body: r.description || '',
+          draft: false,
+          prerelease: false,
+          published_at: r.released_at || r.created_at,
+          target_commitish: r.commit?.id || '',
+          html_url: r._links?.self || `${instanceUrl}/${owner}/${repo}/-/releases/${r.tag_name}`,
+        }));
+      } catch { return []; }
+    }
   }
 }
 
-export async function getTags(provider: RepoProvider, token: string, owner: string, repo: string): Promise<NormalisedTag[]> {
-  switch (provider) {
+export async function getTags(
+  prov: RepoProvider,
+  token: string,
+  owner: string,
+  repo: string,
+  instanceUrl?: string
+): Promise<NormalisedTag[]> {
+  switch (prov) {
     case 'github': {
       const tags = await github.getTags(token, owner, repo);
       return tags.map(t => ({ name: t.name, commit: { sha: t.commit.sha } }));
@@ -272,22 +541,54 @@ export async function getTags(provider: RepoProvider, token: string, owner: stri
       const tags = await codeberg.getTags(token, owner, repo);
       return tags.map(t => ({ name: t.name, commit: { sha: t.commit.sha } }));
     }
+    case 'gitea':
+    case 'forgejo': {
+      if (!instanceUrl) return [];
+      const apiBase = `${instanceUrl}/api/v1`;
+      try {
+        const tags = await giteaGet<any[]>(apiBase, `/repos/${owner}/${repo}/tags?limit=100`, token);
+        return tags.map((t: any) => ({
+          name: t.name,
+          commit: { sha: t.id || t.commit?.sha || '' },
+        }));
+      } catch { return []; }
+    }
+    case 'gitlab': {
+      if (!instanceUrl) return [];
+      const apiBase = `${instanceUrl}/api/v4`;
+      const projectId = encodeURIComponent(`${owner}/${repo}`);
+      try {
+        const tags = await gitlabGet<any[]>(apiBase, `/projects/${projectId}/repository/tags?per_page=100`, token);
+        return tags.map((t: any) => ({
+          name: t.name,
+          commit: { sha: t.commit?.id || '' },
+        }));
+      } catch { return []; }
+    }
   }
 }
 
 export async function exchangeCodeForToken(
-  provider: RepoProvider,
+  prov: RepoProvider,
   code: string,
   redirectUri: string
 ): Promise<{ access_token: string; token_type: string; scope: string }> {
-  switch (provider) {
+  switch (prov) {
     case 'github': return github.exchangeCodeForToken(code);
     case 'codeberg': return codeberg.exchangeCodeForToken(code, redirectUri);
+    case 'gitea':
+    case 'forgejo':
+    case 'gitlab':
+      throw new Error(`${prov} uses PAT authentication, not OAuth code exchange`);
   }
 }
 
-export async function getAuthenticatedUser(provider: RepoProvider, token: string): Promise<NormalisedUser> {
-  switch (provider) {
+export async function getAuthenticatedUser(
+  prov: RepoProvider,
+  token: string,
+  instanceUrl?: string
+): Promise<NormalisedUser> {
+  switch (prov) {
     case 'github': {
       const u = await github.getAuthenticatedUser(token);
       return { id: u.id, login: u.login, avatar_url: u.avatar_url };
@@ -295,6 +596,12 @@ export async function getAuthenticatedUser(provider: RepoProvider, token: string
     case 'codeberg': {
       const u = await codeberg.getAuthenticatedUser(token);
       return { id: u.id, login: u.login, avatar_url: u.avatar_url };
+    }
+    case 'gitea':
+    case 'forgejo':
+    case 'gitlab': {
+      if (!instanceUrl) throw new Error(`${prov} requires instanceUrl`);
+      return validatePAT(prov, token, instanceUrl);
     }
   }
 }
@@ -307,7 +614,7 @@ const MAX_TREE_FILES = 5000;
 
 /** List all files in a repo (recursive). Returns flat array of file paths. */
 export async function listRepoFiles(
-  provider: RepoProvider | string,
+  prov: RepoProvider | string,
   token: string,
   owner: string,
   repo: string,
@@ -315,30 +622,29 @@ export async function listRepoFiles(
   instanceUrl?: string
 ): Promise<string[]> {
   try {
-    if (provider === 'github') {
+    if (prov === 'github') {
       return await listGitHubFiles(token, owner, repo, branch);
     }
-    if (provider === 'codeberg' || provider === 'gitea' || provider === 'forgejo') {
-      const apiBase = provider === 'codeberg'
+    if (prov === 'codeberg' || prov === 'gitea' || prov === 'forgejo') {
+      const apiBase = prov === 'codeberg'
         ? 'https://codeberg.org/api/v1'
         : instanceUrl ? `${instanceUrl}/api/v1` : null;
       if (!apiBase) return [];
       return await listGiteaFiles(apiBase, token, owner, repo, branch);
     }
-    if (provider === 'gitlab') {
+    if (prov === 'gitlab') {
       const apiBase = instanceUrl ? `${instanceUrl}/api/v4` : null;
       if (!apiBase) return [];
       return await listGitLabFiles(apiBase, token, owner, repo, branch);
     }
     return [];
   } catch (err: any) {
-    console.error(`[REPO-PROVIDER] listRepoFiles failed for ${provider}/${owner}/${repo}: ${err.message}`);
+    console.error(`[REPO-PROVIDER] listRepoFiles failed for ${prov}/${owner}/${repo}: ${err.message}`);
     return [];
   }
 }
 
 async function listGitHubFiles(token: string, owner: string, repo: string, branch: string): Promise<string[]> {
-  // GitHub: GET /repos/{owner}/{repo}/git/trees/{branch}?recursive=1
   const data = await github.githubGet<{ tree: Array<{ path: string; type: string }> }>(
     `/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`,
     token
@@ -350,7 +656,6 @@ async function listGitHubFiles(token: string, owner: string, repo: string, branc
 }
 
 async function listGiteaFiles(apiBase: string, token: string, owner: string, repo: string, branch: string): Promise<string[]> {
-  // Gitea/Codeberg/Forgejo: GET /api/v1/repos/{owner}/{repo}/git/trees/{branch}?recursive=true&per_page=0
   const url = `${apiBase}/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=true&per_page=0`;
   const res = await fetch(url, {
     headers: { Authorization: `token ${token}`, Accept: 'application/json' },
@@ -367,8 +672,6 @@ async function listGiteaFiles(apiBase: string, token: string, owner: string, rep
 }
 
 async function listGitLabFiles(apiBase: string, token: string, owner: string, repo: string, branch: string): Promise<string[]> {
-  // GitLab: GET /api/v4/projects/{id}/repository/tree?recursive=true&per_page=100
-  // Project ID = owner%2Frepo (URL-encoded)
   const projectId = encodeURIComponent(`${owner}/${repo}`);
   const files: string[] = [];
   let page = 1;

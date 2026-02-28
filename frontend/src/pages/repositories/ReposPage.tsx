@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { GitBranch, Star, GitFork, AlertCircle, Users, ExternalLink, Github } from 'lucide-react';
+import {
+  GitBranch, Star, GitFork, AlertCircle, Users, ExternalLink, Github,
+  Link2, ChevronDown, ChevronRight, Key, Server, Check, X, Loader, Unlink
+} from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import './ReposPage.css';
@@ -15,6 +18,7 @@ function CodebergIcon({ size = 14 }: { size?: number }) {
     </svg>
   );
 }
+
 
 interface Repo {
   fullName: string;
@@ -49,6 +53,23 @@ interface OverviewData {
   totals: { totalProducts: number; connectedRepos: number; disconnectedProducts: number; totalOpenIssues: number };
 }
 
+interface ProviderDef {
+  id: string;
+  label: string;
+  selfHosted: boolean;
+  oauthSupported: boolean;
+  supportsApiSbom: boolean;
+}
+
+interface Connection {
+  provider: string;
+  username: string;
+  avatarUrl: string | null;
+  scope: string;
+  connectedAt: string;
+  instanceUrl: string | null;
+}
+
 type Filter = 'all' | 'connected' | 'disconnected' | 'github' | 'codeberg';
 
 function formatTimeAgo(dateStr: string | null): string {
@@ -80,12 +101,202 @@ function detectProvider(url: string): string {
   return 'github';
 }
 
+// ─── Provider Connections Panel ──────────────────────────────────
+
+function ProviderConnections({ onConnectionChange }: { onConnectionChange: () => void }) {
+  const [providers, setProviders] = useState<ProviderDef[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
+  const [expanded, setExpanded] = useState(false);
+  const [showPatForm, setShowPatForm] = useState(false);
+  const [patProvider, setPatProvider] = useState('forgejo');
+  const [patUrl, setPatUrl] = useState('');
+  const [patToken, setPatToken] = useState('');
+  const [patLoading, setPatLoading] = useState(false);
+  const [patError, setPatError] = useState('');
+  const [patSuccess, setPatSuccess] = useState('');
+  const token = localStorage.getItem('session_token');
+
+  const fetchConnections = useCallback(async () => {
+    if (!token) return;
+    try {
+      const [provRes, statusRes] = await Promise.all([
+        fetch('/api/repo/providers', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/repo/status', { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      if (provRes.ok) setProviders(await provRes.json());
+      if (statusRes.ok) {
+        const data = await statusRes.json();
+        setConnections(data.connections || []);
+      }
+    } catch { /* silent */ }
+  }, [token]);
+
+  useEffect(() => { fetchConnections(); }, [fetchConnections]);
+
+  const handlePatConnect = async () => {
+    setPatLoading(true);
+    setPatError('');
+    setPatSuccess('');
+    try {
+      const res = await fetch('/api/repo/connect-pat', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: patProvider, instanceUrl: patUrl, accessToken: patToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPatError(data.error || 'Connection failed');
+      } else {
+        setPatSuccess(`Connected as ${data.username}`);
+        setPatToken('');
+        setShowPatForm(false);
+        await fetchConnections();
+        onConnectionChange();
+      }
+    } catch (err: any) {
+      setPatError(err.message || 'Network error');
+    } finally {
+      setPatLoading(false);
+    }
+  };
+
+  const handleDisconnect = async (prov: string) => {
+    if (!confirm(`Disconnect ${prov}? This will remove access to repositories on this provider.`)) return;
+    try {
+      const res = await fetch(`/api/repo/disconnect/${prov}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        await fetchConnections();
+        onConnectionChange();
+      }
+    } catch { /* silent */ }
+  };
+
+  const connectedIds = new Set(connections.map(c => c.provider));
+  const selfHostedProviders = providers.filter(p => p.selfHosted);
+  const connectableCount = selfHostedProviders.filter(p => !connectedIds.has(p.id)).length;
+
+  function providerIcon(id: string) {
+    if (id === 'github') return <Github size={14} />;
+    if (id === 'codeberg') return <CodebergIcon size={14} />;
+    return <Server size={14} />;
+  }
+
+  return (
+    <div className="rp-connections">
+      <div className="rp-conn-header" onClick={() => setExpanded(!expanded)}>
+        <div className="rp-conn-title">
+          <Link2 size={16} />
+          <span>Provider Connections</span>
+          <span className="rp-conn-count">
+            {connections.length} connected
+            {connectableCount > 0 && ` \u2022 ${connectableCount} available`}
+          </span>
+        </div>
+        {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+      </div>
+
+      {expanded && (
+        <div className="rp-conn-body">
+          {/* Connected providers */}
+          {connections.length > 0 && (
+            <div className="rp-conn-list">
+              {connections.map(c => (
+                <div key={c.provider} className="rp-conn-item connected">
+                  <div className="rp-conn-item-left">
+                    {providerIcon(c.provider)}
+                    <div>
+                      <span className="rp-conn-provider">{c.provider}</span>
+                      <span className="rp-conn-username">{c.username}</span>
+                      {c.instanceUrl && (
+                        <span className="rp-conn-instance">{c.instanceUrl}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="rp-conn-item-right">
+                    <span className="rp-conn-status connected"><Check size={12} /> Connected</span>
+                    <button className="rp-conn-disconnect" onClick={() => handleDisconnect(c.provider)} title="Disconnect">
+                      <Unlink size={13} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Self-hosted PAT connect form */}
+          {!showPatForm ? (
+            <button className="rp-conn-add-btn" onClick={() => setShowPatForm(true)}>
+              <Key size={14} /> Connect Self-Hosted Provider (PAT)
+            </button>
+          ) : (
+            <div className="rp-pat-form">
+              <div className="rp-pat-form-header">
+                <Key size={14} />
+                <span>Connect with Personal Access Token</span>
+                <button className="rp-pat-close" onClick={() => { setShowPatForm(false); setPatError(''); setPatSuccess(''); }}>
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div className="rp-pat-field">
+                <label>Provider</label>
+                <select value={patProvider} onChange={e => setPatProvider(e.target.value)}>
+                  {selfHostedProviders.map(p => (
+                    <option key={p.id} value={p.id}>{p.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="rp-pat-field">
+                <label>Instance URL</label>
+                <input
+                  type="url"
+                  placeholder="https://git.example.com"
+                  value={patUrl}
+                  onChange={e => setPatUrl(e.target.value)}
+                />
+              </div>
+
+              <div className="rp-pat-field">
+                <label>Personal Access Token</label>
+                <input
+                  type="password"
+                  placeholder="Enter your PAT"
+                  value={patToken}
+                  onChange={e => setPatToken(e.target.value)}
+                />
+                <span className="rp-pat-hint">Token needs read access to repositories</span>
+              </div>
+
+              {patError && <div className="rp-pat-error">{patError}</div>}
+              {patSuccess && <div className="rp-pat-success">{patSuccess}</div>}
+
+              <button
+                className="rp-pat-submit"
+                onClick={handlePatConnect}
+                disabled={patLoading || !patUrl || !patToken}
+              >
+                {patLoading ? <><Loader size={14} className="spin" /> Validating...</> : 'Test & Connect'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Page ───────────────────────────────────────────────────
+
 export default function ReposPage() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     const token = localStorage.getItem('session_token');
     fetch('/api/repos/overview', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
@@ -93,12 +304,18 @@ export default function ReposPage() {
       .catch(() => setLoading(false));
   }, []);
 
+  useEffect(() => { fetchData(); }, [fetchData]);
+
   if (loading) return <><PageHeader title="Repositories" /><p className="rp-empty">Loading...</p></>;
   if (!data) return <><PageHeader title="Repositories" /><p className="rp-empty">Unable to load repositories.</p></>;
 
   const { products, totals } = data;
   if (products.length === 0) return (
-    <><PageHeader title="Repositories" /><p className="rp-empty">No products yet. <Link to="/products">Add your first product</Link> to connect a repository.</p></>
+    <>
+      <PageHeader title="Repositories" />
+      <ProviderConnections onConnectionChange={fetchData} />
+      <p className="rp-empty">No products yet. <Link to="/products">Add your first product</Link> to connect a repository.</p>
+    </>
   );
 
   const filtered = products.filter(p => {
@@ -122,6 +339,8 @@ export default function ReposPage() {
         <StatCard label="Disconnected" value={totals.disconnectedProducts} color="amber" sub="need linking" />
         <StatCard label="Open Issues" value={totals.totalOpenIssues} color="red" sub="across all repos" />
       </div>
+
+      <ProviderConnections onConnectionChange={fetchData} />
 
       <div className="rp-filter-bar">
         {([
@@ -152,7 +371,7 @@ export default function ReposPage() {
                 <>
                   <span className={`rp-badge rp-badge-provider rp-badge-${repoProvider}`}>
                     {repoProvider === 'codeberg' ? <CodebergIcon size={11} /> : <Github size={11} />}
-                    {repoProvider === 'codeberg' ? 'Codeberg' : 'GitHub'}
+                    {repoProvider === 'codeberg' ? 'Codeberg' : repoProvider === 'github' ? 'GitHub' : repoProvider}
                   </span>
                   <span className={`rp-badge ${product.repo.isPrivate ? 'private' : 'public'}`}>
                     {product.repo.visibility}
@@ -207,7 +426,7 @@ export default function ReposPage() {
               </>
             ) : (
               <div className="rp-disconnected">
-                No repository connected. <Link to={`/products/${product.id}`}>Go to product</Link> to connect a GitHub or Codeberg repository.
+                No repository connected. <Link to={`/products/${product.id}`}>Go to product</Link> to connect a repository.
               </div>
             )}
           </div>

@@ -48,7 +48,7 @@ let lastVulnDbSyncDate = '';
 let lastBillingCheckDate = '';
 let lastEscrowDepositDate = '';
 
-async function getProductRepoToken(productId: string, forProvider?: RepoProvider): Promise<{ token: string; userId: string; provider: RepoProvider } | null> {
+async function getProductRepoToken(productId: string, forProvider?: RepoProvider): Promise<{ token: string; userId: string; provider: RepoProvider; instanceUrl: string | null } | null> {
   // Find the user who owns this product (via org) and has a repo connection
   const neo4jSession = getDriver().session();
   try {
@@ -60,11 +60,63 @@ async function getProductRepoToken(productId: string, forProvider?: RepoProvider
     );
     if (result.records.length === 0) return null;
 
-    // Auto-detect provider from repoUrl if not specified
     const repoUrl = result.records[0].get('repoUrl');
-    const detectedProvider = forProvider || (repoUrl ? repoProvider.detectProvider(repoUrl) : null) || 'github';
 
-    // Try each user until we find one with a matching token
+    // Auto-detect provider from repoUrl (supports cloud + self-hosted)
+    // First try cloud providers
+    let detectedProvider = forProvider || (repoUrl ? repoProvider.detectProvider(repoUrl) : null);
+
+    // Try cloud providers first
+    if (detectedProvider) {
+      for (const record of result.records) {
+        const userId = record.get('userId');
+        const tokenResult = await pool.query(
+          `SELECT access_token_encrypted, instance_url FROM repo_connections WHERE user_id = $1 AND provider = $2`,
+          [userId, detectedProvider]
+        );
+        if (tokenResult.rows.length > 0) {
+          return {
+            token: decrypt(tokenResult.rows[0].access_token_encrypted),
+            userId,
+            provider: detectedProvider,
+            instanceUrl: tokenResult.rows[0].instance_url || null,
+          };
+        }
+      }
+    }
+
+    // If no cloud provider matched, try self-hosted by matching instance_url hostname
+    if (!detectedProvider && repoUrl) {
+      let repoHostname;
+      try {
+        repoHostname = new URL(repoUrl.includes('://') ? repoUrl : `https://${repoUrl}`).hostname;
+      } catch { /* ignore */ }
+
+      if (repoHostname) {
+        for (const record of result.records) {
+          const userId = record.get('userId');
+          const allConns = await pool.query(
+            `SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE user_id = $1 AND instance_url IS NOT NULL`,
+            [userId]
+          );
+          for (const row of allConns.rows) {
+            try {
+              if (new URL(row.instance_url).hostname === repoHostname) {
+                return {
+                  token: decrypt(row.access_token_encrypted),
+                  userId,
+                  provider: row.provider as RepoProvider,
+                  instanceUrl: row.instance_url,
+                };
+              }
+            } catch { continue; }
+          }
+        }
+      }
+    }
+
+    // Final fallback: default to github
+    if (!detectedProvider) detectedProvider = 'github';
     for (const record of result.records) {
       const userId = record.get('userId');
       const tokenResult = await pool.query(
@@ -76,6 +128,7 @@ async function getProductRepoToken(productId: string, forProvider?: RepoProvider
           token: decrypt(tokenResult.rows[0].access_token_encrypted),
           userId,
           provider: detectedProvider,
+          instanceUrl: null,
         };
       }
     }
@@ -112,17 +165,18 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
     if (!repoUrl) return false;
 
     const syncProvider = auth.provider;
+    const syncInstanceUrl = auth.instanceUrl;
     const parsed = repoProvider.parseRepoUrl(syncProvider, repoUrl);
     if (!parsed) return false;
 
     // Fetch all data from provider
     const [repoData, contributors, languages, sbomData, releases, tags] = await Promise.all([
-      repoProvider.getRepo(syncProvider, auth.token, parsed.owner, parsed.repo),
-      repoProvider.getContributors(syncProvider, auth.token, parsed.owner, parsed.repo),
-      repoProvider.getLanguages(syncProvider, auth.token, parsed.owner, parsed.repo),
+      repoProvider.getRepo(syncProvider, auth.token, parsed.owner, parsed.repo, syncInstanceUrl || undefined),
+      repoProvider.getContributors(syncProvider, auth.token, parsed.owner, parsed.repo, syncInstanceUrl || undefined),
+      repoProvider.getLanguages(syncProvider, auth.token, parsed.owner, parsed.repo, syncInstanceUrl || undefined),
       repoProvider.getSBOM(syncProvider, auth.token, parsed.owner, parsed.repo),
-      repoProvider.getReleases(syncProvider, auth.token, parsed.owner, parsed.repo),
-      repoProvider.getTags(syncProvider, auth.token, parsed.owner, parsed.repo),
+      repoProvider.getReleases(syncProvider, auth.token, parsed.owner, parsed.repo, syncInstanceUrl || undefined),
+      repoProvider.getTags(syncProvider, auth.token, parsed.owner, parsed.repo, syncInstanceUrl || undefined),
     ]);
 
     // Store repo data in Neo4j
@@ -165,7 +219,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
       console.log(`[SCHEDULER] No API SBOM for ${parsed.owner}/${parsed.repo} — trying lockfile fallback...`);
       const lockfileResult = await generateSBOMFromLockfiles(
         parsed.owner, parsed.repo, repoData.default_branch,
-        syncProvider, auth.token, repoUrl
+        syncProvider, auth.token, repoUrl, syncInstanceUrl || undefined
       );
       if (lockfileResult) {
         effectiveSbomData = lockfileResult.sbom as any;
@@ -180,7 +234,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
       try {
         const importResult = await generateSBOMFromImports(
           parsed.owner, parsed.repo, repoData.default_branch,
-          syncProvider, auth.token, repoUrl
+          syncProvider, auth.token, repoUrl, syncInstanceUrl || undefined
         );
         if (importResult) {
           effectiveSbomData = { sbom: importResult.sbom } as any;

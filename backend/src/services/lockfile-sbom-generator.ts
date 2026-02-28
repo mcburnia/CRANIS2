@@ -56,15 +56,16 @@ export async function generateSBOMFromLockfiles(
   owner: string,
   repo: string,
   branch: string,
-  provider: RepoProvider,
+  provider: RepoProvider | string,
   token: string,
-  repoUrl: string
+  repoUrl: string,
+  instanceUrl?: string
 ): Promise<LockfileSBOMResult | null> {
   console.log(`[LOCKFILE-SBOM] Attempting lockfile SBOM for ${owner}/${repo} (${provider}, branch: ${branch})`);
 
   for (const config of LOCKFILE_CONFIGS) {
     try {
-      const content = await repoProvider.getFileContent(provider, token, owner, repo, branch, config.filename);
+      const content = await repoProvider.getFileContent(provider, token, owner, repo, branch, config.filename, instanceUrl);
       if (!content) continue;
 
       // Memory guard

@@ -28,6 +28,7 @@ import {
 import type { GitHubSBOMResponse, SpdxPackage, GitHubRelease, GitHubTag } from '../services/github.js';
 import * as provider from '../services/repo-provider.js';
 import type { RepoProvider, NormalisedRelease } from '../services/repo-provider.js';
+// Note: provider.parseRepoUrlGeneric, provider.validatePAT, provider.detectProvider now available
 import { createRepo as codebergCreateRepo } from '../services/codeberg.js';
 
 const router = Router();
@@ -77,6 +78,83 @@ router.get('/providers', requireAuth, (_req: Request, res: Response) => {
   res.json(providers);
 });
 
+// ─── POST /connect-pat — PAT-based connection for self-hosted providers ───
+router.post('/connect-pat', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const userEmail = (req as any).email;
+  const { provider: prov, instanceUrl, accessToken } = req.body;
+
+  // Validate required fields
+  if (!prov || !instanceUrl || !accessToken) {
+    res.status(400).json({ error: 'Missing required fields: provider, instanceUrl, accessToken' });
+    return;
+  }
+
+  // Only allow PAT for self-hosted providers
+  if (!['gitea', 'forgejo', 'gitlab'].includes(prov)) {
+    res.status(400).json({ error: `Provider "${prov}" uses OAuth, not PAT. Use the OAuth connect flow instead.` });
+    return;
+  }
+
+  // Normalise instanceUrl (strip trailing slashes)
+  const normalised = instanceUrl.replace(/\/+$/, '');
+
+  // Validate URL format
+  try {
+    new URL(normalised);
+  } catch {
+    res.status(400).json({ error: 'Invalid instanceUrl format. Must be a valid URL (e.g. https://git.example.com)' });
+    return;
+  }
+
+  try {
+    // Validate the PAT by calling the provider's user endpoint
+    const user = await provider.validatePAT(prov as RepoProvider, accessToken, normalised);
+
+    // Encrypt the token
+    const encryptedToken = encrypt(accessToken);
+
+    // Store connection
+    await pool.query(
+      `INSERT INTO repo_connections (user_id, provider, instance_url, provider_user_id, provider_username,
+         provider_avatar_url, access_token_encrypted, token_scope)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pat')
+       ON CONFLICT ON CONSTRAINT repo_connections_user_provider_unique DO UPDATE SET
+         instance_url = $3, provider_user_id = $4, provider_username = $5,
+         provider_avatar_url = $6, access_token_encrypted = $7, token_scope = 'pat', connected_at = NOW()`,
+      [userId, prov, normalised, String(user.id), user.login, user.avatar_url, encryptedToken]
+    );
+
+    // Record telemetry
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId,
+      email: userEmail,
+      eventType: `${prov}_connected`,
+      ipAddress: reqData.ipAddress,
+      userAgent: reqData.userAgent,
+      acceptLanguage: reqData.acceptLanguage,
+      metadata: { username: user.login, provider: prov, instanceUrl: normalised, method: 'pat' },
+    });
+
+    res.json({
+      provider: prov,
+      username: user.login,
+      avatarUrl: user.avatar_url,
+      instanceUrl: normalised,
+    });
+  } catch (err: any) {
+    console.error(`[PAT-CONNECT] ${prov} PAT validation failed:`, err.message);
+    if (err.message?.includes('401') || err.message?.includes('403')) {
+      res.status(401).json({ error: 'Invalid access token. Please check your PAT and try again.' });
+    } else if (err.message?.includes('ECONNREFUSED') || err.message?.includes('ENOTFOUND')) {
+      res.status(400).json({ error: `Cannot reach ${normalised}. Please check the instance URL.` });
+    } else {
+      res.status(400).json({ error: `Failed to validate ${prov} token: ${err.message}` });
+    }
+  }
+});
+
 // Helper: get user's org_id
 async function getUserOrgId(userId: string): Promise<string | null> {
   const result = await pool.query('SELECT org_id FROM users WHERE id = $1', [userId]);
@@ -99,6 +177,76 @@ export async function getUserRepoToken(userId: string, repoProvider?: RepoProvid
 }
 // Backward compat alias
 export const getUserGitHubToken = getUserRepoToken;
+
+/** Get user's decrypted token AND connection metadata for a specific provider */
+export async function getUserRepoConnection(
+  userId: string,
+  repoProvider?: RepoProvider
+): Promise<{ token: string; instanceUrl: string | null; provider: RepoProvider } | null> {
+  const query = repoProvider
+    ? 'SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE user_id = $1 AND provider = $2'
+    : 'SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE user_id = $1';
+  const params = repoProvider ? [userId, repoProvider] : [userId];
+  const result = await pool.query(query, params);
+  if (result.rows.length === 0) return null;
+  try {
+    return {
+      token: decrypt(result.rows[0].access_token_encrypted),
+      instanceUrl: result.rows[0].instance_url || null,
+      provider: result.rows[0].provider as RepoProvider,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Resolve provider + token for a repo URL by checking user's connections */
+export async function resolveRepoConnection(
+  userId: string,
+  repoUrl: string
+): Promise<{ token: string; instanceUrl: string | null; provider: RepoProvider; owner: string; repo: string } | null> {
+  // First try cloud providers
+  const cloudProvider = provider.detectProvider(repoUrl);
+  if (cloudProvider) {
+    const conn = await getUserRepoConnection(userId, cloudProvider);
+    if (!conn) return null;
+    const parsed = provider.parseRepoUrl(cloudProvider, repoUrl);
+    if (!parsed) return null;
+    return { ...conn, owner: parsed.owner, repo: parsed.repo };
+  }
+
+  // Try self-hosted: find a connection whose instance_url hostname matches the repo URL
+  const allConns = await pool.query(
+    'SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE user_id = $1 AND instance_url IS NOT NULL',
+    [userId]
+  );
+
+  let repoHostname;
+  try {
+    repoHostname = new URL(repoUrl.includes('://') ? repoUrl : `https://${repoUrl}`).hostname;
+  } catch {
+    return null;
+  }
+
+  for (const row of allConns.rows) {
+    try {
+      const instanceHostname = new URL(row.instance_url).hostname;
+      if (instanceHostname === repoHostname) {
+        const parsed = provider.parseRepoUrlGeneric(repoUrl);
+        if (!parsed) continue;
+        return {
+          token: decrypt(row.access_token_encrypted),
+          instanceUrl: row.instance_url,
+          provider: row.provider as RepoProvider,
+          owner: parsed.owner,
+          repo: parsed.repo,
+        };
+      }
+    } catch { continue; }
+  }
+
+  return null;
+}
 
 /**
  * Parse a purl (Package URL) or construct one from SPDX package data.
@@ -480,7 +628,7 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
 
   const result = await pool.query(
-    'SELECT provider, provider_username, provider_avatar_url, token_scope, connected_at FROM repo_connections WHERE user_id = $1',
+    'SELECT provider, provider_username, provider_avatar_url, token_scope, connected_at, instance_url FROM repo_connections WHERE user_id = $1',
     [userId]
   );
 
@@ -496,6 +644,7 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
     avatarUrl: conn.provider_avatar_url,
     scope: conn.token_scope,
     connectedAt: conn.connected_at,
+    instanceUrl: conn.instance_url || null,
   }));
 
   // Backward compat: surface the GitHub connection at top level
@@ -541,24 +690,16 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       return;
     }
 
-    // Auto-detect provider from repo URL
-    const detectedProvider = provider.detectProvider(repoUrl);
-    if (!detectedProvider) {
-      res.status(400).json({ error: 'Unsupported repository URL. Use a GitHub or Codeberg repository.' });
+    // Resolve provider + token from repo URL (supports cloud + self-hosted)
+    const repoConn = await resolveRepoConnection(userId, repoUrl);
+    if (!repoConn) {
+      res.status(400).json({ error: 'No provider connection found for this repository URL. Please connect your account first.' });
       return;
     }
-
-    const parsed = provider.parseRepoUrl(detectedProvider, repoUrl);
-    if (!parsed) {
-      res.status(400).json({ error: `Invalid ${detectedProvider === 'codeberg' ? 'Codeberg' : 'GitHub'} repository URL` });
-      return;
-    }
-
-    const repoToken = await getUserRepoToken(userId, detectedProvider);
-    if (!repoToken) {
-      res.status(400).json({ error: `${detectedProvider === 'codeberg' ? 'Codeberg' : 'GitHub'} not connected. Please connect your account first.` });
-      return;
-    }
+    const detectedProvider = repoConn.provider;
+    const parsed = { owner: repoConn.owner, repo: repoConn.repo };
+    const repoToken = repoConn.token;
+    const repoInstanceUrl = repoConn.instanceUrl;
 
     const syncStartedAt = new Date();
     const syncStartMs = Date.now();
@@ -566,12 +707,12 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
     // Fetch ALL data from provider in parallel (ALL READ-ONLY GET requests)
     console.log(`[SYNC] Fetching data from ${detectedProvider} for`, parsed.owner, parsed.repo);
     const [repoData, contributors, languages, sbomData, releases, tags] = await Promise.all([
-      provider.getRepo(detectedProvider, repoToken, parsed.owner, parsed.repo),
-      provider.getContributors(detectedProvider, repoToken, parsed.owner, parsed.repo),
-      provider.getLanguages(detectedProvider, repoToken, parsed.owner, parsed.repo),
+      provider.getRepo(detectedProvider, repoToken, parsed.owner, parsed.repo, repoInstanceUrl || undefined),
+      provider.getContributors(detectedProvider, repoToken, parsed.owner, parsed.repo, repoInstanceUrl || undefined),
+      provider.getLanguages(detectedProvider, repoToken, parsed.owner, parsed.repo, repoInstanceUrl || undefined),
       provider.getSBOM(detectedProvider, repoToken, parsed.owner, parsed.repo),
-      provider.getReleases(detectedProvider, repoToken, parsed.owner, parsed.repo),
-      provider.getTags(detectedProvider, repoToken, parsed.owner, parsed.repo),
+      provider.getReleases(detectedProvider, repoToken, parsed.owner, parsed.repo, repoInstanceUrl || undefined),
+      provider.getTags(detectedProvider, repoToken, parsed.owner, parsed.repo, repoInstanceUrl || undefined),
     ]);
 
     // Store repo data in Neo4j
@@ -652,7 +793,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       console.log("[SYNC] No API SBOM — trying lockfile fallback...");
       const lockfileResult = await generateSBOMFromLockfiles(
         parsed.owner, parsed.repo, repoData.default_branch,
-        detectedProvider, repoToken, repoData.html_url
+        detectedProvider, repoToken, repoData.html_url, repoInstanceUrl || undefined
       );
       if (lockfileResult) {
         effectiveSbomData = lockfileResult.sbom as any;
@@ -667,7 +808,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       try {
         const importResult = await generateSBOMFromImports(
           parsed.owner, parsed.repo, repoData.default_branch,
-          detectedProvider, repoToken, repoData.html_url
+          detectedProvider, repoToken, repoData.html_url, repoInstanceUrl || undefined
         );
         if (importResult) {
           effectiveSbomData = { sbom: importResult.sbom } as any;
@@ -863,11 +1004,11 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
   } catch (err: any) {
     console.error('GitHub sync error:', err);
     if (err.message?.includes('404')) {
-      res.status(404).json({ error: 'Repository not found on GitHub. Check the URL and ensure your GitHub account has access.' });
+      res.status(404).json({ error: 'Repository not found. Check the URL and ensure your account has access.' });
     } else if (err.message?.includes('401') || err.message?.includes('403')) {
       res.status(403).json({ error: 'GitHub access denied. Your token may have expired — try reconnecting.' });
     } else {
-      res.status(500).json({ error: 'Failed to sync repository from GitHub' });
+      res.status(500).json({ error: 'Failed to sync repository' });
     }
   } finally {
     await neo4jSession.close();
@@ -957,25 +1098,19 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
       return;
     }
 
-    const sbomProvider = provider.detectProvider(repoUrl);
-    if (!sbomProvider) {
-      res.status(400).json({ error: 'Unsupported repository URL.' });
+    // Resolve provider + token (supports cloud + self-hosted)
+    const sbomConn = await resolveRepoConnection(userId, repoUrl);
+    if (!sbomConn) {
+      res.status(400).json({ error: 'No provider connection found for this repository.' });
       return;
     }
-
-    const parsed = provider.parseRepoUrl(sbomProvider, repoUrl);
-    if (!parsed) {
-      res.status(400).json({ error: 'Invalid repository URL' });
-      return;
-    }
-
-    const sbomToken = await getUserRepoToken(userId, sbomProvider);
-    if (!sbomToken) {
-      res.status(400).json({ error: `${sbomProvider === 'codeberg' ? 'Codeberg' : 'GitHub'} not connected.` });
-      return;
-    }
+    const sbomProvider = sbomConn.provider;
+    const parsed = { owner: sbomConn.owner, repo: sbomConn.repo };
+    const sbomToken = sbomConn.token;
+    const sbomInstanceUrl = sbomConn.instanceUrl;
 
     let sbomData = await provider.getSBOM(sbomProvider, sbomToken, parsed.owner, parsed.repo);
+    let refreshInstanceUrl = sbomInstanceUrl;
     let refreshSbomSource = 'api';
     // Fetch default branch for fallback SBOM generation
     const repoNode = await neo4jSession.run(
@@ -1073,7 +1208,7 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
     });
   } catch (err: any) {
     console.error('SBOM refresh error:', err);
-    res.status(500).json({ error: 'Failed to refresh SBOM from GitHub' });
+    res.status(500).json({ error: 'Failed to refresh SBOM' });
   } finally {
     await neo4jSession.close();
   }
@@ -1359,7 +1494,8 @@ router.delete('/disconnect/{:provider}', requireAuth, async (req: Request, res: 
     metadata: { username: result.rows[0].provider_username, provider: disconnectProvider },
   });
 
-  res.json({ message: `${disconnectProvider === 'codeberg' ? 'Codeberg' : 'GitHub'} disconnected` });
+  const providerLabels = { github: 'GitHub', codeberg: 'Codeberg', gitea: 'Gitea', forgejo: 'Forgejo', gitlab: 'GitLab' };
+    res.json({ message: `${providerLabels[disconnectProvider] || disconnectProvider} disconnected` });
 });
 
 // ─── GET /api/github/repo/:productId ────────────────────────────
