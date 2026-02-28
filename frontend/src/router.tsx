@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import RootLayout from './layouts/RootLayout';
 import PublicLayout from './layouts/PublicLayout';
 import AuthenticatedLayout from './layouts/AuthenticatedLayout';
@@ -37,6 +37,7 @@ import StakeholdersPage from './pages/settings/StakeholdersPage';
 import OrganisationPage from './pages/settings/OrganisationPage';
 import AuditLogPage from './pages/settings/AuditLogPage';
 import MarketplaceSettingsPage from './pages/settings/MarketplaceSettingsPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -95,6 +96,14 @@ const router = createBrowserRouter([
           { path: '/organisation', element: <OrganisationPage /> },
           { path: '/audit-log', element: <AuditLogPage /> },
           { path: '/marketplace/settings', element: <MarketplaceSettingsPage /> },
+
+          /* URL aliases — redirect intuitive paths to actual routes */
+          { path: '/cra-reports', element: <Navigate to="/vulnerability-reports" replace /> },
+          { path: '/vulnerabilities', element: <Navigate to="/vulnerability-reports" replace /> },
+          { path: '/license-scan', element: <Navigate to="/license-compliance" replace /> },
+          { path: '/sbom-export', element: <Navigate to="/products" replace /> },
+          { path: '/escrow', element: <Navigate to="/products" replace /> },
+          { path: '/settings', element: <Navigate to="/organisation" replace /> },
         ],
       },
       {
@@ -113,6 +122,9 @@ const router = createBrowserRouter([
           { path: '/admin/test-results', element: <AdminTestResultsPage /> },
         ],
       },
+
+      /* 404 catch-all — must be last */
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ]);
