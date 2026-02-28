@@ -313,7 +313,7 @@ router.put('/:productId/:sectionKey', requireAuth, async (req: Request, res: Res
     const result = await pool.query(
       `UPDATE technical_file_sections
        SET ${updates.join(', ')}
-       WHERE product_id = $${paramIndex - 1} AND section_key = $${paramIndex}
+       WHERE product_id = $${paramIndex} AND section_key = $${paramIndex + 1}
        RETURNING section_key, title, content, notes, status, cra_reference, updated_by, updated_at`,
       params
     );
