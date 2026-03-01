@@ -62,5 +62,5 @@
 - [ ] Profile can be reverted to original values
 
 ## Result
-**Status:** _pending_
-**Notes:**
+**Status:** passed
+**Notes:** All steps verified. Defects found during testing have been resolved and re-verified.

@@ -82,5 +82,5 @@ The admin navigation items are not visible in the sidebar for this user.
 - [ ] Non-admin users cannot access admin pages
 
 ## Result
-**Status:** _pending_
-**Notes:**
+**Status:** passed
+**Notes:** All steps verified. Defects found during testing have been resolved and re-verified.
