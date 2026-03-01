@@ -69,7 +69,7 @@ Cloudflare Tunnel (HTTPS termination, DDoS protection)
 - **NGINX** serves frontend static assets and proxies `/api/*` to the backend
 - **Backend** is not directly accessible from the internet
 - **Database ports** are bound to localhost only
-- **Planned production hosting:** Infomaniak (Switzerland/EU)
+- **Planned production hosting:** Infomaniak (Switzerland)
 
 ---
 
@@ -397,7 +397,7 @@ Only one section expanded at a time (`expandedSection` state):
 - **Internal URL:** `http://forgejo:3000` (Docker network)
 - **External URL:** `https://escrow.cranis2.dev` (port 3003)
 - **Separate Postgres DB:** `forgejo` database, user `forgejo`
-- **Purpose:** EU data sovereignty — source code deposits stored on EU-located infrastructure
+- **Purpose:** European data sovereignty — source code deposits hosted in Switzerland (Infomaniak)
 - **Deposit flow:** Scheduler (5 AM UTC) pushes latest product repo content to Forgejo mirror repository
 - **Retention:** Forgejo repos preserved even after product deletion (legal retention)
 
