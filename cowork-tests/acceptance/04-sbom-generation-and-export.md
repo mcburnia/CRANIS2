@@ -66,5 +66,5 @@ The list should contain at least one dependency from the connected repo.
 - [ ] Exported file contains the expected dependency data
 
 ## Result
-**Status:** passed
-**Notes:** All steps verified. Defects found during testing have been resolved and re-verified.
+**Status:** _pending_
+**Notes:**

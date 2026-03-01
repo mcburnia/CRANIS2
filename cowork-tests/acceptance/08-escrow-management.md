@@ -67,5 +67,5 @@ If no deposits have been made yet, an empty state message is shown.
 - [ ] Deposit history persists after page reload
 
 ## Result
-**Status:** passed
-**Notes:** All steps verified. Defects found during testing have been resolved and re-verified.
+**Status:** _pending_
+**Notes:**

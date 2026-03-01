@@ -67,5 +67,5 @@
 
 ## Result
 
-**Status:** passed
-**Notes:** All steps verified. Defects found during testing have been resolved and re-verified.
+**Status:** _pending_
+**Notes:**
