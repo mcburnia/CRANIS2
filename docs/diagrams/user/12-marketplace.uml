@@ -1,0 +1,41 @@
+@startuml Marketplace — User Level
+title Marketplace (Public Profile & Contact)
+
+actor "Visitor" as visitor
+actor "Org Admin" as admin
+participant "Marketplace Page" as mp
+participant "Org Profile" as profile
+participant "Marketplace Settings" as settings
+participant "Contact Form" as contact
+
+== Browsing the Marketplace ==
+
+visitor -> mp : Visits /marketplace\n(public, no login required)
+visitor -> mp : Sees list of organisations\nwith public profiles
+visitor -> mp : Can search and filter
+
+== Viewing an Organisation ==
+
+visitor -> mp : Clicks on an org card
+mp -> profile : Opens /marketplace/:orgId
+visitor -> profile : Sees organisation details:\n- Description\n- Products listed\n- Compliance summary\n- Contact option
+
+== Contacting an Organisation ==
+
+visitor -> profile : Clicks "Contact"
+profile -> contact : Contact form opens
+visitor -> contact : Enters name, email, message
+visitor -> contact : Clicks "Send"
+contact -> contact : Confirmation shown:\n"Message sent"
+note right of contact : Organisation receives\na notification about\nthe new contact.
+
+== Managing Marketplace Profile ==
+
+admin -> settings : Navigates to\n/marketplace/settings
+admin -> settings : Edits organisation\ndescription and details
+admin -> settings : Toggles marketplace\nvisibility on/off
+admin -> settings : Clicks "Save"
+settings -> settings : Profile updated
+note right of settings : Changes reflect\nimmediately on the\npublic marketplace page.
+
+@enduml

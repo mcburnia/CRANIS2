@@ -1,0 +1,67 @@
+@startuml Escrow Management — System Level
+title Escrow (Source Code Deposits) — System Process
+
+actor "Browser" as browser
+participant "React Frontend" as fe
+participant "Express Backend" as be
+database "Postgres" as pg
+participant "Provider API\n(GitHub/Gitea/etc)" as provider
+participant "Forgejo\n(Escrow Vault)" as forgejo
+participant "Scheduler\n(5 AM)" as sched
+
+== Configure Escrow ==
+
+browser -> fe : Toggle artifact types, Save
+fe -> be : PUT /api/escrow/:productId/config\n{sourceCode: true,\nbuildArtifacts: false,\ndocumentation: true,\nconfiguration: true}
+be -> be : requireAuth + requireActiveBilling
+
+be -> pg : UPSERT escrow_configs\n(product_id, source_code,\nbuild_artifacts, documentation,\nconfiguration, enabled=true)
+pg --> be : Config saved
+
+be --> fe : 200 {config}
+fe --> browser : Config updated
+
+== Load Escrow Status ==
+
+browser -> fe : Navigate to escrow page
+fe -> be : GET /api/escrow/:productId/config
+be -> pg : SELECT * FROM escrow_configs\nWHERE product_id = ?
+pg --> be : Config
+
+fe -> be : GET /api/escrow/:productId/deposits
+be -> pg : SELECT * FROM escrow_deposits\nWHERE product_id = ?\nORDER BY created_at DESC
+pg --> be : Deposit history
+
+be --> fe : 200 {config, deposits}
+fe --> browser : Show config + deposit table
+
+== Daily Escrow Deposits (5 AM) ==
+
+sched -> sched : runDailyEscrowDeposits()
+
+sched -> pg : SELECT ec.*, p.name, p.repo_url,\nrc.encrypted_token, rc.provider\nFROM escrow_configs ec\nJOIN products p ON ...\nJOIN repo_connections rc ON ...\nWHERE ec.enabled = true
+pg --> sched : Enabled products with\nrepo credentials
+
+loop For each enabled product
+
+  sched -> sched : Decrypt repo token
+
+  sched -> provider : Fetch source code archive\n(GET /repos/{owner}/{repo}/\narchive/main.tar.gz)
+  provider --> sched : Source archive
+
+  sched -> forgejo : Ensure escrow repo exists\nPOST /api/v1/orgs/escrow/repos\n{name: "escrow-{productId}"}
+  forgejo --> sched : 200 or 422 (already exists)
+
+  sched -> sched : Create deposit archive:\n- Source code (if enabled)\n- Build artifacts (if enabled)\n- Documentation (if enabled)\n- Configuration (if enabled)\n- Manifest with checksums
+
+  sched -> forgejo : Push deposit to escrow repo\nvia Forgejo API\n(create/update files)
+  forgejo --> sched : Committed
+
+  sched -> pg : INSERT INTO escrow_deposits\n(product_id, deposit_date,\nartifact_types, size_bytes,\nstatus='success', commit_sha)
+  pg --> sched : Deposit recorded
+
+end
+
+note over forgejo : Forgejo runs on the same server\n(https://escrow.cranis2.dev)\nensuring EU data sovereignty.\nAll deposits stored in\nGit repositories with\nfull version history.
+
+@enduml

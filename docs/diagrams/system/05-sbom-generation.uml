@@ -1,0 +1,85 @@
+@startuml SBOM Generation — System Level
+title SBOM Generation (Three-Tier Fallback) — System Process
+
+participant "Scheduler\n(2 AM daily)" as sched
+participant "SBOM Service" as sbom
+participant "GitHub API" as github
+participant "Provider API" as provider
+participant "Lockfile Parsers\n(28 parsers)" as lockfile
+participant "Import Scanner\n(26 language plugins)" as scanner
+database "Postgres" as pg
+database "Neo4j" as neo
+participant "License Scanner" as license
+participant "IP Proof" as ip
+
+== Trigger: Scheduled Sync (2 AM) ==
+
+sched -> sbom : runDailySync()\nOnly stale products\n(last sync > 24h)
+
+loop For each stale product with repo
+  sbom -> pg : SELECT * FROM repo_connections\nWHERE org_id = ?
+  pg --> sbom : Encrypted token + provider
+
+  sbom -> sbom : Decrypt token\n(AES-256-GCM)
+
+  == Tier 1: API SBOM (GitHub Only) ==
+
+  alt Provider is GitHub
+    sbom -> github : GET /repos/{owner}/{repo}/\ndependency-graph/sbom
+    github --> sbom : SPDX SBOM document
+
+    alt GitHub returns SBOM
+      sbom -> sbom : Parse SPDX packages\ninto dependency list
+      note right of sbom : Tier 1 success.\nSkip Tier 2 and 3.
+    else GitHub returns 404/empty
+      note right of sbom : Fall through to Tier 2
+    end
+  end
+
+  == Tier 2: Lockfile Parsing ==
+
+  sbom -> provider : GET repo file tree\n(recursive listing)
+  provider --> sbom : File paths
+
+  sbom -> sbom : Identify lockfiles:\npackage-lock.json, yarn.lock,\nGemfile.lock, go.sum,\nCargo.lock, poetry.lock,\ncomposer.lock, pnpm-lock.yaml,\n... (28 formats)
+
+  loop For each lockfile found
+    sbom -> provider : GET file contents
+    provider --> sbom : Raw lockfile
+
+    sbom -> lockfile : Parse lockfile\n(format-specific parser)
+    lockfile --> sbom : Dependency list\n[{name, version, type}]
+  end
+
+  alt Lockfiles found dependencies
+    note right of sbom : Tier 2 success.\nSkip Tier 3.
+  else No lockfiles found
+    note right of sbom : Fall through to Tier 3
+  end
+
+  == Tier 3: Source Import Scanning ==
+
+  sbom -> provider : GET source files\n(filtered by language extensions)
+  provider --> sbom : Source file contents
+
+  sbom -> scanner : Scan imports per language:\nJS: require(), import from\nPython: import, from...import\nGo: import "..."\nRust: use, extern crate\nJava: import ...\n... (26 languages)
+  scanner --> sbom : Inferred dependencies\n(name only, no version)
+
+  == Store Results ==
+
+  sbom -> pg : UPSERT product_sboms\n(product_id, dependencies JSONB,\nsbom_source, synced_at)
+  pg --> sbom : Stored
+
+  sbom -> neo : MERGE (d:Dependency {name, version})\nCREATE (p)-[:DEPENDS_ON]->(d)\nfor each dependency
+  neo --> sbom : Dependency graph updated
+
+  == Post-SBOM Pipeline (async) ==
+
+  sbom ->> license : Hash enrichment\n→ License enrichment\n→ License scan\n→ IP proof snapshot
+  note right of license : Fire-and-forget.\nEnriches dependencies with\nhashes, licenses, and\ncompatibility checks.
+
+  license -> pg : UPDATE dependency records\nwith license, hash data
+  ip -> pg : INSERT INTO ip_proof_snapshots
+end
+
+@enduml

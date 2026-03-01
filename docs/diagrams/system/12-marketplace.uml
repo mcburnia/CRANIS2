@@ -1,0 +1,76 @@
+@startuml Marketplace — System Level
+title Marketplace — System Process
+
+actor "Visitor Browser" as visitor
+actor "Admin Browser" as admin
+participant "React Frontend" as fe
+participant "Express Backend" as be
+database "Postgres" as pg
+database "Neo4j" as neo
+participant "Notification\nService" as notif
+
+== Browse Marketplace (Public, No Auth) ==
+
+visitor -> fe : Navigate to /marketplace
+fe -> be : GET /api/marketplace\n(no auth required)
+
+be -> pg : SELECT mp.*, o.name as org_name\nFROM marketplace_profiles mp\nJOIN organisations o ON ...\nWHERE mp.visible = true
+note right of be : Org name comes from Neo4j\nvia a joined query
+
+be -> neo : MATCH (o:Organisation)\nWHERE o.id IN $orgIds\nRETURN o.id, o.name
+neo --> be : Org names
+
+be --> fe : 200 {profiles: [\n  {orgId, orgName, description,\n   productCount, complianceScore}\n]}
+fe --> visitor : Render public profile cards
+
+== View Organisation Profile ==
+
+visitor -> fe : Click org card
+fe -> be : GET /api/marketplace/:orgId
+
+be -> pg : SELECT * FROM marketplace_profiles\nWHERE org_id = ? AND visible = true
+pg --> be : Profile details
+
+be -> neo : MATCH (p:Product)\nWHERE p.orgId = $orgId\nRETURN p.name, p.id
+neo --> be : Public products
+
+be --> fe : 200 {profile, products}
+fe --> visitor : Render org detail page
+
+== Contact Organisation ==
+
+visitor -> fe : Submit contact form
+fe -> be : POST /api/marketplace/:orgId/contact\n{name, email, message}
+
+be -> pg : INSERT INTO marketplace_contact_log\n(org_id, sender_name, sender_email,\nmessage, created_at)
+pg --> be : Contact logged
+
+be -> notif : createNotification(\n  orgId,\n  severity='info',\n  title='New marketplace contact',\n  description)
+notif -> pg : INSERT INTO notifications
+pg --> notif : Notification created
+
+be --> fe : 200 {sent: true}
+fe --> visitor : "Message sent" confirmation
+
+== Manage Marketplace Settings (Authenticated) ==
+
+admin -> fe : Navigate to /marketplace/settings
+fe -> be : GET /api/marketplace/settings\nAuthorization: Bearer <token>
+be -> be : requireAuth
+
+be -> pg : SELECT * FROM marketplace_profiles\nWHERE org_id = ?
+pg --> be : Profile (or null if new)
+
+be --> fe : 200 {profile}
+
+admin -> fe : Edit description, toggle visibility
+fe -> be : PUT /api/marketplace/settings\n{description, visible}
+be -> be : requireAuth + requireActiveBilling
+
+be -> pg : UPSERT marketplace_profiles\n(org_id, description, visible,\nupdated_at)
+pg --> be : Profile saved
+
+be --> fe : 200 {profile}
+fe --> admin : Settings saved
+
+@enduml

@@ -1,0 +1,35 @@
+@startuml Registration & Onboarding — User Level
+title Registration & Onboarding
+
+actor "New User" as user
+participant "Landing Page" as landing
+participant "Sign Up Page" as signup
+participant "Email Inbox" as email
+participant "Verify Page" as verify
+participant "Org Setup Page" as orgsetup
+participant "Dashboard" as dash
+
+user -> landing : Visits cranis2.dev
+user -> landing : Clicks "Get Started"
+landing -> signup : Redirects to /signup
+
+user -> signup : Enters name, email, password
+user -> signup : Clicks "Create Account"
+signup -> signup : Shows "Check your email" message
+
+user -> email : Opens verification email
+user -> email : Clicks verification link
+email -> verify : Opens /verify-email?token=xxx
+
+verify -> verify : Shows "Email verified!" confirmation
+verify -> orgsetup : Redirects to /setup/org
+
+user -> orgsetup : Enters organisation name
+user -> orgsetup : Selects industry
+user -> orgsetup : Clicks "Create Organisation"
+orgsetup -> dash : Redirects to /dashboard
+
+user -> dash : Sees dashboard with\nstat cards (all showing 0)\nand sidebar navigation
+note right of dash : Onboarding complete.\nUser can now create\nproducts and connect repos.
+
+@enduml

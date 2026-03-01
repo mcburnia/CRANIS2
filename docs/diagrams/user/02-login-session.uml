@@ -1,0 +1,34 @@
+@startuml Login & Session — User Level
+title Login & Session Management
+
+actor "User" as user
+participant "Login Page" as login
+participant "Dashboard" as dash
+participant "Any Protected Page" as page
+
+== Successful Login ==
+
+user -> login : Navigates to /login
+user -> login : Enters email and password
+user -> login : Clicks "Sign In"
+login -> dash : Redirects to /dashboard
+user -> dash : Sees personalised dashboard\nwith org stats and nav sidebar
+
+== Session Persistence ==
+
+user -> page : Navigates to any page\n(e.g. /products)
+page -> page : Page loads normally\n(session still valid)
+
+== Session Expiry ==
+
+user -> page : Returns after inactivity
+page -> login : Automatically redirected\nto /login
+note right of login : Session expired.\nUser must log in again.
+
+== Invalid Credentials ==
+
+user -> login : Enters wrong password
+login -> login : Shows "Invalid credentials" error
+user -> login : Can retry
+
+@enduml

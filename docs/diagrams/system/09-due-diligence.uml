@@ -1,0 +1,73 @@
+@startuml Due Diligence Export — System Level
+title Due Diligence Package — System Process
+
+actor "Browser" as browser
+participant "React Frontend" as fe
+participant "Express Backend" as be
+database "Postgres" as pg
+database "Neo4j" as neo
+
+== Load Due Diligence Preview ==
+
+browser -> fe : Navigate to /due-diligence
+fe -> be : GET /api/due-diligence\nAuthorization: Bearer <token>
+be -> be : requireAuth, extract orgId
+
+be -> neo : MATCH (p:Product)\nWHERE p.orgId = $orgId\nRETURN p
+neo --> be : Product list
+
+loop For each product
+  be -> pg : SELECT * FROM product_sboms\nWHERE product_id = ?
+  pg --> be : SBOM data (dependency count)
+
+  be -> pg : SELECT COUNT(*) FROM vulnerability_findings\nWHERE product_id = ?
+  pg --> be : Vulnerability count
+
+  be -> pg : SELECT COUNT(*) FROM technical_file_sections\nWHERE product_id = ?\nAND content IS NOT NULL
+  pg --> be : Technical file completeness
+
+  be -> pg : SELECT * FROM license_scans\nWHERE product_id = ?\nORDER BY created_at DESC LIMIT 1
+  pg --> be : Latest license scan
+end
+
+be --> fe : 200 {products: [\n  {id, name, sbomStatus,\n   vulnCount, techFileComplete,\n   licenseStatus}\n]}
+fe --> browser : Render product cards\nwith readiness indicators
+
+== Export ZIP Package ==
+
+browser -> fe : Click "Export ZIP" for product
+fe -> be : GET /api/due-diligence/:productId/export\nAuthorization: Bearer <token>
+
+be -> be : requireAuth
+
+be -> neo : MATCH (p:Product {id: $id})\nRETURN p
+neo --> be : Product details
+
+be -> pg : SELECT * FROM product_sboms\nWHERE product_id = ?
+pg --> be : Full SBOM data
+
+be -> be : Generate CycloneDX JSON\nfrom SBOM data
+be -> be : Generate SPDX JSON\nfrom SBOM data
+
+be -> pg : SELECT * FROM vulnerability_findings\nWHERE product_id = ?
+pg --> be : All findings
+
+be -> pg : SELECT * FROM technical_file_sections\nWHERE product_id = ?
+pg --> be : All sections
+
+be -> pg : SELECT * FROM license_findings\nWHERE product_id = ?
+pg --> be : License data
+
+be -> pg : SELECT * FROM cra_reports\nWHERE product_id = ?
+pg --> be : CRA report history
+
+be -> pg : SELECT * FROM stakeholders\nWHERE org_id = ?
+pg --> be : Stakeholder list
+
+be -> be : Create ZIP archive:\n/product-summary.json\n/sbom/cyclonedx.json\n/sbom/spdx.json\n/vulnerabilities.json\n/licenses.json\n/technical-file/*.json\n/cra-reports.json\n/stakeholders.json
+
+be --> fe : 200 (ZIP stream)\nContent-Type: application/zip\nContent-Disposition:\n  attachment; filename=\n  "due-diligence-{name}.zip"
+
+fe --> browser : ZIP file downloads
+
+@enduml

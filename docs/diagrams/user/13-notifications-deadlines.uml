@@ -1,0 +1,40 @@
+@startuml Notifications & CRA Deadlines — User Level
+title Notifications & CRA Deadline Alerts
+
+actor "User" as user
+participant "Sidebar Badge" as badge
+participant "Notifications Page" as notif
+participant "Report Detail" as report
+
+== Seeing Notification Badge ==
+
+badge -> user : Unread count badge\nappears on sidebar\nnotification icon
+note right of badge : Badge shows total\nunread notifications.
+
+== Viewing Notifications ==
+
+user -> notif : Clicks notification icon\nor navigates to /notifications
+user -> notif : Sees notification list:\n- Severity (info/low/medium/high/critical)\n- Title and description\n- Timestamp\n- Read/unread status
+
+== CRA Deadline Alerts ==
+
+note over notif : System checks CRA report\ndeadlines every hour and\nsends alerts at key intervals.
+
+notif -> user : "12 hours remaining"\nalert for Early Warning stage
+notif -> user : "4 hours remaining"\nalert — urgency increases
+notif -> user : "1 hour remaining"\ncritical alert
+notif -> user : "OVERDUE" alert if\ndeadline has passed
+
+== Acting on a Deadline Alert ==
+
+user -> notif : Clicks deadline notification
+notif -> report : Opens the CRA report\nthat needs attention
+user -> report : Adds the required stage\n(Early Warning / Notification /\nFinal Report)
+
+== Marking as Read ==
+
+user -> notif : Clicks "Mark as read"\non a notification
+notif -> notif : Notification greyed out
+badge -> badge : Unread count decreases
+
+@enduml

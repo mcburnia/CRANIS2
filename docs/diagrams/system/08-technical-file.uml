@@ -1,0 +1,52 @@
+@startuml Technical File — System Level
+title Technical File Management — System Process
+
+actor "Browser" as browser
+participant "React Frontend" as fe
+participant "Express Backend" as be
+database "Postgres" as pg
+
+== Load Technical File Overview ==
+
+browser -> fe : Navigate to /technical-files
+fe -> be : GET /api/technical-files/overview\nAuthorization: Bearer <token>
+be -> be : requireAuth, extract orgId
+
+be -> pg : SELECT p.product_id, p.product_name,\nCOUNT(tfs.id) as filled_sections\nFROM products_overview p\nLEFT JOIN technical_file_sections tfs\nON tfs.product_id = p.product_id\nAND tfs.content IS NOT NULL\nAND tfs.content != ''\nGROUP BY p.product_id
+pg --> be : Products with section counts
+
+be -> be : Calculate completeness:\nfilled_sections / 8 * 100\n(8 = total CRA Annex VII sections)
+
+be --> fe : 200 [{productId, productName,\ncompleteness, filledSections}]
+fe --> browser : Render product list\nwith completeness bars
+
+== Load Product Technical File ==
+
+browser -> fe : Navigate to product\nTechnical File tab
+fe -> be : GET /api/technical-file/:productId
+be -> be : requireAuth
+
+be -> pg : SELECT * FROM technical_file_sections\nWHERE product_id = ?\nORDER BY section_key
+pg --> be : Section rows (0-8 rows)
+
+be -> be : Merge with canonical\nsection list to ensure\nall 8 sections returned\n(even if empty)
+
+be --> fe : 200 {sections: [\n  {key: 'product_description',\n   title: 'Product Description',\n   content: '...'},\n  {key: 'design_development', ...},\n  {key: 'vulnerability_handling', ...},\n  {key: 'risk_assessment', ...},\n  {key: 'support_period', ...},\n  {key: 'standards_applied', ...},\n  {key: 'test_reports', ...},\n  {key: 'declaration_of_conformity', ...}\n]}
+fe --> browser : Render 8 sections\nwith edit capability
+
+== Update Section Content ==
+
+browser -> fe : Edit section, click Save
+fe -> be : PUT /api/technical-file/:productId\n/:sectionKey\n{content: "..."}
+be -> be : requireAuth + requireActiveBilling
+
+be -> pg : INSERT INTO technical_file_sections\n(product_id, section_key, content,\nupdated_at)\nON CONFLICT (product_id, section_key)\nDO UPDATE SET content = $content,\nupdated_at = NOW()
+pg --> be : Upserted
+
+be -> pg : INSERT INTO user_events\n(event_type=\n'technical_file_updated')
+pg --> be : Audit logged
+
+be --> fe : 200 {section}
+fe --> browser : Section saved,\ncompleteness recalculated
+
+@enduml

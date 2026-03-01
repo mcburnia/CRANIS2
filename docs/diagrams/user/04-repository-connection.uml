@@ -1,0 +1,38 @@
+@startuml Repository Connection — User Level
+title Repository Connection
+
+actor "User" as user
+participant "Repos Page" as repos
+participant "GitHub OAuth" as github
+participant "PAT Form" as pat
+participant "Product Detail" as detail
+
+== GitHub OAuth Connection ==
+
+user -> repos : Navigates to /repos
+user -> repos : Sees 5 provider cards\n(GitHub, Codeberg, Gitea,\nForgejo, GitLab)
+user -> repos : Clicks "Connect" on GitHub
+repos -> github : Redirects to GitHub\nauthorisation page
+user -> github : Approves access
+github -> repos : Redirects back to app
+repos -> repos : GitHub shows as "Connected"\nRepositories appear in list
+
+== PAT Connection (Self-Hosted) ==
+
+user -> repos : Clicks "Connect" on\nGitea/Forgejo/GitLab
+repos -> pat : PAT connection form opens
+user -> pat : Selects provider
+user -> pat : Enters instance URL\n(e.g. https://git.mycompany.com)
+user -> pat : Pastes personal access token
+user -> pat : Clicks "Connect"
+pat -> repos : Provider shows as "Connected"\nRepositories appear
+
+== Linking Repo to Product ==
+
+user -> detail : Opens a product detail page
+user -> detail : Enters repository URL\nin product settings
+user -> detail : Clicks Save
+detail -> detail : Repo linked.\nSync begins automatically.
+note right of detail : Dependencies, contributors,\nand languages populate\nfrom the connected repo.
+
+@enduml

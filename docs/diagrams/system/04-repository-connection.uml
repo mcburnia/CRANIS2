@@ -1,0 +1,81 @@
+@startuml Repository Connection — System Level
+title Repository Connection — System Process
+
+actor "Browser" as browser
+participant "React Frontend" as fe
+participant "Express Backend" as be
+database "Postgres" as pg
+database "Neo4j" as neo
+participant "GitHub API" as github
+participant "Provider API\n(Gitea/Forgejo/GitLab)" as provider
+
+== GitHub OAuth Flow ==
+
+browser -> fe : Click "Connect GitHub"
+fe -> be : GET /api/github/auth-url
+be --> fe : {url: "https://github.com/login/oauth/\nauthorize?client_id=Ov23li...&scope=repo"}
+fe --> browser : Redirect to GitHub
+
+browser -> github : User approves access
+github --> browser : Redirect to callback\nwith ?code=xxx
+
+browser -> be : GET /api/github/callback?code=xxx
+be -> github : POST /login/oauth/access_token\n{client_id, client_secret, code}
+github --> be : {access_token: "gho_..."}
+
+be -> be : Encrypt token with\nAES-256-GCM
+be -> pg : INSERT INTO repo_connections\n(org_id, provider='github',\nencrypted_token, iv, auth_tag)
+pg --> be : Connection stored
+
+be -> github : GET /user/repos
+github --> be : Repository list
+
+be -> neo : CREATE (r:Repository {\nname, url, provider: 'github'})\nfor each repo
+neo --> be : Repository nodes created
+
+be --> browser : Redirect to /repos\nwith success
+
+== PAT Connection (Self-Hosted) ==
+
+browser -> fe : Submit provider, instanceUrl, token
+fe -> be : POST /api/repo/connect-pat\n{provider, instanceUrl, token}
+
+be -> be : validatePAT(provider,\ninstanceUrl, token)
+
+alt Gitea / Forgejo
+  be -> provider : GET {instanceUrl}/api/v1/user\nAuthorization: token {pat}
+  provider --> be : 200 {login, email}
+else GitLab
+  be -> provider : GET {instanceUrl}/api/v4/user\nPRIVATE-TOKEN: {pat}
+  provider --> be : 200 {username, email}
+end
+
+be -> be : Encrypt PAT with\nAES-256-GCM
+be -> pg : INSERT INTO repo_connections\n(org_id, provider, instance_url,\nencrypted_token, iv, auth_tag)
+pg --> be : Connection stored
+
+be -> provider : GET /api/v1/repos/search\nor /api/v4/projects
+provider --> be : Repository list
+
+be -> neo : CREATE Repository nodes
+neo --> be : Nodes created
+
+be --> fe : 200 {connected: true}
+
+== Linking Repo to Product ==
+
+browser -> fe : Set repoUrl on product
+fe -> be : PUT /api/products/:id\n{repoUrl: "https://github.com/org/repo"}
+
+be -> be : resolveRepoConnection(repoUrl)\nMatches hostname to stored\nrepo_connections.instance_url
+be -> pg : SELECT * FROM repo_connections\nWHERE org_id = ? AND provider = ?
+pg --> be : Connection with encrypted token
+
+be -> neo : MATCH (p:Product {id: $id})\nMATCH (r:Repository {url: $repoUrl})\nCREATE (p)-[:REPO_CONNECTED]->(r)
+neo --> be : Relationship created
+
+be -> be : Trigger initial sync\n(async, fire-and-forget)
+
+be --> fe : 200 {updated product}
+
+@enduml

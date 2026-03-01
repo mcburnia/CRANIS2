@@ -1,0 +1,99 @@
+@startuml Billing & Subscription — System Level
+title Billing & Subscription — System Process
+
+actor "Browser" as browser
+participant "React Frontend" as fe
+participant "Express Backend" as be
+database "Postgres" as pg
+participant "Stripe API" as stripe
+participant "Scheduler\n(4 AM)" as sched
+participant "Billing Email\nService" as email
+
+== Load Billing Status ==
+
+browser -> fe : Navigate to /billing
+fe -> be : GET /api/billing\nAuthorization: Bearer <token>
+be -> be : requireAuth, extract orgId
+
+be -> pg : SELECT * FROM org_billing\nWHERE org_id = ?
+pg --> be : {plan, status, trial_ends_at,\nstripe_customer_id,\nstripe_subscription_id}
+
+be --> fe : 200 {billing status}\n(sensitive fields stripped)
+fe --> browser : Show plan, status,\ntrial countdown
+
+== Create Stripe Checkout ==
+
+browser -> fe : Click "Subscribe"
+fe -> be : POST /api/billing/checkout\n{priceId}
+be -> be : requireAuth
+
+be -> stripe : stripe.checkout.sessions.create({\n  customer: stripeCustomerId,\n  line_items: [{price: priceId}],\n  mode: 'subscription',\n  success_url, cancel_url\n})
+stripe --> be : {url: "https://checkout.stripe.com/..."}
+
+be --> fe : 200 {checkoutUrl}
+fe --> browser : Redirect to Stripe Checkout
+
+browser -> stripe : User enters payment details
+stripe --> browser : Redirect to success_url
+
+== Stripe Webhook (Payment Complete) ==
+
+stripe -> be : POST /api/billing/webhook\n(stripe-signature header)
+be -> be : Verify webhook signature\nwith Stripe signing secret
+
+alt checkout.session.completed
+  be -> pg : UPDATE org_billing\nSET status = 'active',\nstripe_subscription_id = ?,\nplan = 'paid'
+  pg --> be : Updated
+  be -> pg : INSERT INTO billing_events\n(type='subscription_created')
+end
+
+alt invoice.payment_failed
+  be -> pg : UPDATE org_billing\nSET status = 'payment_grace',\ngrace_ends_at = NOW() + 7d
+  pg --> be : Updated
+  be -> email : Send payment failure email
+end
+
+alt customer.subscription.deleted
+  be -> pg : UPDATE org_billing\nSET status = 'cancelled'
+  pg --> be : Updated
+end
+
+be --> stripe : 200 (acknowledge webhook)
+
+== Billing Gate Middleware ==
+
+note over be : Every write request passes\nthrough requireActiveBilling\nmiddleware in index.ts
+
+be -> be : Peek JWT for orgId\n(without full auth)
+be -> pg : SELECT status FROM org_billing\nWHERE org_id = ?
+pg --> be : {status}
+
+alt status = 'active' or 'trial'
+  be -> be : Request proceeds normally
+else status = 'read_only' or 'suspended'
+  be --> browser : 403 {error:\n"Billing suspended.\nPlease update payment."}
+else status = 'cancelled'
+  be --> browser : 403 {error:\n"Subscription cancelled."}
+end
+
+== Daily Billing Checks (4 AM) ==
+
+sched -> sched : runDailyBillingChecks()
+
+sched -> pg : SELECT * FROM org_billing\nWHERE status = 'trial'\nAND trial_ends_at < NOW()
+pg --> sched : Expired trial orgs
+
+loop For each expired trial
+  sched -> pg : UPDATE org_billing\nSET status = 'read_only'
+  sched -> email : Send trial expired email
+end
+
+sched -> pg : SELECT * FROM org_billing\nWHERE status = 'payment_grace'\nAND grace_ends_at < NOW()
+pg --> sched : Grace period expired
+
+loop For each expired grace
+  sched -> pg : UPDATE org_billing\nSET status = 'suspended'
+  sched -> email : Send suspension email
+end
+
+@enduml

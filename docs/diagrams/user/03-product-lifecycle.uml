@@ -1,0 +1,42 @@
+@startuml Product Lifecycle — User Level
+title Product Lifecycle (Create, Edit, View, Delete)
+
+actor "User" as user
+participant "Products Page" as list
+participant "Create Dialog" as create
+participant "Product Detail" as detail
+
+== Create Product ==
+
+user -> list : Navigates to /products
+user -> list : Clicks "Add Product"
+list -> create : Modal/dialog opens
+
+user -> create : Enters product name
+user -> create : Clicks "Create"
+create -> list : Product appears in list
+
+== View Product Detail ==
+
+user -> list : Clicks on product card
+list -> detail : Opens /products/:id
+
+user -> detail : Sees 5 tabs:\n- Overview\n- Obligations\n- Technical File\n- Risk Findings\n- Dependencies
+note right of detail : Overview shows product info,\nrepo status, SBOM status,\nvuln summary, and compliance score.
+
+== Edit Product ==
+
+user -> detail : Clicks "Edit" button in header
+detail -> detail : Header switches to inline\nedit form (name, description,\nversion, CRA category, etc.)
+user -> detail : Changes product name
+user -> detail : Clicks "Save"
+detail -> detail : Edit mode closes,\nupdated name displays
+
+== Delete Product ==
+
+user -> detail : Clicks "Delete" button
+detail -> detail : Confirmation dialog appears
+user -> detail : Confirms deletion
+detail -> list : Redirects to /products\nProduct no longer in list
+
+@enduml

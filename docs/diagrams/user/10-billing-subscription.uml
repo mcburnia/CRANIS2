@@ -1,0 +1,38 @@
+@startuml Billing & Subscription — User Level
+title Billing & Subscription Management
+
+actor "User" as user
+participant "Billing Page" as billing
+participant "Stripe Checkout" as stripe
+participant "App (Gated)" as gated
+
+== Viewing Billing Status ==
+
+user -> billing : Navigates to /billing
+user -> billing : Sees current plan:\n- Plan name\n- Status (trial / active / suspended)\n- Trial days remaining (if applicable)\n- Next billing date
+
+== Subscribing to a Plan ==
+
+user -> billing : Clicks "Upgrade" or\n"Choose Plan"
+billing -> stripe : Redirects to\nStripe Checkout page
+user -> stripe : Enters payment details
+user -> stripe : Completes payment
+stripe -> billing : Redirects back to app
+billing -> billing : Status updates to "Active"
+
+== Trial Expiry ==
+
+note over user : Trial period ends
+user -> gated : Tries to create/edit data
+gated -> gated : Shows billing gate message:\n"Your trial has expired.\nPlease subscribe to continue."
+user -> gated : Clicks "Subscribe" link
+gated -> billing : Redirected to billing page
+
+== Payment Failure ==
+
+note over user : Payment fails
+user -> gated : App enters read-only mode
+gated -> gated : Can view all data\nbut cannot create or edit
+user -> billing : Goes to billing page\nto update payment method
+
+@enduml

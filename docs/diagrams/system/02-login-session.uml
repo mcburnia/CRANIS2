@@ -1,0 +1,61 @@
+@startuml Login & Session — System Level
+title Login & Session Management — System Process
+
+actor "Browser" as browser
+participant "React Frontend" as fe
+participant "AuthContext" as auth
+participant "Express Backend" as be
+database "Postgres" as pg
+
+== Login Flow ==
+
+browser -> fe : Submit email + password
+fe -> be : POST /api/auth/login\n{email, password}
+be -> pg : SELECT * FROM users\nWHERE email = ?
+pg --> be : User row (id, password_hash,\norg_id, email_verified, role)
+
+be -> be : bcrypt.compare(\npassword, password_hash)
+note right of be : Returns 401 if\nmismatch or unverified
+
+be -> be : jwt.sign({userId, orgId,\nemail, role}, SECRET,\n{expiresIn: '7d'})
+
+be -> pg : INSERT INTO user_events\n(user_id, event_type='login',\nip_address, user_agent)
+pg --> be : Event logged
+
+be --> fe : 200 {token, user}
+fe -> fe : localStorage.setItem(\n'session_token', token)
+fe --> browser : Redirect to /dashboard
+
+== Session Validation (Every Page Load) ==
+
+browser -> fe : Navigate to protected route
+fe -> auth : AuthContext.checkSession()
+auth -> be : GET /api/auth/me\nAuthorization: Bearer <token>
+
+be -> be : verifySessionToken(token)\njwt.verify(token, SECRET)
+note right of be : Extracts userId, orgId,\nrole from JWT payload
+
+be -> pg : SELECT * FROM users\nWHERE id = ? AND org_id = ?
+pg --> be : User row
+
+be --> auth : 200 {user}
+auth -> auth : setUser(user)\nsetLoading(false)
+auth --> fe : User authenticated
+
+== Session Expiry ==
+
+browser -> fe : Navigate to protected route
+fe -> auth : AuthContext.checkSession()
+auth -> be : GET /api/auth/me\nAuthorization: Bearer <expired-token>
+be -> be : jwt.verify() throws\nTokenExpiredError
+be --> auth : 401 Unauthorized
+auth -> auth : setUser(null)
+auth --> fe : user is null
+fe -> fe : AuthenticatedLayout renders\n<Navigate to="/login" replace />
+fe --> browser : Redirect to /login
+
+== Route Guard (Client-Side) ==
+
+fe -> fe : AuthenticatedLayout checks:\n1. loading? → show spinner\n2. !user? → Navigate to /login\n3. !user.orgId? → Navigate to /setup/org\n4. Otherwise → render <Outlet />
+
+@enduml

@@ -1,0 +1,52 @@
+@startuml Admin Operations — User Level
+title Platform Admin Operations
+
+actor "Platform Admin" as admin
+participant "Admin Dashboard" as dash
+participant "Organisations" as orgs
+participant "Users" as users
+participant "Audit Log" as audit
+participant "System Health" as sys
+participant "Vuln Scanning" as vuln
+participant "Vuln Database" as vdb
+participant "Test Results" as tests
+
+== Accessing Admin Panel ==
+
+admin -> dash : Navigates to /admin\n(requires platform admin role)
+admin -> dash : Sees platform overview:\n- Total orgs, users, products\n- Billing summary\n- System status
+
+== Managing Organisations ==
+
+admin -> orgs : Opens /admin/orgs
+admin -> orgs : Sees all organisations\nwith member counts,\nbilling status, product counts
+admin -> orgs : Can search by name
+admin -> orgs : Clicks into an org to\nview full details
+
+== Managing Users ==
+
+admin -> users : Opens /admin/users
+admin -> users : Sees all platform users\nwith email, org, role, status
+admin -> users : Can search by email
+admin -> users : Can invite new users\nto any organisation
+
+== Viewing Audit Log ==
+
+admin -> audit : Opens /admin/audit-log
+admin -> audit : Sees all platform events:\n- Logins, logouts\n- Data changes\n- Admin actions
+admin -> audit : Can filter by date,\nuser, or event type
+
+== System Monitoring ==
+
+admin -> sys : Opens /admin/system
+admin -> sys : Sees system health:\n- Server status\n- Database connections\n- Scheduler job history
+admin -> vuln : Opens /admin/vuln-scan\nto review scan results
+admin -> vdb : Opens /admin/vuln-db\nto check database sync status
+
+== Viewing Test Results ==
+
+admin -> tests : Opens /admin/test-results
+admin -> tests : Sees Vitest + Playwright\nresults pushed from CI
+admin -> tests : Can drill into individual\ntest suites and cases
+
+@enduml

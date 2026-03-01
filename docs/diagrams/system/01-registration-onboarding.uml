@@ -1,0 +1,60 @@
+@startuml Registration & Onboarding — System Level
+title Registration & Onboarding — System Process
+
+actor "Browser" as browser
+participant "React Frontend" as fe
+participant "Express Backend" as be
+database "Postgres" as pg
+database "Neo4j" as neo
+participant "Resend (Email)" as resend
+
+== Account Registration ==
+
+browser -> fe : Submit signup form\n(name, email, password)
+fe -> be : POST /api/auth/register\n{email, password}
+be -> pg : SELECT * FROM users\nWHERE email = ?
+pg --> be : No existing user
+
+be -> be : bcrypt.hash(password)
+be -> pg : INSERT INTO users\n(id, email, password_hash,\nemail_verified=false)
+pg --> be : User created (UUID)
+
+be -> be : Generate verification token\n(JWT, 24h expiry)
+be -> resend : Send verification email\nwith link containing token
+resend --> be : Email queued
+
+be --> fe : 200 {message:\n"Verification email sent"}
+fe --> browser : Shows "Check your email"
+
+== Email Verification ==
+
+browser -> fe : Click verification link\n/verify-email?token=xxx
+fe -> be : POST /api/auth/verify-email\n{token}
+be -> be : Verify JWT token\n(check signature + expiry)
+be -> pg : UPDATE users\nSET email_verified = true\nWHERE id = ?
+pg --> be : Updated
+
+be -> be : Generate session JWT
+be --> fe : 200 {token, user}
+fe -> fe : Store token in\nlocalStorage('session_token')
+fe --> browser : Redirect to /setup/org
+
+== Organisation Setup ==
+
+browser -> fe : Submit org name + industry
+fe -> be : POST /api/org\n{name, industry}
+be -> be : Verify JWT from\nAuthorization header
+
+be -> neo : CREATE (o:Organisation\n{id: uuid, name, industry})
+neo --> be : Org created
+
+be -> pg : UPDATE users\nSET org_id = ?\nWHERE id = ?
+pg --> be : Updated
+
+be -> pg : INSERT INTO org_billing\n(org_id, plan='trial',\ntrial_ends_at=NOW()+14d)
+pg --> be : Billing record created
+
+be --> fe : 200 {org}
+fe --> browser : Redirect to /dashboard
+
+@enduml

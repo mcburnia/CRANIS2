@@ -1,0 +1,73 @@
+@startuml Product Lifecycle — System Level
+title Product Lifecycle — System Process
+
+actor "Browser" as browser
+participant "React Frontend" as fe
+participant "Express Backend" as be
+database "Neo4j" as neo
+database "Postgres" as pg
+
+== Create Product ==
+
+browser -> fe : Submit product name
+fe -> be : POST /api/products\n{name}\nAuthorization: Bearer <token>
+
+be -> be : requireAuth middleware\nverifies JWT, extracts orgId
+be -> be : requireActiveBilling\nchecks org_billing status
+
+be -> neo : CREATE (p:Product {\n  id: uuid(),\n  name: $name,\n  orgId: $orgId,\n  createdAt: datetime()\n})
+neo --> be : Product node created
+
+be -> neo : MATCH (o:Organisation {id: $orgId})\nMATCH (p:Product {id: $productId})\nCREATE (p)-[:BELONGS_TO]->(o)
+neo --> be : Relationship created
+
+be --> fe : 201 {id, name, orgId}
+fe --> browser : Product appears in list
+
+== Read Product Detail ==
+
+browser -> fe : Navigate to /products/:id
+fe -> be : GET /api/products/:id
+be -> neo : MATCH (p:Product {id: $id})\nOPTIONAL MATCH (p)-[:REPO_CONNECTED]->(r:Repository)\nRETURN p, r
+neo --> be : Product + repo data
+
+be -> pg : SELECT * FROM product_sboms\nWHERE product_id = ?
+pg --> be : SBOM metadata
+
+be -> pg : SELECT * FROM vulnerability_findings\nWHERE product_id = ?
+pg --> be : Vulnerability findings
+
+be --> fe : 200 {product, repo,\nsbom, vulnerabilities}
+fe --> browser : Render 5-tab detail page
+
+== Update Product ==
+
+browser -> fe : Edit fields, click Save
+fe -> be : PUT /api/products/:id\n{name, description, version,\nproductType, craCategory,\ndistributionModel, provider, repoUrl}
+
+be -> be : requireAuth + requireActiveBilling
+be -> neo : MATCH (p:Product {id: $id, orgId: $orgId})\nSET p.name = $name,\n    p.description = $description,\n    p.version = $version, ...
+neo --> be : Product updated
+
+be --> fe : 200 {updated product}
+fe --> browser : Edit mode closes,\nupdated data displays
+
+== Delete Product ==
+
+browser -> fe : Confirm deletion
+fe -> be : DELETE /api/products/:id
+
+be -> be : requireAuth + requireActiveBilling
+be -> neo : MATCH (p:Product {id: $id, orgId: $orgId})\nDETACH DELETE p
+neo --> be : Product + relationships deleted
+
+be -> pg : DELETE FROM product_sboms\nWHERE product_id = ?
+be -> pg : DELETE FROM vulnerability_findings\nWHERE product_id = ?
+be -> pg : DELETE FROM technical_file_sections\nWHERE product_id = ?
+be -> pg : DELETE FROM cra_reports\nWHERE product_id = ?
+pg --> be : Cascade cleanup complete
+
+be --> fe : 200 {deleted: true}
+fe --> browser : Redirect to /products
+
+@enduml

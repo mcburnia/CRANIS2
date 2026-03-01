@@ -1,0 +1,79 @@
+@startuml CRA Incident Reporting — System Level
+title CRA Incident & Vulnerability Reporting — System Process
+
+actor "Browser" as browser
+participant "React Frontend" as fe
+participant "Express Backend" as be
+database "Postgres" as pg
+participant "Scheduler\n(hourly)" as sched
+participant "Notification\nService" as notif
+
+== Create CRA Report ==
+
+browser -> fe : Submit report form
+fe -> be : POST /api/cra-reports\n{productId, reportType,\ndescription, awarenessAt,\ncsirtCountry}
+be -> be : requireAuth + requireActiveBilling
+
+be -> pg : INSERT INTO cra_reports\n(id, org_id, product_id,\nreport_type, description,\nawareness_at, csirt_country,\nstatus='open', created_at)
+pg --> be : Report created (UUID)
+
+note right of be : CRA deadlines calculated\nfrom awareness_at:\n- Early Warning: +24h\n- Vuln Notification: +72h\n- Final Report: +14d
+
+be -> pg : INSERT INTO user_events\n(event_type='cra_report_created')
+pg --> be : Audit logged
+
+be --> fe : 201 {report}
+fe --> browser : Redirect to report detail
+
+== Add Report Stage ==
+
+browser -> fe : Submit stage details
+fe -> be : POST /api/cra-reports/:id/stages\n{stageType, description,\ntechnicalDetails}
+be -> be : requireAuth
+
+be -> pg : INSERT INTO cra_report_stages\n(report_id, stage_type,\ndescription, technical_details,\nsubmitted_at)
+pg --> be : Stage created
+
+be --> fe : 201 {stage}
+fe --> browser : Stage appears in timeline
+
+== Close Report ==
+
+browser -> fe : Click "Close Report"
+fe -> be : POST /api/cra-reports/:id/close
+be -> pg : UPDATE cra_reports\nSET status = 'closed',\nclosed_at = NOW()\nWHERE id = ?
+pg --> be : Report closed
+
+be --> fe : 200 {report}
+note right of be : Post-close addenda\nstill allowed (stages\ncan be added after close)
+
+== Hourly Deadline Monitoring ==
+
+sched -> sched : checkCraDeadlines()\nRuns every hour
+
+sched -> pg : SELECT * FROM cra_reports\nWHERE status = 'open'
+pg --> sched : Open reports with\nawareness_at timestamps
+
+loop For each open report
+  sched -> sched : Calculate time remaining:\n- early_warning_deadline =\n  awareness_at + 24h\n- notification_deadline =\n  awareness_at + 72h\n- final_report_deadline =\n  awareness_at + 14d
+
+  sched -> pg : SELECT stage_type\nFROM cra_report_stages\nWHERE report_id = ?
+  pg --> sched : Submitted stages
+
+  alt Missing stage & deadline approaching
+    alt 12 hours remaining
+      sched -> notif : severity='high'\n"12h until {stage} deadline"
+    else 4 hours remaining
+      sched -> notif : severity='high'\n"4h until {stage} deadline"
+    else 1 hour remaining
+      sched -> notif : severity='critical'\n"1h until {stage} deadline"
+    else Overdue
+      sched -> notif : severity='critical'\n"OVERDUE: {stage} deadline passed"
+    end
+
+    notif -> pg : INSERT INTO notifications\n(org_id, severity, title,\ndescription, product_id)
+    pg --> notif : Notification stored
+  end
+end
+
+@enduml

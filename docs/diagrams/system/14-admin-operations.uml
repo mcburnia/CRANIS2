@@ -1,0 +1,108 @@
+@startuml Admin Operations — System Level
+title Platform Admin Operations — System Process
+
+actor "Admin Browser" as browser
+participant "React Frontend\n(AdminLayout)" as fe
+participant "Express Backend" as be
+participant "requirePlatformAdmin\nmiddleware" as guard
+database "Postgres" as pg
+database "Neo4j" as neo
+participant "Resend (Email)" as resend
+
+== Access Control ==
+
+browser -> fe : Navigate to /admin/*
+fe -> fe : AdminLayout checks:\n1. loading? → spinner\n2. !user? → redirect /login\n3. !user.isPlatformAdmin?\n   → redirect /dashboard\n4. Otherwise → render admin UI
+
+fe -> be : Any /api/admin/* request\nAuthorization: Bearer <token>
+be -> guard : requirePlatformAdmin(req)
+guard -> guard : Verify JWT\nCheck user.isPlatformAdmin
+
+alt Not platform admin
+  guard --> fe : 403 Forbidden
+else Platform admin
+  guard -> be : Next()
+end
+
+== Admin Dashboard ==
+
+fe -> be : GET /api/admin/dashboard
+be -> pg : SELECT COUNT(*) FROM users
+be -> pg : SELECT COUNT(*) FROM org_billing
+be -> neo : MATCH (o:Organisation)\nRETURN COUNT(o) as orgCount
+be -> neo : MATCH (p:Product)\nRETURN COUNT(p) as productCount
+be -> pg : SELECT status, COUNT(*)\nFROM org_billing\nGROUP BY status
+
+neo --> be : Org + product counts
+pg --> be : User + billing counts
+
+be --> fe : 200 {totalUsers, totalOrgs,\ntotalProducts, billingBreakdown}
+
+== Organisation Management ==
+
+fe -> be : GET /api/admin/orgs?search=xxx
+be -> neo : MATCH (o:Organisation)\nWHERE o.name CONTAINS $search\nRETURN o
+neo --> be : Matching orgs
+
+be -> pg : SELECT COUNT(*) FROM users\nWHERE org_id IN (...)
+pg --> be : Member counts per org
+
+be -> pg : SELECT * FROM org_billing\nWHERE org_id IN (...)
+pg --> be : Billing status per org
+
+be --> fe : 200 {orgs: [{id, name,\nmemberCount, billingStatus, ...}]}
+
+== User Management ==
+
+fe -> be : GET /api/admin/users?search=xxx
+be -> pg : SELECT u.*, ob.status as billing_status\nFROM users u\nLEFT JOIN org_billing ob\nON ob.org_id = u.org_id::text\nWHERE u.email ILIKE $search
+pg --> be : User list with billing
+
+be --> fe : 200 {users: [{id, email,\norgId, role, billingStatus}]}
+
+== Invite User to Organisation ==
+
+browser -> fe : Enter email, select org
+fe -> be : POST /api/admin/invite\n{email, orgId}
+be -> guard : requirePlatformAdmin
+
+be -> pg : SELECT * FROM users\nWHERE email = ?
+pg --> be : Existing or null
+
+alt User exists
+  be -> pg : UPDATE users SET org_id = ?\nWHERE id = ?
+else New user
+  be -> be : Generate invite token (JWT)
+  be -> resend : Send invite email with\nlink to /accept-invite?token=xxx
+  resend --> be : Email sent
+end
+
+be -> pg : INSERT INTO user_events\n(event_type='admin_invite')
+pg --> be : Audit logged
+
+be --> fe : 200 {invited: true}
+
+== Audit Log ==
+
+fe -> be : GET /api/admin/audit-log\n?page=1&limit=50
+be -> pg : SELECT ue.*, u.email\nFROM user_events ue\nJOIN users u ON u.id = ue.user_id\nORDER BY ue.created_at DESC\nLIMIT 50 OFFSET ?
+pg --> be : Event list
+
+be --> fe : 200 {events: [{id, email,\neventType, ipAddress,\ncreatedAt, metadata}]}
+
+== System Health ==
+
+fe -> be : GET /api/admin/system
+be -> pg : SELECT 1 (Postgres health)
+be -> neo : RETURN 1 (Neo4j health)
+be -> be : Process memory usage\nUptime, CPU load
+
+be -> pg : SELECT * FROM platform_scan_runs\nORDER BY started_at DESC LIMIT 5
+pg --> be : Recent scan runs
+
+be -> pg : SELECT * FROM vuln_db_sync_status
+pg --> be : Last sync timestamps
+
+be --> fe : 200 {postgres: 'healthy',\nneo4j: 'healthy',\nmemory, uptime,\nrecentScans, syncStatus}
+
+@enduml

@@ -1,0 +1,33 @@
+@startuml Escrow Management — User Level
+title Escrow (Source Code & Artifact Deposits)
+
+actor "User" as user
+participant "Product Detail" as detail
+participant "Escrow Config" as config
+participant "Deposit History" as history
+
+== Viewing Escrow Status ==
+
+user -> detail : Opens a product
+user -> detail : Clicks escrow link or\nnavigates to\n/products/:id/escrow
+detail -> config : Shows escrow configuration
+
+== Configuring Escrow ==
+
+user -> config : Sees artifact type toggles:\n- Source code\n- Build artifacts\n- Documentation\n- Configuration
+user -> config : Enables/disables\nartifact types
+user -> config : Clicks "Save Configuration"
+config -> config : Configuration saved
+note right of config : Escrow deposits will run\nautomatically every night\nat 5 AM for enabled products.
+
+== Viewing Deposit History ==
+
+user -> history : Scrolls to deposit history
+user -> history : Sees table of past deposits:\n- Date\n- Artifact types included\n- Size\n- Status (success/failed)
+note right of history : Each deposit is a\npoint-in-time snapshot\nstored in a Forgejo\nrepository for EU\ndata sovereignty.
+
+== Understanding Escrow ==
+
+note over user : Escrow provides a trusted\nthird-party copy of source code\nand artifacts. If the vendor\nceases operations, escrow\nbeneficiaries can access the\ndeposited materials.
+
+@enduml

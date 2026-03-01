@@ -1,0 +1,70 @@
+@startuml Notifications & CRA Deadlines — System Level
+title Notifications & CRA Deadlines — System Process
+
+actor "Browser" as browser
+participant "React Frontend" as fe
+participant "Express Backend" as be
+database "Postgres" as pg
+participant "Scheduler\n(hourly)" as sched
+participant "Notification\nService" as notif
+
+== Load Notifications ==
+
+browser -> fe : Navigate to /notifications\nor check badge count
+fe -> be : GET /api/notifications\nAuthorization: Bearer <token>
+be -> be : requireAuth, extract orgId
+
+be -> pg : SELECT * FROM notifications\nWHERE org_id = ?\nORDER BY created_at DESC\nLIMIT 50
+pg --> be : Notification rows
+
+be --> fe : 200 {notifications: [\n  {id, severity, title,\n   description, read, created_at,\n   product_id}\n]}
+fe --> browser : Render notification list
+
+== Get Unread Count (Badge) ==
+
+fe -> be : GET /api/notifications/unread-count
+be -> pg : SELECT COUNT(*) FROM notifications\nWHERE org_id = ? AND read = false
+pg --> be : {count: N}
+
+be --> fe : 200 {count: N}
+fe -> fe : Update sidebar badge
+
+== Mark as Read ==
+
+browser -> fe : Click "Mark as read"
+fe -> be : PUT /api/notifications/:id/read
+be -> pg : UPDATE notifications\nSET read = true\nWHERE id = ? AND org_id = ?
+pg --> be : Updated
+
+be --> fe : 200
+fe -> fe : Update badge count
+
+== Creating Notifications (Internal Service) ==
+
+note over notif : Notifications are created by\nvarious system processes.\nThey are never created directly\nby users.
+
+notif -> pg : INSERT INTO notifications\n(id, org_id, severity, title,\ndescription, product_id,\nread=false, created_at=NOW())
+pg --> notif : Notification stored
+
+note over notif : Severity levels:\n- info (general updates)\n- low (minor alerts)\n- medium (attention needed)\n- high (action required)\n- critical (urgent action)
+
+== Notification Sources ==
+
+note over notif : Sources that create notifications:\n\n1. Vulnerability Scanner\n   → "New critical vulnerability in X"\n\n2. CRA Deadline Checker (hourly)\n   → "12h/4h/1h until deadline"\n   → "OVERDUE: deadline passed"\n\n3. Marketplace Contact\n   → "New contact from visitor"\n\n4. Billing Events\n   → "Trial expiring soon"\n   → "Payment failed"\n\n5. SBOM Sync\n   → "SBOM updated for product X"\n\n6. Escrow\n   → "Escrow deposit failed"
+
+== CRA Deadline Check Detail ==
+
+sched -> sched : checkCraDeadlines()\nRuns every hour
+
+sched -> pg : SELECT r.*, \narray_agg(s.stage_type) as stages\nFROM cra_reports r\nLEFT JOIN cra_report_stages s\nON s.report_id = r.id\nWHERE r.status = 'open'\nGROUP BY r.id
+pg --> sched : Open reports with stages
+
+loop For each open report
+  sched -> sched : Check each deadline:\n\n1. Early Warning (24h)\n   missing 'early_warning' stage?\n\n2. Notification (72h)\n   missing 'vulnerability_notification'?\n\n3. Final Report (14d)\n   missing 'final_report'?
+
+  alt Deadline approaching & stage missing
+    sched -> notif : Create alert notification\nwith appropriate severity\nand time remaining
+  end
+end
+
+@enduml

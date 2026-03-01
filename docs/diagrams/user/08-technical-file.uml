@@ -1,0 +1,37 @@
+@startuml Technical File Management — User Level
+title Technical File (CRA Annex VII Documentation)
+
+actor "User" as user
+participant "Technical Files Page" as overview
+participant "Product Detail" as detail
+participant "Section Editor" as editor
+
+== Viewing Technical File Overview ==
+
+user -> overview : Navigates to /technical-files
+user -> overview : Sees all products with\ncompleteness indicators\n(percentage per product)
+
+== Editing a Section ==
+
+user -> detail : Opens a product
+user -> detail : Clicks "Technical File" tab
+detail -> detail : Shows 8 CRA Annex VII sections:\n1. Product Description\n2. Design & Development\n3. Vulnerability Handling\n4. Risk Assessment\n5. Support Period\n6. Standards Applied\n7. Test Reports\n8. Declaration of Conformity
+
+user -> detail : Clicks on a section
+detail -> editor : Section opens with\nrich text editor
+user -> editor : Types documentation content
+user -> editor : Clicks "Save"
+editor -> detail : Section saved,\ncompleteness updates
+
+== Tracking Completeness ==
+
+user -> detail : Sees completeness bar\nfor each section\n(filled / empty indicators)
+note right of detail : All 8 sections must be\ncompleted for full CRA\ntechnical documentation\ncompliance.
+
+== Viewing Across Products ==
+
+user -> overview : Returns to /technical-files
+user -> overview : Sees updated completeness\npercentages for all products
+note right of overview : Quick overview of which\nproducts still need\ndocumentation work.
+
+@enduml

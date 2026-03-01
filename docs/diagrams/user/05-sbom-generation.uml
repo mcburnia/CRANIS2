@@ -1,0 +1,38 @@
+@startuml SBOM Generation — User Level
+title SBOM Generation & Export
+
+actor "User" as user
+participant "Product Detail" as detail
+participant "Dependencies Tab" as deps
+participant "Download" as dl
+
+== Automatic SBOM Generation ==
+
+user -> detail : Opens product with\na connected repository
+user -> detail : Clicks "Dependencies" tab
+detail -> deps : Shows dependency list\nwith names, versions,\nlicenses, and risk levels
+note right of deps : SBOM was generated\nautomatically when the\nrepo was synced.\n\nNo manual action needed.
+
+== Viewing Dependencies ==
+
+user -> deps : Scrolls through dependency list
+user -> deps : Sees total count,\nenrichment progress,\nand license breakdown
+
+== Exporting CycloneDX ==
+
+user -> deps : Clicks "Export CycloneDX" button
+deps -> dl : JSON file downloads\n(product-name-cyclonedx.json)
+note right of dl : CycloneDX 1.6 format.\nIncludes all components,\nlicenses, and metadata.
+
+== Exporting SPDX ==
+
+user -> deps : Clicks "Export SPDX" button
+deps -> dl : JSON file downloads\n(product-name-spdx.json)
+note right of dl : SPDX 2.3 format.\nIncludes packages,\nrelationships, and\nlicense declarations.
+
+== No SBOM Available ==
+
+user -> detail : Opens product with\nno connected repository
+user -> deps : Sees empty state:\n"No dependencies found.\nConnect a repository to\ngenerate an SBOM."
+
+@enduml

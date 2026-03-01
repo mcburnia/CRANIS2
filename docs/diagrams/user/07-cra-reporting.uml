@@ -1,0 +1,43 @@
+@startuml CRA Incident Reporting — User Level
+title CRA Incident & Vulnerability Reporting
+
+actor "User" as user
+participant "Vuln Reports Page" as reports
+participant "Create Report Form" as form
+participant "Report Detail" as detail
+
+== Viewing Existing Reports ==
+
+user -> reports : Navigates to\n/vulnerability-reports
+user -> reports : Sees list of CRA reports\nwith status, type, product,\nand creation date
+
+== Creating a New Report ==
+
+user -> reports : Clicks "Create Report"
+reports -> form : Report creation form opens
+user -> form : Selects product
+user -> form : Chooses report type:\nVulnerability or Incident
+user -> form : Enters description
+user -> form : Sets awareness date/time
+user -> form : Selects CSIRT country
+user -> form : Clicks "Submit"
+form -> detail : Redirects to report detail
+
+== Adding Report Stages (ENISA Workflow) ==
+
+user -> detail : Sees report in "Early Warning" stage
+note right of detail : CRA requires 3 stages:\n1. Early Warning (24h)\n2. Vulnerability Notification (72h)\n3. Final Report (14 days)
+
+user -> detail : Clicks "Add Stage"
+user -> detail : Enters stage details\nand technical findings
+user -> detail : Submits stage update
+detail -> detail : Progress indicator advances
+
+== Closing a Report ==
+
+user -> detail : All stages completed
+user -> detail : Clicks "Close Report"
+detail -> detail : Report status changes\nto "Closed"
+note right of detail : Closed reports remain\nvisible for audit purposes.\nAdditional stages can still\nbe added as addenda.
+
+@enduml

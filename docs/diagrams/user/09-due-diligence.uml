@@ -1,0 +1,26 @@
+@startuml Due Diligence Export — User Level
+title Due Diligence Package
+
+actor "User" as user
+participant "Due Diligence Page" as dd
+participant "Preview" as preview
+participant "Download" as dl
+
+== Viewing Due Diligence Overview ==
+
+user -> dd : Navigates to /due-diligence
+user -> dd : Sees list of products with\ndue diligence readiness status
+
+== Previewing Package Contents ==
+
+user -> dd : Selects a product
+dd -> preview : Shows preview of all sections:\n- Product information\n- SBOM summary\n- Vulnerability findings\n- License compliance\n- Technical file status\n- CRA report history\n- Stakeholder list\n- Compliance timeline
+note right of preview : This is a read-only preview\nof everything that will be\nincluded in the export.
+
+== Downloading ZIP Package ==
+
+user -> preview : Clicks "Export ZIP"
+preview -> dl : ZIP file downloads containing:\n- Product summary (JSON)\n- SBOM (CycloneDX + SPDX)\n- Vulnerability report\n- License compliance report\n- Technical documentation\n- Compliance timeline
+note right of dl : Single ZIP file suitable\nfor sending to auditors,\nmarket surveillance, or\nsupply chain partners.
+
+@enduml
