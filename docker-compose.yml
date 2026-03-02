@@ -11,6 +11,8 @@ services:
       - postgres
       - neo4j
       - backend
+    volumes:
+      - ./docs:/app/docs:ro
     deploy:
       resources:
         limits:
@@ -48,6 +50,8 @@ services:
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
       FORGEJO_ADMIN_TOKEN: ${FORGEJO_ADMIN_TOKEN}
       FORGEJO_URL: ${FORGEJO_URL}
+    volumes:
+      - ./docs:/app/docs:ro
     deploy:
       resources:
         limits:
@@ -75,6 +79,8 @@ services:
       TEST_NEO4J_USER: ${NEO4J_USER}
       TEST_NEO4J_PASSWORD: ${NEO4J_PASSWORD}
       TEST_BASE_URL: https://dev.cranis2.dev
+    volumes:
+      - ./docs:/app/docs:ro
     deploy:
       resources:
         limits:
@@ -98,6 +104,8 @@ services:
     ports:
       - "5433:5432"
     command: ["postgres", "-c", "shared_buffers=64MB", "-c", "work_mem=2MB", "-c", "effective_cache_size=256MB"]
+    volumes:
+      - ./docs:/app/docs:ro
     deploy:
       resources:
         limits:
@@ -122,6 +130,8 @@ services:
       NEO4J_server_memory_heap_initial__size: 128m
       NEO4J_server_memory_heap_max__size: 256m
       NEO4J_server_memory_pagecache_size: 64m
+    volumes:
+      - ./docs:/app/docs:ro
     deploy:
       resources:
         limits:
@@ -145,6 +155,8 @@ services:
     image: codeberg.org/forgejo/forgejo:10
     container_name: cranis2_forgejo
     restart: unless-stopped
+    volumes:
+      - ./docs:/app/docs:ro
     deploy:
       resources:
         limits:

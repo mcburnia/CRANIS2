@@ -29,6 +29,7 @@ import billingRoutes from './routes/billing.js';
 import marketplaceRoutes from "./routes/marketplace.js";
 import complianceTimelineRoutes from "./routes/compliance-timeline.js";
 import escrowRoutes from "./routes/escrow.js";
+import docsRoutes from "./routes/docs.js";
 import { startScheduler } from './services/scheduler.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
 
@@ -44,7 +45,7 @@ app.use(express.json({
 
 // Global billing gate — blocks write operations for restricted accounts
 // Skips: auth, billing, admin, health, webhooks, and all GET/OPTIONS requests
-const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/dev'];
+const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/dev', '/api/docs'];
 app.use('/api', (req, res, next) => {
   // Only gate write operations
   if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
@@ -88,6 +89,7 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/compliance-timeline', complianceTimelineRoutes);
 app.use('/api/escrow', escrowRoutes);
+app.use('/api/docs', docsRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

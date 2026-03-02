@@ -1,4 +1,10 @@
 import pg from 'pg';
+import { readFileSync, existsSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
@@ -783,6 +789,33 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
 
     // Track SBOM source (api = GitHub dependency graph, lockfile:filename = generated from lockfile)
     await client.query(`ALTER TABLE product_sboms ADD COLUMN IF NOT EXISTS sbom_source VARCHAR(50) DEFAULT 'api'`);
+    // ── Documentation pages (admin-editable) ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS doc_pages (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        slug VARCHAR(100) UNIQUE NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL DEFAULT '',
+        updated_by UUID REFERENCES users(id),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
+    // Seed doc_pages from markdown files on first run
+    const docCount = await client.query('SELECT COUNT(*) FROM doc_pages');
+    if (parseInt(docCount.rows[0].count) === 0) {
+      const ugPath = join(__dirname, '../../docs/USER-GUIDE.md');
+      const faqPath = join(__dirname, '../../docs/FAQ.md');
+      const ugContent = existsSync(ugPath) ? readFileSync(ugPath, 'utf-8') : '';
+      const faqContent = existsSync(faqPath) ? readFileSync(faqPath, 'utf-8') : '';
+      await client.query(
+        `INSERT INTO doc_pages (slug, title, content) VALUES ($1, $2, $3), ($4, $5, $6)`,
+        ['user-guide', 'User Guide', ugContent, 'faq', 'FAQ', faqContent]
+      );
+      console.log('[DB] Seeded doc_pages with USER-GUIDE.md and FAQ.md');
+    }
+
   } finally {
     client.release();
   }

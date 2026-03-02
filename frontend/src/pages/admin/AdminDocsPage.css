@@ -1,0 +1,247 @@
+/* AdminDocsPage — adoc- prefix */
+
+.admin-docs {
+  padding: 0;
+}
+
+/* ── Tab bar ── */
+.adoc-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+
+.adoc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+
+.adoc-tab:hover {
+  color: var(--text);
+}
+
+.adoc-tab-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Loading ── */
+.adoc-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+}
+
+/* ── Title row ── */
+.adoc-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.adoc-title-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.adoc-title-input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.adoc-title-input:focus {
+  border-color: var(--accent);
+}
+
+/* ── Toolbar ── */
+.adoc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.adoc-toolbar-left {
+  display: flex;
+  gap: 1rem;
+}
+
+.adoc-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.adoc-label-editor,
+.adoc-label-preview {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  width: calc(50% - 0.5rem);
+  text-align: center;
+  display: none;
+}
+
+.adoc-last-updated {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.adoc-unsaved-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 10%, transparent);
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+}
+
+.adoc-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.adoc-save-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
+}
+
+.adoc-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.adoc-save-btn.success {
+  background: var(--green);
+}
+
+.adoc-save-btn.error {
+  background: var(--red);
+}
+
+/* ── Split pane ── */
+.adoc-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  min-height: calc(100vh - 320px);
+}
+
+.adoc-editor-pane {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.adoc-textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  padding: 1rem;
+  border: none;
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  tab-size: 2;
+}
+
+.adoc-textarea::placeholder {
+  color: var(--muted);
+}
+
+.adoc-preview-pane {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 320px);
+  background: var(--surface);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .adoc-split {
+    grid-template-columns: 1fr;
+  }
+
+  .adoc-preview-pane {
+    max-height: 400px;
+  }
+
+  .adoc-label-editor,
+  .adoc-label-preview {
+    display: block;
+    width: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .adoc-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .adoc-toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .adoc-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .adoc-title-input {
+    width: 100%;
+  }
+}

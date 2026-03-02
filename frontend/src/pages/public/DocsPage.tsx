@@ -3,9 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
-import { Book, HelpCircle, ChevronRight, ArrowUp, Menu, X } from 'lucide-react';
-import userGuideRaw from '../../../../docs/USER-GUIDE.md?raw';
-import faqRaw from '../../../../docs/FAQ.md?raw';
+import { Book, HelpCircle, ChevronRight, ArrowUp, Menu, X, Loader } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './DocsPage.css';
 
@@ -62,7 +60,26 @@ export default function DocsPage() {
   usePageMeta();
   const location = useLocation();
   const isFaq = location.pathname === '/docs/faq';
-  const content = isFaq ? faqRaw : userGuideRaw;
+
+  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  /* Fetch content from API */
+  useEffect(() => {
+    setLoading(true);
+    const slug = isFaq ? 'faq' : 'user-guide';
+    fetch(`/api/docs/${slug}`)
+      .then(r => r.json())
+      .then(data => {
+        setContent(data.content || '');
+        setLoading(false);
+      })
+      .catch(() => {
+        setContent('');
+        setLoading(false);
+      });
+  }, [isFaq]);
+
   const headings = useMemo(() => parseHeadings(content), [content]);
 
   /* Only show h2 + h3 in the TOC (h1 is the page title) */
@@ -73,6 +90,7 @@ export default function DocsPage() {
 
   /* Scroll to hash on mount or route change */
   useEffect(() => {
+    if (loading) return;
     if (location.hash) {
       const id = location.hash.slice(1);
       const el = document.getElementById(id);
@@ -82,10 +100,12 @@ export default function DocsPage() {
     } else {
       window.scrollTo(0, 0);
     }
-  }, [location.hash, location.pathname]);
+  }, [location.hash, location.pathname, loading]);
 
   /* Track which heading is in view via IntersectionObserver */
   useEffect(() => {
+    if (loading) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -103,7 +123,7 @@ export default function DocsPage() {
     headingEls.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, [content]);
+  }, [content, loading]);
 
   /* Close mobile TOC on route change */
   useEffect(() => {
@@ -187,9 +207,15 @@ export default function DocsPage() {
 
         {/* Main content */}
         <main className="doc-content">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
-            {content}
-          </ReactMarkdown>
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem 0' }}>
+              <Loader size={28} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
+            </div>
+          ) : (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
+              {content}
+            </ReactMarkdown>
+          )}
         </main>
       </div>
 
