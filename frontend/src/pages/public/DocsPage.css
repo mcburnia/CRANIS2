@@ -1,0 +1,488 @@
+/* ══════════════════════════════════════
+   DocsPage — doc- prefix
+   ══════════════════════════════════════ */
+
+/* ── Page wrapper ── */
+
+.doc-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg, #1a1d27);
+  color: var(--text);
+}
+
+/* ── Top navigation ── */
+
+.doc-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.doc-nav-logo {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.doc-nav-logo span {
+  color: var(--accent);
+}
+
+.doc-nav-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 1rem;
+}
+
+.doc-nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.doc-nav-tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+.doc-nav-tab-active {
+  color: var(--accent);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.doc-nav-links {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  margin-left: auto;
+}
+.doc-nav-links a:not(.btn) {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.15s;
+}
+.doc-nav-links a:not(.btn):hover {
+  color: var(--text);
+}
+
+.doc-toc-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.25rem;
+  margin-left: auto;
+}
+
+/* ── Layout ── */
+
+.doc-layout {
+  display: flex;
+  flex: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── TOC sidebar ── */
+
+.doc-toc {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 53px; /* nav height */
+  height: calc(100vh - 53px);
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 0;
+  background: var(--surface);
+}
+
+.doc-toc-header {
+  padding: 0 1.25rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.doc-toc-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-toc-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 1.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-decoration: none;
+  line-height: 1.4;
+  border-left: 2px solid transparent;
+  transition: all 0.12s;
+}
+
+.doc-toc-item:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.doc-toc-active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.doc-toc-level-2 {
+  font-weight: 600;
+  padding-top: 0.5rem;
+}
+.doc-toc-level-3 {
+  padding-left: 2rem;
+  font-weight: 400;
+  font-size: 0.78rem;
+}
+
+.doc-toc-chevron {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.doc-toc-overlay {
+  display: none;
+}
+
+/* ── Scrollbar styling for TOC ── */
+
+.doc-toc::-webkit-scrollbar {
+  width: 4px;
+}
+.doc-toc::-webkit-scrollbar-track {
+  background: transparent;
+}
+.doc-toc::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+/* ── Main content ── */
+
+.doc-content {
+  flex: 1;
+  min-width: 0;
+  padding: 2.5rem 3rem 4rem;
+  max-width: 900px;
+}
+
+/* ── Markdown typography ── */
+
+.doc-content h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.doc-content h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 3rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.doc-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 2rem 0 0.75rem;
+  color: var(--text);
+}
+
+.doc-content h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+  color: var(--text);
+}
+
+.doc-content p {
+  font-size: 0.925rem;
+  line-height: 1.75;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+
+.doc-content strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.doc-content a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+.doc-content a:hover {
+  border-bottom-color: var(--accent);
+}
+
+/* ── Lists ── */
+
+.doc-content ul,
+.doc-content ol {
+  margin: 0 0 1.25rem;
+  padding-left: 1.5rem;
+}
+
+.doc-content li {
+  font-size: 0.925rem;
+  line-height: 1.7;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.doc-content li strong {
+  color: var(--text);
+}
+
+/* Nested lists */
+.doc-content li > ul,
+.doc-content li > ol {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+/* ── Code ── */
+
+.doc-content code {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.85em;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+.doc-content pre {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin: 0 0 1.25rem;
+}
+
+.doc-content pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+/* ── Tables ── */
+
+.doc-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.5rem;
+  font-size: 0.875rem;
+}
+
+.doc-content thead th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border-bottom: 2px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.doc-content tbody td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  vertical-align: top;
+}
+
+.doc-content tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── Blockquotes ── */
+
+.doc-content blockquote {
+  border-left: 3px solid var(--accent);
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  background: rgba(99, 102, 241, 0.06);
+  border-radius: 0 6px 6px 0;
+}
+
+.doc-content blockquote p {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+/* ── Horizontal rules ── */
+
+.doc-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.5rem 0;
+}
+
+/* ── Emoji callouts (> **Tip:** style) ── */
+
+.doc-content blockquote strong {
+  color: var(--accent);
+}
+
+/* ── Back to top ── */
+
+.doc-back-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s, opacity 0.15s;
+  z-index: 50;
+  opacity: 0.8;
+}
+.doc-back-to-top:hover {
+  transform: translateY(-2px);
+  opacity: 1;
+}
+
+/* ── Footer ── */
+
+.doc-footer {
+  text-align: center;
+  padding: 2rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* ══════════════════════════════════════
+   Responsive
+   ══════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+  .doc-content {
+    padding: 2rem;
+  }
+  .doc-toc {
+    width: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Hide desktop nav links, show toggle */
+  .doc-nav-links {
+    display: none;
+  }
+  .doc-toc-toggle {
+    display: flex;
+    margin-left: auto;
+  }
+
+  /* Mobile TOC: slide-over */
+  .doc-toc {
+    position: fixed;
+    top: 53px;
+    left: 0;
+    width: 280px;
+    height: calc(100vh - 53px);
+    z-index: 90;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: none;
+  }
+  .doc-toc-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .doc-toc-overlay {
+    display: block;
+    position: fixed;
+    inset: 53px 0 0 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 80;
+  }
+
+  .doc-content {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .doc-content h1 {
+    font-size: 1.5rem;
+  }
+  .doc-content h2 {
+    font-size: 1.2rem;
+  }
+
+  .doc-nav-tabs {
+    margin-left: 0;
+  }
+  .doc-nav-tab {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .doc-nav {
+    padding: 0.6rem 1rem;
+  }
+  .doc-content {
+    padding: 1rem 0.75rem 2rem;
+  }
+  .doc-content table {
+    font-size: 0.8rem;
+  }
+  .doc-content thead th,
+  .doc-content tbody td {
+    padding: 0.4rem 0.5rem;
+  }
+}

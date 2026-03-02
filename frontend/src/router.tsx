@@ -11,6 +11,7 @@ import VerifyEmailPage from './pages/public/VerifyEmailPage';
 import AcceptInvitePage from './pages/public/AcceptInvitePage';
 import MarketplacePage from './pages/public/MarketplacePage';
 import MarketplaceDetailPage from './pages/public/MarketplaceDetailPage';
+import DocsPage from './pages/public/DocsPage';
 import WelcomePage from './pages/setup/WelcomePage';
 import OrgSetupPage from './pages/setup/OrgSetupPage';
 
@@ -66,6 +67,8 @@ const router = createBrowserRouter([
           { path: '/accept-invite', element: <AcceptInvitePage /> },
           { path: '/marketplace', element: <MarketplacePage /> },
           { path: '/marketplace/:orgId', element: <MarketplaceDetailPage /> },
+          { path: '/docs', element: <DocsPage /> },
+          { path: '/docs/faq', element: <DocsPage /> },
           { path: '/welcome', element: <WelcomePage /> },
           { path: '/setup/org', element: <OrgSetupPage /> },
         ],

@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
   FolderGit2, Users, Box, AlertTriangle, CreditCard,
   BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2, Shield, MessageSquareMore, Scale, Fingerprint, FileBarChart2, Store,
-  ChevronRight
+  ChevronRight, BookOpen
 } from 'lucide-react';
 import FeedbackModal from './FeedbackModal';
 import './Sidebar.css';
@@ -159,6 +159,10 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
         );
       })}
       <div className="nav-section">
+        <Link to="/docs" className="nav-item" onClick={onNavigate} target="_blank">
+          <BookOpen size={18} className="nav-icon" />
+          Documentation
+        </Link>
         <button className="nav-item feedback-btn" onClick={() => { setShowFeedback(true); if (onNavigate) onNavigate(); }}>
           <MessageSquareMore size={18} className="nav-icon" />
           Feedback & Bug Report

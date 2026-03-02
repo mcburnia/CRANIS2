@@ -170,6 +170,7 @@ export default function LandingPage() {
           <a href="#compliance">Compliance</a>
           <a href="#pricing">Pricing</a>
           <Link to="/marketplace">Marketplace</Link>
+          <Link to="/docs">Documentation</Link>
           <Link to="/login">Log In</Link>
           <Link to="/signup" className="btn btn-primary">Try CRANIS2 Free</Link>
         </div>
