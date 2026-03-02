@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { Shield, ChevronDown, ChevronRight, Clock } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Shield, ChevronDown, ChevronRight, Clock, RefreshCw, FileText } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import './RiskFindingsPage.css';
@@ -14,6 +14,8 @@ interface FindingsSummary {
   open: number;
   dismissed: number;
   acknowledged: number;
+  mitigated: number;
+  resolved: number;
 }
 
 interface LastScan {
@@ -80,6 +82,7 @@ interface OverviewData {
 
 interface Finding {
   id: string;
+  product_id: string;
   source: string;
   source_id: string;
   severity: string;
@@ -93,6 +96,9 @@ interface Finding {
   affected_versions: string;
   references_url: string;
   mitigation: string;
+  mitigation_notes: string | null;
+  resolved_at: string | null;
+  resolved_by: string | null;
   status: string;
   dismissed_by: string | null;
   dismissed_reason: string | null;
@@ -119,6 +125,15 @@ interface PlatformScan {
 
 type Filter = 'all' | 'critical_high' | 'open' | 'dismissed';
 
+// FR-1: All triage statuses
+const TRIAGE_STATUSES = [
+  { value: 'open', label: 'Open', className: 'open' },
+  { value: 'acknowledged', label: 'Acknowledged', className: 'acknowledged' },
+  { value: 'mitigated', label: 'Mitigated', className: 'mitigated' },
+  { value: 'resolved', label: 'Resolved', className: 'resolved' },
+  { value: 'dismissed', label: 'Dismissed', className: 'dismissed' },
+];
+
 function formatTimeAgo(dateStr: string | null): string {
   if (!dateStr) return 'Never';
   const d = new Date(dateStr);
@@ -133,6 +148,7 @@ function formatTimeAgo(dateStr: string | null): string {
 }
 
 export default function RiskFindingsPage() {
+  const navigate = useNavigate();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
@@ -142,8 +158,11 @@ export default function RiskFindingsPage() {
   const [scanHistories, setScanHistories] = useState<Record<string, ScanHistoryData>>({});
   const [showHistory, setShowHistory] = useState<Record<string, boolean>>({});
   const [latestPlatformScan, setLatestPlatformScan] = useState<PlatformScan | null>(null);
+  const [scanningProducts, setScanningProducts] = useState<Record<string, boolean>>({});
+  const [mitigationDraft, setMitigationDraft] = useState<Record<string, string>>({});
 
   const token = localStorage.getItem('session_token');
+  const headers = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
 
   const fetchOverview = useCallback(() => {
     fetch('/api/risk-findings/overview', { headers: { Authorization: 'Bearer ' + token } })
@@ -178,14 +197,15 @@ export default function RiskFindingsPage() {
     }
   };
 
-  const handleDismiss = async (findingId: string, productId: string) => {
-    const reason = prompt('Reason for dismissing this finding (optional):');
+  // FR-1: Full triage status change handler
+  const handleStatusChange = async (findingId: string, productId: string, newStatus: string, reason?: string, mitigationNotes?: string) => {
     try {
       await fetch('/api/risk-findings/' + findingId, {
         method: 'PUT',
-        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'dismissed', reason: reason || '' }),
+        headers,
+        body: JSON.stringify({ status: newStatus, reason: reason || '', mitigationNotes: mitigationNotes || '' }),
       });
+      // Refresh findings for this product
       const resp = await fetch('/api/risk-findings/' + productId, {
         headers: { Authorization: 'Bearer ' + token },
       });
@@ -193,7 +213,38 @@ export default function RiskFindingsPage() {
       setProductFindings(prev => ({ ...prev, [productId]: result.findings }));
       fetchOverview();
     } catch (err) {
-      console.error('Failed to dismiss finding:', err);
+      console.error('Failed to update finding status:', err);
+    }
+  };
+
+  // FR-2: Per-product scan trigger
+  const handleProductScan = async (productId: string) => {
+    setScanningProducts(prev => ({ ...prev, [productId]: true }));
+    try {
+      const resp = await fetch('/api/risk-findings/' + productId + '/scan', {
+        method: 'POST',
+        headers,
+      });
+      if (resp.ok) {
+        // Refresh data after scan completes
+        setTimeout(() => {
+          fetchOverview();
+          // Re-load findings if expanded
+          if (expandedProducts[productId]) {
+            fetch('/api/risk-findings/' + productId, { headers: { Authorization: 'Bearer ' + token } })
+              .then(r => r.json())
+              .then(result => setProductFindings(prev => ({ ...prev, [productId]: result.findings })));
+          }
+          setScanningProducts(prev => ({ ...prev, [productId]: false }));
+        }, 1000);
+      } else {
+        const err = await resp.json();
+        alert(err.error || 'Scan failed');
+        setScanningProducts(prev => ({ ...prev, [productId]: false }));
+      }
+    } catch (err) {
+      console.error('Failed to trigger scan:', err);
+      setScanningProducts(prev => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -283,6 +334,7 @@ export default function RiskFindingsPage() {
         const total = findings.total;
         const isExpanded = expandedProducts[product.id];
         const pFindings = productFindings[product.id] || [];
+        const isScanning = scanningProducts[product.id];
 
         return (
           <div key={product.id} className="rf-product-card">
@@ -303,6 +355,16 @@ export default function RiskFindingsPage() {
                     ? 'Last scan: ' + formatTimeAgo(product.lastScan.completedAt) + ' (' + product.lastScan.findingsCount + ' findings)'
                     : 'Never scanned'}
                 </span>
+                {/* FR-2: Per-product scan button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleProductScan(product.id); }}
+                  className="rf-scan-btn"
+                  disabled={isScanning}
+                  title="Trigger vulnerability scan"
+                >
+                  <RefreshCw size={12} className={isScanning ? 'rf-spin' : ''} />
+                  {isScanning ? 'Scanning...' : 'Scan'}
+                </button>
                 {product.lastScan && (
                   <button
                     onClick={(e) => { e.stopPropagation(); loadScanHistory(product.id); }}
@@ -328,7 +390,7 @@ export default function RiskFindingsPage() {
                   {findings.medium > 0 && <span className="rf-legend-item"><span className="rf-legend-dot medium" /> Medium ({findings.medium})</span>}
                   {findings.low > 0 && <span className="rf-legend-item"><span className="rf-legend-dot low" /> Low ({findings.low})</span>}
                   <span className="rf-legend-item" style={{ marginLeft: 'auto' }}>
-                    {findings.open} open, {findings.dismissed} dismissed
+                    {findings.open} open, {findings.acknowledged} ack, {findings.mitigated} mitigated, {findings.resolved} resolved, {findings.dismissed} dismissed
                   </span>
                 </div>
               </>
@@ -425,8 +487,37 @@ export default function RiskFindingsPage() {
                             {finding.cvss_score && <span>CVSS: {finding.cvss_score}</span>}
                           </div>
                         </div>
-                        <div className="rf-finding-status">
-                          <span className={finding.status}>{finding.status}</span>
+                        <div className="rf-finding-actions" onClick={e => e.stopPropagation()}>
+                          {/* FR-1: Status dropdown */}
+                          <select
+                            className={'rf-status-select rf-status-' + finding.status}
+                            value={finding.status}
+                            onChange={async (e) => {
+                              const newStatus = e.target.value;
+                              if (newStatus === 'dismissed') {
+                                const reason = prompt('Reason for dismissing (optional):');
+                                await handleStatusChange(finding.id, product.id, newStatus, reason || '');
+                              } else if (newStatus === 'mitigated') {
+                                const notes = mitigationDraft[finding.id] || prompt('Mitigation notes (describe what was done):');
+                                await handleStatusChange(finding.id, product.id, newStatus, '', notes || '');
+                              } else {
+                                await handleStatusChange(finding.id, product.id, newStatus);
+                              }
+                            }}
+                          >
+                            {TRIAGE_STATUSES.map(s => (
+                              <option key={s.value} value={s.value}>{s.label}</option>
+                            ))}
+                          </select>
+                          {/* FR-3: Create ENISA Report button */}
+                          <button
+                            className="rf-report-btn"
+                            onClick={() => navigate('/vulnerability-reports?create=true&productId=' + finding.product_id + '&findingId=' + finding.id)}
+                            title="Create ENISA Report from this finding"
+                          >
+                            <FileText size={12} />
+                            Report
+                          </button>
                         </div>
                       </div>
                       {isDetailExpanded && (
@@ -452,14 +543,38 @@ export default function RiskFindingsPage() {
                               ))}
                             </div>
                           )}
-                          {finding.status === 'open' && (
-                            <button className="rf-dismiss-btn" onClick={(e) => { e.stopPropagation(); handleDismiss(finding.id, product.id); }}>
-                              Dismiss
-                            </button>
+                          {/* FR-4: Mitigation notes */}
+                          {(finding.status === 'mitigated' || finding.mitigation_notes) && (
+                            <div className="rf-mitigation-notes">
+                              <div className="rf-mitigation-header">Mitigation Notes</div>
+                              {finding.status === 'mitigated' ? (
+                                <textarea
+                                  className="rf-mitigation-textarea"
+                                  value={mitigationDraft[finding.id] ?? finding.mitigation_notes ?? ''}
+                                  onChange={e => setMitigationDraft(prev => ({ ...prev, [finding.id]: e.target.value }))}
+                                  onBlur={async () => {
+                                    const notes = mitigationDraft[finding.id];
+                                    if (notes !== undefined && notes !== (finding.mitigation_notes || '')) {
+                                      await handleStatusChange(finding.id, product.id, 'mitigated', '', notes);
+                                    }
+                                  }}
+                                  placeholder="Describe the mitigation steps taken..."
+                                  rows={3}
+                                />
+                              ) : (
+                                <p style={{ margin: 0 }}>{finding.mitigation_notes}</p>
+                              )}
+                            </div>
                           )}
-                          {finding.dismissed_by && (
+                          {/* Status metadata */}
+                          {finding.dismissed_by && finding.status === 'dismissed' && (
                             <p style={{ fontSize: '0.75rem', marginTop: '0.5rem' }}>
                               Dismissed by {finding.dismissed_by}{finding.dismissed_reason ? ': ' + finding.dismissed_reason : ''}
+                            </p>
+                          )}
+                          {finding.resolved_by && finding.status === 'resolved' && (
+                            <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: 'var(--green)' }}>
+                              Resolved by {finding.resolved_by} on {new Date(finding.resolved_at || '').toLocaleDateString()}
                             </p>
                           )}
                         </div>

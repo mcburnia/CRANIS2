@@ -169,3 +169,88 @@
 .lc-verdict-bad { color: var(--red); background: rgba(239, 68, 68, 0.12); }
 .lc-verdict-review { color: var(--amber); background: rgba(245, 158, 11, 0.12); }
 .lc-verdict-none { color: var(--muted); }
+
+/* FR-5: Distribution model badge */
+.lc-dist-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--accent);
+  font-size: 0.65rem;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+/* FR-6: Compatibility Matrix */
+.lc-matrix-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  margin-bottom: 1.25rem;
+  transition: all 0.15s;
+}
+.lc-matrix-toggle:hover { border-color: var(--accent); background: rgba(99, 102, 241, 0.06); }
+
+.lc-matrix-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.lc-matrix-section h4 { margin: 0 0 1rem; font-size: 0.95rem; color: var(--text); }
+
+.lc-matrix-table { width: 100%; border-collapse: collapse; }
+.lc-matrix-table th {
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.lc-matrix-table th:first-child { text-align: left; }
+.lc-matrix-model {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.lc-matrix-cell {
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: help;
+}
+.lc-matrix-compatible { color: var(--green); }
+.lc-matrix-incompatible { color: var(--red); }
+.lc-matrix-review_needed { color: var(--amber); }
+
+.lc-conflicts { margin-top: 1rem; }
+.lc-conflicts h5 { margin: 0 0 0.5rem; font-size: 0.8rem; color: var(--text); }
+.lc-conflict-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.3rem 0;
+  font-size: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.lc-conflict-licenses {
+  font-weight: 600;
+  color: var(--red);
+  min-width: 200px;
+}
+.lc-conflict-reason { color: var(--muted); }

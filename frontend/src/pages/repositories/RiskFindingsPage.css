@@ -48,6 +48,30 @@
 .rf-card-header h3 a:hover { color: var(--accent); }
 .rf-scan-info { margin-left: auto; font-size: 0.8rem; color: var(--muted); }
 
+/* FR-2: Scan button */
+.rf-scan-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.rf-scan-btn:hover { background: rgba(99, 102, 241, 0.08); }
+.rf-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@keyframes rf-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.rf-spin { animation: rf-spin 1s linear infinite; }
+
 .rf-severity-bar {
   display: flex; height: 6px; border-radius: 3px; overflow: hidden;
   margin: 0.75rem 1.25rem; background: var(--border);
@@ -92,6 +116,50 @@
 .rf-finding-meta a { color: var(--accent); text-decoration: none; }
 .rf-finding-meta a:hover { text-decoration: underline; }
 
+/* FR-1: Finding actions area (status + report) */
+.rf-finding-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* FR-1: Status dropdown */
+.rf-status-select {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #1e1e2e;
+  color: var(--muted);
+  cursor: pointer;
+  min-width: 90px;
+}
+.rf-status-select:focus { border-color: var(--accent); outline: none; }
+.rf-status-select.rf-status-open { color: var(--amber); }
+.rf-status-select.rf-status-acknowledged { color: var(--accent); }
+.rf-status-select.rf-status-mitigated { color: #8b5cf6; }
+.rf-status-select.rf-status-resolved { color: var(--green); }
+.rf-status-select.rf-status-dismissed { color: var(--muted); }
+
+/* FR-3: Report button */
+.rf-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: var(--purple);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.65rem;
+  font-weight: 500;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.rf-report-btn:hover { background: rgba(139, 92, 246, 0.08); border-color: var(--purple); }
+
 .rf-finding-status { flex-shrink: 0; font-size: 0.75rem; }
 .rf-finding-status .open { color: var(--amber); }
 .rf-finding-status .dismissed { color: var(--muted); text-decoration: line-through; }
@@ -104,6 +172,35 @@
 }
 .rf-finding-detail .refs { margin-top: 0.5rem; }
 .rf-finding-detail .refs a { color: var(--accent); text-decoration: none; word-break: break-all; }
+
+/* FR-4: Mitigation notes */
+.rf-mitigation-notes {
+  margin-top: 0.75rem;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+}
+.rf-mitigation-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--purple);
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+}
+.rf-mitigation-textarea {
+  width: 100%;
+  background: #1e1e2e;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 0.4rem 0.5rem;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+.rf-mitigation-textarea:focus { border-color: var(--accent); outline: none; }
 
 .rf-dismiss-btn {
   background: none; border: 1px solid var(--border); color: var(--muted);
@@ -134,4 +231,5 @@
   .rf-finding-row { flex-direction: column; }
   .rf-finding-meta { flex-direction: column; gap: 0.25rem; }
   .rf-header-actions { flex-direction: column; align-items: flex-start; }
+  .rf-finding-actions { flex-wrap: wrap; }
 }

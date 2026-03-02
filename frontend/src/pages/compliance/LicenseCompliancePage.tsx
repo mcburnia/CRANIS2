@@ -7,6 +7,7 @@ import './LicenseCompliancePage.css';
 interface ProductSummary {
   productId: string;
   productName: string;
+  distributionModel: string | null;
   totalDeps: number;
   permissiveCount: number;
   copyleftCount: number;
@@ -67,6 +68,14 @@ interface LatestScan {
   duration_ms: number;
 }
 
+const DIST_MODEL_LABELS: Record<string, string> = {
+  proprietary_binary: "Proprietary Binary",
+  saas_hosted: "SaaS / Cloud Hosted",
+  source_available: "Source Available",
+  library_component: "Library / Component",
+  internal_only: "Internal Only",
+};
+
 const getToken = () => localStorage.getItem('session_token');
 
 export default function LicenseCompliancePage() {
@@ -82,10 +91,23 @@ export default function LicenseCompliancePage() {
   const [verdictFilter, setVerdictFilter] = useState<string>('all');
   const [waiverModal, setWaiverModal] = useState<{ findingId: string; name: string } | null>(null);
   const [waiverReason, setWaiverReason] = useState('');
+  const [showMatrix, setShowMatrix] = useState(false);
+  const [matrixData, setMatrixData] = useState<any>(null);
 
   useEffect(() => {
     fetchOverview();
   }, []);
+
+  async function fetchMatrix() {
+    try {
+      const res = await fetch('/api/license-scan/compatibility-matrix', {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (res.ok) setMatrixData(await res.json());
+    } catch (err) {
+      console.error('Failed to fetch compatibility matrix:', err);
+    }
+  }
 
   async function fetchOverview() {
     try {
@@ -229,6 +251,57 @@ export default function LicenseCompliancePage() {
         </div>
       </div>
 
+      {/* FR-6: Compatibility Matrix toggle */}
+      <button
+        className="lc-matrix-toggle"
+        onClick={() => { setShowMatrix(!showMatrix); if (!matrixData) fetchMatrix(); }}
+      >
+        <Scale size={14} />
+        {showMatrix ? 'Hide' : 'Show'} Compatibility Matrix
+      </button>
+
+      {showMatrix && matrixData && (
+        <div className="lc-matrix-section">
+          <h4>License Compatibility by Distribution Model</h4>
+          <table className="lc-matrix-table">
+            <thead>
+              <tr>
+                <th></th>
+                {matrixData.licenseCategories.map((lc: any) => (
+                  <th key={lc.value}>{lc.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {matrixData.distributionModels.map((dm: any) => (
+                <tr key={dm.value}>
+                  <td className="lc-matrix-model">{dm.label}</td>
+                  {matrixData.licenseCategories.map((lc: any) => {
+                    const cell = matrixData.matrix[dm.value]?.[lc.value];
+                    return (
+                      <td key={lc.value} className={`lc-matrix-cell lc-matrix-${cell?.verdict || 'unknown'}`} title={cell?.note || ''}>
+                        {cell?.verdict === 'compatible' ? '\u2713' : cell?.verdict === 'incompatible' ? '\u2717' : '?'}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {matrixData.crossConflicts?.length > 0 && (
+            <div className="lc-conflicts">
+              <h5>Known Cross-License Conflicts</h5>
+              {matrixData.crossConflicts.map((c: any, i: number) => (
+                <div key={i} className="lc-conflict-item">
+                  <span className="lc-conflict-licenses">{c.a} + {c.b}</span>
+                  <span className="lc-conflict-reason">{c.reason}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {totals && (
         <div className="stats">
           <StatCard
@@ -275,7 +348,7 @@ export default function LicenseCompliancePage() {
                     <td className="lc-expand-icon">
                       {expandedProduct === p.productId ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </td>
-                    <td className="lc-product-name">{p.productName}</td>
+                    <td className="lc-product-name">{p.productName}{p.distributionModel && <span className="lc-dist-badge">{DIST_MODEL_LABELS[p.distributionModel] || p.distributionModel}</span>}</td>
                     <td>{p.totalDeps || '—'}</td>
                     <td className="lc-cell-blue">{p.directCount || '—'}</td>
                     <td className="lc-cell-muted">{p.transitiveCount || '—'}</td>

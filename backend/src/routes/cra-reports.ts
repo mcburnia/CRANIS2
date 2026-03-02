@@ -41,11 +41,8 @@ function calculateDeadlines(awarenessAt: Date, reportType: 'vulnerability' | 'in
 
   let finalReport: Date;
   if (reportType === 'vulnerability') {
-    // 14 days after awareness (actual deadline is 14 days after corrective measure,
-    // but we use awareness + 14d as a planning deadline — can be adjusted later)
     finalReport = new Date(awarenessAt.getTime() + 14 * 24 * 60 * 60 * 1000);
   } else {
-    // 1 month for incidents
     finalReport = new Date(awarenessAt);
     finalReport.setMonth(finalReport.getMonth() + 1);
   }
@@ -82,7 +79,6 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       [orgId]
     );
 
-    // Next upcoming deadline
     const nextDeadline = await pool.query(
       `SELECT id, product_id, report_type, status,
               CASE
@@ -97,7 +93,6 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       [orgId]
     );
 
-    // Reports created this month
     const thisMonth = await pool.query(
       `SELECT count(*) AS cnt FROM cra_reports
        WHERE org_id = $1 AND created_at >= date_trunc('month', NOW())`,
@@ -247,15 +242,17 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       deadlines = calculateDeadlines(awareness, reportType);
     }
 
-    // If linked to a finding, validate it exists
+    // If linked to a finding, validate it exists and fetch details for auto-populate (CR-1)
+    let linkedFinding: any = null;
     if (linkedFindingId) {
       const findingCheck = await pool.query(
-        'SELECT id FROM vulnerability_findings WHERE id = $1 AND org_id = $2',
+        'SELECT id, title, severity, cvss_score, source, source_id, dependency_name, dependency_version, fixed_version, description FROM vulnerability_findings WHERE id = $1 AND org_id = $2',
         [linkedFindingId, orgId]
       );
       if (findingCheck.rows.length === 0) {
         res.status(404).json({ error: 'Linked finding not found' }); return;
       }
+      linkedFinding = findingCheck.rows[0];
     }
 
     const result = await pool.query(
@@ -287,7 +284,8 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       metadata: { reportId: report.id, reportType, productId, linkedFindingId: linkedFindingId || null },
     });
 
-    res.status(201).json({ report });
+    // Return report with linked finding data (CR-1: auto-populate support)
+    res.status(201).json({ report, linkedFinding });
   } catch (err) {
     console.error('Failed to create CRA report:', err);
     res.status(500).json({ error: 'Failed to create report' });
@@ -412,13 +410,14 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     const orgId = await getOrgId(userId);
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-    // Build dynamic update
+    // Build dynamic update — TD-1: added enisaReference
     const allowedFields: Record<string, string> = {
       awarenessAt: 'awareness_at',
       csirtCountry: 'csirt_country',
       memberStatesAffected: 'member_states_affected',
       sensitivityTlp: 'sensitivity_tlp',
       reportType: 'report_type',
+      enisaReference: 'enisa_reference',
     };
 
     const sets: string[] = ['updated_at = NOW()'];
@@ -435,7 +434,6 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
 
     // Recalculate deadlines if awareness or type changed
     if (req.body.awarenessAt || req.body.reportType) {
-      // Need current values to merge
       const current = await pool.query(
         'SELECT awareness_at, report_type FROM cra_reports WHERE id = $1 AND org_id = $2',
         [reportId, orgId]
@@ -488,7 +486,6 @@ router.post('/:id/stages', requireAuth, async (req: Request, res: Response) => {
       res.status(400).json({ error: 'content must be a JSON object' }); return;
     }
 
-    // Verify report exists and belongs to org
     const report = await pool.query(
       'SELECT id, status, report_type FROM cra_reports WHERE id = $1 AND org_id = $2',
       [reportId, orgId]
@@ -497,13 +494,12 @@ router.post('/:id/stages', requireAuth, async (req: Request, res: Response) => {
       res.status(404).json({ error: 'Report not found' }); return;
     }
 
-    // Validate stage progression (allow intermediate at any time)
     const currentStatus = report.rows[0].status;
     const validTransitions: Record<string, string[]> = {
       draft: ['early_warning', 'intermediate'],
       early_warning_sent: ['notification', 'intermediate'],
       notification_sent: ['final_report', 'intermediate'],
-      final_report_sent: ['intermediate'], // Can still add intermediates after final
+      final_report_sent: ['intermediate'],
     };
 
     if (stage !== 'intermediate' && !(validTransitions[currentStatus] || []).includes(stage)) {
@@ -515,14 +511,12 @@ router.post('/:id/stages', requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    // Insert stage
     const stageResult = await pool.query(
       `INSERT INTO cra_report_stages (report_id, stage, content, submitted_by)
        VALUES ($1, $2, $3, $4) RETURNING *`,
       [reportId, stage, JSON.stringify(content), userId]
     );
 
-    // Update report status (unless intermediate)
     let newStatus = currentStatus;
     if (stage === 'early_warning') newStatus = 'early_warning_sent';
     else if (stage === 'notification') newStatus = 'notification_sent';
@@ -535,7 +529,6 @@ router.post('/:id/stages', requireAuth, async (req: Request, res: Response) => {
       );
     }
 
-    // Record telemetry
     const reqData = extractRequestData(req);
     await recordEvent({
       userId, email,
@@ -599,7 +592,6 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
     const orgId = await getOrgId(userId);
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-    // Only allow deleting drafts
     const check = await pool.query(
       "SELECT id, status FROM cra_reports WHERE id = $1 AND org_id = $2",
       [reportId, orgId]
@@ -613,7 +605,6 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
       res.status(400).json({ error: 'Only draft reports can be deleted. Use close instead.' }); return;
     }
 
-    // CASCADE deletes stages too
     await pool.query('DELETE FROM cra_reports WHERE id = $1', [reportId]);
 
     const reqData = extractRequestData(req);

@@ -42,13 +42,13 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
 
     // Get all products for this org from Neo4j
     const session = neo4jDriver.session({ defaultAccessMode: neo4j.session.READ });
-    let products: Array<{ id: string; name: string }> = [];
+    let products: Array<{ id: string; name: string; distributionModel: string | null }> = [];
     try {
       const result = await session.run(
-        `MATCH (p:Product)-[:BELONGS_TO]->(o:Organisation {id: $orgId}) RETURN p.id AS id, p.name AS name`,
+        `MATCH (p:Product)-[:BELONGS_TO]->(o:Organisation {id: $orgId}) RETURN p.id AS id, p.name AS name, p.distributionModel AS distributionModel`,
         { orgId }
       );
-      products = result.records.map(r => ({ id: r.get('id'), name: r.get('name') }));
+      products = result.records.map(r => ({ id: r.get('id'), name: r.get('name'), distributionModel: r.get('distributionModel') || null }));
     } finally {
       await session.close();
     }
@@ -110,6 +110,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       return {
         productId: p.id,
         productName: p.name,
+        distributionModel: p.distributionModel,
         totalDeps: scan ? parseInt(scan.total_deps) : 0,
         permissiveCount: scan ? parseInt(scan.permissive_count) : 0,
         copyleftCount: scan ? parseInt(scan.copyleft_count) : 0,
@@ -362,6 +363,40 @@ router.put('/finding/:findingId', requireAuth, async (req: Request, res: Respons
     console.error('Failed to update finding:', err);
     res.status(500).json({ error: 'Failed to update finding' });
   }
+});
+
+// FR-6: GET /compatibility-matrix — visual compatibility rules grid
+router.get("/compatibility-matrix", requireAuth, async (_req: Request, res: Response) => {
+  const distributionModels = [
+    { value: "proprietary_binary", label: "Proprietary Binary" },
+    { value: "saas_hosted", label: "SaaS / Cloud Hosted" },
+    { value: "source_available", label: "Source Available" },
+    { value: "library_component", label: "Library / Component" },
+    { value: "internal_only", label: "Internal Only" },
+  ];
+  const licenseCategories = [
+    { value: "permissive", label: "Permissive" },
+    { value: "copyleft_weak", label: "Weak Copyleft" },
+    { value: "copyleft_strong", label: "Strong Copyleft" },
+    { value: "unknown", label: "Unknown" },
+  ];
+  const matrix: Record<string, Record<string, { verdict: string; note: string }>> = {};
+  for (const dm of distributionModels) {
+    matrix[dm.value] = {};
+    for (const lc of licenseCategories) {
+      const result = checkCompatibility(dm.value as any, lc.value as any, lc.value === "copyleft_strong" ? "GPL-3.0-only" : lc.value === "copyleft_weak" ? "LGPL-2.1" : "", "direct");
+      matrix[dm.value][lc.value] = { verdict: result.verdict, note: result.reason };
+    }
+  }
+  const crossConflicts = [
+    { a: "GPL-2.0-only", b: "Apache-2.0", reason: "Patent clause conflicts" },
+    { a: "GPL-2.0", b: "CDDL-1.0", reason: "Conflicting copyleft requirements" },
+    { a: "EPL-1.0", b: "GPL-2.0", reason: "Incompatible patent and distribution terms" },
+    { a: "EPL-1.0", b: "GPL-3.0", reason: "Incompatible copyleft terms" },
+    { a: "EUPL-1.2", b: "GPL-2.0-only", reason: "EUPL compatible with GPL-3.0 only" },
+    { a: "CDDL-1.0", b: "GPL-3.0", reason: "Conflicting copyleft requirements" },
+  ];
+  res.json({ distributionModels, licenseCategories, matrix, crossConflicts });
 });
 
 export default router;

@@ -359,6 +359,21 @@ export async function initDb() {
     await client.query(`ALTER TABLE platform_scan_runs ADD COLUMN IF NOT EXISTS local_db_duration_ms INT`);
     await client.query(`ALTER TABLE platform_scan_runs ADD COLUMN IF NOT EXISTS local_db_findings INT DEFAULT 0`);
 
+    // FR-1: Full triage workflow columns for vulnerability findings
+
+    // CR-2/FR-7/FR-8: Custom obligations, evidence, deadlines
+    await client.query(`ALTER TABLE obligations ADD COLUMN IF NOT EXISTS is_custom BOOLEAN DEFAULT false`);
+    await client.query(`ALTER TABLE obligations ADD COLUMN IF NOT EXISTS custom_title VARCHAR(255)`);
+    await client.query(`ALTER TABLE obligations ADD COLUMN IF NOT EXISTS custom_description TEXT`);
+    await client.query(`ALTER TABLE obligations ADD COLUMN IF NOT EXISTS cra_reference VARCHAR(100)`);
+    await client.query(`ALTER TABLE obligations ADD COLUMN IF NOT EXISTS created_by VARCHAR(255)`);
+    await client.query(`ALTER TABLE obligations ADD COLUMN IF NOT EXISTS due_date DATE`);
+    await client.query(`ALTER TABLE obligations ADD COLUMN IF NOT EXISTS evidence_url TEXT`);
+    await client.query(`ALTER TABLE obligations ADD COLUMN IF NOT EXISTS evidence_filename VARCHAR(255)`);
+    await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS mitigation_notes TEXT`);
+    await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ`);
+    await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS resolved_by VARCHAR(255)`);
+
     // Local vulnerability database — OSV/GHSA advisories cache
     await client.query(`
       CREATE TABLE IF NOT EXISTS vuln_db_advisories (

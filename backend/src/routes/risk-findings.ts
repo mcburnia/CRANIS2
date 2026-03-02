@@ -85,7 +85,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
     const findingsMap = new Map<string, any>();
     for (const row of findingsResult.rows) {
       if (!findingsMap.has(row.product_id)) {
-        findingsMap.set(row.product_id, { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0 });
+        findingsMap.set(row.product_id, { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0 });
       }
       const pf = findingsMap.get(row.product_id);
       const count = parseInt(row.cnt);
@@ -94,6 +94,8 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       if (row.status === 'open') pf.open += count;
       else if (row.status === 'dismissed') pf.dismissed += count;
       else if (row.status === 'acknowledged') pf.acknowledged += count;
+      else if (row.status === 'mitigated') pf.mitigated += count;
+      else if (row.status === 'resolved') pf.resolved += count;
     }
 
     // Build response
@@ -101,7 +103,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
 
     const enrichedProducts = products.map(p => {
       const scan = scanMap.get(p.id);
-      const findings = findingsMap.get(p.id) || { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0 };
+      const findings = findingsMap.get(p.id) || { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0 };
 
       totalCritical += findings.critical;
       totalHigh += findings.high;
@@ -281,13 +283,16 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
       [productId, orgId]
     );
 
-    // Summary counts
-    const summary = { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0 };
+    // Summary counts — FR-1: include all 5 statuses
+    const summary = { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0 };
     for (const row of result.rows) {
       summary[row.severity as keyof typeof summary] = (summary[row.severity as keyof typeof summary] || 0) + 1;
       summary.total++;
       if (row.status === 'open') summary.open++;
-      if (row.status === 'dismissed') summary.dismissed++;
+      else if (row.status === 'dismissed') summary.dismissed++;
+      else if (row.status === 'acknowledged') summary.acknowledged++;
+      else if (row.status === 'mitigated') summary.mitigated++;
+      else if (row.status === 'resolved') summary.resolved++;
     }
 
     res.json({
@@ -382,7 +387,7 @@ router.get('/:productId/scan-history', requireAuth, async (req: Request, res: Re
   }
 });
 
-// POST /api/risk-findings/:productId/scan — Trigger per-product vulnerability scan
+// POST /api/risk-findings/:productId/scan — Trigger per-product vulnerability scan (FR-2)
 router.post('/:productId/scan', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;
@@ -441,14 +446,17 @@ router.post('/:productId/scan', requireAuth, async (req: Request, res: Response)
   }
 });
 
-// PUT /api/risk-findings/:findingId — Dismiss/acknowledge a finding
+// PUT /api/risk-findings/:findingId — Update finding status (FR-1: full triage workflow)
 router.put('/:findingId', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
+  const email = (req as any).email;
   const findingId = req.params.findingId as string;
-  const { status, reason } = req.body;
+  const { status, reason, mitigationNotes } = req.body;
 
-  if (!status || !['open', 'dismissed', 'acknowledged'].includes(status)) {
-    res.status(400).json({ error: 'Invalid status. Must be: open, dismissed, acknowledged' });
+  // FR-1: Full triage — open, acknowledged, mitigated, resolved, dismissed
+  const validStatuses = ['open', 'dismissed', 'acknowledged', 'mitigated', 'resolved'];
+  if (!status || !validStatuses.includes(status)) {
+    res.status(400).json({ error: 'Invalid status. Must be: ' + validStatuses.join(', ') });
     return;
   }
 
@@ -456,14 +464,32 @@ router.put('/:findingId', requireAuth, async (req: Request, res: Response) => {
     const orgId = await getOrgId(userId);
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-    const result = await pool.query(
-      'UPDATE vulnerability_findings ' +
-      "SET status = $1, dismissed_by = $2, dismissed_at = CASE WHEN $1 = 'dismissed' THEN NOW() ELSE NULL END, " +
-      'dismissed_reason = $3, updated_at = NOW() ' +
-      'WHERE id = $4 AND org_id = $5 ' +
-      'RETURNING *',
-      [status, status === 'open' ? null : (req as any).email, reason || null, findingId, orgId]
-    );
+    // Build dynamic update based on status
+    let query: string;
+    let params: any[];
+
+    if (status === 'open') {
+      // Re-open: clear all triage fields
+      query = 'UPDATE vulnerability_findings SET status = $1, dismissed_by = NULL, dismissed_at = NULL, dismissed_reason = NULL, mitigation_notes = NULL, resolved_at = NULL, resolved_by = NULL, updated_at = NOW() WHERE id = $2 AND org_id = $3 RETURNING *';
+      params = [status, findingId, orgId];
+    } else if (status === 'dismissed') {
+      query = 'UPDATE vulnerability_findings SET status = $1, dismissed_by = $2, dismissed_at = NOW(), dismissed_reason = $3, updated_at = NOW() WHERE id = $4 AND org_id = $5 RETURNING *';
+      params = [status, email, reason || null, findingId, orgId];
+    } else if (status === 'acknowledged') {
+      query = 'UPDATE vulnerability_findings SET status = $1, dismissed_by = $2, dismissed_at = NOW(), updated_at = NOW() WHERE id = $3 AND org_id = $4 RETURNING *';
+      params = [status, email, findingId, orgId];
+    } else if (status === 'mitigated') {
+      // FR-4: Save mitigation notes
+      query = 'UPDATE vulnerability_findings SET status = $1, mitigation_notes = $2, dismissed_by = $3, updated_at = NOW() WHERE id = $4 AND org_id = $5 RETURNING *';
+      params = [status, mitigationNotes || null, email, findingId, orgId];
+    } else if (status === 'resolved') {
+      query = 'UPDATE vulnerability_findings SET status = $1, resolved_at = NOW(), resolved_by = $2, updated_at = NOW() WHERE id = $3 AND org_id = $4 RETURNING *';
+      params = [status, email, findingId, orgId];
+    } else {
+      res.status(400).json({ error: 'Unexpected status' }); return;
+    }
+
+    const result = await pool.query(query, params);
 
     if (result.rows.length === 0) {
       res.status(404).json({ error: 'Finding not found' });
@@ -474,10 +500,10 @@ router.put('/:findingId', requireAuth, async (req: Request, res: Response) => {
     const reqData = extractRequestData(req);
     await recordEvent({
       userId,
-      email: (req as any).email,
+      email,
       eventType: 'vulnerability_finding_updated',
       ...reqData,
-      metadata: { findingId, status, reason },
+      metadata: { findingId, status, reason, mitigationNotes },
     });
 
     res.json(result.rows[0]);
