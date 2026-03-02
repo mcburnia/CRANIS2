@@ -120,6 +120,47 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 
 ---
 
+## Step 6: Morning Test Cycle
+
+**Run this every morning before starting any new work.** This ensures the environment is healthy and no regressions have been introduced.
+
+### Vitest Backend Tests (788 tests — runs on server)
+
+```bash
+ssh -p 2222 mcburnia@localhost "cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && node_modules/.bin/vitest run --config vitest.config.ts"
+```
+
+- Auto-seeds test data on every run (global-setup.ts calls `seedAllTestData()`)
+- Tests run against https://dev.cranis2.dev (live dev stack)
+- Expected result: **788 passed, 0 failed**
+
+### Playwright E2E Tests (221 tests — runs locally on Mac)
+
+```bash
+cd ~/CRANIS2/e2e && npm test
+```
+
+- Requires SSH tunnel running (for Postgres push if using `npm run test:push`)
+- Tests run against https://dev.cranis2.dev via Chromium
+- Expected result: **216 passed, 5 skipped**
+
+### Push Results to Admin Dashboard (optional)
+
+```bash
+# Requires Postgres SSH tunnel: ssh -N -L 5433:localhost:5433 -p 2222 mcburnia@localhost
+cd ~/CRANIS2/e2e && npm run push-results
+```
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Mass 404 failures in Vitest | Seed data missing from Neo4j | Auto-seeding should prevent this. Manual fix: `cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && npx tsx setup/seed-test-data.ts` |
+| SSH connection refused | Tunnel not running | User must start: `ssh -N -L 2222:localhost:22 mcburnia@10.0.0.122` |
+| Docker containers down | Server restarted | `ssh -p 2222 mcburnia@localhost "cd ~/cranis2 && docker compose up -d"` |
+| E2E auth failures | Storage state expired | Delete `e2e/auth/` and re-run (setup tests regenerate it) |
+
+
 ## Tech Stack
 
 | Layer | Technology | Notes |
