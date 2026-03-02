@@ -18,7 +18,7 @@ CRANIS2 is a SaaS platform that helps software organisations achieve and maintai
 ## Server Access
 
 - **Server:** Mac Mini running Ubuntu Linux
-- **SSH (direct):** `ssh mcburnia@192.168.1.107` (only works from user's own terminal)
+- **SSH (direct):** `ssh mcburnia@10.0.0.122` (only works from user's own terminal)
 - **SSH (Claude Code):** `ssh -p 2222 mcburnia@localhost` (via SSH tunnel — see below)
 - **Project path:** `~/cranis2/`
 - **Public URL:** `https://dev.cranis2.dev` (via Cloudflare Tunnel)
@@ -61,7 +61,7 @@ ssh -p 2222 mcburnia@localhost "echo 'Connected' && hostname && uname -a"
 
 ## Step 2: Check Docker Containers
 
-All four must be running:
+All five must be running:
 
 ```bash
 ssh -p 2222 mcburnia@localhost "docker ps --filter name=cranis2 --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
@@ -75,6 +75,7 @@ Expected containers:
 | cranis2_backend | cranis2-backend | 3001 → 3001 | Express API server |
 | cranis2_postgres | postgres:16-alpine | 5433 → 5432 | Application database (users, auth, GitHub connections) |
 | cranis2_neo4j | neo4j:5-community | 7475 → 7474, 7688 → 7687 | Graph database (organisations, products, contributors, dependencies) |
+| cranis2_forgejo | forgejo:9 | 3003 → 3000 | Source code escrow (EU-hosted, Forgejo git server) |
 
 If containers are down, start them:
 
@@ -237,6 +238,7 @@ cd ~/CRANIS2/e2e && npm run push-results
         dependencies-overview.ts ← GET /dependencies/overview (+ license analysis)
         risk-findings.ts   ← Vulnerability scanning + findings CRUD (5 endpoints)
         admin.ts           ← Platform admin endpoints (dashboard, orgs, users, invite, audit, system, vuln-scan, vuln-db)
+        docs.ts            ← Public + admin documentation page CRUD
         dev.ts             ← Dev-only routes (nuke button — MUST REMOVE BEFORE PRODUCTION)
 marketplace.ts     ← Marketplace endpoints (listings, profile, contact, admin)
       db/
@@ -281,7 +283,7 @@ marketplace.ts     ← Compliance badge computation for marketplace profiles
         PageHeader.tsx     ← Page title + timestamp
         StatCard.tsx       ← Metric display card
       pages/
-        public/            ← LandingPage, LoginPage, SignupPage, CheckEmailPage, VerifyEmailPage, AcceptInvitePage, MarketplacePage, MarketplaceDetailPage
+        public/            ← LandingPage, LoginPage, SignupPage, CheckEmailPage, VerifyEmailPage, AcceptInvitePage, MarketplacePage, MarketplaceDetailPage, DocsPage
         setup/             ← WelcomePage, OrgSetupPage (wizard with CRA role selection)
         dashboard/         ← DashboardPage (fully migrated)
         products/          ← ProductsPage (list + add modal), ProductDetailPage (tabs + GitHub UI)
@@ -290,7 +292,7 @@ marketplace.ts     ← Compliance badge computation for marketplace profiles
         billing/           ← BillingPage, ReportsPage (stubs)
         settings/          ← StakeholdersPage (live), OrganisationPage (live), AuditLogPage (live), MarketplaceSettingsPage (live)
         notifications/     ← NotificationsPage (live — filters, mark-read, severity badges)
-        admin/             ← AdminDashboardPage, AdminOrgsPage, AdminUsersPage, AdminAuditLogPage, AdminSystemPage, AdminVulnScanPage, AdminVulnDbPage
+        admin/             ← AdminDashboardPage, AdminOrgsPage, AdminUsersPage, AdminAuditLogPage, AdminSystemPage, AdminVulnScanPage, AdminVulnDbPage, AdminDocsPage
 ```
 
 ## Routes
@@ -306,6 +308,8 @@ marketplace.ts     ← Compliance badge computation for marketplace profiles
 - `/setup/org` → Organisation setup wizard
 - `/marketplace` → Public compliance marketplace (browse companies, search/filter)
 - `/marketplace/:orgId` → Company detail page (products, compliance badges, contact modal)
+- `/docs` → User Guide documentation page (fetched from API, TOC sidebar)
+- `/docs/faq` → FAQ documentation page
 
 **Admin (platform admins only, separate layout):**
 - `/admin` → Admin dashboard (cross-org platform statistics)
@@ -316,6 +320,7 @@ marketplace.ts     ← Compliance badge computation for marketplace profiles
 - `/admin/system` → System health (scan performance, DB row counts, error rates)
 - `/admin/vuln-scan` → Vulnerability scanning (trigger scans, scan history, per-product breakdown)
 - `/admin/vuln-db` → Vulnerability database (ecosystem stats, sync controls, advisory/CVE counts)
+- `/admin/docs` → Documentation editor (split-pane markdown editor with live preview)
 
 **Authenticated (with sidebar, requires JWT + org):**
 - `/dashboard` → Dashboard (live — real data from Neo4j + Postgres, vulnerability summary)
@@ -408,6 +413,9 @@ marketplace.ts     ← Compliance badge computation for marketplace profiles
 | POST | /api/marketplace/contact/:orgId | Auth: Send introduction email (rate-limited) |
 | GET | /api/marketplace/contact-history | Auth: Contacts sent by current user |
 | POST | /api/license-scan/:productId/recheck-compatibility | Re-run compatibility checks without full rescan |
+| GET | /api/docs | Public: List all doc pages (slug, title, updated_at) |
+| GET | /api/docs/:slug | Public: Get doc page content (markdown) |
+| PUT | /api/docs/:slug | Admin: Update doc page title + content |
 
 ## Database Schema
 
@@ -692,6 +700,17 @@ CREATE TABLE marketplace_contact_log (
   sent_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Documentation pages (admin-editable)
+CREATE TABLE doc_pages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug VARCHAR(100) UNIQUE NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL DEFAULT '',
+  updated_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Vulnerability database sync status (per-ecosystem tracking)
 CREATE TABLE vuln_db_sync_status (
   ecosystem VARCHAR(50) PRIMARY KEY,
@@ -959,7 +978,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-02-25 (session 7)
+**Last updated:** 2026-03-02 (session 8)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -1031,6 +1050,10 @@ sudo systemctl restart cloudflared
 - **Admin pages updated for local DB** — Dashboard shows last DB sync time, System Health shows Local DB Query avg latency (historical API latencies dimmed), Vuln Scan shows local DB timing as primary display
 - **License Compatibility Matrix** -- Distribution model awareness on products (proprietary_binary, saas_hosted, source_available, library_component, internal_only). Pure rules engine (license-compatibility.ts) with FSF cross-license conflict table (14 known incompatibilities). Verdicts: compatible/incompatible/review_needed per finding. AGPL/SSPL network copyleft detection. Integrated into license scanner, recheck endpoint for distribution model changes. Frontend: distribution model select on product edit, verdict badges/filters on LicenseCompliancePage. Due diligence PDF includes compatibility analysis section.
 - **Landing page polish** -- Alternating section backgrounds (nth-of-type(even) #363d4f), CRANIS2 logo "2" blue on public pages, Log In nav link, marketplace cards full-width list layout, hero text simplified
+- **SEO implementation** -- usePageMeta hook (per-route meta tags, Open Graph, Twitter Cards, JSON-LD structured data), sitemap.xml endpoint, security headers middleware (CSP, HSTS, X-Frame-Options), canonical URLs
+- **User documentation** -- USER-GUIDE.md and FAQ.md (comprehensive usage guides), in-app /docs page with TOC sidebar, hash navigation, IntersectionObserver heading tracking
+- **Admin-editable documentation** -- doc_pages Postgres table (seeded from markdown files), /api/docs public GET + admin PUT endpoints, AdminDocsPage split-pane markdown editor with live preview, Ctrl+S/Cmd+S save, unsaved changes warning, tab switching between User Guide and FAQ
+- **Vulnerability remediation** -- Upgraded minimatch 10.2.2→10.2.4, rollup 4.57.1→4.59.0; dismissed ajv (dev-only) and @types/qs (false positive); 0 open findings on CRANIS2 product
 
 **Known Issues / Gotchas:**
 - **PRODUCTION MIGRATION**: `FRONTEND_URL` in `.env` is currently `https://dev.cranis2.dev`. When moving to production, this MUST be changed to `https://cranis2.com` (or equivalent production URL). This affects all email links (verification, invitations) and OAuth callback URLs.
@@ -1044,8 +1067,7 @@ sudo systemctl restart cloudflared
 - **GENERIC_CPE_NAMES blocklist** in vulnerability-scanner.ts prevents scoped npm short names (core, connect, debug, etc.) from matching unrelated CPE products
 
 **Next Steps:**
-- Historical compliance timeline (per-scan findings, timeline visualisation)
-- Escrow capability
+- Multi-Language support
 - Remove dev routes before production deployment
 - Remove SBOM debug logging from services/github.ts
 - Production deployment planning (Infomaniak hosting, cranis2.com)
