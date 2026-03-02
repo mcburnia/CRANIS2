@@ -1650,11 +1650,13 @@ function RiskFindingsTab({ productId }: { productId: string }) {
         <div>
           {summary && (
             <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
-              {summary.total} findings ({summary.open} open{summary.dismissed > 0 ? ', ' + summary.dismissed + ' mitigated' : ''}) &mdash;
+              {summary.total} findings ({summary.open} open{summary.resolved > 0 ? ', ' + summary.resolved + ' resolved' : ''}{summary.mitigated > 0 ? ', ' + summary.mitigated + ' mitigated' : ''}{summary.dismissed > 0 ? ', ' + summary.dismissed + ' dismissed' : ''})
+              {summary.open > 0 ? <>&mdash;
               {summary.critical > 0 && <span style={{ color: '#dc2626', fontWeight: 600 }}> {summary.critical} critical</span>}
               {summary.high > 0 && <span style={{ color: '#f97316', fontWeight: 600 }}> {summary.high} high</span>}
               {summary.medium > 0 && <span style={{ color: 'var(--amber)' }}> {summary.medium} medium</span>}
               {summary.low > 0 && <span style={{ color: '#3b82f6' }}> {summary.low} low</span>}
+              </> : summary.total > 0 ? <span style={{ color: 'var(--green)', fontWeight: 500 }}> &mdash; All findings handled</span> : null}
             </span>
           )}
           {lastScan && <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '1rem' }}>Last scan: {new Date(lastScan.completed_at).toLocaleString()}</span>}
@@ -1692,7 +1694,10 @@ function RiskFindingsTab({ productId }: { productId: string }) {
                 <span>{f.source_id}</span>
                 <span>{f.dependency_name}@{f.dependency_version}</span>
                 {f.fixed_version && <span>Fix: {f.fixed_version}</span>}
-                {f.status === 'dismissed' && <span style={{ color: 'var(--green)', fontWeight: 500 }}>✓ Mitigated</span>}
+                {f.status === 'dismissed' && <span style={{ color: 'var(--green)', fontWeight: 500 }}>✓ Dismissed</span>}
+                {f.status === 'resolved' && <span style={{ color: 'var(--green)', fontWeight: 500 }}>✓ Resolved</span>}
+                {f.status === 'mitigated' && <span style={{ color: 'var(--green)', fontWeight: 500 }}>✓ Mitigated</span>}
+                {f.status === 'acknowledged' && <span style={{ color: 'var(--amber)', fontWeight: 500 }}>⚠ Acknowledged</span>}
               </div>
             </div>
             <span style={{ fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "0.25rem", color: "var(--accent)", cursor: "pointer" }}>{expandedIds.has(f.id) ? <><ChevronDown size={14} /> Close</> : <><ChevronRight size={14} /> View</>}</span>
@@ -1712,8 +1717,10 @@ function RiskFindingsTab({ productId }: { productId: string }) {
                 </div>
               )}
               <p>{f.description?.substring(0, 500)}</p>
-              {f.status === 'dismissed' && (<div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginTop: '0.75rem' }}><div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--green)', marginBottom: '0.2rem' }}>✓ MITIGATED</div>{f.dismissed_reason && <div style={{ fontSize: '0.8rem', color: 'var(--text)' }}>{f.dismissed_reason}</div>}{f.dismissed_at && <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.2rem' }}>by {f.dismissed_by} on {new Date(f.dismissed_at).toLocaleDateString()}</div>}</div>)}
-              {f.status === 'open' && <button onClick={() => handleDismiss(f.id)} style={{ background: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', color: 'var(--green)', padding: '0.3rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', marginTop: '0.75rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem' }}><CheckCircle2 size={13} /> Mark as Mitigated</button>}
+              {f.status === 'dismissed' && (<div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginTop: '0.75rem' }}><div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--green)', marginBottom: '0.2rem' }}>✓ DISMISSED</div>{f.dismissed_reason && <div style={{ fontSize: '0.8rem', color: 'var(--text)' }}>{f.dismissed_reason}</div>}{f.dismissed_at && <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.2rem' }}>on {new Date(f.dismissed_at).toLocaleDateString()}</div>}</div>)}
+              {f.status === 'resolved' && (<div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginTop: '0.75rem' }}><div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--green)', marginBottom: '0.2rem' }}>✓ RESOLVED</div>{f.mitigation_notes && <div style={{ fontSize: '0.8rem', color: 'var(--text)' }}>{f.mitigation_notes}</div>}{f.resolved_at && <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.2rem' }}>on {new Date(f.resolved_at).toLocaleDateString()}</div>}</div>)}
+              {f.status === 'mitigated' && (<div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginTop: '0.75rem' }}><div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--green)', marginBottom: '0.2rem' }}>✓ MITIGATED</div>{f.mitigation_notes && <div style={{ fontSize: '0.8rem', color: 'var(--text)' }}>{f.mitigation_notes}</div>}</div>)}
+              {(f.status === 'open' || f.status === 'acknowledged') && <button onClick={() => handleDismiss(f.id)} style={{ background: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', color: 'var(--green)', padding: '0.3rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', marginTop: '0.75rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem' }}><CheckCircle2 size={13} /> Mark as Mitigated</button>}
               <a href={"/vulnerability-reports?create=true&productId=" + productId + "&findingId=" + f.id} style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.3)', color: 'var(--purple)', padding: '0.3rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', marginTop: '0.75rem', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '0.3rem', textDecoration: 'none' }}><Shield size={13} /> Report to ENISA</a>
             </div>
           )}
