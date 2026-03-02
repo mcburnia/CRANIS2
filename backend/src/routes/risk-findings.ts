@@ -85,7 +85,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
     const findingsMap = new Map<string, any>();
     for (const row of findingsResult.rows) {
       if (!findingsMap.has(row.product_id)) {
-        findingsMap.set(row.product_id, { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0 });
+        findingsMap.set(row.product_id, { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0, openCritical: 0, openHigh: 0, openMedium: 0, openLow: 0 });
       }
       const pf = findingsMap.get(row.product_id);
       const count = parseInt(row.cnt);
@@ -96,10 +96,18 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       else if (row.status === 'acknowledged') pf.acknowledged += count;
       else if (row.status === 'mitigated') pf.mitigated += count;
       else if (row.status === 'resolved') pf.resolved += count;
+      // Track open-only severity for stat cards
+      if (row.status === 'open' || row.status === 'acknowledged') {
+        if (row.severity === 'critical') pf.openCritical += count;
+        if (row.severity === 'high') pf.openHigh += count;
+        if (row.severity === 'medium') pf.openMedium += count;
+        if (row.severity === 'low') pf.openLow += count;
+      }
     }
 
     // Build response
     let totalCritical = 0, totalHigh = 0, totalMedium = 0, totalLow = 0, totalOpen = 0, totalAll = 0;
+    let openCritical = 0, openHigh = 0, openMedium = 0, openLow = 0;
 
     const enrichedProducts = products.map(p => {
       const scan = scanMap.get(p.id);
@@ -111,6 +119,10 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       totalLow += findings.low;
       totalOpen += findings.open;
       totalAll += findings.total;
+      openCritical += findings.openCritical;
+      openHigh += findings.openHigh;
+      openMedium += findings.openMedium;
+      openLow += findings.openLow;
 
       return {
         id: p.id,
@@ -135,6 +147,10 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
         medium: totalMedium,
         low: totalLow,
         openFindings: totalOpen,
+        openCritical,
+        openHigh,
+        openMedium,
+        openLow,
       },
     });
   } catch (err) {

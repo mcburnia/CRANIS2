@@ -17,6 +17,10 @@ interface FindingsSummary {
   acknowledged: number;
   mitigated: number;
   resolved: number;
+  openCritical: number;
+  openHigh: number;
+  openMedium: number;
+  openLow: number;
 }
 
 interface LastScan {
@@ -78,6 +82,7 @@ interface OverviewData {
   totals: {
     totalFindings: number; critical: number; high: number;
     medium: number; low: number; openFindings: number;
+    openCritical: number; openHigh: number; openMedium: number; openLow: number;
   };
 }
 
@@ -308,9 +313,9 @@ export default function RiskFindingsPage() {
 
       <div className="rf-stats">
         <StatCard label="Total Findings" value={totals.totalFindings} color="blue" sub={totals.openFindings + ' open'} />
-        <StatCard label="Critical" value={totals.critical} color="red" sub={totals.critical > 0 ? 'immediate action' : 'none found'} />
-        <StatCard label="High" value={totals.high} color="amber" sub={totals.high > 0 ? 'review needed' : 'none found'} />
-        <StatCard label="Medium + Low" value={totals.medium + totals.low} color="blue" sub={totals.medium + ' medium, ' + totals.low + ' low'} />
+        <StatCard label="Critical" value={totals.openCritical} color={totals.openCritical > 0 ? 'red' : 'green'} sub={totals.openCritical > 0 ? 'immediate action' : totals.critical > 0 ? totals.critical + ' resolved/dismissed' : 'none found'} />
+        <StatCard label="High" value={totals.openHigh} color={totals.openHigh > 0 ? 'amber' : 'green'} sub={totals.openHigh > 0 ? 'review needed' : totals.high > 0 ? totals.high + ' resolved/dismissed' : 'none found'} />
+        <StatCard label="Medium + Low" value={totals.openMedium + totals.openLow} color={totals.openMedium + totals.openLow > 0 ? 'blue' : 'green'} sub={totals.openMedium + totals.openLow > 0 ? totals.openMedium + ' medium, ' + totals.openLow + ' low' : (totals.medium + totals.low) > 0 ? (totals.medium + totals.low) + ' resolved/dismissed' : 'none found'} />
       </div>
 
       <div className="rf-header-actions">
@@ -345,10 +350,10 @@ export default function RiskFindingsPage() {
               <h3><Link to={'/products/' + product.id + '?tab=risk-findings'} onClick={e => e.stopPropagation()}>{product.name}</Link></h3>
               {total > 0 && (
                 <>
-                  {findings.critical > 0 && <span className="rf-severity-badge critical">{findings.critical} Critical</span>}
-                  {findings.high > 0 && <span className="rf-severity-badge high">{findings.high} High</span>}
-                  {findings.medium > 0 && <span className="rf-severity-badge medium">{findings.medium} Med</span>}
-                  {findings.low > 0 && <span className="rf-severity-badge low">{findings.low} Low</span>}
+                  {(findings.openCritical || 0) > 0 && <span className="rf-severity-badge critical">{findings.openCritical} Critical</span>}
+                  {(findings.openHigh || 0) > 0 && <span className="rf-severity-badge high">{findings.openHigh} High</span>}
+                  {(findings.openMedium || 0) > 0 && <span className="rf-severity-badge medium">{findings.openMedium} Med</span>}
+                  {(findings.openLow || 0) > 0 && <span className="rf-severity-badge low">{findings.openLow} Low</span>}
                 </>
               )}
               <div className="rf-scan-info" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
@@ -378,25 +383,38 @@ export default function RiskFindingsPage() {
               </div>
             </div>
 
-            {total > 0 && (
-              <>
-                <div className="rf-severity-bar">
-                  {findings.critical > 0 && <div className="rf-severity-segment critical" style={{ width: (findings.critical / total) * 100 + '%' }} />}
-                  {findings.high > 0 && <div className="rf-severity-segment high" style={{ width: (findings.high / total) * 100 + '%' }} />}
-                  {findings.medium > 0 && <div className="rf-severity-segment medium" style={{ width: (findings.medium / total) * 100 + '%' }} />}
-                  {findings.low > 0 && <div className="rf-severity-segment low" style={{ width: (findings.low / total) * 100 + '%' }} />}
-                </div>
-                <div className="rf-severity-legend">
-                  {findings.critical > 0 && <span className="rf-legend-item"><span className="rf-legend-dot critical" /> Critical ({findings.critical})</span>}
-                  {findings.high > 0 && <span className="rf-legend-item"><span className="rf-legend-dot high" /> High ({findings.high})</span>}
-                  {findings.medium > 0 && <span className="rf-legend-item"><span className="rf-legend-dot medium" /> Medium ({findings.medium})</span>}
-                  {findings.low > 0 && <span className="rf-legend-item"><span className="rf-legend-dot low" /> Low ({findings.low})</span>}
-                  <span className="rf-legend-item" style={{ marginLeft: 'auto' }}>
-                    {findings.open} open, {findings.acknowledged} ack, {findings.mitigated} mitigated, {findings.resolved} resolved, {findings.dismissed} dismissed
-                  </span>
-                </div>
-              </>
-            )}
+            {total > 0 && (() => {
+              const openTotal = findings.open + findings.acknowledged;
+              const resolvedTotal = findings.mitigated + findings.resolved + findings.dismissed;
+              return (
+                <>
+                  {openTotal > 0 ? (
+                    <>
+                      <div className="rf-severity-bar">
+                        {(findings.openCritical || 0) > 0 && <div className="rf-severity-segment critical" style={{ width: ((findings.openCritical || 0) / openTotal) * 100 + '%' }} />}
+                        {(findings.openHigh || 0) > 0 && <div className="rf-severity-segment high" style={{ width: ((findings.openHigh || 0) / openTotal) * 100 + '%' }} />}
+                        {(findings.openMedium || 0) > 0 && <div className="rf-severity-segment medium" style={{ width: ((findings.openMedium || 0) / openTotal) * 100 + '%' }} />}
+                        {(findings.openLow || 0) > 0 && <div className="rf-severity-segment low" style={{ width: ((findings.openLow || 0) / openTotal) * 100 + '%' }} />}
+                      </div>
+                      <div className="rf-severity-legend">
+                        {(findings.openCritical || 0) > 0 && <span className="rf-legend-item"><span className="rf-legend-dot critical" /> Critical ({findings.openCritical})</span>}
+                        {(findings.openHigh || 0) > 0 && <span className="rf-legend-item"><span className="rf-legend-dot high" /> High ({findings.openHigh})</span>}
+                        {(findings.openMedium || 0) > 0 && <span className="rf-legend-item"><span className="rf-legend-dot medium" /> Medium ({findings.openMedium})</span>}
+                        {(findings.openLow || 0) > 0 && <span className="rf-legend-item"><span className="rf-legend-dot low" /> Low ({findings.openLow})</span>}
+                        <span className="rf-legend-item" style={{ marginLeft: 'auto' }}>
+                          {findings.open} open{findings.acknowledged > 0 ? ', ' + findings.acknowledged + ' ack' : ''}{resolvedTotal > 0 ? ', ' + resolvedTotal + ' resolved/handled' : ''}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0', color: 'var(--green)', fontSize: '0.8rem' }}>
+                      <span style={{ fontSize: '1rem' }}>{"\u2714"}</span>
+                      All {total} findings resolved or dismissed ({findings.resolved > 0 ? findings.resolved + ' resolved' : ''}{findings.resolved > 0 && findings.dismissed > 0 ? ', ' : ''}{findings.dismissed > 0 ? findings.dismissed + ' dismissed' : ''}{findings.mitigated > 0 ? ', ' + findings.mitigated + ' mitigated' : ''})
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             {total === 0 && !product.lastScan && (
               <div className="rf-no-findings">
