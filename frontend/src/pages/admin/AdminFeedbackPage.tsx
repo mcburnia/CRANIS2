@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, Bug, Lightbulb, Loader, ChevronLeft, ChevronRight, CheckCircle2, Eye, Clock } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './AdminFeedbackPage.css';
 
 interface FeedbackItem {
@@ -32,6 +33,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function AdminFeedbackPage() {
+  usePageMeta();
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [summary, setSummary] = useState<Record<string, number>>({ new: 0, reviewed: 0, resolved: 0 });
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });

@@ -10,6 +10,7 @@ import {
   ArrowLeft, Loader2, Shield, Scale, Fingerprint,
   Tag, FileWarning, BarChart3
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './ComplianceTimelinePage.css';
 
 /* ── Types ────────────────────────────────────────────────── */
@@ -214,6 +215,7 @@ export default function ComplianceTimelinePage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState(productId || '');
+  usePageMeta(selectedProduct && products.length ? { title: `Timeline — ${products.find(p => p.id === selectedProduct)?.name || 'Compliance'}` } : undefined);
   const [data, setData] = useState<TimelineData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

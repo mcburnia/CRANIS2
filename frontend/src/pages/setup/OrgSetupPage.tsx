@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Building2, ArrowRight, Globe, Users, Shield, Factory } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './OrgSetupPage.css';
 
 const EU_COUNTRIES = [
@@ -38,6 +39,7 @@ const INDUSTRIES = [
 ];
 
 export default function OrgSetupPage() {
+  usePageMeta();
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
   const [name, setName] = useState('');

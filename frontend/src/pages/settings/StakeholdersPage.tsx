@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { Building2, Package, ChevronRight, Loader2, Save } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './StakeholdersPage.css';
 
 interface Stakeholder {
@@ -28,6 +29,7 @@ interface StakeholderData {
 }
 
 export default function StakeholdersPage() {
+  usePageMeta();
   const [data, setData] = useState<StakeholderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);

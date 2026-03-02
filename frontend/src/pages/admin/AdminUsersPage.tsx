@@ -3,6 +3,7 @@ import { Shield, CheckCircle, Search, Loader, Clock, Mail, Building2, XCircle, U
 import { useAuth } from '../../context/AuthContext';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './AdminUsersPage.css';
 
 interface AdminUser {
@@ -39,6 +40,7 @@ function timeAgo(dateStr: string | null): string {
 }
 
 export default function AdminUsersPage() {
+  usePageMeta();
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [totals, setTotals] = useState({ total: 0, verified: 0, platformAdmins: 0, active30d: 0 });

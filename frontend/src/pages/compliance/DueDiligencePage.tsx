@@ -5,6 +5,7 @@ import {
   Download, FileBarChart2, Shield, Scale, AlertTriangle,
   Fingerprint, CheckCircle2, XCircle, Loader2, ChevronRight
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './DueDiligencePage.css';
 
 interface Product {
@@ -32,6 +33,7 @@ interface PreviewData {
 }
 
 export default function DueDiligencePage() {
+  usePageMeta();
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [preview, setPreview] = useState<PreviewData | null>(null);

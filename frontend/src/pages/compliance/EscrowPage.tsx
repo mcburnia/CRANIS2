@@ -7,6 +7,7 @@ import {
   ExternalLink, RefreshCw, Settings2, Shield, Users, UserPlus,
   UserX, Copy, Key, Eye, EyeOff, Mail
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './EscrowPage.css';
 
 interface EscrowConfig {
@@ -75,6 +76,7 @@ interface EscrowUser {
 export default function EscrowPage() {
   const { productId } = useParams<{ productId: string }>();
   const [productName, setProductName] = useState('');
+  usePageMeta(productName ? { title: `Escrow — ${productName}` } : undefined);
   const [productRepoUrl, setProductRepoUrl] = useState('');
   const [config, setConfig] = useState<EscrowConfig | null>(null);
   const [status, setStatus] = useState<EscrowStatus | null>(null);

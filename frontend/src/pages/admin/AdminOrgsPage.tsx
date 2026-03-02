@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Building2, Users, Package, AlertTriangle, ChevronDown, ChevronRight, Shield, FileText, Loader, Search, ExternalLink, CheckCircle } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './AdminOrgsPage.css';
 
 interface OrgVulns { total: number; critical: number; high: number; open: number }
@@ -77,6 +78,7 @@ function timeAgo(dateStr: string | null): string {
 }
 
 export default function AdminOrgsPage() {
+  usePageMeta();
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [totals, setTotals] = useState({ totalOrgs: 0, totalUsers: 0, totalProducts: 0 });
   const [loading, setLoading] = useState(true);

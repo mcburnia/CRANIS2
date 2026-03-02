@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './LoginPage.css';
 
 /** Collect browser telemetry silently — no user interaction required */
@@ -12,6 +13,7 @@ function getBrowserTelemetry() {
 }
 
 export default function LoginPage() {
+  usePageMeta();
   const navigate = useNavigate();
   const { login } = useAuth();
   const [email, setEmail] = useState('');

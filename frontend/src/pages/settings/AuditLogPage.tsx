@@ -5,6 +5,7 @@ import {
   Globe, Monitor, Clock, ChevronLeft, ChevronRight,
   Filter, RefreshCw
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './AuditLogPage.css';
 
 interface AuditEvent {
@@ -78,6 +79,7 @@ function timeAgo(iso: string): string {
 const PAGE_SIZE = 25;
 
 export default function AuditLogPage() {
+  usePageMeta();
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [total, setTotal] = useState(0);
   const [eventTypes, setEventTypes] = useState<string[]>([]);

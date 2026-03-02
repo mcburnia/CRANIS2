@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Loader2, CheckCircle, AlertTriangle, XCircle, Info } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './AdminVulnDbPage.css';
 
 interface EcosystemStatus {
@@ -36,6 +37,7 @@ function formatTimeAgo(dateStr: string | null): string {
 }
 
 export default function AdminVulnDbPage() {
+  usePageMeta();
   const [data, setData] = useState<VulnDbStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);

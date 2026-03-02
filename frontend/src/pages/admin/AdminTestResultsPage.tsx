@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FlaskConical, Loader, ChevronDown, ChevronRight, AlertCircle, CheckCircle, XCircle, MinusCircle, Play, Terminal } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './AdminTestResultsPage.css';
 
 interface Suite {
@@ -48,6 +49,7 @@ type CategoryFilter = 'all' | 'route' | 'security' | 'break' | 'webhook' | 'inte
 type StatusFilter = 'all' | 'passing' | 'failing' | 'never_run';
 
 export default function AdminTestResultsPage() {
+  usePageMeta();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [suites, setSuites] = useState<Suite[]>([]);
   const [loading, setLoading] = useState(true);

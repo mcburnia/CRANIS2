@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './ContributorsPage.css';
 
 interface Contributor {
@@ -29,6 +30,7 @@ interface OverviewData {
 type Filter = 'all' | 'has_contributors' | 'no_repo';
 
 export default function ContributorsPage() {
+  usePageMeta();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');

@@ -4,6 +4,7 @@ import {
   ShieldCheck, Globe, Award, Fingerprint,
   CheckCircle2, XCircle, ChevronRight,
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './LandingPage.css';
 
 /* ── Feature + audience data ── */
@@ -160,6 +161,7 @@ const isNotItems = [
 ];
 
 export default function LandingPage() {
+  usePageMeta();
   return (
     <div className="landing">
       {/* ── Nav ── */}

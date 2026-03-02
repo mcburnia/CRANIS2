@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { Package, Users, ScrollText, ShieldAlert } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './DashboardPage.css';
 
 interface DashboardProduct {
@@ -110,6 +111,7 @@ function getActivityText(item: ActivityItem): string {
 }
 
 export default function DashboardPage() {
+  usePageMeta();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 

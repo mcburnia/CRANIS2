@@ -9,6 +9,7 @@ import {
   CheckCircle2, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
   GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive, Server
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './ProductDetailPage.css';
 
 // Codeberg SVG icon (not available in lucide)
@@ -269,6 +270,7 @@ export default function ProductDetailPage() {
   const { productId } = useParams();
 
   const [product, setProduct] = useState<Product | null>(null);
+  usePageMeta(product ? { title: product.name } : undefined);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const initialTab = (searchParams.get('tab') as TabKey) || 'overview';

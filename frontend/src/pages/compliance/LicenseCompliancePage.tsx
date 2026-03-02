@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Scale, RefreshCw, ChevronDown, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './LicenseCompliancePage.css';
 
 interface ProductSummary {
@@ -79,6 +80,7 @@ const DIST_MODEL_LABELS: Record<string, string> = {
 const getToken = () => localStorage.getItem('session_token');
 
 export default function LicenseCompliancePage() {
+  usePageMeta();
   const [totals, setTotals] = useState<Totals | null>(null);
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [loading, setLoading] = useState(true);

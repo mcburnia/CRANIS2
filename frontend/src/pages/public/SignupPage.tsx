@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './SignupPage.css';
 
 interface PasswordCheck {
@@ -37,6 +38,7 @@ function getBrowserTelemetry() {
 }
 
 export default function SignupPage() {
+  usePageMeta();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Loader, ChevronLeft, ChevronRight, Filter, Building2 } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './AdminAuditLogPage.css';
 
 interface AuditEvent {
@@ -48,6 +49,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function AdminAuditLogPage() {
+  usePageMeta();
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [eventTypes, setEventTypes] = useState<string[]>([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });

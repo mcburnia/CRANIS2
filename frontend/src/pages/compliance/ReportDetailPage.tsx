@@ -5,6 +5,7 @@ import {
   ArrowLeft, Shield, AlertTriangle, Clock, CheckCircle2,
   Send, AlertCircle, X, Save, Info
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './ReportDetailPage.css';
 
 /* ── Types ────────────────────────────────────────────────── */
@@ -102,6 +103,7 @@ type StageKey = 'early_warning' | 'notification' | 'final_report';
 export default function ReportDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [report, setReport] = useState<Report | null>(null);
+  usePageMeta(report ? { title: `Report #${report.id}` } : undefined);
   const [stages, setStages] = useState<Stage[]>([]);
   const [linkedFinding, setLinkedFinding] = useState<LinkedFinding | null>(null);
   const [loading, setLoading] = useState(true);

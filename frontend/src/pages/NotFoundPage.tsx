@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { AlertTriangle, Home, ArrowLeft } from 'lucide-react';
+import { usePageMeta } from '../hooks/usePageMeta';
 import './NotFoundPage.css';
 
 export default function NotFoundPage() {
+  usePageMeta({ title: 'Page Not Found', noindex: true });
   const location = useLocation();
 
   return (

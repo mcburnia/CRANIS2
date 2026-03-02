@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Shield, Play, Loader2, Clock, AlertTriangle, CheckCircle, XCircle, Database } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './AdminVulnScanPage.css';
 
 interface ScanRun {
@@ -65,6 +66,7 @@ function formatDuration(seconds: number | null): string {
 }
 
 export default function AdminVulnScanPage() {
+  usePageMeta();
   const [currentRun, setCurrentRun] = useState<ScanRun | null>(null);
   const [products, setProducts] = useState<ProductBreakdown[]>([]);
   const [history, setHistory] = useState<ScanRun[]>([]);

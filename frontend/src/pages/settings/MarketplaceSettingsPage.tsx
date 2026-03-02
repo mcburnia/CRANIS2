@@ -4,6 +4,7 @@ import PageHeader from '../../components/PageHeader';
 import {
   Store, ExternalLink, Save, Eye, ShieldCheck, Package, Loader2
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './MarketplaceSettingsPage.css';
 
 interface Category { value: string; label: string; }
@@ -41,6 +42,7 @@ function badgeColor(s: string) {
 }
 
 export default function MarketplaceSettingsPage() {
+  usePageMeta();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);

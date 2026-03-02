@@ -4,6 +4,7 @@ import {
   Search, MapPin, Filter, ShieldCheck, Package, Scale,
   ChevronLeft, ChevronRight,
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './MarketplacePage.css';
 
 interface ComplianceBadges {
@@ -65,6 +66,7 @@ function craStatusColor(status: ComplianceBadges['craStatus']): string {
 }
 
 export default function MarketplacePage() {
+  usePageMeta();
   const [listings, setListings] = useState<Listing[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);

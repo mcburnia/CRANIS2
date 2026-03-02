@@ -4,6 +4,7 @@ import {
   Building2, Globe, Users, Shield, Factory, Briefcase,
   Calendar, Mail, Crown, MapPin, Phone, Edit3, Save, X
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './OrganisationPage.css';
 
 interface OrgData {
@@ -65,6 +66,7 @@ function formatLanguage(lang: string | null): string {
 }
 
 export default function OrganisationPage() {
+  usePageMeta();
   const [org, setOrg] = useState<OrgData | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);

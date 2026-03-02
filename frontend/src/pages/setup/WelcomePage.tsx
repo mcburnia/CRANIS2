@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, ArrowRight } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 
 export default function WelcomePage() {
+  usePageMeta();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {

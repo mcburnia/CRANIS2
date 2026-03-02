@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Fingerprint, ShieldCheck, Download, ChevronDown, ChevronRight, CheckCircle2, XCircle, Hash } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './IpProofPage.css';
 
 interface ProductSummary {
@@ -41,6 +42,7 @@ interface Snapshot {
 const getToken = () => localStorage.getItem('session_token');
 
 export default function IpProofPage() {
+  usePageMeta();
   const [totals, setTotals] = useState<Totals | null>(null);
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [loading, setLoading] = useState(true);

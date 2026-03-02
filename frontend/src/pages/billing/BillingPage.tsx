@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { CreditCard, ExternalLink, UserMinus, UserPlus, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './BillingPage.css';
 
 interface ContributorInfo {
@@ -51,6 +52,7 @@ const STATUS_LABELS: Record<string, { label: string; color: 'green' | 'amber' | 
 };
 
 export default function BillingPage() {
+  usePageMeta();
   const [searchParams] = useSearchParams();
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [loading, setLoading] = useState(true);

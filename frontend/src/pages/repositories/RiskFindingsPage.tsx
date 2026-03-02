@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Shield, ChevronDown, ChevronRight, Clock, RefreshCw, FileText } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './RiskFindingsPage.css';
 
 interface FindingsSummary {
@@ -148,6 +149,7 @@ function formatTimeAgo(dateStr: string | null): string {
 }
 
 export default function RiskFindingsPage() {
+  usePageMeta();
   const navigate = useNavigate();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);

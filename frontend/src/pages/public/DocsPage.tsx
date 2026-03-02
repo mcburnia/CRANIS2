@@ -6,6 +6,7 @@ import rehypeSlug from 'rehype-slug';
 import { Book, HelpCircle, ChevronRight, ArrowUp, Menu, X } from 'lucide-react';
 import userGuideRaw from '../../../../docs/USER-GUIDE.md?raw';
 import faqRaw from '../../../../docs/FAQ.md?raw';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './DocsPage.css';
 
 /* ── Types ── */
@@ -58,6 +59,7 @@ function parseHeadings(markdown: string): TocItem[] {
 /* ── Component ── */
 
 export default function DocsPage() {
+  usePageMeta();
   const location = useLocation();
   const isFaq = location.pathname === '/docs/faq';
   const content = isFaq ? faqRaw : userGuideRaw;

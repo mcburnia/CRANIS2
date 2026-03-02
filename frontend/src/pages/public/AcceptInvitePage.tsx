@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './LoginPage.css';
 import './SignupPage.css';
 
@@ -29,6 +30,7 @@ function getStrengthLabel(score: number): { text: string; color: string } {
 }
 
 export default function AcceptInvitePage() {
+  usePageMeta();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token');

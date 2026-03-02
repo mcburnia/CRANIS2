@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './ReposPage.css';
 
 // Codeberg SVG icon (not in lucide)
@@ -292,6 +293,7 @@ function ProviderConnections({ onConnectionChange }: { onConnectionChange: () =>
 // ─── Main Page ───────────────────────────────────────────────────
 
 export default function ReposPage() {
+  usePageMeta();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');

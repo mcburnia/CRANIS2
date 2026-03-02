@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Shield, Users, AlertTriangle, CheckCircle, Activity, Loader, Database } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './AdminDashboardPage.css';
 
 interface DashboardData {
@@ -14,6 +15,7 @@ interface DashboardData {
 }
 
 export default function AdminDashboardPage() {
+  usePageMeta();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

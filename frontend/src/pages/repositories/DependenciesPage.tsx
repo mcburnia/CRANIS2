@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './DependenciesPage.css';
 
 interface Dependency {
@@ -49,6 +50,7 @@ const LICENSE_COLORS: Record<string, string> = {
 };
 
 export default function DependenciesPage() {
+  usePageMeta();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');

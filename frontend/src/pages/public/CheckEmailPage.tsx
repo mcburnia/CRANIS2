@@ -1,7 +1,9 @@
 import { useLocation, Link } from 'react-router-dom';
 import { Mail } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 
 export default function CheckEmailPage() {
+  usePageMeta();
   const location = useLocation();
   const email = (location.state as { email?: string })?.email || 'your email';
 

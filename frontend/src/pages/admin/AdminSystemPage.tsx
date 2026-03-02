@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Activity, Loader, Database, AlertTriangle, CheckCircle, Clock, XCircle}  from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './AdminSystemPage.css';
 
 interface ScanEntry {
@@ -74,6 +75,7 @@ const TABLE_LABELS: Record<string, string> = {
 };
 
 export default function AdminSystemPage() {
+  usePageMeta();
   const [data, setData] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

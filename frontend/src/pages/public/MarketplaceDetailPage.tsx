@@ -4,6 +4,7 @@ import {
   ArrowLeft, Globe, Building2, Shield, Package, Scale,
   AlertTriangle, Send, X, CheckCircle2,
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './MarketplaceDetailPage.css';
 
 interface Listing {
@@ -48,6 +49,7 @@ function craStatusColor(s: string): string {
 export default function MarketplaceDetailPage() {
   const { orgId } = useParams<{ orgId: string }>();
   const [listing, setListing] = useState<Listing | null>(null);
+  usePageMeta(listing ? { title: listing.orgName, description: `${listing.orgName} on the CRANIS2 Marketplace.` } : undefined);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);

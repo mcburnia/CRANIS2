@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './TechnicalFilesPage.css';
 
 interface Section {
@@ -48,6 +49,7 @@ function formatStatus(status: string): string {
 type Filter = 'all' | 'incomplete' | 'complete';
 
 export default function TechnicalFilesPage() {
+  usePageMeta();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');

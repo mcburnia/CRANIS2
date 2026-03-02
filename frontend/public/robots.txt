@@ -1,0 +1,49 @@
+# CRANIS2 — robots.txt
+# https://cranis2.com
+
+User-agent: *
+
+# Public pages
+Allow: /
+Allow: /marketplace
+Allow: /docs
+Allow: /docs/faq
+Allow: /login
+Allow: /signup
+
+# Auth & setup pages
+Disallow: /check-email
+Disallow: /verify-email
+Disallow: /accept-invite
+Disallow: /welcome
+Disallow: /setup/
+
+# Authenticated application
+Disallow: /dashboard
+Disallow: /notifications
+Disallow: /products
+Disallow: /obligations
+Disallow: /technical-files
+Disallow: /vulnerability-reports
+Disallow: /license-compliance
+Disallow: /ip-proof
+Disallow: /due-diligence
+Disallow: /repos
+Disallow: /contributors
+Disallow: /dependencies
+Disallow: /risk-findings
+Disallow: /billing
+Disallow: /reports
+Disallow: /stakeholders
+Disallow: /organisation
+Disallow: /audit-log
+Disallow: /marketplace/settings
+
+# Admin panel
+Disallow: /admin
+
+# API
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://cranis2.com/sitemap.xml

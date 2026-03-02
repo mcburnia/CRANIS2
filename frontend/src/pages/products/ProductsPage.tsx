@@ -6,6 +6,7 @@ import {
   Package, Plus, Trash2, ChevronRight, Cpu, Cloud,
   BookOpen, Smartphone, Monitor, Radio, Box, GitBranch
 } from 'lucide-react';
+import { usePageMeta } from '../../hooks/usePageMeta';
 import './ProductsPage.css';
 
 interface Product {
@@ -55,6 +56,7 @@ function formatDate(iso: string): string {
 }
 
 export default function ProductsPage() {
+  usePageMeta();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);

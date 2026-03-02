@@ -1,8 +1,10 @@
 import { FileBarChart, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import PageHeader from "../../components/PageHeader";
+import { usePageMeta } from '../../hooks/usePageMeta';
 
 export default function ReportsPage() {
+  usePageMeta();
   return (
     <>
       <PageHeader title="Billing Reports" />
