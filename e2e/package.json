@@ -1,0 +1,25 @@
+{
+  "name": "cranis2-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "npx playwright test",
+    "test:smoke": "npx playwright test --project=smoke",
+    "test:acceptance": "npx playwright test --project=acceptance",
+    "test:break": "npx playwright test --project=break",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug",
+    "test:ui": "npx playwright test --ui",
+    "report": "npx playwright show-report",
+    "push-results": "node push-results.mjs",
+    "test:push": "npx playwright test && node push-results.mjs",
+    "setup": "npx playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "typescript": "^5.9.0"
+  },
+  "dependencies": {
+    "pg": "^8.19.0"
+  }
+}

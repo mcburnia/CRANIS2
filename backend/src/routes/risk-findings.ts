@@ -111,7 +111,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
 
     const enrichedProducts = products.map(p => {
       const scan = scanMap.get(p.id);
-      const findings = findingsMap.get(p.id) || { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0 };
+      const findings = findingsMap.get(p.id) || { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0, openCritical: 0, openHigh: 0, openMedium: 0, openLow: 0 };
 
       totalCritical += findings.critical;
       totalHigh += findings.high;

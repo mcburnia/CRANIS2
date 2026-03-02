@@ -252,7 +252,9 @@ async function seedVulnerabilityFindings(): Promise<void> {
     { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0002 - XSS in Template', severity: 'high', cvssScore: 7.5, source: 'osv', sourceId: 'GHSA-test-0002', dependencyName: 'handlebars', dependencyVersion: '4.7.6', fixedVersion: '4.7.8', status: 'open' },
     { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0003 - ReDoS', severity: 'medium', cvssScore: 5.3, source: 'nvd', sourceId: 'CVE-2024-0003', dependencyName: 'minimatch', dependencyVersion: '3.0.4', fixedVersion: '3.1.2', status: 'mitigated' },
     { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0004 - Info Leak', severity: 'low', cvssScore: 3.1, source: 'osv', sourceId: 'GHSA-test-0004', dependencyName: 'debug', dependencyVersion: '4.3.1', fixedVersion: '4.3.4', status: 'open' },
-    { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0005 - DoS', severity: 'high', cvssScore: 7.8, source: 'nvd', sourceId: 'CVE-2024-0005', dependencyName: 'express', dependencyVersion: '4.18.0', fixedVersion: '4.19.0', status: 'closed' },
+    { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0005 - DoS', severity: 'high', cvssScore: 7.8, source: 'nvd', sourceId: 'CVE-2024-0005', dependencyName: 'express', dependencyVersion: '4.18.0', fixedVersion: '4.19.0', status: 'resolved' },
+    { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0006 - Open Redirect', severity: 'medium', cvssScore: 4.3, source: 'osv', sourceId: 'GHSA-test-0006', dependencyName: 'next', dependencyVersion: '13.4.0', fixedVersion: '13.4.5', status: 'dismissed' },
+    { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0007 - Race Condition', severity: 'high', cvssScore: 6.8, source: 'nvd', sourceId: 'CVE-2024-0007', dependencyName: 'async', dependencyVersion: '3.2.4', fixedVersion: '3.2.5', status: 'acknowledged' },
 
     // test-product-codeberg: 3 vulns
     { productId: TEST_IDS.products.codeberg, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-1001 - SQL Injection', severity: 'critical', cvssScore: 9.1, source: 'osv', sourceId: 'PYSEC-test-1001', dependencyName: 'django', dependencyVersion: '4.1.0', fixedVersion: '4.1.7', status: 'open' },
@@ -275,7 +277,10 @@ async function seedVulnerabilityFindings(): Promise<void> {
     await registerTestData('vulnerability_finding', id, 'postgres');
   }
 
-  console.log(`  Seeded ${findings.length} vulnerability findings`);
+  // Fix any stale 'closed' findings from previous seed runs (closed is not a valid triage status)
+  await pool.query("UPDATE vulnerability_findings SET status = 'resolved' WHERE status = 'closed'");
+
+  console.log(`  Seeded ${findings.length} vulnerability findings (all 5 statuses represented)`);
 }
 
 async function seedCraReports(): Promise<void> {
