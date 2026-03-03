@@ -1,54 +1,83 @@
-import { FileBarChart, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
-import PageHeader from "../../components/PageHeader";
+import { Link } from 'react-router-dom';
+import { ShieldCheck, AlertTriangle, ScrollText, ArrowRight } from 'lucide-react';
+import PageHeader from '../../components/PageHeader';
 import { usePageMeta } from '../../hooks/usePageMeta';
+
+const REPORTS = [
+  {
+    to: '/reports/compliance-summary',
+    icon: ShieldCheck,
+    title: 'Compliance Summary',
+    description:
+      'Point-in-time snapshot of CRA obligations progress, technical file completion, open vulnerabilities, and ENISA report status across all products.',
+  },
+  {
+    to: '/reports/vulnerability-trends',
+    icon: AlertTriangle,
+    title: 'Vulnerability Trends',
+    description:
+      'Time-series analysis of vulnerability scan history, finding severity over time, status progression, and ecosystem breakdown.',
+  },
+  {
+    to: '/reports/audit-trail',
+    icon: ScrollText,
+    title: 'Audit Trail',
+    description:
+      'Tamper-evident log of user activity, ENISA report stage submissions, and repository syncs for audit and process-control evidence.',
+  },
+];
 
 export default function ReportsPage() {
   usePageMeta();
   return (
     <>
-      <PageHeader title="Billing Reports" />
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '4rem 2rem',
-        textAlign: 'center',
-      }}>
-        <div style={{
-          width: 64,
-          height: 64,
-          borderRadius: 12,
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '1.5rem',
-        }}>
-          <FileBarChart size={28} color="var(--accent)" />
-        </div>
-        <h2 style={{ color: 'var(--text)', fontSize: '1.25rem', fontWeight: 600, margin: '0 0 0.5rem' }}>
-          No billing reports yet
-        </h2>
-        <p style={{ color: 'var(--muted)', maxWidth: 420, lineHeight: 1.6, margin: '0 0 1.5rem' }}>
-          Billing reports and invoices will appear here once your subscription generates its first billing cycle.
-        </p>
-        <Link
-          to="/billing"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            color: 'var(--accent)',
-            textDecoration: 'none',
-            fontSize: '0.9rem',
-            fontWeight: 500,
-          }}
-        >
-          View subscription details <ArrowRight size={14} />
-        </Link>
+      <PageHeader title="Reports" />
+      <p style={{ color: 'var(--muted)', marginTop: '-0.5rem', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+        Export compliance, vulnerability, and audit data as PDF or CSV.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: 680 }}>
+        {REPORTS.map(({ to, icon: Icon, title, description }) => (
+          <Link
+            key={to}
+            to={to}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '1rem',
+              padding: '1.25rem 1.5rem',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              textDecoration: 'none',
+              color: 'inherit',
+              transition: 'border-color 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+          >
+            <div style={{
+              flexShrink: 0,
+              width: 40,
+              height: 40,
+              borderRadius: 8,
+              background: 'var(--accent-subtle, rgba(99,102,241,0.1))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Icon size={20} color="var(--accent)" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: '0.25rem' }}>
+                {title}
+              </div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--muted)', lineHeight: 1.5 }}>
+                {description}
+              </div>
+            </div>
+            <ArrowRight size={16} color="var(--muted)" style={{ flexShrink: 0, marginTop: 4 }} />
+          </Link>
+        ))}
       </div>
     </>
   );

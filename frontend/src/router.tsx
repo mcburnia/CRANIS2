@@ -34,6 +34,9 @@ import DependenciesPage from './pages/repositories/DependenciesPage';
 import RiskFindingsPage from './pages/repositories/RiskFindingsPage';
 import BillingPage from './pages/billing/BillingPage';
 import ReportsPage from './pages/billing/ReportsPage';
+import ComplianceSummaryReport from './pages/reports/ComplianceSummaryReport';
+import VulnerabilityTrendsReport from './pages/reports/VulnerabilityTrendsReport';
+import AuditTrailReport from './pages/reports/AuditTrailReport';
 import StakeholdersPage from './pages/settings/StakeholdersPage';
 import OrganisationPage from './pages/settings/OrganisationPage';
 import AuditLogPage from './pages/settings/AuditLogPage';
@@ -96,6 +99,9 @@ const router = createBrowserRouter([
           { path: '/risk-findings', element: <RiskFindingsPage /> },
           { path: '/billing', element: <BillingPage /> },
           { path: '/reports', element: <ReportsPage /> },
+          { path: '/reports/compliance-summary', element: <ComplianceSummaryReport /> },
+          { path: '/reports/vulnerability-trends', element: <VulnerabilityTrendsReport /> },
+          { path: '/reports/audit-trail', element: <AuditTrailReport /> },
           { path: '/stakeholders', element: <StakeholdersPage /> },
           { path: '/organisation', element: <OrganisationPage /> },
           { path: '/audit-log', element: <AuditLogPage /> },
