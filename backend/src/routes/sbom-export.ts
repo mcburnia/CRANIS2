@@ -101,6 +101,52 @@ function buildComplianceRiskNote(g: ReturnType<typeof Object>, total: number, en
   return parts.join(' ');
 }
 
+// ─── Structural validators ───────────────────────────────────────────
+// Lightweight completeness checks — no external schema library required.
+// Returns an array of warning strings; empty array means structurally valid.
+
+function validateCycloneDX(bom: any): string[] {
+  const warnings: string[] = [];
+
+  if (bom.bomFormat !== 'CycloneDX') warnings.push('bomFormat is missing or incorrect');
+  if (!bom.specVersion) warnings.push('specVersion is missing');
+  if (!bom.serialNumber) warnings.push('serialNumber is missing');
+
+  if (!Array.isArray(bom.components) || bom.components.length === 0) {
+    warnings.push('components array is empty — SBOM has no dependencies');
+  } else {
+    const missing = bom.components.filter((c: any) => !c.name || !c.version).length;
+    if (missing > 0) warnings.push(`${missing} component(s) are missing name or version`);
+  }
+
+  if (!bom.metadata?.component?.name) warnings.push('metadata.component.name is missing');
+
+  return warnings;
+}
+
+function validateSPDX(sbom: any): string[] {
+  const warnings: string[] = [];
+
+  if (!sbom?.spdxVersion) warnings.push('spdxVersion is missing');
+  if (!sbom?.SPDXID) warnings.push('SPDXID is missing');
+  if (!sbom?.name) warnings.push('document name is missing');
+
+  if (!Array.isArray(sbom?.packages) || sbom.packages.length === 0) {
+    warnings.push('packages array is empty — SBOM has no dependencies');
+  }
+
+  const created = sbom?.creationInfo?.created;
+  if (!created || isNaN(Date.parse(created))) {
+    warnings.push('creationInfo.created is missing or not a valid ISO timestamp');
+  }
+
+  if (!Array.isArray(sbom?.creationInfo?.creators) || sbom.creationInfo.creators.length === 0) {
+    warnings.push('creationInfo.creators is missing or empty');
+  }
+
+  return warnings;
+}
+
 // ─── GET /api/sbom/:productId/export/cyclonedx ──────────────────────
 // Export SBOM as CycloneDX 1.6 JSON
 router.get('/:productId/export/cyclonedx', requireAuth, async (req: Request, res: Response) => {
@@ -284,13 +330,17 @@ router.get('/:productId/export/cyclonedx', requireAuth, async (req: Request, res
       dependencies,
     };
 
-    // 10. Send as downloadable JSON
+    // 10. Validate structure and send as downloadable JSON
+    const cyclonedxWarnings = validateCycloneDX(cyclonedx);
     const safeName = (product.name || 'product').replace(/[^a-zA-Z0-9_-]/g, '_');
     const version = product.version || 'latest';
     const filename = `${safeName}-${version}-cyclonedx-1.6.json`;
 
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    if (cyclonedxWarnings.length > 0) {
+      res.setHeader('X-SBOM-Warnings', JSON.stringify(cyclonedxWarnings));
+    }
     res.send(JSON.stringify(cyclonedx, null, 2));
 
     // Record telemetry (non-blocking)
@@ -426,13 +476,17 @@ router.get('/:productId/export/spdx', requireAuth, async (req: Request, res: Res
       }
     }
 
-    // 7. Send as downloadable JSON
+    // 7. Validate structure and send as downloadable JSON
+    const spdxWarnings = validateSPDX(sbom);
     const safeName = (product.name || 'product').replace(/[^a-zA-Z0-9_-]/g, '_');
     const version = product.version || 'latest';
     const filename = `${safeName}-${version}-spdx-2.3.json`;
 
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    if (spdxWarnings.length > 0) {
+      res.setHeader('X-SBOM-Warnings', JSON.stringify(spdxWarnings));
+    }
     res.send(JSON.stringify(enrichedSpdx, null, 2));
 
     // Record telemetry (non-blocking)
@@ -489,6 +543,24 @@ router.get('/:productId/export/status', requireAuth, async (req: Request, res: R
       [productId]
     );
 
+    // Derive completeness warnings from known data (without building the full export)
+    const validationWarnings: string[] = [];
+    if (sbomRow.rows.length === 0) {
+      validationWarnings.push('No SBOM available — sync the repository first');
+    } else if (gapData.total === 0) {
+      validationWarnings.push('SBOM contains no dependencies');
+    } else {
+      if (gapData.pending > 0) {
+        validationWarnings.push(`${gapData.pending} component(s) pending hash enrichment`);
+      }
+      if (gapData.fetchError > 0) {
+        validationWarnings.push(`${gapData.fetchError} component(s) failed hash enrichment due to registry errors`);
+      }
+      if (gapData.noVersion > 0) {
+        validationWarnings.push(`${gapData.noVersion} component(s) missing version information`);
+      }
+    }
+
     res.json({
       hasSBOM: sbomRow.rows.length > 0,
       sbomSyncedAt: sbomRow.rows[0]?.synced_at || null,
@@ -504,6 +576,7 @@ router.get('/:productId/export/status', requireAuth, async (req: Request, res: R
       },
       lockfileResolved: gapData.lockfileResolved,
       lastEnrichedAt: gapData.lastEnrichedAt,
+      validationWarnings,
     });
   } catch (err) {
     console.error('Export status check failed:', err);
