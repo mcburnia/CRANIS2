@@ -7,10 +7,11 @@
  * - GET /api/technical-files/overview returns { products: [...] }
  *   Each product has: id, name, craCategory, sections: [{ sectionKey, title, status, craReference, updatedAt }]
  * - GET /api/technical-files/:productId returns 404 (per-product detail uses a different pattern)
+ * - GET /api/technical-file/:productId/suggestions returns { sections: { product_description, vulnerability_handling, standards_applied, test_reports } }
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
-import { api, loginTestUser, TEST_USERS } from '../setup/test-helpers.js';
+import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { api, loginTestUser, TEST_USERS, getAppPool } from '../setup/test-helpers.js';
 import { TEST_IDS } from '../setup/seed-test-data.js';
 
 const PRODUCT_ID = TEST_IDS.products.github;
@@ -193,5 +194,103 @@ describe('/api/technical-file/:productId/declaration-of-conformity/pdf', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('content-disposition')).toMatch(/attachment/);
     expect(res.headers.get('content-disposition')).toMatch(/\.pdf/);
+  });
+});
+
+// ─── Technical file auto-population suggestions endpoint ─────────────────────
+
+describe('/api/technical-file/:productId/suggestions', () => {
+  let mfgToken: string;
+  let impToken: string;
+
+  beforeAll(async () => {
+    mfgToken = await loginTestUser(TEST_USERS.mfgAdmin);
+    impToken = await loginTestUser(TEST_USERS.impAdmin);
+  });
+
+  afterEach(async () => {
+    // Clean up any scans seeded during this suite
+    const pool = getAppPool();
+    await pool.query("DELETE FROM vulnerability_scans WHERE source = 'test-suggestions'");
+  });
+
+  it('should reject unauthenticated request', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/suggestions`);
+    expect(res.status).toBe(401);
+  });
+
+  it('should return 404 for a product belonging to another org', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/suggestions`, { auth: impToken });
+    expect(res.status).toBe(404);
+  });
+
+  it('should return 200 with a sections object', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/suggestions`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('sections');
+    expect(typeof res.body.sections).toBe('object');
+  });
+
+  it('should include all four section keys', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/suggestions`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    const sections = res.body.sections;
+    expect(sections).toHaveProperty('product_description');
+    expect(sections).toHaveProperty('vulnerability_handling');
+    expect(sections).toHaveProperty('standards_applied');
+    expect(sections).toHaveProperty('test_reports');
+  });
+
+  it('should include non-empty field suggestions for product_description', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/suggestions`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    const fields = res.body.sections.product_description?.fields;
+    expect(fields).toBeDefined();
+    expect(typeof fields.intended_purpose).toBe('string');
+    expect(fields.intended_purpose.length).toBeGreaterThan(0);
+    expect(typeof fields.versions_affecting_compliance).toBe('string');
+    expect(fields.versions_affecting_compliance.length).toBeGreaterThan(0);
+  });
+
+  it('should return only 2 standards for a default-category product', async () => {
+    // github test product has craCategory = 'default' → only 2 base standards
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/suggestions`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    const standards = res.body.sections.standards_applied?.standards;
+    expect(Array.isArray(standards)).toBe(true);
+    expect(standards.length).toBe(2);
+    expect(standards[0]).toHaveProperty('name');
+    expect(standards[0]).toHaveProperty('reference');
+  });
+
+  it('should include at least one test report entry', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/suggestions`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    const reports = res.body.sections.test_reports?.reports;
+    expect(Array.isArray(reports)).toBe(true);
+    expect(reports.length).toBeGreaterThanOrEqual(1);
+    expect(reports[0]).toHaveProperty('type');
+    expect(reports[0]).toHaveProperty('date');
+    expect(reports[0]).toHaveProperty('summary');
+  });
+
+  it('should include scan details in test reports when a completed scan exists', async () => {
+    // Seed a completed scan for the github product
+    const pool = getAppPool();
+    await pool.query(
+      `INSERT INTO vulnerability_scans (product_id, org_id, status, started_at, completed_at, findings_count, source)
+       VALUES ($1, $2, 'completed', NOW() - INTERVAL '1 hour', NOW(), 3, 'test-suggestions')`,
+      [PRODUCT_ID, TEST_IDS.orgs.mfgActive]
+    );
+
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/suggestions`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    const reports = res.body.sections.test_reports?.reports;
+    expect(Array.isArray(reports)).toBe(true);
+
+    // Should have the seeded scan as a report entry
+    const scanReport = reports.find((r: any) => r.summary.includes('3 total finding'));
+    expect(scanReport).toBeTruthy();
+    expect(scanReport.type).toBe('Automated Vulnerability Scan');
   });
 });

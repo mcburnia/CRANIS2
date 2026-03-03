@@ -7,7 +7,7 @@ import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
   CheckCircle2, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
-  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive, Server
+  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive, Server, Sparkles
 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './ProductDetailPage.css';
@@ -1329,6 +1329,9 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
   const [editContent, setEditContent] = useState<Record<string, any>>({});
   const [editNotes, setEditNotes] = useState<Record<string, string>>({});
   const [editStatus, setEditStatus] = useState<Record<string, string>>({});
+  const [suggestions, setSuggestions] = useState<any>(null);
+  const [loadingSuggestion, setLoadingSuggestion] = useState<string | null>(null);
+  const [autoFilledSections, setAutoFilledSections] = useState<Set<string>>(new Set());
 
   const statusConfig = {
     completed: { icon: CheckCircle2, color: 'var(--green)', text: 'Complete' },
@@ -1393,6 +1396,69 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
       alert('Failed to generate EU Declaration of Conformity. Please try again.');
     } finally {
       setDownloadingDoc(false);
+    }
+  }
+
+  // Sections that support auto-fill from platform data
+  const AUTO_FILL_SECTIONS = ['product_description', 'vulnerability_handling', 'standards_applied', 'test_reports'];
+
+  async function handleAutoFill(sectionKey: string) {
+    setLoadingSuggestion(sectionKey);
+    try {
+      let data = suggestions;
+      if (!data) {
+        const token = localStorage.getItem('session_token');
+        const res = await fetch(`/api/technical-file/${productId}/suggestions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed to fetch suggestions');
+        data = await res.json();
+        setSuggestions(data);
+      }
+
+      const sectionSuggestion = data?.sections?.[sectionKey];
+      if (!sectionSuggestion) return;
+
+      setEditContent(prev => {
+        const current = prev[sectionKey] || {};
+
+        if (sectionKey === 'product_description' || sectionKey === 'vulnerability_handling') {
+          // Merge suggested fields — only populate empty values
+          const currentFields = current.fields || {};
+          const suggestedFields = sectionSuggestion.fields || {};
+          const mergedFields = { ...currentFields };
+          for (const [k, v] of Object.entries(suggestedFields)) {
+            if (!mergedFields[k]) mergedFields[k] = v as string;
+          }
+          return { ...prev, [sectionKey]: { ...current, fields: mergedFields } };
+        }
+
+        if (sectionKey === 'standards_applied') {
+          // Only apply if standards list is currently empty
+          const currentStandards = current.standards || [];
+          if (currentStandards.length === 0) {
+            return { ...prev, [sectionKey]: { ...current, standards: sectionSuggestion.standards || [] } };
+          }
+          return prev;
+        }
+
+        if (sectionKey === 'test_reports') {
+          // Only apply if reports list is currently empty
+          const currentReports = current.reports || [];
+          if (currentReports.length === 0) {
+            return { ...prev, [sectionKey]: { ...current, reports: sectionSuggestion.reports || [] } };
+          }
+          return prev;
+        }
+
+        return prev;
+      });
+
+      setAutoFilledSections(prev => new Set([...prev, sectionKey]));
+    } catch {
+      // Silently ignore — auto-fill is best-effort
+    } finally {
+      setLoadingSuggestion(null);
     }
   }
 
@@ -1582,6 +1648,14 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
                     <span>{section.content?.guidance || 'Complete this section per the CRA requirements.'}</span>
                   </div>
 
+                  {/* Auto-fill banner — shown after auto-fill is applied */}
+                  {autoFilledSections.has(section.sectionKey) && (
+                    <div className="tf-autofill-banner">
+                      <Sparkles size={13} />
+                      <span>Platform data auto-filled — review each field before saving.</span>
+                    </div>
+                  )}
+
                   {/* Status selector */}
                   <div className="tf-status-row">
                     <label className="tf-field-label">Section Status</label>
@@ -1618,7 +1692,7 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
                     />
                   </div>
 
-                  {/* Save button */}
+                  {/* Save button + action buttons */}
                   <div className="tf-actions">
                     <button
                       className="btn btn-primary tf-save-btn"
@@ -1628,6 +1702,19 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
                       {saving === section.sectionKey ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
                       {saving === section.sectionKey ? 'Saving...' : 'Save Section'}
                     </button>
+                    {AUTO_FILL_SECTIONS.includes(section.sectionKey) && (
+                      <button
+                        className="btn tf-autofill-btn"
+                        onClick={() => handleAutoFill(section.sectionKey)}
+                        disabled={loadingSuggestion === section.sectionKey}
+                        title="Pre-fill empty fields using data already in the platform (non-destructive)"
+                      >
+                        {loadingSuggestion === section.sectionKey
+                          ? <Loader2 size={14} className="spin" />
+                          : <Sparkles size={14} />}
+                        {loadingSuggestion === section.sectionKey ? 'Filling…' : 'Auto-fill'}
+                      </button>
+                    )}
                     {section.sectionKey === 'declaration_of_conformity' && (
                       <button
                         className="btn tf-doc-download-btn"
