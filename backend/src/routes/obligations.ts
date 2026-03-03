@@ -39,6 +39,14 @@ const OBLIGATIONS = [
   { key: 'annex_i_part_ii', article: 'Annex I, Part II', title: 'Vulnerability Handling Requirements', description: 'Implement vulnerability handling processes including coordinated disclosure policy.', appliesTo: ['default', 'important_i', 'important_ii', 'critical'] },
   { key: 'art_32', article: 'Art. 32', title: 'Harmonised Standards', description: 'Where harmonised standards exist, conformity assessment shall reference them.', appliesTo: ['important_i', 'important_ii', 'critical'] },
   { key: 'art_32_3', article: 'Art. 32(3)', title: 'Third-Party Assessment', description: 'Critical products require third-party conformity assessment by a notified body.', appliesTo: ['important_ii', 'critical'] },
+  { key: 'art_13_3', article: 'Art. 13(3)', title: 'Component Currency', description: 'Ensure all software components integrated in the product are free of known exploitable vulnerabilities and kept up to date throughout the support period.', appliesTo: ['default', 'important_i', 'important_ii', 'critical'] },
+  { key: 'art_13_5', article: 'Art. 13(5)', title: 'No Known Exploitable Vulnerabilities at Market Placement', description: 'Products shall be placed on the market without any known exploitable vulnerabilities. Conduct a vulnerability assessment before market placement and remediate findings.', appliesTo: ['default', 'important_i', 'important_ii', 'critical'] },
+  { key: 'art_13_7', article: 'Art. 13(7)', title: 'Automatic Security Updates', description: 'Put in place a policy ensuring that security updates are automatically made available to users where technically feasible, for the duration of the support period.', appliesTo: ['default', 'important_i', 'important_ii', 'critical'] },
+  { key: 'art_13_8', article: 'Art. 13(8)', title: 'Security Patches Free of Charge', description: 'Security patches and updates shall be provided to users at no additional charge for the full duration of the support period.', appliesTo: ['default', 'important_i', 'important_ii', 'critical'] },
+  { key: 'art_13_9', article: 'Art. 13(9)', title: 'Security Updates Separate from Feature Updates', description: 'Security updates shall be distributed and clearly identified separately from feature updates, allowing users to apply security fixes promptly and independently.', appliesTo: ['default', 'important_i', 'important_ii', 'critical'] },
+  { key: 'art_13_10', article: 'Art. 13(10)', title: 'Documentation Retention (10 Years)', description: 'Technical documentation and the EU declaration of conformity shall be retained for at least 10 years after the product is placed on the market, or for the support period if longer.', appliesTo: ['default', 'important_i', 'important_ii', 'critical'] },
+  { key: 'art_16', article: 'Art. 16', title: 'EU Declaration of Conformity (Annex IV)', description: 'Draw up an EU Declaration of Conformity meeting the Annex IV content requirements: manufacturer name and address, product identification, applicable standards, place and date of issue, and authorised signatory.', appliesTo: ['default', 'important_i', 'important_ii', 'critical'] },
+  { key: 'art_20', article: 'Art. 20', title: 'EU Market Surveillance Registration', description: 'Critical products with digital elements require notification of the relevant market surveillance authority and additional registration steps before being placed on the EU market.', appliesTo: ['critical'] },
 ];
 
 const STATUS_ORDER: Record<string, number> = { 'not_started': 0, 'in_progress': 1, 'met': 2 };
@@ -56,14 +64,14 @@ function getApplicableObligations(craCategory: string | null): typeof OBLIGATION
 
 async function ensureObligations(orgId: string, productId: string, craCategory: string | null): Promise<void> {
   const applicable = getApplicableObligations(craCategory);
-  for (const ob of applicable) {
-    await pool.query(
-      `INSERT INTO obligations (org_id, product_id, obligation_key)
-       VALUES ($1, $2, $3)
-       ON CONFLICT DO NOTHING`,
-      [orgId, productId, ob.key]
-    );
-  }
+  if (applicable.length === 0) return;
+  // Batch all inserts into a single round-trip
+  const placeholders = applicable.map((_, i) => `($1, $2, $${i + 3})`).join(', ');
+  const params: any[] = [orgId, productId, ...applicable.map(ob => ob.key)];
+  await pool.query(
+    `INSERT INTO obligations (org_id, product_id, obligation_key) VALUES ${placeholders} ON CONFLICT DO NOTHING`,
+    params
+  );
 }
 
 // ─── Derived status computation ───────────────────────────────
@@ -72,7 +80,8 @@ async function ensureObligations(orgId: string, productId: string, craCategory: 
 // Non-destructive: manual statuses are preserved; derived is returned alongside.
 async function computeDerivedStatuses(
   productIds: string[],
-  orgId: string
+  orgId: string,
+  categoryMap: Record<string, string | null>
 ): Promise<Record<string, Record<string, { status: string; reason: string }>>> {
   if (productIds.length === 0) return {};
 
@@ -234,6 +243,32 @@ async function computeDerivedStatuses(
       derived['art_14'] = { status: hasFinal ? 'met' : 'in_progress', reason: hasFinal ? 'ENISA report submitted' : 'ENISA report in progress' };
     }
 
+    // art_13_3 — Component Currency (uses SBOM as proxy; can't verify 'latest' without registry lookups)
+    if (sbom) {
+      derived['art_13_3'] = { status: 'in_progress', reason: `Component inventory tracked via SBOM (${sbom.packageCount} packages)` };
+    }
+
+    // art_13_5 — No Known Exploitable Vulnerabilities at Market Placement
+    if (scanCount > 0) {
+      if (openFindings === 0) {
+        derived['art_13_5'] = { status: 'met', reason: 'Vulnerability scanning active — no open findings' };
+      } else {
+        derived['art_13_5'] = { status: 'in_progress', reason: `Vulnerability scanning active — ${openFindings} open finding${openFindings !== 1 ? 's' : ''} require remediation` };
+      }
+    }
+
+    // art_16 — EU Declaration of Conformity content (Annex IV) — same data source as art_13_15
+    if (docSection?.status === 'completed') {
+      derived['art_16'] = { status: 'met', reason: 'EU Declaration of Conformity complete (Annex IV)' };
+    } else if (docSection?.status === 'in_progress') {
+      derived['art_16'] = { status: 'in_progress', reason: 'EU Declaration of Conformity in progress' };
+    }
+
+    // art_20 — EU Market Surveillance Registration (critical products only)
+    if (categoryMap[productId] === 'critical') {
+      derived['art_20'] = { status: 'in_progress', reason: 'Critical product — EU market surveillance registration required' };
+    }
+
     // art_13 — Overall (derived from all others)
     const others = Object.entries(derived).filter(([k]) => k !== 'art_13');
     if (others.length > 0) {
@@ -314,6 +349,8 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
 
     // Fetch all obligations and derived statuses in parallel
     const productIds = products.map(p => p.id);
+    const categoryMap: Record<string, string | null> = {};
+    for (const p of products) categoryMap[p.id] = p.craCategory;
     const [obResult, derivedMap] = await Promise.all([
       pool.query(
         `SELECT id, product_id, obligation_key, status, notes, updated_by, updated_at
@@ -321,7 +358,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
          ORDER BY created_at ASC`,
         [orgId, productIds]
       ),
-      computeDerivedStatuses(productIds, orgId),
+      computeDerivedStatuses(productIds, orgId, categoryMap),
     ]);
 
     // Group by product
@@ -402,7 +439,7 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
          ORDER BY created_at ASC`,
         [orgId, productId]
       ),
-      computeDerivedStatuses([productId], orgId),
+      computeDerivedStatuses([productId], orgId, { [productId]: craCategory }),
     ]);
 
     const productDerived = derivedMap[productId] ?? {};

@@ -12,6 +12,7 @@ import { TEST_IDS } from '../setup/seed-test-data.js';
 
 const MFG_ORG = TEST_IDS.orgs.mfgActive;
 const PRODUCT_ID = TEST_IDS.products.github;
+const GITEA_PRODUCT = TEST_IDS.products.gitea;
 
 describe('/api/obligations', () => {
   let mfgToken: string;
@@ -399,6 +400,136 @@ describe('/api/obligations', () => {
       expect(completed + inProgress + notStarted).toBe(total);
 
       await pool.query(`DELETE FROM product_sboms WHERE product_id = $1 AND package_count = 9999`, [PRODUCT_ID]);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // NEW OBLIGATIONS — CATEGORY FILTERING AND AUTO-DERIVE
+  // ═══════════════════════════════════════════════════════
+
+  describe('New obligations — category filtering and auto-derive', () => {
+    it('should include new obligations for default-category products', async () => {
+      const res = await api.get(`/api/obligations/${PRODUCT_ID}`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      const keys = res.body.obligations.map((o: any) => o.obligationKey);
+      // All new obligations that apply to 'default' category
+      expect(keys).toContain('art_13_3');
+      expect(keys).toContain('art_13_5');
+      expect(keys).toContain('art_13_7');
+      expect(keys).toContain('art_13_8');
+      expect(keys).toContain('art_13_9');
+      expect(keys).toContain('art_13_10');
+      expect(keys).toContain('art_16');
+    });
+
+    it('should NOT include art_20 for a non-critical product', async () => {
+      // github product has craCategory = 'category-1' which resolves to 'default'
+      // art_20 only applies to 'critical' — it must not appear here
+      const res = await api.get(`/api/obligations/${PRODUCT_ID}`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      const keys = res.body.obligations.map((o: any) => o.obligationKey);
+      expect(keys).not.toContain('art_20');
+    });
+
+    it('should derive art_13_3 as in_progress when an SBOM is present', async () => {
+      const pool = getAppPool();
+      await pool.query(
+        `INSERT INTO product_sboms (product_id, spdx_json, package_count, is_stale, synced_at)
+         VALUES ($1, '{}', 9999, true, NOW())
+         ON CONFLICT (product_id) DO UPDATE SET package_count = 9999, is_stale = true`,
+        [PRODUCT_ID]
+      );
+
+      const res = await api.get(`/api/obligations/${PRODUCT_ID}`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      const ob = res.body.obligations.find((o: any) => o.obligationKey === 'art_13_3');
+      expect(ob).toBeDefined();
+      expect(ob.derivedStatus).toBe('in_progress');
+      expect(ob.derivedReason).toMatch(/9999 packages/);
+
+      await pool.query(`DELETE FROM product_sboms WHERE product_id = $1 AND package_count = 9999`, [PRODUCT_ID]);
+    });
+
+    it('should derive art_13_5 as in_progress when scans exist with open findings', async () => {
+      const pool = getAppPool();
+      // Seed a completed scan — github product already has open/acknowledged findings seeded
+      await pool.query(
+        `INSERT INTO vulnerability_scans (org_id, product_id, status, source, findings_count, completed_at)
+         VALUES ($1, $2, 'completed', 'test-derived', 4, NOW())`,
+        [MFG_ORG, PRODUCT_ID]
+      );
+
+      const res = await api.get(`/api/obligations/${PRODUCT_ID}`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      const ob = res.body.obligations.find((o: any) => o.obligationKey === 'art_13_5');
+      expect(ob).toBeDefined();
+      expect(ob.derivedStatus).toBe('in_progress');
+      expect(ob.derivedReason).toMatch(/Vulnerability scanning active/);
+
+      await pool.query(`DELETE FROM vulnerability_scans WHERE product_id = $1 AND source = 'test-derived'`, [PRODUCT_ID]);
+    });
+
+    it('should derive art_13_5 as met when scans exist with no open findings', async () => {
+      const pool = getAppPool();
+      // gitea product has no seeded vulnerability findings — zero open count expected
+      await pool.query(
+        `INSERT INTO vulnerability_scans (org_id, product_id, status, source, findings_count, completed_at)
+         VALUES ($1, $2, 'completed', 'test-derived', 0, NOW())`,
+        [MFG_ORG, GITEA_PRODUCT]
+      );
+
+      const res = await api.get(`/api/obligations/${GITEA_PRODUCT}`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      const ob = res.body.obligations.find((o: any) => o.obligationKey === 'art_13_5');
+      expect(ob).toBeDefined();
+      expect(ob.derivedStatus).toBe('met');
+      expect(ob.derivedReason).toMatch(/no open findings/);
+
+      await pool.query(`DELETE FROM vulnerability_scans WHERE product_id = $1 AND source = 'test-derived'`, [GITEA_PRODUCT]);
+    });
+
+    it('should derive art_16 as in_progress when declaration_of_conformity section is in progress', async () => {
+      const pool = getAppPool();
+      await pool.query(
+        `INSERT INTO technical_file_sections (product_id, section_key, title, status, cra_reference)
+         VALUES ($1, 'declaration_of_conformity', 'Declaration of Conformity', 'in_progress', 'Art. 16 / Annex IV')
+         ON CONFLICT (product_id, section_key) DO UPDATE SET status = 'in_progress'`,
+        [PRODUCT_ID]
+      );
+
+      const res = await api.get(`/api/obligations/${PRODUCT_ID}`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      const ob = res.body.obligations.find((o: any) => o.obligationKey === 'art_16');
+      expect(ob).toBeDefined();
+      expect(ob.derivedStatus).toBe('in_progress');
+      expect(ob.derivedReason).toMatch(/Declaration of Conformity/);
+
+      await pool.query(
+        `UPDATE technical_file_sections SET status = 'not_started' WHERE product_id = $1 AND section_key = 'declaration_of_conformity'`,
+        [PRODUCT_ID]
+      );
+    });
+
+    it('should derive art_16 as met when declaration_of_conformity section is complete', async () => {
+      const pool = getAppPool();
+      await pool.query(
+        `INSERT INTO technical_file_sections (product_id, section_key, title, status, cra_reference)
+         VALUES ($1, 'declaration_of_conformity', 'Declaration of Conformity', 'completed', 'Art. 16 / Annex IV')
+         ON CONFLICT (product_id, section_key) DO UPDATE SET status = 'completed'`,
+        [PRODUCT_ID]
+      );
+
+      const res = await api.get(`/api/obligations/${PRODUCT_ID}`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      const ob = res.body.obligations.find((o: any) => o.obligationKey === 'art_16');
+      expect(ob).toBeDefined();
+      expect(ob.derivedStatus).toBe('met');
+      expect(ob.derivedReason).toContain('Annex IV');
+
+      await pool.query(
+        `UPDATE technical_file_sections SET status = 'not_started' WHERE product_id = $1 AND section_key = 'declaration_of_conformity'`,
+        [PRODUCT_ID]
+      );
     });
   });
 });
