@@ -59,9 +59,9 @@ scp -P 2222 localfile mcburnia@localhost:~/cranis2/path/
 ssh -p 2222 mcburnia@localhost "echo 'Connected' && hostname && uname -a"
 ```
 
-## Step 2: Check Docker Containers
+## Step 2: Check Docker Containers + Memory Profile
 
-All five must be running:
+Core CRANIS2 services must be running (`test-runner` is optional unless running regression tests):
 
 ```bash
 ssh -p 2222 mcburnia@localhost "docker ps --filter name=cranis2 --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
@@ -75,13 +75,38 @@ Expected containers:
 | cranis2_backend | cranis2-backend | 3001 → 3001 | Express API server |
 | cranis2_postgres | postgres:16-alpine | 5433 → 5432 | Application database (users, auth, GitHub connections) |
 | cranis2_neo4j | neo4j:5-community | 7475 → 7474, 7688 → 7687 | Graph database (organisations, products, contributors, dependencies) |
-| cranis2_forgejo | forgejo:9 | 3003 → 3000 | Source code escrow (EU-hosted, Forgejo git server) |
+| cranis2_forgejo | codeberg.org/forgejo/forgejo:10 | 3003 → 3000 | Source code escrow (EU-hosted, Forgejo git server) |
+| cranis2_test_runner (optional) | cranis2_test-runner | none | Morning regression harness container |
 
 If containers are down, start them:
 
 ```bash
 ssh -p 2222 mcburnia@localhost "cd ~/cranis2 && docker compose up -d"
 ```
+
+Current CRANIS2 memory profile (for 16 GB host) is:
+
+| Service | Limit |
+|---------|-------|
+| nginx | 64M |
+| backend | 768M |
+| test-runner | 512M |
+| postgres | 1G |
+| neo4j | 1536M |
+| forgejo | 384M |
+
+Backend process is hard-capped at Node V8 heap `512 MB` (`--max-old-space-size=512`) to prevent container OOM kills.
+
+Quick check commands:
+```bash
+# Limit configuration from compose
+ssh -p 2222 mcburnia@localhost "cd ~/cranis2 && docker compose config | rg -n 'memory:|--max-old-space-size'"
+
+# Live memory usage snapshot
+ssh -p 2222 mcburnia@localhost "docker stats --no-stream --format 'table {{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}'"
+```
+
+For full shared-host guidance (CRANIS2 + ANSABASE) see `memory.md`.
 
 ## Step 3: Sync Code from GitHub
 
@@ -108,6 +133,8 @@ ssh -p 2222 mcburnia@localhost "source ~/.nvm/nvm.sh && cd ~/cranis2/frontend &&
 # Rebuild and restart all services
 ssh -p 2222 mcburnia@localhost "cd ~/cranis2 && docker compose up -d --build && docker compose restart nginx"
 ```
+
+Note: backend starts with `node --max-old-space-size=512 dist/index.js` (defined in `backend/Dockerfile`).
 
 ## Step 5: Verify the App
 
@@ -207,6 +234,7 @@ cd ~/CRANIS2/e2e && npm run push-results
 ```
 ~/cranis2/
   RESTART.md              ← This file
+  memory.md               ← Memory/oom runbook (shared dev server profile)
   docker-compose.yml      ← Docker services (NGINX, Backend, Postgres, Neo4j)
   .env                    ← Credentials (NOT in git)
   .gitignore
@@ -217,6 +245,10 @@ cd ~/CRANIS2/e2e && npm run push-results
     LLD.md                 ← Low Level Design
     Cranis2 Epics.csv      ← Project epics
     Stories-and-spikes.csv ← User stories and spikes
+    USB-STORAGE-SETUP.md   ← External SSD mount + backup workflow (non-destructive)
+  scripts/
+    usb-storage-init.sh
+    usb-storage-sync-artifacts.sh
   public/                  ← Original HTML prototypes (reference only)
   backend/                 ← Express API service
     Dockerfile             ← Multi-stage build (builder for TS compile, production for runtime)
@@ -904,6 +936,7 @@ Responsive breakpoints:
 
 ## Other Projects on This Server
 
+- **ANSABASE** — separate dev stack that runs concurrently on this host. Keep both stacks within documented memory budgets (see `memory.md`).
 - **Archoniq** — separate project using Postgres (port 5432) and Neo4j (ports 7474/7687). Do not interfere with these containers.
 
 ## Reference Materials
@@ -978,10 +1011,12 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-02 (session 8)
+**Last updated:** 2026-03-03 (session 9)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
+- Shared dev-server memory profile tuned for 16 GB RAM (container limits + backend Node heap cap) to reduce OOM restarts
+- External USB SSD runbook + helper scripts added for non-destructive artifact/backup storage
 - Vite + React + TypeScript scaffolding with all routes
 - React Router with RootLayout for auth context
 - Express backend with auth + org API endpoints
@@ -1065,10 +1100,10 @@ sudo systemctl restart cloudflared
 - **NVD CPE matching** — never use keyword/description search (produces massive false positives). Always use CPE index with ecosystem-strict targets
 - **CPE wildcard target_sw** (`*`) matches unrelated products — only match ecosystem-specific targets (e.g. `node.js`)
 - **GENERIC_CPE_NAMES blocklist** in vulnerability-scanner.ts prevents scoped npm short names (core, connect, debug, etc.) from matching unrelated CPE products
+- Compose project naming mismatch can leave temporary `docker-*` orphan containers; cleanup and naming standardisation is tracked as technical debt in `docs/Stories-and-spikes.csv` (CRN-14)
 
 **Next Steps:**
 - Multi-Language support
 - Remove dev routes before production deployment
 - Remove SBOM debug logging from services/github.ts
 - Production deployment planning (Infomaniak hosting, cranis2.com)
-

@@ -58,3 +58,4 @@ Story,EU deployment workflow,"Implement deployment workflow for EU hosting.",CRN
 Story,Architecture documentation,"Document system architecture and design decisions.",CRN-16
 Story,CRA/NIS2 mapping guide,"Provide documentation mapping CRANIS2 evidence to CRA and NIS2 expectations.",CRN-16
 Story,Developer onboarding guide,"Provide developer setup and contribution documentation.",CRN-16
+Story,Technical debt cleanup for compose project naming,"Eliminate temporary docker-* containers created by project-name mismatch, remove obsolete orphan container definitions, and standardise compose command usage for both dev stacks.",CRN-14

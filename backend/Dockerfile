@@ -23,4 +23,5 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 3001
 
-CMD ["node", "--max-old-space-size=3072", "dist/index.js"]
+# Keep V8 heap below container memory limit to prevent cgroup OOM kills.
+CMD ["node", "--max-old-space-size=512", "dist/index.js"]
