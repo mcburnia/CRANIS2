@@ -129,6 +129,37 @@
   text-align: right;
 }
 
+.tfo-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tfo-download-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tfo-download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.tfo-download-btn .spin {
+  animation: tfo-spin 0.8s linear infinite;
+}
+@keyframes tfo-spin {
+  to { transform: rotate(360deg); }
+}
+
 .tfo-empty {
   color: var(--muted);
   font-size: 0.9rem;

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Download, Loader2 } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -53,6 +54,31 @@ export default function TechnicalFilesPage() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
+  const [downloading, setDownloading] = useState<Record<string, boolean>>({});
+
+  async function handleDownload(productId: string, productName: string) {
+    setDownloading(prev => ({ ...prev, [productId]: true }));
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/due-diligence/${productId}/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = productName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const dateStr = new Date().toISOString().split('T')[0];
+      a.download = `due-diligence-${safeName}-${dateStr}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to download compliance package. Please try again.');
+    } finally {
+      setDownloading(prev => ({ ...prev, [productId]: false }));
+    }
+  }
 
   useEffect(() => {
     async function fetchOverview() {
@@ -140,6 +166,17 @@ export default function TechnicalFilesPage() {
                   </div>
                   <span className="tfo-progress-text">{product.progress.completed}/{product.progress.total}</span>
                 </div>
+                <button
+                  className="tfo-download-btn"
+                  onClick={() => handleDownload(product.id, product.name)}
+                  disabled={downloading[product.id]}
+                  title="Download compliance package"
+                >
+                  {downloading[product.id]
+                    ? <Loader2 size={14} className="spin" />
+                    : <Download size={14} />}
+                  {downloading[product.id] ? 'Generating…' : 'Download'}
+                </button>
               </div>
               <div className="tfo-sections">
                 {product.sections.map(section => (
