@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, FileText } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -55,6 +55,7 @@ export default function TechnicalFilesPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
   const [downloading, setDownloading] = useState<Record<string, boolean>>({});
+  const [downloadingDoc, setDownloadingDoc] = useState<Record<string, boolean>>({});
 
   async function handleDownload(productId: string, productName: string) {
     setDownloading(prev => ({ ...prev, [productId]: true }));
@@ -77,6 +78,30 @@ export default function TechnicalFilesPage() {
       alert('Failed to download compliance package. Please try again.');
     } finally {
       setDownloading(prev => ({ ...prev, [productId]: false }));
+    }
+  }
+
+  async function handleDownloadDoc(productId: string, productName: string) {
+    setDownloadingDoc(prev => ({ ...prev, [productId]: true }));
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/technical-file/${productId}/declaration-of-conformity/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = productName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const dateStr = new Date().toISOString().split('T')[0];
+      a.download = `eu-declaration-of-conformity-${safeName}-${dateStr}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to generate EU Declaration of Conformity. Please try again.');
+    } finally {
+      setDownloadingDoc(prev => ({ ...prev, [productId]: false }));
     }
   }
 
@@ -170,12 +195,23 @@ export default function TechnicalFilesPage() {
                   className="tfo-download-btn"
                   onClick={() => handleDownload(product.id, product.name)}
                   disabled={downloading[product.id]}
-                  title="Download compliance package"
+                  title="Download compliance package (ZIP)"
                 >
                   {downloading[product.id]
                     ? <Loader2 size={14} className="spin" />
                     : <Download size={14} />}
                   {downloading[product.id] ? 'Generating…' : 'Download'}
+                </button>
+                <button
+                  className="tfo-doc-btn"
+                  onClick={() => handleDownloadDoc(product.id, product.name)}
+                  disabled={downloadingDoc[product.id]}
+                  title="Download EU Declaration of Conformity (PDF)"
+                >
+                  {downloadingDoc[product.id]
+                    ? <Loader2 size={14} className="spin" />
+                    : <FileText size={14} />}
+                  {downloadingDoc[product.id] ? 'Generating…' : 'EU DoC'}
                 </button>
               </div>
               <div className="tfo-sections">

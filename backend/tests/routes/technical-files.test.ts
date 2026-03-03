@@ -9,9 +9,11 @@
  * - GET /api/technical-files/:productId returns 404 (per-product detail uses a different pattern)
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { api, loginTestUser, TEST_USERS } from '../setup/test-helpers.js';
 import { TEST_IDS } from '../setup/seed-test-data.js';
+
+const PRODUCT_ID = TEST_IDS.products.github;
 
 describe('/api/technical-files', () => {
   let mfgToken: string;
@@ -148,5 +150,48 @@ describe('/api/technical-files', () => {
         expect(mfgProductIds).not.toContain(product.id);
       }
     });
+  });
+});
+
+// ─── EU Declaration of Conformity PDF endpoint ──────────────────────────────
+
+describe('/api/technical-file/:productId/declaration-of-conformity/pdf', () => {
+  let mfgToken: string;
+  let impToken: string;
+
+  beforeAll(async () => {
+    mfgToken = await loginTestUser(TEST_USERS.mfgAdmin);
+    impToken = await loginTestUser(TEST_USERS.impAdmin);
+  });
+
+  it('should reject unauthenticated request', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/declaration-of-conformity/pdf`);
+    expect(res.status).toBe(401);
+  });
+
+  it('should return 404 for a product belonging to another org', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/declaration-of-conformity/pdf`, { auth: impToken });
+    expect(res.status).toBe(404);
+  });
+
+  it('should return 200 with Content-Type application/pdf', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/declaration-of-conformity/pdf`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toMatch(/application\/pdf/);
+  });
+
+  it('should return a valid PDF (starts with %PDF magic bytes)', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/declaration-of-conformity/pdf`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    // Binary responses are returned as ArrayBuffer by the test helper
+    const buf = Buffer.from(res.body as ArrayBuffer);
+    expect(buf.slice(0, 4).toString()).toBe('%PDF');
+  });
+
+  it('should include Content-Disposition attachment header', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/declaration-of-conformity/pdf`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-disposition')).toMatch(/attachment/);
+    expect(res.headers.get('content-disposition')).toMatch(/\.pdf/);
   });
 });

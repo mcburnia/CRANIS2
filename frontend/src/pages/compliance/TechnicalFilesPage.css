@@ -160,6 +160,34 @@
   to { transform: rotate(360deg); }
 }
 
+.tfo-doc-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid rgba(0,51,153,0.25);
+  border-radius: 6px;
+  background: rgba(0,51,153,0.04);
+  color: #003399;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tfo-doc-btn:hover:not(:disabled) {
+  border-color: #003399;
+  background: rgba(0,51,153,0.08);
+}
+.tfo-doc-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.tfo-doc-btn .spin {
+  animation: tfo-spin 0.8s linear infinite;
+}
+
 .tfo-empty {
   color: var(--muted);
   font-size: 0.9rem;

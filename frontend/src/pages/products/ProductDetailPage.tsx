@@ -1325,6 +1325,7 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
 }) {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [downloadingDoc, setDownloadingDoc] = useState(false);
   const [editContent, setEditContent] = useState<Record<string, any>>({});
   const [editNotes, setEditNotes] = useState<Record<string, string>>({});
   const [editStatus, setEditStatus] = useState<Record<string, string>>({});
@@ -1370,6 +1371,28 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
       console.error('Failed to save section:', err);
     } finally {
       setSaving(null);
+    }
+  }
+
+  async function handleDownloadDoc() {
+    setDownloadingDoc(true);
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/technical-file/${productId}/declaration-of-conformity/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || 'eu-declaration-of-conformity.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to generate EU Declaration of Conformity. Please try again.');
+    } finally {
+      setDownloadingDoc(false);
     }
   }
 
@@ -1605,6 +1628,17 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
                       {saving === section.sectionKey ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
                       {saving === section.sectionKey ? 'Saving...' : 'Save Section'}
                     </button>
+                    {section.sectionKey === 'declaration_of_conformity' && (
+                      <button
+                        className="btn tf-doc-download-btn"
+                        onClick={handleDownloadDoc}
+                        disabled={downloadingDoc}
+                        title="Download EU Declaration of Conformity as PDF"
+                      >
+                        {downloadingDoc ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+                        {downloadingDoc ? 'Generating…' : 'Download EU DoC PDF'}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
