@@ -1018,7 +1018,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-03 (session 11)
+**Last updated:** 2026-03-03 (session 12)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -1029,6 +1029,8 @@ sudo systemctl restart cloudflared
 - **Technical File in compliance package** — Due Diligence ZIP now includes `technical-file.json` (all 8 Annex VII sections) and a Technical File section in the PDF
 - **Download button on Technical Files overview** — per-product "Download" button on `/technical-files` triggers the Due Diligence export ZIP download
 - **tasklist.md updated** — SBOM Export, Compliance Package, IP/Copyright Proof, and Billing all marked complete; Reports page and Escrow remain open
+- **Compliance Reports feature** — Three report types added: Compliance Summary (per-product obligations, tech file, vulns, CRA reports), Vulnerability Trends (scan history, severity/status charts via Recharts, ecosystem breakdown), Audit Trail (user events, ENISA stage submissions, repo syncs). Each has PDF (PDFKit) and CSV export, date range picker defaulting to last 12 months. Hub at `/reports`; sub-routes `/reports/compliance-summary`, `/reports/vulnerability-trends`, `/reports/audit-trail`. Backend: `backend/src/routes/reports.ts` (6 endpoints).
+- **tasklist.md finalised** — All 5 MVP features confirmed complete. Escrow was already fully implemented (routes, service, DB schema, frontend) in a prior session; tasklist updated to reflect this. **No open MVP tasks remain.**
 - NGINX API proxy updated to use Docker DNS re-resolution for backend upstreams (prevents stale IP 502 errors after backend recreation)
 - Shared dev-server memory profile tuned for 16 GB RAM (container limits + backend Node heap cap) to reduce OOM restarts
 - External USB SSD runbook + helper scripts added for non-destructive artifact/backup storage
