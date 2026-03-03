@@ -1018,11 +1018,17 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-03 (session 10)
+**Last updated:** 2026-03-03 (session 11)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
 - Assistant operating protocol formalised in `Workflow Rules` (propose-first flow, test gates, push handoff, British English)
+- **CLAUDE.md created** — project-level instructions file (auto-loaded by Claude Code each session); contains operating protocol, environment notes, NGINX gotchas, port map
+- **MEMORY.md created** — cross-session memory at `~/.claude/projects/-home-mcburnia/memory/MEMORY.md`; contains user preferences, active projects, key environment facts
+- **SBOM structural validation** — `validateCycloneDX()` and `validateSPDX()` added to `sbom-export.ts`; exports set `X-SBOM-Warnings` response header; status endpoint includes `validationWarnings` array
+- **Technical File in compliance package** — Due Diligence ZIP now includes `technical-file.json` (all 8 Annex VII sections) and a Technical File section in the PDF
+- **Download button on Technical Files overview** — per-product "Download" button on `/technical-files` triggers the Due Diligence export ZIP download
+- **tasklist.md updated** — SBOM Export, Compliance Package, IP/Copyright Proof, and Billing all marked complete; Reports page and Escrow remain open
 - NGINX API proxy updated to use Docker DNS re-resolution for backend upstreams (prevents stale IP 502 errors after backend recreation)
 - Shared dev-server memory profile tuned for 16 GB RAM (container limits + backend Node heap cap) to reduce OOM restarts
 - External USB SSD runbook + helper scripts added for non-destructive artifact/backup storage
