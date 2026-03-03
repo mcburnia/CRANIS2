@@ -44,8 +44,8 @@ Replace stub pages with functional billing management and compliance reporting.
 - [x] Define billing model (contributor-based, EUR 6/month, 90-day trial)
 - [x] Integrate payment provider (Stripe — checkout sessions, customer portal, webhooks, 9 billing email templates)
 - [x] Build billing page with plan management, invoices, usage
-- [ ] Define report types (compliance summary, vulnerability trends, audit trail)
-- [ ] Build reports page with generation and export (PDF/CSV)
+- [x] Define report types (compliance summary, vulnerability trends, audit trail)
+- [x] Build reports page with generation and export (PDF/CSV)
 
 ---
 
@@ -54,14 +54,14 @@ Replace stub pages with functional billing management and compliance reporting.
 ### 5. Escrow Capability
 Offer source code escrow integration for customers who require guaranteed access to source code — relevant for critical infrastructure suppliers under NIS2.
 
-- [ ] Research escrow provider APIs (e.g. NCC Group, Iron Mountain)
-- [ ] Define escrow workflow and triggers
-- [ ] Build escrow status tracking per product
-- [ ] Add escrow management UI to product detail page
+- [x] Research escrow provider APIs — self-hosted Forgejo chosen for EU data sovereignty
+- [x] Define escrow workflow and triggers — setup wizard, daily scheduled deposits (5 AM), manual trigger, initial setup deposit, and final archive on product deletion
+- [x] Build escrow status tracking per product — escrow_configs, escrow_deposits, escrow_users tables; status endpoint; deposit history with commit SHAs
+- [x] Add escrow management UI to product detail page — full EscrowPage.tsx accessible via "Escrow" button on product detail; dashboard with artifact toggles, agent management, deposit history
 
 ---
 
 ## Notes
 - Tackle one feature at a time — plan, build, test, commit before moving on
 - Each feature should be planned and approved before implementation begins
-- Remaining open work: Reports page (compliance/vulnerability/audit exports) and Escrow capability
+- **All MVP tasks are complete.**
