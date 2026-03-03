@@ -1190,8 +1190,27 @@ function ProgressItem({ label, status }: { label: string; status: 'completed' | 
 }
 
 /* ── Obligations Tab ─────────────────────────────────────── */
+type ObligationRecord = {
+  id: string;
+  obligationKey: string;
+  article: string;
+  title: string;
+  description: string;
+  status: string;
+  derivedStatus: string | null;
+  derivedReason: string | null;
+  effectiveStatus: string;
+  notes: string;
+};
+
+const STATUS_ORDER: Record<string, number> = { not_started: 0, in_progress: 1, met: 2 };
+function maxStatus(a: string, b: string | null): string {
+  if (!b) return a;
+  return (STATUS_ORDER[a] ?? 0) >= (STATUS_ORDER[b] ?? 0) ? a : b;
+}
+
 function ObligationsTab({ product }: { product: Product }) {
-  const [obligations, setObligations] = useState<{ id: string; obligationKey: string; article: string; title: string; description: string; status: string; notes: string }[]>([]);
+  const [obligations, setObligations] = useState<ObligationRecord[]>([]);
   const [obLoading, setObLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const token = localStorage.getItem('session_token');
@@ -1223,7 +1242,9 @@ function ObligationsTab({ product }: { product: Product }) {
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
-        setObligations(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+        setObligations(prev => prev.map(o => o.id === id
+          ? { ...o, status: newStatus, effectiveStatus: maxStatus(newStatus, o.derivedStatus) }
+          : o));
       }
     } catch (err) {
       console.error('Failed to update obligation:', err);
@@ -1242,30 +1263,57 @@ function ObligationsTab({ product }: { product: Product }) {
         <Shield size={20} />
         <div>
           <h3>CRA Obligations for {CATEGORY_INFO[product.craCategory]?.label || 'Default'} Products</h3>
-          <p>These are the key regulatory obligations under the EU Cyber Resilience Act that apply to your product.</p>
+          <p>These are the key regulatory obligations under the EU Cyber Resilience Act that apply to your product. Use the dropdown to set your manual compliance status, or let the platform auto-detect progress from your data.</p>
         </div>
       </div>
+      <p className="pd-ob-legend">
+        <span className="pd-ob-legend-dot" /> Manual&nbsp;&nbsp;&nbsp;
+        <span className="pd-ob-auto-badge">auto</span> Auto-detected from platform data
+      </p>
       <div className="pd-obligations-list">
-        {obligations.map((ob) => (
-          <div key={ob.id} className="pd-obligation-card">
-            <div className="pd-obligation-header">
-              <span className="pd-obligation-article">{ob.article}</span>
-              <select
-                className={`pd-obligation-status status-${ob.status}`}
-                value={ob.status}
-                disabled={updatingId === ob.id}
-                onChange={e => handleStatusChange(ob.id, e.target.value)}
-                onClick={e => e.stopPropagation()}
-              >
-                <option value="not_started">Not Started</option>
-                <option value="in_progress">In Progress</option>
-                <option value="met">Met</option>
-              </select>
+        {obligations.map((ob) => {
+          const isAutoAdvanced = ob.derivedStatus && ob.effectiveStatus !== ob.status;
+          const isPlatformConfirmed = ob.derivedStatus && ob.derivedStatus === ob.status && ob.status !== 'not_started';
+          return (
+            <div key={ob.id} className="pd-obligation-card">
+              <div className="pd-obligation-header">
+                <span className="pd-obligation-article">{ob.article}</span>
+                <div className="pd-ob-status-group">
+                  {isAutoAdvanced && (
+                    <span
+                      className="pd-ob-auto-badge"
+                      title={ob.derivedReason || 'Auto-detected from platform data'}
+                    >
+                      auto: {ob.effectiveStatus === 'met' ? 'Met' : 'In Progress'}
+                    </span>
+                  )}
+                  {isPlatformConfirmed && (
+                    <span
+                      className="pd-ob-confirmed"
+                      title={ob.derivedReason || 'Confirmed by platform data'}
+                    >✓ confirmed</span>
+                  )}
+                  <select
+                    className={`pd-obligation-status status-${ob.status}`}
+                    value={ob.status}
+                    disabled={updatingId === ob.id}
+                    onChange={e => handleStatusChange(ob.id, e.target.value)}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <option value="not_started">Not Started</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="met">Met</option>
+                  </select>
+                </div>
+              </div>
+              <h4>{ob.title}</h4>
+              <p>{ob.description}</p>
+              {ob.derivedReason && ob.derivedStatus && (
+                <p className="pd-ob-derived-reason">{ob.derivedReason}</p>
+              )}
             </div>
-            <h4>{ob.title}</h4>
-            <p>{ob.description}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

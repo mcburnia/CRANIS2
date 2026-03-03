@@ -41,8 +41,16 @@ const OBLIGATIONS = [
   { key: 'art_32_3', article: 'Art. 32(3)', title: 'Third-Party Assessment', description: 'Critical products require third-party conformity assessment by a notified body.', appliesTo: ['important_ii', 'critical'] },
 ];
 
+const STATUS_ORDER: Record<string, number> = { 'not_started': 0, 'in_progress': 1, 'met': 2 };
+
+function higherStatus(a: string, b: string | null): string {
+  if (!b) return a;
+  return (STATUS_ORDER[a] ?? 0) >= (STATUS_ORDER[b] ?? 0) ? a : b;
+}
+
 function getApplicableObligations(craCategory: string | null): typeof OBLIGATIONS {
-  const cat = craCategory || 'default';
+  const known = ['default', 'important_i', 'important_ii', 'critical'];
+  const cat = (craCategory && known.includes(craCategory)) ? craCategory : 'default';
   return OBLIGATIONS.filter(o => o.appliesTo.includes(cat));
 }
 
@@ -58,15 +66,208 @@ async function ensureObligations(orgId: string, productId: string, craCategory: 
   }
 }
 
-function enrichObligation(row: any) {
+// ─── Derived status computation ───────────────────────────────
+// Computes obligation statuses that can be inferred from existing platform data.
+// Returns: productId → obligationKey → { status, reason }
+// Non-destructive: manual statuses are preserved; derived is returned alongside.
+async function computeDerivedStatuses(
+  productIds: string[],
+  orgId: string
+): Promise<Record<string, Record<string, { status: string; reason: string }>>> {
+  if (productIds.length === 0) return {};
+
+  // 1. SBOMs
+  const sbomResult = await pool.query(
+    `SELECT product_id, package_count, is_stale FROM product_sboms WHERE product_id = ANY($1)`,
+    [productIds]
+  );
+  const sbomByProduct: Record<string, { packageCount: number; isStale: boolean }> = {};
+  for (const row of sbomResult.rows) {
+    sbomByProduct[row.product_id] = { packageCount: parseInt(row.package_count, 10), isStale: row.is_stale };
+  }
+
+  // 2. Completed vulnerability scan count per product
+  const scanResult = await pool.query(
+    `SELECT product_id, COUNT(*) AS scan_count
+     FROM vulnerability_scans
+     WHERE product_id = ANY($1) AND status = 'completed'
+     GROUP BY product_id`,
+    [productIds]
+  );
+  const scanCountByProduct: Record<string, number> = {};
+  for (const row of scanResult.rows) {
+    scanCountByProduct[row.product_id] = parseInt(row.scan_count, 10);
+  }
+
+  // 3. Open/acknowledged vulnerability findings per product
+  const findingsResult = await pool.query(
+    `SELECT product_id, COUNT(*) AS open_count
+     FROM vulnerability_findings
+     WHERE product_id = ANY($1) AND org_id = $2 AND status IN ('open', 'acknowledged')
+     GROUP BY product_id`,
+    [productIds, orgId]
+  );
+  const openFindingsByProduct: Record<string, number> = {};
+  for (const row of findingsResult.rows) {
+    openFindingsByProduct[row.product_id] = parseInt(row.open_count, 10);
+  }
+
+  // 4. Technical file sections (status + key content fields)
+  const techFileResult = await pool.query(
+    `SELECT product_id, section_key, status,
+            content->>'disclosure_policy_url' AS cvd_url,
+            content->>'notified_body' AS notified_body
+     FROM technical_file_sections WHERE product_id = ANY($1)`,
+    [productIds]
+  );
+  const techFileByProduct: Record<string, Record<string, { status: string; cvdUrl: string | null; notifiedBody: string | null }>> = {};
+  for (const row of techFileResult.rows) {
+    if (!techFileByProduct[row.product_id]) techFileByProduct[row.product_id] = {};
+    techFileByProduct[row.product_id][row.section_key] = {
+      status: row.status,
+      cvdUrl: row.cvd_url || null,
+      notifiedBody: row.notified_body || null,
+    };
+  }
+
+  // 5. CRA reports
+  const craResult = await pool.query(
+    `SELECT product_id, status FROM cra_reports WHERE product_id = ANY($1) AND org_id = $2`,
+    [productIds, orgId]
+  );
+  const craReportsByProduct: Record<string, string[]> = {};
+  for (const row of craResult.rows) {
+    if (!craReportsByProduct[row.product_id]) craReportsByProduct[row.product_id] = [];
+    craReportsByProduct[row.product_id].push(row.status);
+  }
+
+  // Compute derived statuses per product
+  const result: Record<string, Record<string, { status: string; reason: string }>> = {};
+
+  for (const productId of productIds) {
+    const derived: Record<string, { status: string; reason: string }> = {};
+    const sections = techFileByProduct[productId] ?? {};
+    const ALL_SECTION_KEYS = ['product_description', 'design_development', 'vulnerability_handling', 'risk_assessment', 'support_period', 'standards_applied', 'test_reports', 'declaration_of_conformity'];
+
+    // art_13_11 — SBOM
+    const sbom = sbomByProduct[productId];
+    if (sbom) {
+      if (!sbom.isStale && sbom.packageCount > 0) {
+        derived['art_13_11'] = { status: 'met', reason: `SBOM current (${sbom.packageCount} packages)` };
+      } else {
+        derived['art_13_11'] = { status: 'in_progress', reason: `SBOM present${sbom.isStale ? ' — update pending' : ''} (${sbom.packageCount} packages)` };
+      }
+    }
+
+    // art_13_6 — Vulnerability Handling
+    const scanCount = scanCountByProduct[productId] ?? 0;
+    const openFindings = openFindingsByProduct[productId] ?? 0;
+    if (scanCount > 0) {
+      if (openFindings === 0) {
+        derived['art_13_6'] = { status: 'met', reason: 'Vulnerability scanning active — no open findings' };
+      } else {
+        derived['art_13_6'] = { status: 'in_progress', reason: `Vulnerability scanning active — ${openFindings} open finding${openFindings !== 1 ? 's' : ''}` };
+      }
+    }
+
+    // art_13_12 — Technical Documentation
+    const sectionStatuses = ALL_SECTION_KEYS.map(k => sections[k]?.status ?? 'not_started');
+    const completedCount = sectionStatuses.filter(s => s === 'completed').length;
+    const startedCount = sectionStatuses.filter(s => s !== 'not_started').length;
+    if (completedCount === ALL_SECTION_KEYS.length) {
+      derived['art_13_12'] = { status: 'met', reason: 'Technical file complete (8/8 sections)' };
+    } else if (startedCount > 0) {
+      derived['art_13_12'] = { status: 'in_progress', reason: `Technical file ${completedCount}/8 sections complete` };
+    }
+
+    // art_13_14 — Conformity Assessment (test_reports section)
+    const testReports = sections['test_reports'];
+    if (testReports?.status === 'completed') {
+      derived['art_13_14'] = { status: 'met', reason: 'Test reports section complete' };
+    } else if (testReports?.status === 'in_progress') {
+      derived['art_13_14'] = { status: 'in_progress', reason: 'Test reports section in progress' };
+    }
+
+    // art_13_15 — EU Declaration of Conformity
+    const docSection = sections['declaration_of_conformity'];
+    if (docSection?.status === 'completed') {
+      derived['art_13_15'] = { status: 'met', reason: 'Declaration of Conformity section complete' };
+    } else if (docSection?.status === 'in_progress') {
+      derived['art_13_15'] = { status: 'in_progress', reason: 'Declaration of Conformity section in progress' };
+    }
+
+    // annex_i_part_i — Security by Design (risk_assessment section)
+    const riskSection = sections['risk_assessment'];
+    if (riskSection?.status === 'completed') {
+      derived['annex_i_part_i'] = { status: 'met', reason: 'Risk assessment complete' };
+    } else if (riskSection?.status === 'in_progress') {
+      derived['annex_i_part_i'] = { status: 'in_progress', reason: 'Risk assessment in progress' };
+    }
+
+    // annex_i_part_ii — Vulnerability Handling Requirements (CVD policy)
+    const vulnHandling = sections['vulnerability_handling'];
+    if (vulnHandling?.status === 'completed') {
+      derived['annex_i_part_ii'] = { status: 'met', reason: 'Vulnerability handling section complete' };
+    } else if (vulnHandling?.cvdUrl) {
+      derived['annex_i_part_ii'] = { status: 'in_progress', reason: 'CVD policy URL documented' };
+    } else if (vulnHandling?.status === 'in_progress') {
+      derived['annex_i_part_ii'] = { status: 'in_progress', reason: 'Vulnerability handling section in progress' };
+    }
+
+    // art_32 — Harmonised Standards
+    const standardsSection = sections['standards_applied'];
+    if (standardsSection?.status === 'completed') {
+      derived['art_32'] = { status: 'met', reason: 'Standards section complete' };
+    } else if (standardsSection?.status === 'in_progress') {
+      derived['art_32'] = { status: 'in_progress', reason: 'Standards section in progress' };
+    }
+
+    // art_32_3 — Third-Party Assessment (notified body in DoC)
+    if (docSection?.notifiedBody) {
+      derived['art_32_3'] = { status: docSection.status === 'completed' ? 'met' : 'in_progress', reason: 'Notified body referenced in DoC' };
+    }
+
+    // art_14 — Vulnerability Reporting (ENISA reports)
+    const reports = craReportsByProduct[productId] ?? [];
+    if (reports.length > 0) {
+      const hasFinal = reports.some(s => s === 'final_report_sent' || s === 'closed');
+      derived['art_14'] = { status: hasFinal ? 'met' : 'in_progress', reason: hasFinal ? 'ENISA report submitted' : 'ENISA report in progress' };
+    }
+
+    // art_13 — Overall (derived from all others)
+    const others = Object.entries(derived).filter(([k]) => k !== 'art_13');
+    if (others.length > 0) {
+      const metCount = others.filter(([, v]) => v.status === 'met').length;
+      const allMet = metCount === others.length;
+      derived['art_13'] = {
+        status: allMet ? 'met' : 'in_progress',
+        reason: `${metCount}/${others.length} obligations met`,
+      };
+    }
+
+    result[productId] = derived;
+  }
+
+  return result;
+}
+
+function enrichObligation(row: any, derived?: { status: string; reason: string } | null) {
   const def = OBLIGATIONS.find(o => o.key === row.obligation_key);
+  const manualStatus: string = row.status;
+  const derivedStatus: string | null = derived?.status ?? null;
+  const derivedReason: string | null = derived?.reason ?? null;
+  const effectiveStatus = higherStatus(manualStatus, derivedStatus);
+
   return {
     id: row.id,
     obligationKey: row.obligation_key,
     article: def?.article || row.obligation_key,
     title: def?.title || row.obligation_key,
     description: def?.description || '',
-    status: row.status,
+    status: manualStatus,
+    derivedStatus,
+    derivedReason,
+    effectiveStatus,
     notes: row.notes || '',
     updatedBy: row.updated_by,
     updatedAt: row.updated_at,
@@ -111,29 +312,34 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       await ensureObligations(orgId, p.id, p.craCategory);
     }
 
-    // Fetch all obligations
+    // Fetch all obligations and derived statuses in parallel
     const productIds = products.map(p => p.id);
-    const obResult = await pool.query(
-      `SELECT id, product_id, obligation_key, status, notes, updated_by, updated_at
-       FROM obligations WHERE org_id = $1 AND product_id = ANY($2)
-       ORDER BY created_at ASC`,
-      [orgId, productIds]
-    );
+    const [obResult, derivedMap] = await Promise.all([
+      pool.query(
+        `SELECT id, product_id, obligation_key, status, notes, updated_by, updated_at
+         FROM obligations WHERE org_id = $1 AND product_id = ANY($2)
+         ORDER BY created_at ASC`,
+        [orgId, productIds]
+      ),
+      computeDerivedStatuses(productIds, orgId),
+    ]);
 
     // Group by product
     const obByProduct: Record<string, any[]> = {};
     for (const row of obResult.rows) {
       if (!obByProduct[row.product_id]) obByProduct[row.product_id] = [];
-      obByProduct[row.product_id].push(enrichObligation(row));
+      const derived = derivedMap[row.product_id]?.[row.obligation_key] ?? null;
+      obByProduct[row.product_id].push(enrichObligation(row, derived));
     }
 
     let totalCompleted = 0, totalInProgress = 0, totalNotStarted = 0;
 
     const enrichedProducts = products.map(p => {
       const obligations = obByProduct[p.id] || [];
-      const completed = obligations.filter(o => o.status === 'met').length;
-      const inProgress = obligations.filter(o => o.status === 'in_progress').length;
-      const notStarted = obligations.filter(o => o.status === 'not_started').length;
+      // Use effectiveStatus (max of manual and derived) for counts
+      const completed = obligations.filter(o => o.effectiveStatus === 'met').length;
+      const inProgress = obligations.filter(o => o.effectiveStatus === 'in_progress').length;
+      const notStarted = obligations.filter(o => o.effectiveStatus === 'not_started').length;
       totalCompleted += completed;
       totalInProgress += inProgress;
       totalNotStarted += notStarted;
@@ -186,21 +392,26 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
       await session.close();
     }
 
-    // Auto-create
+    // Auto-create obligations and fetch derived statuses in parallel
     await ensureObligations(orgId, productId, craCategory);
 
-    // Fetch
-    const obResult = await pool.query(
-      `SELECT id, product_id, obligation_key, status, notes, updated_by, updated_at
-       FROM obligations WHERE org_id = $1 AND product_id = $2
-       ORDER BY created_at ASC`,
-      [orgId, productId]
-    );
+    const [obResult, derivedMap] = await Promise.all([
+      pool.query(
+        `SELECT id, product_id, obligation_key, status, notes, updated_by, updated_at
+         FROM obligations WHERE org_id = $1 AND product_id = $2
+         ORDER BY created_at ASC`,
+        [orgId, productId]
+      ),
+      computeDerivedStatuses([productId], orgId),
+    ]);
 
-    const obligations = obResult.rows.map(enrichObligation);
-    const completed = obligations.filter(o => o.status === 'met').length;
-    const inProgress = obligations.filter(o => o.status === 'in_progress').length;
-    const notStarted = obligations.filter(o => o.status === 'not_started').length;
+    const productDerived = derivedMap[productId] ?? {};
+    const obligations = obResult.rows.map(row => enrichObligation(row, productDerived[row.obligation_key] ?? null));
+
+    // Use effectiveStatus for counts
+    const completed = obligations.filter(o => o.effectiveStatus === 'met').length;
+    const inProgress = obligations.filter(o => o.effectiveStatus === 'in_progress').length;
+    const notStarted = obligations.filter(o => o.effectiveStatus === 'not_started').length;
 
     res.json({
       obligations,

@@ -12,6 +12,9 @@ interface Obligation {
   title: string;
   description: string;
   status: string;
+  derivedStatus: string | null;
+  derivedReason: string | null;
+  effectiveStatus: string;
   notes: string;
 }
 
@@ -117,6 +120,10 @@ export default function ObligationsPage() {
         <button className={`ob-filter-btn ${filter === 'outstanding' ? 'active' : ''}`} onClick={() => setFilter('outstanding')}>Has Outstanding</button>
         <button className={`ob-filter-btn ${filter === 'met' ? 'active' : ''}`} onClick={() => setFilter('met')}>All Met</button>
       </div>
+      <p className="ob-legend">
+        <span className="ob-legend-dot" /> Manual&nbsp;&nbsp;&nbsp;
+        <span className="ob-legend-auto">auto</span> Auto-detected from platform data
+      </p>
 
       {products.length === 0 ? (
         <p className="ob-empty">No products yet. <Link to="/products">Add your first product</Link> to begin tracking obligations.</p>
@@ -143,18 +150,30 @@ export default function ObligationsPage() {
                 </div>
               </div>
               <div className="ob-sections">
-                {product.obligations.map(ob => (
-                  <Link
-                    key={ob.id}
-                    to={`/products/${product.id}?tab=obligations`}
-                    className="ob-section-row"
-                  >
-                    <div className={`ob-section-dot ${ob.status}`} />
-                    <span className="ob-section-title">{ob.title}</span>
-                    <span className="ob-section-ref">{ob.article}</span>
-                    <span className="ob-section-status">{formatStatus(ob.status)}</span>
-                  </Link>
-                ))}
+                {product.obligations.map(ob => {
+                  const isAutoAdvanced = ob.derivedStatus && ob.effectiveStatus !== ob.status;
+                  const isPlatformConfirmed = ob.derivedStatus && ob.derivedStatus === ob.status && ob.status !== 'not_started';
+                  return (
+                    <Link
+                      key={ob.id}
+                      to={`/products/${product.id}?tab=obligations`}
+                      className="ob-section-row"
+                    >
+                      <div className={`ob-section-dot ${ob.effectiveStatus}`} />
+                      <span className="ob-section-title">{ob.title}</span>
+                      <span className="ob-section-ref">{ob.article}</span>
+                      <span className="ob-section-status">
+                        {formatStatus(ob.effectiveStatus)}
+                        {isAutoAdvanced && (
+                          <span className="ob-auto-badge" title={ob.derivedReason || 'Auto-detected from platform data'}>auto</span>
+                        )}
+                        {isPlatformConfirmed && (
+                          <span className="ob-confirmed-badge" title={ob.derivedReason || 'Confirmed by platform data'}>✓</span>
+                        )}
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           );
