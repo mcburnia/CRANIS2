@@ -152,7 +152,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 
 **Run this every morning before starting any new work.** This ensures the environment is healthy and no regressions have been introduced.
 
-### Vitest Backend Tests (841 tests — runs on server)
+### Vitest Backend Tests (868 tests — runs on server)
 
 ```bash
 ssh -p 2222 mcburnia@localhost "cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && node_modules/.bin/vitest run --config vitest.config.ts"
@@ -160,7 +160,7 @@ ssh -p 2222 mcburnia@localhost "cd ~/cranis2/backend/tests && source ~/.nvm/nvm.
 
 - Auto-seeds test data on every run (global-setup.ts calls `seedAllTestData()`)
 - Tests run against https://dev.cranis2.dev (live dev stack)
-- Expected result: **841 passed, 0 failed**
+- Expected result: **868 passed, 0 failed**
 
 ### Playwright E2E Tests (250 tests — runs locally on Mac)
 
@@ -1018,7 +1018,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-03 (session 12)
+**Last updated:** 2026-03-03 (session 13)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -1032,6 +1032,8 @@ sudo systemctl restart cloudflared
 - **Compliance Reports feature** — Three report types added: Compliance Summary (per-product obligations, tech file, vulns, CRA reports), Vulnerability Trends (scan history, severity/status charts via Recharts, ecosystem breakdown), Audit Trail (user events, ENISA stage submissions, repo syncs). Each has PDF (PDFKit) and CSV export, date range picker defaulting to last 12 months. Hub at `/reports`; sub-routes `/reports/compliance-summary`, `/reports/vulnerability-trends`, `/reports/audit-trail`. Backend: `backend/src/routes/reports.ts` (6 endpoints).
 - **tasklist.md finalised** — All 5 MVP features confirmed complete. Escrow was already fully implemented (routes, service, DB schema, frontend) in a prior session; tasklist updated to reflect this. **No open MVP tasks remain.**
 - **Reports test coverage** — Full test coverage added for the reports feature. Backend: `backend/tests/routes/reports.test.ts` (35 integration tests covering all 6 endpoints — 401 auth, 200 success, PDF magic bytes, CSV headers, date defaults, category filter, org isolation). E2E: `e2e/acceptance/reports.spec.ts` (29 acceptance tests covering hub + 3 sub-pages). Total test counts: **841 backend tests passing, 29 E2E acceptance tests passing**.
+- **Phase 2 tasklist defined** — Thorough CRA gap analysis identified 7 Phase 2 features for the 8-week launch window. `tasklist.md` rewritten with full Phase 2 + Phase 3 roadmap.
+- **Obligations auto-intelligence** — `computeDerivedStatuses()` added to `obligations.ts`; derives obligation statuses from existing platform data (5 batched Postgres queries: product_sboms, vulnerability_scans, vulnerability_findings, technical_file_sections, cra_reports). All GET endpoints now return `derivedStatus`, `derivedReason`, `effectiveStatus`. Progress counts use effectiveStatus. `getApplicableObligations()` fixed to fall back to `'default'` for unrecognised CRA categories. UI: both `ObligationsPage` and `ProductDetailPage` ObligationsTab show `auto` badge when derived advances status above manual, `✓ confirmed` when platform data confirms manual status, derived reason as tooltip/subtext, legend explaining manual vs auto. 27 new tests added (`backend/tests/routes/obligations.test.ts`). **Total: 868 backend tests passing.**
 - NGINX API proxy updated to use Docker DNS re-resolution for backend upstreams (prevents stale IP 502 errors after backend recreation)
 - Shared dev-server memory profile tuned for 16 GB RAM (container limits + backend Node heap cap) to reduce OOM restarts
 - External USB SSD runbook + helper scripts added for non-destructive artifact/backup storage
