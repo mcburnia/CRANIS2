@@ -920,18 +920,25 @@ Responsive breakpoints:
 
 ## Workflow Rules
 
-1. **After each user prompt** (not responses to questions), commit to git and remind the user to push to GitHub
-2. **Never commit `.env`** — it contains credentials
-3. **Build before deploying** — `npm run build` then `docker compose up -d --build`
-4. **SSH key has passphrase** — user must handle `git push` manually
-5. **Always use `source ~/.nvm/nvm.sh &&`** before any npm/node commands on the server
-6. **Update RESTART.md** after significant changes
+1. **Propose first, then implement** — always present a plan of action before making changes, and wait for user approval.
+2. **Commit per completed task** — create one commit after each distinct piece of work is complete, with a detailed message/body for traceability.
+3. **User performs push** — do not push automatically; ask the user to run `git push` after each commit.
+4. **Work on `main`** — use `main` unless the user explicitly asks for a feature branch.
+5. **Run tests per task** — run unit and integration tests at the end of each task.
+6. **Run full morning regression daily** — before new work each morning, run the full test cycle in Step 6.
+7. **Explicit approval for higher-risk operations** — get approval before infra restarts, DB migrations, destructive commands, external service changes, or production-impacting actions.
+8. **Use British English** — all assistant communication should use British spelling/phrasing.
+9. **Definition of done** — code changed, tests pass, docs updated, committed, pushed, and deployment status verified.
+10. **Never commit `.env`** — it contains credentials.
+11. **Build before deploying** — `npm run build` then `docker compose up -d --build`.
+12. **Always use `source ~/.nvm/nvm.sh &&`** before npm/node commands on the server.
+13. **Update RESTART.md** after significant workflow or platform changes.
 
 ## NGINX Config Notes
 
 - The `nginx/default.conf` file uses plain `$uri` / `$host` variables — **do NOT escape with `\$`** as it causes redirect loops (this was a bug we fixed)
 - SPA routing: `try_files $uri $uri/ /index.html`
-- API proxy: `location /api/` → `proxy_pass http://backend:3001/api/`
+- API proxy: `location /api/` resolves backend through Docker DNS (`resolver 127.0.0.11`) and forwards full request URI to avoid stale upstream IPs after backend container recreation
 - GitHub callback URL `/api/github/callback` is proxied through NGINX to the backend
 
 ## Other Projects on This Server
@@ -1011,10 +1018,12 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-03 (session 9)
+**Last updated:** 2026-03-03 (session 10)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
+- Assistant operating protocol formalised in `Workflow Rules` (propose-first flow, test gates, push handoff, British English)
+- NGINX API proxy updated to use Docker DNS re-resolution for backend upstreams (prevents stale IP 502 errors after backend recreation)
 - Shared dev-server memory profile tuned for 16 GB RAM (container limits + backend Node heap cap) to reduce OOM restarts
 - External USB SSD runbook + helper scripts added for non-destructive artifact/backup storage
 - Vite + React + TypeScript scaffolding with all routes
