@@ -9,6 +9,16 @@ const require = createRequire(import.meta.url);
 
 // ─── Types ──────────────────────────────────────────────────────────
 
+export interface TechnicalFileSection {
+  sectionKey: string;
+  title: string;
+  craReference: string | null;
+  status: string;
+  content: Record<string, any>;
+  notes: string;
+  updatedAt: string | null;
+}
+
 export interface DueDiligenceData {
   product: {
     id: string;
@@ -69,6 +79,7 @@ export interface DueDiligenceData {
   obligations: Array<{ key: string; status: string }>;
   productVersion: string | null;
   generatedAt: string;
+  technicalFileSections: TechnicalFileSection[];
 }
 
 // ─── Data Gathering ─────────────────────────────────────────────────
@@ -109,8 +120,8 @@ export async function gatherReportData(orgId: string, productId: string): Promis
       transitive: toNum(depRecord.get('transitive')),
     };
 
-    // 3-7: Parallel Postgres queries
-    const [scanResult, findingsResult, vulnResult, ipResult, oblResult, versionResult] = await Promise.all([
+    // 3-8: Parallel Postgres queries
+    const [scanResult, findingsResult, vulnResult, ipResult, oblResult, versionResult, techFileResult] = await Promise.all([
       // 3. Latest licence scan
       pool.query(
         `SELECT total_deps, permissive_count, copyleft_count, unknown_count, critical_count,
@@ -157,6 +168,14 @@ export async function gatherReportData(orgId: string, productId: string): Promis
       pool.query(
         `SELECT cranis_version FROM product_versions
          WHERE product_id = $1 ORDER BY created_at DESC LIMIT 1`,
+        [productId]
+      ),
+      // 9. Technical file sections (Annex VII)
+      pool.query(
+        `SELECT section_key, title, content, notes, status, cra_reference, updated_at
+         FROM technical_file_sections
+         WHERE product_id = $1
+         ORDER BY created_at ASC`,
         [productId]
       ),
     ]);
@@ -215,6 +234,17 @@ export async function gatherReportData(orgId: string, productId: string): Promis
     // Process obligations
     const obligations = oblResult.rows.map(r => ({ key: r.obligation_key, status: r.status }));
 
+    // Process technical file sections
+    const technicalFileSections: TechnicalFileSection[] = techFileResult.rows.map(r => ({
+      sectionKey: r.section_key,
+      title: r.title,
+      craReference: r.cra_reference || null,
+      status: r.status,
+      content: typeof r.content === 'string' ? JSON.parse(r.content) : (r.content || {}),
+      notes: r.notes || '',
+      updatedAt: r.updated_at || null,
+    }));
+
     return {
       product: {
         id: productId,
@@ -238,6 +268,7 @@ export async function gatherReportData(orgId: string, productId: string): Promis
       obligations,
       productVersion: versionResult.rows[0]?.cranis_version || null,
       generatedAt: new Date().toISOString(),
+      technicalFileSections,
     };
   } finally {
     await neo4jSession.close();
@@ -584,6 +615,45 @@ export async function generatePDF(data: DueDiligenceData): Promise<Buffer> {
       bodyText('No CRA obligations have been configured for this product.');
     }
 
+    // ── TECHNICAL FILE (ANNEX VII) ──
+    sectionTitle('Technical File (CRA Annex VII)');
+
+    if (data.technicalFileSections.length > 0) {
+      const completed = data.technicalFileSections.filter(s => s.status === 'completed').length;
+      const inProg = data.technicalFileSections.filter(s => s.status === 'in_progress').length;
+      const notStarted = data.technicalFileSections.filter(s => s.status === 'not_started').length;
+      const tfPct = Math.round((completed / data.technicalFileSections.length) * 100);
+
+      statLine('Sections Completed', `${completed} of ${data.technicalFileSections.length} (${tfPct}%)`, completed === data.technicalFileSections.length ? greenColour : amberColour);
+      statLine('In Progress', String(inProg), inProg > 0 ? amberColour : greenColour);
+      statLine('Not Started', String(notStarted), notStarted > 0 ? redColour : greenColour);
+
+      doc.moveDown(0.5);
+      drawBar(50, doc.y, pageWidth, 16, tfPct, greenColour, '#e5e7eb');
+      doc.moveDown(1.5);
+      doc.fontSize(9).fillColor(mutedColour).text(`${tfPct}% complete`);
+
+      doc.moveDown(0.5);
+      subHeading('Section Status');
+
+      for (const section of data.technicalFileSections) {
+        if (doc.y > doc.page.height - 80) newPage();
+        const statusIcon = section.status === 'completed' ? '✓' : section.status === 'in_progress' ? '◐' : '○';
+        const statusCol = section.status === 'completed' ? greenColour : section.status === 'in_progress' ? amberColour : mutedColour;
+        const updatedStr = section.updatedAt ? new Date(section.updatedAt).toLocaleDateString('en-GB') : 'not updated';
+        doc.fontSize(9).fillColor(statusCol).text(
+          `${statusIcon}  ${section.title}  (${section.craReference || ''})  —  ${section.status.replace('_', ' ')}  —  last updated ${updatedStr}`,
+          { indent: 10 }
+        );
+        doc.moveDown(0.2);
+      }
+
+      doc.moveDown(0.5);
+      bodyText('The complete Annex VII Technical File data is included in this package as technical-file.json.');
+    } else {
+      bodyText('No Technical File sections have been created for this product. Begin filling in the Technical File from the CRANIS2 dashboard.');
+    }
+
     // ── Finalize ──
     doc.end();
   });
@@ -674,7 +744,24 @@ export function generateDueDiligenceZIP(
   };
   zip.addFile('vulnerability-summary.json', Buffer.from(JSON.stringify(vulnSummary, null, 2), 'utf-8'));
 
-  // 5. Full licence texts for non-permissive licences
+  // 5. Technical File (Annex VII) — all 8 sections as structured JSON
+  const technicalFileExport = {
+    generatedAt: data.generatedAt,
+    productId: data.product.id,
+    productName: data.product.name,
+    sections: data.technicalFileSections.map(s => ({
+      sectionKey: s.sectionKey,
+      title: s.title,
+      craReference: s.craReference,
+      status: s.status,
+      content: s.content,
+      notes: s.notes,
+      updatedAt: s.updatedAt,
+    })),
+  };
+  zip.addFile('technical-file.json', Buffer.from(JSON.stringify(technicalFileExport, null, 2), 'utf-8'));
+
+  // 6. Full licence texts for non-permissive licences
   const nonPermissiveIds = new Set<string>();
   for (const f of data.licenseFindings) {
     if (f.riskLevel !== 'ok' && f.licenseDeclared && f.licenseDeclared !== 'NOASSERTION') {
@@ -696,7 +783,7 @@ export function generateDueDiligenceZIP(
     }
   }
 
-  // 6. Report metadata
+  // 7. Report metadata
   const metadata = {
     reportType: 'due-diligence',
     generatedAt: data.generatedAt,
@@ -712,6 +799,7 @@ export function generateDueDiligenceZIP(
       'sbom-cyclonedx-1.6.json — Software Bill of Materials (CycloneDX 1.6)',
       'license-findings.csv — Per-dependency licence classification',
       'vulnerability-summary.json — Vulnerability posture summary',
+      `technical-file.json — CRA Annex VII Technical File (${data.technicalFileSections.length} sections)`,
       `license-texts/ — Full licence texts (${nonPermissiveIds.size} non-permissive licences)`,
     ],
   };
