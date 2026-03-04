@@ -802,6 +802,23 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
       );
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS repo_push_events (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id VARCHAR(255) NOT NULL,
+        pusher_name VARCHAR(255) NOT NULL,
+        pusher_email VARCHAR(255),
+        ref VARCHAR(255),
+        branch VARCHAR(255),
+        commit_count INTEGER DEFAULT 0,
+        head_commit_message TEXT,
+        head_commit_sha VARCHAR(64),
+        provider VARCHAR(20),
+        created_at TIMESTAMPTZ DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS idx_push_events_product ON repo_push_events(product_id, created_at DESC);
+    `);
+
     // Seed doc_pages from markdown files on first run
     const docCount = await client.query('SELECT COUNT(*) FROM doc_pages');
     if (parseInt(docCount.rows[0].count) === 0) {

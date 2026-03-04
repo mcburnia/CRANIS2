@@ -7,7 +7,7 @@ import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
   CheckCircle2, Circle, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
-  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive, Server, Sparkles
+  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive, Server, Sparkles, Activity
 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './ProductDetailPage.css';
@@ -193,6 +193,19 @@ interface SyncStats {
   errorCount: number;
 }
 
+interface PushEvent {
+  id: string;
+  pusherName: string;
+  pusherEmail: string | null;
+  ref: string | null;
+  branch: string | null;
+  commitCount: number;
+  headCommitMessage: string | null;
+  headCommitSha: string | null;
+  provider: string;
+  createdAt: string;
+}
+
 interface GitHubData {
   synced: boolean;
   provider?: string;
@@ -299,6 +312,7 @@ export default function ProductDetailPage() {
   const [versionHistory, setVersionHistory] = useState<VersionEntry[]>([]);
   const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([]);
   const [syncStats, setSyncStats] = useState<SyncStats | null>(null);
+  const [pushEvents, setPushEvents] = useState<PushEvent[]>([]);
 
   useEffect(() => {
     fetchProduct();
@@ -324,6 +338,7 @@ export default function ProductDetailPage() {
       fetchTechFileData();
       fetchVersionHistory();
       fetchSyncHistory();
+      fetchPushEvents();
     }
   }, [product?.id]);
 
@@ -463,6 +478,21 @@ export default function ProductDetailPage() {
     }
   }
 
+  async function fetchPushEvents() {
+    if (!productId) return;
+    try {
+      const res = await fetch(`/api/github/push-events/${productId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('session_token')}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPushEvents(data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch push events:', err);
+    }
+  }
+
   async function handleRefreshSBOM() {
     setSbomLoading(true);
     try {
@@ -495,6 +525,7 @@ export default function ProductDetailPage() {
         fetchSBOMData();
         fetchVersionHistory();
         fetchSyncHistory();
+        fetchPushEvents();
       } else {
         const err = await res.json();
         setSyncError(err.error || 'Sync failed');
@@ -834,7 +865,7 @@ export default function ProductDetailPage() {
 
       {/* Tab content */}
       <div className="pd-tab-content">
-        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} syncHistory={syncHistory} syncStats={syncStats} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} repoProvider={currentProvider} isProviderConnected={isProviderConnected} providerConnection={providerConnection} />}
+        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} syncHistory={syncHistory} syncStats={syncStats} pushEvents={pushEvents} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} repoProvider={currentProvider} isProviderConnected={isProviderConnected} providerConnection={providerConnection} />}
         {activeTab === 'obligations' && <ObligationsTab product={product} />}
         {activeTab === 'technical-file' && <TechnicalFileTab productId={productId!} techFileData={techFileData} loading={techFileLoading} onUpdate={fetchTechFileData} />}
         {activeTab === 'risk-findings' && <RiskFindingsTab productId={product.id} />}
@@ -922,13 +953,14 @@ interface ProductChecklistPD {
   steps: ChecklistStepPD[];
 }
 
-function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, techFileProgress: _techFileProgress, versionHistory, syncHistory, syncStats, onConnect, onSync, syncing, onDisconnect, repoProvider, isProviderConnected, providerConnection }: {
+function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, techFileProgress: _techFileProgress, versionHistory, syncHistory, syncStats, pushEvents, onConnect, onSync, syncing, onDisconnect, repoProvider, isProviderConnected, providerConnection }: {
   product: Product; catInfo: { label: string; color: string; desc: string };
   ghStatus: GitHubStatus; ghData: GitHubData; sbomData: SBOMData;
   techFileProgress: { total: number; completed: number; inProgress: number; notStarted: number };
   versionHistory: VersionEntry[];
   syncHistory: SyncHistoryEntry[];
   syncStats: SyncStats | null;
+  pushEvents: PushEvent[];
   onConnect: (provider?: string) => void; onSync: () => void; syncing: boolean; onDisconnect: (provider?: string) => void;
   repoProvider: string;
   isProviderConnected: boolean;
@@ -1090,6 +1122,31 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
                   <span className={`vh-source vh-source-${v.source}`}>{v.source === 'sync' ? 'Sync' : v.source === 'github_release' ? 'Release' : 'Manual'}</span>
                   <span className="vh-date">{new Date(v.createdAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {pushEvents.length > 0 && (
+        <div className="pd-card">
+          <div className="pd-card-header">
+            <Activity size={18} />
+            <h3>Repo Activity</h3>
+            <span className="pd-card-badge">{pushEvents.length} push{pushEvents.length !== 1 ? 'es' : ''}</span>
+          </div>
+          <div className="pd-activity-list">
+            {pushEvents.slice(0, 8).map((ev) => (
+              <div key={ev.id} className="pd-activity-item">
+                <div className="pd-activity-top">
+                  <span className="pd-activity-pusher">{ev.pusherName}</span>
+                  {ev.branch && <span className="pd-activity-branch">{ev.branch}</span>}
+                  <span className="pd-activity-commits">{ev.commitCount} commit{ev.commitCount !== 1 ? 's' : ''}</span>
+                  <span className="pd-activity-time">{timeAgo(ev.createdAt)}</span>
+                </div>
+                {ev.headCommitMessage && (
+                  <div className="pd-activity-message">{ev.headCommitMessage.split('\n')[0].slice(0, 120)}</div>
+                )}
               </div>
             ))}
           </div>

@@ -1308,6 +1308,25 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
       console.log(`[WEBHOOK] Marked SBOM stale for product: ${productId}`);
 
+      // Store push event details for the activity feed
+      try {
+        const pusherName = req.body?.pusher?.name || req.body?.pusher?.login || 'unknown';
+        const pusherEmail = req.body?.pusher?.email || null;
+        const pushRef = req.body?.ref || null;
+        const pushBranch = pushRef?.replace('refs/heads/', '') || null;
+        const commitCount = Array.isArray(req.body?.commits) ? req.body.commits.length : 0;
+        const headCommitMessage = req.body?.head_commit?.message || req.body?.commits?.[0]?.message || null;
+        const headCommitSha = req.body?.after || req.body?.head_commit?.id || null;
+
+        await pool.query(
+          `INSERT INTO repo_push_events (product_id, pusher_name, pusher_email, ref, branch, commit_count, head_commit_message, head_commit_sha, provider)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [productId, pusherName, pusherEmail, pushRef, pushBranch, commitCount, headCommitMessage, headCommitSha, webhookProvider]
+        );
+      } catch (pushErr: any) {
+        console.error('[WEBHOOK] Failed to store push event:', pushErr.message);
+      }
+
       // Record telemetry (system event — no user, insert directly)
       try {
         await pool.query(
@@ -1472,24 +1491,71 @@ router.get('/sync-history/:productId', requireAuth, async (req: Request, res: Re
   }
 });
 
+// ─── GET /api/github/push-events/:productId ───────────────────────
+// Return recent push events received via webhook for a product
+router.get('/push-events/:productId', requireAuth, async (req: Request, res: Response) => {
+  const orgId = await getUserOrgId((req as any).userId);
+  if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+  const productId = req.params.productId as string;
+
+  // Verify product belongs to user's org
+  const neo4jSession = getDriver().session();
+  try {
+    const check = await neo4jSession.run(
+      `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId}) RETURN p.id`,
+      { orgId, productId }
+    );
+    if (check.records.length === 0) {
+      res.status(404).json({ error: 'Product not found' });
+      return;
+    }
+  } finally {
+    await neo4jSession.close();
+  }
+
+  const result = await pool.query(
+    `SELECT id, pusher_name, pusher_email, ref, branch, commit_count,
+            head_commit_message, head_commit_sha, provider, created_at
+     FROM repo_push_events
+     WHERE product_id = $1
+     ORDER BY created_at DESC
+     LIMIT 20`,
+    [productId]
+  );
+
+  res.json(result.rows.map((row: any) => ({
+    id: row.id,
+    pusherName: row.pusher_name,
+    pusherEmail: row.pusher_email,
+    ref: row.ref,
+    branch: row.branch,
+    commitCount: row.commit_count,
+    headCommitMessage: row.head_commit_message,
+    headCommitSha: row.head_commit_sha,
+    provider: row.provider,
+    createdAt: row.created_at,
+  })));
+});
+
 // ─── DELETE /api/github/disconnect/{:provider} ───────────────────
 router.delete('/disconnect/{:provider}', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const userEmail = (req as any).email;
   const disconnectProvider = (req.params.provider || 'github') as RepoProvider;
 
-  // Retrieve token before deleting connection — needed for webhook cleanup
-  const connRow = await pool.query(
-    'SELECT access_token, instance_url FROM repo_connections WHERE user_id = $1 AND provider = $2',
-    [userId, disconnectProvider]
-  );
-  if (connRow.rows.length > 0 && connRow.rows[0].access_token) {
-    try {
-      const decryptedToken = decrypt(connRow.rows[0].access_token);
+  // Retrieve token before deleting connection — needed for webhook cleanup (non-blocking)
+  try {
+    const connRow = await pool.query(
+      'SELECT access_token_encrypted, instance_url FROM repo_connections WHERE user_id = $1 AND provider = $2',
+      [userId, disconnectProvider]
+    );
+    if (connRow.rows.length > 0 && connRow.rows[0].access_token_encrypted) {
+      const decryptedToken = decrypt(connRow.rows[0].access_token_encrypted);
       await removeWebhooksForUser(disconnectProvider, decryptedToken, userId, connRow.rows[0].instance_url || undefined);
-    } catch (err: any) {
-      console.error(`[DISCONNECT] Webhook cleanup failed (non-blocking): ${err.message}`);
     }
+  } catch (err: any) {
+    console.error(`[DISCONNECT] Webhook cleanup failed (non-blocking): ${err.message}`);
   }
 
   const result = await pool.query(

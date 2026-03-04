@@ -609,6 +609,30 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
 .sh-packages { color: var(--muted); }
 .sh-date { color: var(--muted); }
 
+/* ─── Repo Activity ─────────────────────────────────────────── */
+.pd-activity-list { display: flex; flex-direction: column; gap: 0; }
+.pd-activity-item { padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+.pd-activity-item:last-child { border-bottom: none; }
+.pd-activity-top { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.pd-activity-pusher { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+.pd-activity-branch {
+  font-size: 0.7rem; font-weight: 600; font-family: monospace;
+  padding: 0.1rem 0.4rem; border-radius: 4px;
+  background: rgba(59,130,246,0.12); color: var(--accent);
+}
+.pd-activity-commits { font-size: 0.75rem; color: var(--muted); }
+.pd-activity-time { font-size: 0.75rem; color: var(--muted); margin-left: auto; }
+.pd-activity-message {
+  font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+.pd-card-badge {
+  font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem;
+  border-radius: 10px; background: rgba(59,130,246,0.12); color: var(--accent);
+  margin-left: auto;
+}
+
 /* SBOM Export */
 .sbom-export-dropdown {
   position: relative;
