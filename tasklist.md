@@ -185,6 +185,19 @@ Sub-tasks:
 
 ---
 
+### 8. Webhook integration end-to-end test
+**Priority: HIGH**
+
+The platform had auto-webhook registration code deployed but no webhook was ever registered — and no test caught this. The existing test suite verified webhook *reception* (HMAC validation, stale-marking) but never verified that webhooks were *registered* on the provider side during sync.
+
+Sub-tasks:
+- [ ] Add E2E test that verifies a product sync results in a `webhookId` stored on the Repository node
+- [ ] Add E2E test that verifies subsequent pushes trigger stale-marking (full push→stale→sync→scan pipeline)
+- [ ] Add test that verifies disconnect removes the webhook from the provider
+- [ ] Add monitoring/alert for products with connected repos but no `webhookId`
+
+---
+
 ## Phase 3: Pre-Production Housekeeping
 
 These are not new features but must be completed before production launch.
