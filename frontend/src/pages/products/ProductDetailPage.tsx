@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
 
 import PageHeader from '../../components/PageHeader';
+import HelpTip from '../../components/HelpTip';
 import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
@@ -56,6 +57,19 @@ const PROVIDER_LABELS: Record<string, string> = {
 function providerLabel(provider: string): string {
   return PROVIDER_LABELS[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
 }
+
+const CRA_CATEGORY_HELP = 'The CRA defines four product categories with increasing obligations. Default: standard cybersecurity requirements (self-assessment, Module A). Important Class I: products with higher risk — must use harmonised standards or third-party assessment. Important Class II: critical infrastructure products — mandatory third-party conformity assessment (Module B+C or H). Critical: highest risk — requires EU cybersecurity certification per Article 8(6).';
+
+const TECHFILE_HELP: Record<string, string> = {
+  product_description: 'Describe your product\'s intended purpose, software versions affecting cybersecurity compliance, how it is made available on the market, and reference user instructions per Annex II. Satisfies Annex VII §1.',
+  design_development: 'Document system architecture, how software components interact and integrate, and your SDLC process including production monitoring. Satisfies Annex VII §2(a).',
+  vulnerability_handling: 'Document your coordinated vulnerability disclosure (CVD) policy, reporting contact, secure update distribution, and reference to your SBOM. Satisfies Annex VII §2(b).',
+  risk_assessment: 'Perform and document a cybersecurity risk assessment considering intended and foreseeable use. Must address each Annex I Part I essential requirement. Satisfies Annex VII §3 and Article 13(2).',
+  support_period: 'Determine and document the support period (minimum 5 years or expected product lifetime). Include rationale and communication plan. Satisfies Annex VII §4 and Article 13(8).',
+  standards_applied: 'List harmonised standards (EU Official Journal), common specifications per Article 27(2), or EU cybersecurity certification schemes. Specify which parts are applied. Satisfies Annex VII §5.',
+  test_reports: 'Attach penetration testing, static/dynamic analysis, vulnerability scan results, and any third-party audit reports demonstrating conformity with Annex I. Satisfies Annex VII §6.',
+  declaration_of_conformity: 'The formal EU Declaration of Conformity per Article 28 and Annex VI. Specify the conformity assessment module (A, B+C, or H), notified body details if applicable, and CE marking date. Satisfies Annex VII §7.',
+};
 
 interface Product {
   id: string;
@@ -823,7 +837,7 @@ export default function ProductDetailPage() {
                 </select>
               </div>
               <div className="form-group" style={{ flex: 1 }}>
-                <label className="form-label">CRA Category</label>
+                <label className="form-label">CRA Category <HelpTip text={CRA_CATEGORY_HELP} /></label>
                 <select className="form-input" value={editForm.craCategory} onChange={e => setEditForm({ ...editForm, craCategory: e.target.value })}>
                   <option value="default">Default</option>
                   <option value="class_i">Class I (Important)</option>
@@ -1780,7 +1794,7 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
                   <StatusIcon size={16} style={{ color: cfg.color }} />
                 </div>
                 <div className="pd-techfile-content">
-                  <h4>{section.title}</h4>
+                  <h4>{section.title} <HelpTip text={TECHFILE_HELP[section.sectionKey] || ''} /></h4>
                   <p>{section.craReference}{section.updatedAt ? ` · Updated ${timeAgo(section.updatedAt)}` : ''}</p>
                 </div>
                 <ChevronRight size={16} className={`tf-chevron ${isExpanded ? 'tf-chevron-open' : ''}`} />

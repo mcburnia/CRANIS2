@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
+import HelpTip from '../../components/HelpTip';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './ObligationsPage.css';
@@ -160,7 +161,7 @@ export default function ObligationsPage() {
                       className="ob-section-row"
                     >
                       <div className={`ob-section-dot ${ob.effectiveStatus}`} />
-                      <span className="ob-section-title">{ob.title}</span>
+                      <span className="ob-section-title">{ob.title} <HelpTip text={ob.description} /></span>
                       <span className="ob-section-ref">{ob.article}</span>
                       <span className="ob-section-status">
                         {formatStatus(ob.effectiveStatus)}

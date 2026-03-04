@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
 import PageHeader from '../../components/PageHeader';
+import HelpTip from '../../components/HelpTip';
 import { Building2, Package, ChevronRight, Loader2, Save } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './StakeholdersPage.css';
+
+const ROLE_HELP: Record<string, string> = {
+  manufacturer_contact: 'The primary contact person or legal entity placing the product on the EU market. Required under CRA Article 13 to be identifiable on the product or packaging.',
+  authorised_representative: 'A person established in the EU appointed by the manufacturer to act on their behalf for CRA compliance tasks. Required under Article 15 when the manufacturer is outside the EU.',
+  compliance_officer: 'The internal person responsible for overseeing CRA compliance across your organisation. Not a specific CRA requirement but essential for governance and audit readiness.',
+  security_contact: 'The person responsible for receiving and triaging vulnerability reports for this product. Required under CRA Article 11 and your coordinated vulnerability disclosure policy.',
+  technical_file_owner: 'The person responsible for compiling and maintaining the technical documentation file for this product. The file must be kept up to date per CRA Article 31.',
+  incident_response_lead: 'The person who coordinates response to cybersecurity incidents for this product, including mandatory ENISA reporting within 24 hours under NIS2 and CRA Article 14.',
+};
 
 interface Stakeholder {
   id: string;
@@ -119,7 +129,7 @@ export default function StakeholdersPage() {
         <div className="sk-role-header" onClick={() => toggleRole(stakeholder)}>
           <ChevronRight size={16} className={`sk-chevron ${isExpanded ? 'sk-chevron-open' : ''}`} />
           <div className="sk-role-info">
-            <span className="sk-role-title">{stakeholder.title}</span>
+            <span className="sk-role-title">{stakeholder.title} <HelpTip text={ROLE_HELP[stakeholder.roleKey] || ''} /></span>
             <span className="sk-role-ref">{stakeholder.craReference}</span>
           </div>
           <div className="sk-status">
