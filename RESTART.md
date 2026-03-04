@@ -1018,7 +1018,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-03 (session 13)
+**Last updated:** 2026-03-04 (session 15)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -1127,6 +1127,12 @@ sudo systemctl restart cloudflared
 - **CPE wildcard target_sw** (`*`) matches unrelated products — only match ecosystem-specific targets (e.g. `node.js`)
 - **GENERIC_CPE_NAMES blocklist** in vulnerability-scanner.ts prevents scoped npm short names (core, connect, debug, etc.) from matching unrelated CPE products
 - Compose project naming mismatch can leave temporary `docker-*` orphan containers; cleanup and naming standardisation is tracked as technical debt in `docs/Stories-and-spikes.csv` (CRN-14)
+
+**Session 15 (2026-03-04):**
+- **welcome.cranis2.dev** — Password-protected standalone site serving the Strategy & Ecosystem content for external stakeholders. Express app on port 3004, HMAC-signed cookie auth (24h expiry), access logging (IP, geo via Cloudflare headers, user agent). Docker service with 64M memory limit, Cloudflare Tunnel route. Credentials via env vars.
+- **Full prioritised backlog** — `memory/BACKLOG.md` created with 14 items across P0–P3 including AI Copilot and MCP API as future features.
+- **Email alerts for critical compliance events (P0 #1)** — New `backend/src/services/alert-emails.ts` with 5 alert types: vulnerability found (critical/high), scan failed, SBOM stale, compliance gaps (>10%), CRA deadline approaching (12h/1h thresholds). Recipients resolved from stakeholders table by role_key at product + org levels, deduplicated. 24-hour deduplication via notifications metadata. Non-blocking (fire-and-forget). Wired into vulnerability-scanner.ts (sendScanNotifications), scheduler.ts (autoSyncProduct error, compliance gap, CRA deadline), github.ts (webhook stale handler). 12 new tests. **Total: 943 backend tests passing.**
+- **Technical file N+1 query fix** — `ensureSections()` was running 8 individual INSERT queries per product sequentially (2,209 test products × 8 = 17,672 round trips). Refactored to chunked multi-row INSERT (100 products per chunk). Added `idx_technical_file_sections_product` index on `product_id`. Response time: 15s+ timeout → ~2s. Fixed the only flaky test in the suite.
 
 **Next Steps:**
 - Multi-Language support
