@@ -1,5 +1,7 @@
 /**
  * Dashboard Route Tests — /api/dashboard
+ *
+ * Tests: summary endpoint (products, stats, risk findings, recent activity, CRA readiness)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -24,6 +26,74 @@ describe('/api/dashboard', () => {
       const token = await loginTestUser(TEST_USERS.emptyAdmin);
       const res = await api.get('/api/dashboard/summary', { auth: token });
       expect(res.status).toBe(200);
+    });
+  });
+
+  // ─── CRA Readiness Scorecard ──────────────────────────────────────
+
+  describe('CRA Readiness Scorecard', () => {
+    it('should include overallReadiness in dashboard summary', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('overallReadiness');
+      expect(typeof res.body.overallReadiness).toBe('number');
+      expect(res.body.overallReadiness).toBeGreaterThanOrEqual(0);
+      expect(res.body.overallReadiness).toBeLessThanOrEqual(100);
+    });
+
+    it('should include craReadiness on each product', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      for (const product of res.body.products) {
+        expect(product).toHaveProperty('craReadiness');
+        expect(product.craReadiness).toHaveProperty('met');
+        expect(product.craReadiness).toHaveProperty('total');
+        expect(product.craReadiness).toHaveProperty('readiness');
+        expect(typeof product.craReadiness.readiness).toBe('number');
+        expect(product.craReadiness.readiness).toBeGreaterThanOrEqual(0);
+        expect(product.craReadiness.readiness).toBeLessThanOrEqual(100);
+      }
+    });
+
+    it('should return 0 overallReadiness for empty org', async () => {
+      const token = await loginTestUser(TEST_USERS.emptyAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      expect(res.body.overallReadiness).toBe(0);
+    });
+
+    it('readiness should match round(met/total * 100) for each product', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      for (const product of res.body.products) {
+        const { met, total, readiness } = product.craReadiness;
+        const expected = total > 0 ? Math.round((met / total) * 100) : 0;
+        expect(readiness).toBe(expected);
+      }
+    });
+
+    it('overallReadiness should be weighted average across products', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      const products = res.body.products;
+      if (products.length === 0) return;
+      const totalMet = products.reduce((sum: number, p: any) => sum + p.craReadiness.met, 0);
+      const totalObs = products.reduce((sum: number, p: any) => sum + p.craReadiness.total, 0);
+      const expected = totalObs > 0 ? Math.round((totalMet / totalObs) * 100) : 0;
+      expect(res.body.overallReadiness).toBe(expected);
+    });
+
+    it('met should never exceed total for any product', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      for (const product of res.body.products) {
+        expect(product.craReadiness.met).toBeLessThanOrEqual(product.craReadiness.total);
+      }
     });
   });
 });

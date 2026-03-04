@@ -2,6 +2,10 @@ import { Router, Request, Response } from 'express';
 import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
+import {
+  getApplicableObligations, ensureObligations,
+  computeDerivedStatuses, higherStatus,
+} from '../services/obligation-engine.js';
 
 const router = Router();
 
@@ -192,10 +196,62 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       riskFindings.lastScanAt = lastScanResult.rows[0]?.last_scan || null;
     }
 
-    // Enrich products with risk data
+    // --- CRA Readiness computation (obligation-based) ---
+    let readinessMap: Record<string, { met: number; total: number; readiness: number }> = {};
+    let overallReadiness = 0;
+
+    if (productIds.length > 0) {
+      const categoryMap: Record<string, string | null> = {};
+      for (const p of products) categoryMap[p.id] = p.category;
+
+      // Ensure obligations exist for all products
+      for (const p of products) {
+        await ensureObligations(orgId, p.id, p.category);
+      }
+
+      // Fetch obligations + derived statuses in parallel
+      const [obResult, derivedMap] = await Promise.all([
+        pool.query(
+          `SELECT product_id, obligation_key, status
+           FROM obligations WHERE org_id = $1 AND product_id = ANY($2)`,
+          [orgId, productIds]
+        ),
+        computeDerivedStatuses(productIds, orgId, categoryMap),
+      ]);
+
+      // Compute per-product readiness
+      const obByProduct: Record<string, { key: string; effectiveStatus: string }[]> = {};
+      for (const row of obResult.rows) {
+        if (!obByProduct[row.product_id]) obByProduct[row.product_id] = [];
+        const derivedStatus = derivedMap[row.product_id]?.[row.obligation_key]?.status ?? null;
+        const effectiveStatus = higherStatus(row.status, derivedStatus);
+        obByProduct[row.product_id].push({ key: row.obligation_key, effectiveStatus });
+      }
+
+      let totalMetAcrossOrg = 0;
+      let totalObligationsAcrossOrg = 0;
+
+      for (const p of products) {
+        const obligations = obByProduct[p.id] || [];
+        const applicable = getApplicableObligations(p.category);
+        const total = applicable.length;
+        const met = obligations.filter(o => o.effectiveStatus === 'met').length;
+        const readiness = total > 0 ? Math.round((met / total) * 100) : 0;
+        readinessMap[p.id] = { met, total, readiness };
+        totalMetAcrossOrg += met;
+        totalObligationsAcrossOrg += total;
+      }
+
+      overallReadiness = totalObligationsAcrossOrg > 0
+        ? Math.round((totalMetAcrossOrg / totalObligationsAcrossOrg) * 100)
+        : 0;
+    }
+
+    // Enrich products with risk + readiness data
     const finalProducts = enrichedProducts.map(p => ({
       ...p,
       riskFindings: productRiskMap[p.id] || { total: 0, critical: 0, high: 0, open: 0 },
+      craReadiness: readinessMap[p.id] || { met: 0, total: 0, readiness: 0 },
     }));
 
     res.json({
@@ -209,6 +265,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       },
       riskFindings,
       recentActivity,
+      overallReadiness,
     });
 
   } catch (err) {

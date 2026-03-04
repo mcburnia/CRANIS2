@@ -19,6 +19,7 @@ interface DashboardProduct {
   techFileSections: { total: number; completed: number };
   lastSync: string | null;
   riskFindings: { total: number; critical: number; high: number; open: number };
+  craReadiness: { met: number; total: number; readiness: number };
 }
 
 interface DashboardStats {
@@ -52,6 +53,7 @@ interface DashboardData {
   stats: DashboardStats;
   riskFindings: RiskFindingsSummary;
   recentActivity: ActivityItem[];
+  overallReadiness: number;
 }
 
 interface ChecklistStep {
@@ -136,6 +138,20 @@ function getActivityText(item: ActivityItem): string {
     case 'vulnerability_finding_updated': return `Vulnerability finding ${item.metadata?.status || 'updated'}`;
     default: return item.eventType.replace(/_/g, ' ');
   }
+}
+
+function getReadinessColour(pct: number): string {
+  if (pct >= 67) return 'green';
+  if (pct >= 34) return 'amber';
+  return 'red';
+}
+
+function getReadinessLabel(pct: number): string {
+  if (pct >= 90) return 'Nearly compliant';
+  if (pct >= 67) return 'Good progress';
+  if (pct >= 34) return 'In progress';
+  if (pct > 0) return 'Getting started';
+  return 'Not started';
 }
 
 export default function DashboardPage() {
@@ -234,10 +250,31 @@ export default function DashboardPage() {
     <>
       <PageHeader title="Dashboard" timestamp={syncTimestamp} />
 
-      <div className="welcome-banner">
-        <h2>{bannerTitle}</h2>
-        <p>{bannerText}</p>
-      </div>
+      {stats.totalProducts > 0 ? (
+        <div className="readiness-banner">
+          <div className="readiness-gauge">
+            <svg viewBox="0 0 120 120" className="readiness-ring">
+              <circle cx="60" cy="60" r="52" className="readiness-ring-bg" />
+              <circle cx="60" cy="60" r="52"
+                className={`readiness-ring-fill ${getReadinessColour(data.overallReadiness)}`}
+                strokeDasharray={`${(data.overallReadiness / 100) * 327} 327`}
+                transform="rotate(-90 60 60)"
+              />
+            </svg>
+            <div className="readiness-pct">{data.overallReadiness}%</div>
+          </div>
+          <div className="readiness-info">
+            <h2>CRA Readiness</h2>
+            <p className="readiness-sub">{getReadinessLabel(data.overallReadiness)}</p>
+            <p className="readiness-detail">{bannerText}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="welcome-banner">
+          <h2>{bannerTitle}</h2>
+          <p>{bannerText}</p>
+        </div>
+      )}
 
       <div className="stats">
         <StatCard label="Products" value={stats.totalProducts} color="blue" sub={`${stats.connectedRepos} with repos`} />
@@ -258,6 +295,7 @@ export default function DashboardPage() {
                 <th>Product</th>
                 <th>CRA Category</th>
                 <th>Technical File</th>
+                <th>CRA Readiness</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -266,6 +304,8 @@ export default function DashboardPage() {
                 const cat = formatCategory(p.category);
                 const status = getStatusBadge(p.techFileProgress);
                 const progressColor = p.techFileProgress === 0 ? 'red' : p.techFileProgress >= 100 ? 'green' : 'amber';
+                const readinessColour = getReadinessColour(p.craReadiness?.readiness ?? 0);
+                const readinessPct = p.craReadiness?.readiness ?? 0;
                 return (
                   <tr key={p.id}>
                     <td><Link to={`/products/${p.id}`}><strong>{p.name}</strong></Link></td>
@@ -273,6 +313,10 @@ export default function DashboardPage() {
                     <td>
                       <div className="progress-bar"><div className={`progress-fill ${progressColor}`} style={{ width: `${Math.max(p.techFileProgress, 2)}%` }} /></div>
                       <span className="progress-text">{p.techFileProgress}%</span>
+                    </td>
+                    <td>
+                      <div className="progress-bar"><div className={`progress-fill ${readinessColour}`} style={{ width: `${Math.max(readinessPct, 2)}%` }} /></div>
+                      <span className="progress-text">{readinessPct}% <span className="readiness-fraction">({p.craReadiness?.met ?? 0}/{p.craReadiness?.total ?? 0})</span></span>
                     </td>
                     <td><span className={`badge ${status.color}`}>{status.label}</span></td>
                   </tr>
