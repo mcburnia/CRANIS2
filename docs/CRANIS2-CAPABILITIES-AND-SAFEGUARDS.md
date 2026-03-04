@@ -25,7 +25,7 @@ Most software companies — especially SMEs — have no tooling for this. They f
 
 ## 2. What CRANIS2 Actually Does
 
-CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, Gitea, Forgejo, or GitLab (including self-hosted instances) — and automatically builds compliance evidence from dependency metadata. It reads import statements but never stores, analyses or modifies source code in any way. It automates seven distinct compliance functions:
+CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, Gitea, Forgejo, or GitLab (including self-hosted instances) — and automatically builds compliance evidence from dependency metadata. It reads import statements but never stores, analyses or modifies source code in any way. It automates eight core compliance functions:
 
 ### 2.1 Software Bill of Materials (SBOM)
 
@@ -89,18 +89,37 @@ CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, G
 
 ### 2.5 CRA Technical File (Annex VII)
 
-**What:** Structures the documentation required under CRA Annex VII across eight sections, with inline editing and version tracking.
+**What:** Structures the documentation required under CRA Annex VII across eight sections, with inline editing, version tracking, and intelligent auto-population that pre-fills content from platform data.
 
-**Why it matters:** The CRA requires a technical file to be maintained for every product with digital elements. This file must be available for market surveillance authorities on request. It covers risk assessment, design documentation, testing evidence, and more.
+**Why it matters:** The CRA requires a technical file to be maintained for every product with digital elements. This file must be available for market surveillance authorities on request. It covers risk assessment, design documentation, testing evidence, and more. Writing this documentation from scratch is one of the most time-consuming parts of CRA compliance.
 
 **How it works:**
 - Eight structured sections corresponding to CRA Annex VII requirements
 - Inline editors for each section with guidance text explaining what is needed
+- **Auto-population** suggests content for four key sections based on platform data:
+  - **Product Description** — pre-fills product name, CRA category, repository URL, and deployment guidance
+  - **Vulnerability Handling** — summarises SBOM status (package count, staleness), scan history, and open findings
+  - **Standards Applied** — suggests harmonised standards (EN 18031-1/2/3, ETSI EN 303 645, ISO/IEC 15408) based on CRA category classification
+  - **Test Reports** — lists all completed vulnerability scans with dates, tools, and finding counts
 - Per-product, versioned documentation with status tracking (not started / in progress / complete)
 - Annex I Part I checklist with 13 essential requirements and evidence fields
 - Cross-product overview dashboard showing completion status
 
-### 2.6 ENISA Reporting (CRA Article 14)
+### 2.6 EU Declaration of Conformity (CRA Article 16)
+
+**What:** Generates a professionally formatted, legally compliant EU Declaration of Conformity as a downloadable PDF.
+
+**Why it matters:** Every product with digital elements placed on the EU market must be accompanied by a Declaration of Conformity. This is the formal statement that the product meets CRA requirements and is eligible for the CE mark. Creating this document manually requires legal knowledge of the correct format and clauses.
+
+**How it works:**
+- Combines product metadata, organisation details, and technical file content into a structured PDF
+- Eight numbered legal clauses covering: product identification, manufacturer, responsibility, object, legislative basis, harmonised standards, notified body (if applicable), and additional information
+- Standards list is pulled automatically from the technical file
+- Optional DRAFT watermark for review copies
+- Signature block with place and date of issue
+- One-click download from the product detail page
+
+### 2.7 ENISA Reporting (CRA Article 14)
 
 **What:** Manages the mandatory vulnerability and incident reporting workflow to national CSIRTs (Computer Security Incident Response Teams) and ENISA.
 
@@ -120,7 +139,7 @@ CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, G
 - Stages are submitted individually with audit trail (who submitted, when)
 - Dashboard showing active reports, overdue count, next deadline
 
-### 2.7 Source Code Escrow
+### 2.8 Source Code Escrow
 
 **What:** Enables companies to configure escrow coverage so that if they cease to operate, their clients are not left without access to the software they depend on.
 
@@ -135,17 +154,19 @@ CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, G
 - Escrow deposits are preserved even after product deletion (legal retention)
 - Entirely under the manufacturer's control
 
-### 2.8 Additional Capabilities
+### 2.9 Additional Capabilities
 
 | Capability | Purpose |
 |---|---|
-| **Obligations Tracking** | Maps CRA and NIS2 requirements to products, tracks status (not started / in progress / met) |
-| **Stakeholders Management** | Records CRA/NIS2 contacts at org and product level (responsible persons, security officers) |
+| **Obligations Tracking** | Maps 19 CRA and NIS2 requirements to products with auto-intelligence — obligation statuses are derived from platform data (SBOMs, scans, technical file progress) so users see their true compliance standing without manual data entry. Manual overrides are always preserved. |
+| **Compliance Checklist** | A 7-step getting-started guide per product that breaks CRA conformity into concrete, actionable steps with real-time progress tracking, completion percentage, and statutory deadlines |
+| **Stakeholders Management** | Records CRA/NIS2 contacts at org and product level (responsible persons, security officers). Auto-assign option during product creation fills all 6 stakeholder roles with the creating user's details — ideal for solo developers and small teams |
 | **Due Diligence Export** | Generates a complete compliance package as a ZIP: PDF report, CycloneDX SBOM, licence findings CSV, vulnerability summary JSON, full licence texts |
 | **Compliance Marketplace** | Companies can opt in to list themselves publicly with compliance badges derived from real platform data — not self-declared |
 | **Notifications System** | Targeted alerts for vulnerability findings, deadline warnings, sync status, billing events |
+| **Webhook Integration** | Push webhooks are automatically registered when repositories are connected (GitHub, Codeberg, Gitea, Forgejo) — SBOMs are flagged as stale in real time when code is pushed, with admin health monitoring to detect broken pipelines |
 | **Audit Logging** | Every significant action is recorded with user, timestamp, IP address, and metadata |
-| **Platform Admin Dashboard** | Organisation management, user management, system health, vulnerability database status, feedback handling |
+| **Platform Admin Dashboard** | Organisation management, user management, system health, vulnerability database status, webhook health monitoring, feedback handling |
 
 ---
 
@@ -283,7 +304,9 @@ Once set up, CRANIS2 runs largely on autopilot:
 | 3 AM | Platform-wide vulnerability scan |
 | 4 AM | Billing checks (trial expiry, payment grace) |
 | 5 AM | Escrow deposits for all enabled products |
+| 6 AM | Webhook health checks — detects products with missing or silent webhooks |
 | Hourly | CRA deadline monitoring with escalating alerts |
+| On push | Push webhooks flag SBOMs as stale in real time |
 
 Human interaction is needed when:
 - A new vulnerability finding requires triage
@@ -342,7 +365,7 @@ Dec 2027 ──── CRA: Full compliance required
 
 ## 9. Summary
 
-CRANIS2 automates the mechanical burden of EU cybersecurity compliance — SBOM management, vulnerability monitoring, licence compliance, IP proof, regulatory reporting, and source code escrow — so that software companies can meet CRA and NIS2 requirements without building a dedicated compliance department.
+CRANIS2 automates the mechanical burden of EU cybersecurity compliance — SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, EU Declaration of Conformity, regulatory reporting, and source code escrow — so that software companies can meet CRA and NIS2 requirements without building a dedicated compliance department.
 
 It does this while reading import statements but never storing, analysing or modifying source code in any way, with strict multi-tenant isolation, with billing accountability tied to real development activity, and with all compliance data exportable in open formats at any time.
 

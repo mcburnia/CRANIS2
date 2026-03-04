@@ -18,11 +18,15 @@ CRANIS2 takes the dependency and component information present in your repositor
 
 - **Intellectual Property Proof** — Creates cryptographically timestamped snapshots of your codebase using RFC 3161, giving you independently verifiable proof of authorship and prior art.
 
-- **CRA Technical File** — Structures the documentation required under CRA Annex VII across eight sections, with inline editing and version tracking.
+- **CRA Technical File** — Structures the documentation required under CRA Annex VII across eight sections, with inline editing and version tracking. Auto-population suggests content for four key sections based on your platform data — product description, vulnerability handling, applicable standards, and test reports — eliminating 60–80% of the documentation effort.
+
+- **EU Declaration of Conformity** — Generates a professionally formatted PDF declaration under CRA Article 16, combining your product metadata, organisation details, and applicable standards into a legally compliant document ready for download.
 
 - **ENISA Reporting** — Manages the mandatory incident and vulnerability reporting workflow under CRA Article 14, with deadline tracking (24-hour early warning, 72-hour notification, 14-day final report).
 
-- **Obligations Tracking** — Maps CRA and NIS2 requirements to your products and tracks compliance status across your organisation.
+- **Obligations Tracking** — Maps 19 CRA and NIS2 requirements to your products, with auto-intelligence that derives obligation statuses from platform data (SBOMs, scans, technical file progress). You always see your true compliance standing without manual data entry — and manual overrides are preserved.
+
+- **Compliance Checklist** — A 7-step getting-started guide for each product that breaks CRA conformity into concrete, actionable steps. Progress is tracked in real time so you always know what to do next and how far along you are.
 
 - **Source Code Escrow** — Protects your clients against business continuity risk. When setting up a product in CRANIS2, you can configure escrow coverage so that if your company ceases to operate, your clients are not left without the software they depend on. Source code is deposited to a self-hosted Forgejo instance within the CRANIS2 infrastructure, hosted in Switzerland (European data sovereignty). You choose the release model: either the source code is published as open source, or specific clients you designate receive private copies. Daily automated deposits ensure the escrow is always current.
 
@@ -87,11 +91,15 @@ Your code stays in your repository. We read the labels — and in some cases gla
 
 Once connected, CRANIS2 runs largely on autopilot:
 
+- **Daily at 1 AM** — Vulnerability database sync (OSV + NVD)
 - **Daily at 2 AM** — SBOMs are automatically refreshed for any products with changes
 - **Daily at 3 AM** — Vulnerability scans run against the updated dependency data
+- **Daily at 4 AM** — Billing checks (trial expiry, payment grace)
+- **Daily at 5 AM** — Escrow deposits are updated for all enabled products
+- **Daily at 6 AM** — Webhook health checks ensure push event pipelines are working
 - **Hourly** — CRA reporting deadlines are checked, with escalating alerts as they approach
 - **On every sync** — Licence compliance is re-scanned and IP proof snapshots are created
-- **Daily at 5 AM** — Escrow deposits are updated for all enabled products
+- **On first product creation** — All stakeholder contact roles can be auto-populated with the creating user's details
 
 Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerability finding, updating a compliance obligation, or submitting an ENISA report. The rest happens in the background.
 
@@ -100,7 +108,7 @@ Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerab
 | | |
 |---|---|
 | **Problem** | EU legislation (CRA + NIS2) requires software companies to demonstrate cybersecurity compliance — most have no tooling for this |
-| **Solution** | CRANIS2 automates SBOM management, vulnerability monitoring, licence compliance, IP proof, regulatory reporting, and source code escrow |
+| **Solution** | CRANIS2 automates SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, regulatory reporting, and source code escrow |
 | **Timing** | CRA reporting obligations begin Sept 2026; full compliance required Dec 2027 |
 | **Audience** | Software product companies selling into the EU, especially SMEs without dedicated compliance teams |
 | **Source code** | Import statements are read but source code is never stored, analysed or modified |
