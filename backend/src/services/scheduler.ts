@@ -19,6 +19,7 @@ import { resolveLockfileVersions } from './lockfile-resolver.js';
 import { generateSBOMFromLockfiles } from './lockfile-sbom-generator.js';
 import { generateSBOMFromImports } from './import-scanner.js';
 import { sendComplianceGapNotification } from './notifications.js';
+import { sendScanFailedEmail, sendComplianceGapEmail, sendDeadlineAlertEmail } from './alert-emails.js';
 import { scanProductLicenses } from './license-scanner.js';
 import { createSnapshot } from './ip-proof.js';
 import { extractPackageInfo } from '../routes/github.js';
@@ -293,6 +294,13 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
           const totalDeps = enrichResult.enriched + enrichResult.gaps.noVersion + enrichResult.gaps.unsupportedEcosystem + enrichResult.gaps.notFound + enrichResult.gaps.fetchError;
           if (schedOrgId) {
             await sendComplianceGapNotification(schedProductId, schedOrgId, schedProductName, enrichResult.gaps, totalDeps);
+
+            // Email alert for compliance gaps (>10% threshold)
+            const gapCount = enrichResult.gaps.noVersion + enrichResult.gaps.unsupportedEcosystem + enrichResult.gaps.notFound + enrichResult.gaps.fetchError;
+            const gapPct = totalDeps > 0 ? Math.round((gapCount / totalDeps) * 100) : 0;
+            if (gapPct > 10) {
+              sendComplianceGapEmail(schedOrgId, schedProductName, gapPct, totalDeps, schedProductId).catch(() => {});
+            }
           }
           // Auto license enrichment + scan + IP proof timestamp after SBOM enrichment
           if (schedOrgId) {
@@ -401,6 +409,9 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
           link: `/products/${productId}`,
           metadata: { productId, errorMessage: err.message },
         }).catch(() => {});
+
+        // Email alert for scan failure
+        sendScanFailedEmail(orgId, productName, err.message || 'Unknown error', productId).catch(() => {});
       }
     } catch (_notifErr) {
       // Notification failure should never mask the real error
@@ -623,6 +634,11 @@ async function checkCraDeadlines(): Promise<void> {
         link: '/vulnerability-reports/' + row.id,
         metadata: { reportId: row.id, stageName, hoursRemaining: Math.round(hoursRemaining), productId: row.product_id },
       });
+
+      // Email alert at 12h and 1h thresholds (and overdue)
+      if (hoursRemaining <= 1 || (hoursRemaining > 4 && hoursRemaining <= 12) || hoursRemaining < 0) {
+        sendDeadlineAlertEmail(row.org_id, stageName, Math.max(0, Math.round(hoursRemaining)), row.id).catch(() => {});
+      }
 
       console.log('[CRA-DEADLINE] ' + (isOverdue ? 'OVERDUE' : 'Approaching') + ': ' + stageName + ' for ' + productName + ' (' + timeStr + ')');
     }

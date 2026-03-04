@@ -6,6 +6,7 @@ import { verifySessionToken } from '../utils/token.js';
 import { encrypt, decrypt } from '../utils/encryption.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { createNotification, sendComplianceGapNotification } from '../services/notifications.js';
+import { sendSbomStaleEmail } from '../services/alert-emails.js';
 import { enrichDependencyHashes } from '../services/hash-enrichment.js';
 import { enrichDependencyLicenses } from '../services/license-enrichment.js';
 import { scanProductLicenses } from '../services/license-scanner.js';
@@ -1359,6 +1360,9 @@ router.post('/webhook', async (req: Request, res: Response) => {
               link: '/products/' + productId + '?tab=dependencies',
               metadata: { productId, productName, repoUrl, event: 'push' },
             });
+
+            // Email alert for stale SBOM
+            sendSbomStaleEmail(webhookOrgId, productName, productId).catch(() => {});
           }
         }
       } catch (notifErr: any) {
