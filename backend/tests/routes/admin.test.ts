@@ -25,6 +25,7 @@ describe('/api/admin', () => {
     '/api/admin/vulnerability-scan/status',
     '/api/admin/vulnerability-db/status',
     '/api/admin/feedback',
+    '/api/admin/webhook-health',
   ];
 
   describe('access control — non-admin user', () => {

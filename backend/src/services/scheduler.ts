@@ -40,6 +40,9 @@ const VULN_SCAN_HOUR = 3;
 const BILLING_CHECK_HOUR = 4;
 const ESCROW_DEPOSIT_HOUR = 5;
 
+// Hour of the day to run webhook health checks (0-23, default: 6 AM — after SBOM sync refreshes lastPush)
+const WEBHOOK_HEALTH_HOUR = 6;
+
 // Hour of the day to sync vulnerability databases (0-23, default: 1 AM — before SBOM sync)
 const VULN_DB_SYNC_HOUR = 1;
 
@@ -48,6 +51,7 @@ let lastVulnScanDate = '';
 let lastVulnDbSyncDate = '';
 let lastBillingCheckDate = '';
 let lastEscrowDepositDate = '';
+let lastWebhookHealthDate = '';
 
 async function getProductRepoToken(productId: string, forProvider?: RepoProvider): Promise<{ token: string; userId: string; provider: RepoProvider; instanceUrl: string | null } | null> {
   // Find the user who owns this product (via org) and has a repo connection
@@ -645,8 +649,125 @@ async function runDailyEscrowDeposits(): Promise<void> {
   }
 }
 
+async function runDailyWebhookHealthCheck(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (lastWebhookHealthDate === todayStr) return;
+
+  const now = new Date();
+  if (now.getHours() < WEBHOOK_HEALTH_HOUR) return;
+
+  lastWebhookHealthDate = todayStr;
+  console.log('[WEBHOOK-HEALTH] Starting daily webhook health check...');
+
+  const driver = getDriver();
+  const session = driver.session();
+
+  try {
+    // 1. Get all products with connected repos from Neo4j
+    const neo4jResult = await session.run(
+      `MATCH (p:Product)-[:BELONGS_TO]->(o:Organisation), (p)-[:HAS_REPO]->(r:Repository)
+       RETURN p.id AS productId, p.name AS productName, o.id AS orgId,
+              r.url AS repoUrl, r.webhookId AS webhookId,
+              r.lastPush AS lastPush, r.provider AS provider`
+    );
+
+    if (neo4jResult.records.length === 0) {
+      console.log('[WEBHOOK-HEALTH] No products with repos found');
+      return;
+    }
+
+    // 2. Get most recent push event per product from Postgres
+    const productIds = neo4jResult.records.map(r => r.get('productId'));
+    const pushEventsResult = await pool.query(
+      `SELECT product_id, MAX(created_at) AS last_event
+       FROM repo_push_events
+       WHERE product_id = ANY($1)
+       GROUP BY product_id`,
+      [productIds]
+    );
+    const lastEventMap = new Map<string, Date>();
+    for (const row of pushEventsResult.rows) {
+      lastEventMap.set(row.product_id, new Date(row.last_event));
+    }
+
+    // 3. Detect issues
+    const issues: Array<{ productId: string; productName: string; orgId: string; repoUrl: string; issueType: string }> = [];
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    for (const record of neo4jResult.records) {
+      const productId = record.get('productId');
+      const productName = record.get('productName') || 'Unknown';
+      const orgId = record.get('orgId');
+      const repoUrl = record.get('repoUrl');
+      const webhookId = record.get('webhookId');
+      const lastPushRaw = record.get('lastPush');
+
+      if (!webhookId) {
+        issues.push({ productId, productName, orgId, repoUrl, issueType: 'no_webhook' });
+        continue;
+      }
+
+      // Check for silent webhook: provider reports recent push but no event received
+      if (lastPushRaw) {
+        const lastPush = new Date(typeof lastPushRaw === 'string' ? lastPushRaw : lastPushRaw.toString());
+        if (lastPush > sevenDaysAgo) {
+          const lastEvent = lastEventMap.get(productId);
+          if (!lastEvent || lastEvent < lastPush) {
+            issues.push({ productId, productName, orgId, repoUrl, issueType: 'webhook_silent' });
+          }
+        }
+      }
+    }
+
+    if (issues.length === 0) {
+      console.log(`[WEBHOOK-HEALTH] All ${neo4jResult.records.length} product(s) healthy`);
+      return;
+    }
+
+    console.log(`[WEBHOOK-HEALTH] Found ${issues.length} issue(s):`);
+
+    // 4. Create notifications for platform admins (debounced)
+    const admins = await pool.query('SELECT id, org_id FROM users WHERE is_platform_admin = true');
+
+    for (const issue of issues) {
+      const issueLabel = issue.issueType === 'no_webhook' ? 'Webhook not registered' : 'Webhook silent — pushes not received';
+      console.log(`[WEBHOOK-HEALTH]   ${issue.productName}: ${issueLabel} (${issue.repoUrl})`);
+
+      // Debounce: skip if unread notification already exists for this product
+      const existing = await pool.query(
+        `SELECT id FROM notifications
+         WHERE type = 'webhook_health_warning' AND is_read = false
+           AND metadata->>'productId' = $1
+         LIMIT 1`,
+        [issue.productId]
+      );
+      if (existing.rows.length > 0) continue;
+
+      // Create notification for each platform admin
+      for (const admin of admins.rows) {
+        await createNotification({
+          orgId: admin.org_id,
+          userId: admin.id,
+          type: 'webhook_health_warning',
+          severity: 'medium',
+          title: `Webhook issue: ${issue.productName}`,
+          body: `Repository ${issue.repoUrl} — ${issueLabel}`,
+          link: '/admin/system',
+          metadata: { productId: issue.productId, repoUrl: issue.repoUrl, issueType: issue.issueType },
+        });
+      }
+    }
+
+    console.log('[WEBHOOK-HEALTH] Daily check complete');
+  } catch (err: any) {
+    console.error('[WEBHOOK-HEALTH] Error during health check:', err.message);
+  } finally {
+    await session.close();
+  }
+}
+
 export function startScheduler(): void {
-  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00');
+  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00');
 
   // Run check periodically — all three have hour-gating and date-tracking
   setInterval(() => {
@@ -656,5 +777,6 @@ export function startScheduler(): void {
     runDailyBillingChecks().catch(err => console.error('[SCHEDULER] Uncaught error in billing checks:', err));
     checkCraDeadlines().catch(err => console.error("[SCHEDULER] Uncaught error in CRA deadline check:", err));
     runDailyEscrowDeposits().catch(err => console.error('[SCHEDULER] Uncaught error in escrow deposits:', err));
+    runDailyWebhookHealthCheck().catch(err => console.error('[SCHEDULER] Uncaught error in webhook health:', err));
   }, CHECK_INTERVAL_MS);
 }

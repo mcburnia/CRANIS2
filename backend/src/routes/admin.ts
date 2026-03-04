@@ -1709,4 +1709,112 @@ router.get('/test-results/:suiteId', requirePlatformAdmin, async (req: Request, 
   }
 });
 
+// GET /api/admin/webhook-health — Webhook pipeline health status
+router.get('/webhook-health', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const driver = getDriver();
+    const session = driver.session();
+
+    let records: any[] = [];
+    try {
+      const result = await session.run(
+        `MATCH (p:Product)-[:BELONGS_TO]->(o:Organisation), (p)-[:HAS_REPO]->(r:Repository)
+         RETURN p.id AS productId, p.name AS productName, o.name AS orgName,
+                r.url AS repoUrl, r.webhookId AS webhookId,
+                r.lastPush AS lastPush, r.provider AS provider`
+      );
+      records = result.records;
+    } finally {
+      await session.close();
+    }
+
+    if (records.length === 0) {
+      return res.json({
+        issues: [],
+        summary: { totalProducts: 0, healthyProducts: 0, noWebhook: 0, webhookSilent: 0 },
+      });
+    }
+
+    // Get most recent push event per product from Postgres
+    const productIds = records.map((r: any) => r.get('productId'));
+    const pushEventsResult = await pool.query(
+      `SELECT product_id, MAX(created_at) AS last_event
+       FROM repo_push_events
+       WHERE product_id = ANY($1)
+       GROUP BY product_id`,
+      [productIds]
+    );
+    const lastEventMap = new Map<string, string>();
+    for (const row of pushEventsResult.rows) {
+      lastEventMap.set(row.product_id, row.last_event);
+    }
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const issues: any[] = [];
+    let noWebhook = 0;
+    let webhookSilent = 0;
+
+    for (const record of records) {
+      const productId = record.get('productId');
+      const webhookId = record.get('webhookId');
+      const lastPushRaw = record.get('lastPush');
+      const lastPushStr = lastPushRaw ? (typeof lastPushRaw === 'string' ? lastPushRaw : toISOString(lastPushRaw)) : null;
+      const lastEventStr = lastEventMap.get(productId) || null;
+
+      if (!webhookId) {
+        noWebhook++;
+        issues.push({
+          productId,
+          productName: record.get('productName') || 'Unknown',
+          orgName: record.get('orgName') || 'Unknown',
+          repoUrl: record.get('repoUrl'),
+          provider: record.get('provider') || 'unknown',
+          issueType: 'no_webhook',
+          webhookId: null,
+          lastProviderPush: lastPushStr,
+          lastWebhookEvent: lastEventStr,
+        });
+        continue;
+      }
+
+      // Check for silent webhook
+      if (lastPushStr) {
+        const lastPush = new Date(lastPushStr);
+        if (lastPush > sevenDaysAgo) {
+          const lastEvent = lastEventStr ? new Date(lastEventStr) : null;
+          if (!lastEvent || lastEvent < lastPush) {
+            webhookSilent++;
+            issues.push({
+              productId,
+              productName: record.get('productName') || 'Unknown',
+              orgName: record.get('orgName') || 'Unknown',
+              repoUrl: record.get('repoUrl'),
+              provider: record.get('provider') || 'unknown',
+              issueType: 'webhook_silent',
+              webhookId,
+              lastProviderPush: lastPushStr,
+              lastWebhookEvent: lastEventStr,
+            });
+          }
+        }
+      }
+    }
+
+    const healthyProducts = records.length - issues.length;
+
+    res.json({
+      issues,
+      summary: {
+        totalProducts: records.length,
+        healthyProducts,
+        noWebhook,
+        webhookSilent,
+      },
+    });
+  } catch (err) {
+    console.error('Admin webhook health error:', err);
+    res.status(500).json({ error: 'Failed to fetch webhook health' });
+  }
+});
+
 export default router;

@@ -97,6 +97,44 @@
 
 .as-scans-empty { text-align: center; padding: 2rem; color: var(--muted); }
 
+/* Webhook Health */
+.as-wh-header-row {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;
+}
+.as-wh-header-row h3 {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.95rem; margin: 0;
+}
+.as-wh-badges { display: flex; gap: 0.5rem; }
+.as-wh-badge {
+  font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+}
+.as-wh-healthy { background: rgba(34, 197, 94, 0.12); color: var(--green); }
+.as-wh-issue { background: rgba(239, 68, 68, 0.12); color: var(--red); }
+
+.as-wh-all-good {
+  display: flex; align-items: center; gap: 0.5rem; padding: 1.5rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--green); font-size: 0.85rem; font-weight: 500;
+}
+
+.as-wh-table-header {
+  display: grid; grid-template-columns: 1.2fr 1fr 1.5fr 0.8fr 0.8fr 0.8fr;
+  gap: 0.3rem; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+  font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.as-wh-row {
+  display: grid; grid-template-columns: 1.2fr 1fr 1.5fr 0.8fr 0.8fr 0.8fr;
+  gap: 0.3rem; padding: 0.5rem 1rem; align-items: center;
+  border-bottom: 1px solid var(--border); font-size: 0.8rem;
+}
+.as-wh-row:last-child { border-bottom: none; }
+.as-wh-row:hover { background: rgba(168, 85, 247, 0.03); }
+.as-wh-org { color: var(--muted); font-size: 0.8rem; }
+.as-wh-repo { font-size: 0.75rem; font-family: monospace; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 @media (max-width: 768px) {
   .as-stat-cards { grid-template-columns: repeat(2, 1fr); }
   .as-grid { grid-template-columns: 1fr; }

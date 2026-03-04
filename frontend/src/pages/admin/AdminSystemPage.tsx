@@ -1,9 +1,31 @@
 import { useState, useEffect } from 'react';
-import { Activity, Loader, Database, AlertTriangle, CheckCircle, Clock, XCircle}  from 'lucide-react';
+import { Activity, Loader, Database, AlertTriangle, CheckCircle, Clock, XCircle, Link2 }  from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './AdminSystemPage.css';
+
+interface WebhookIssue {
+  productId: string;
+  productName: string;
+  orgName: string;
+  repoUrl: string;
+  provider: string;
+  issueType: 'no_webhook' | 'webhook_silent';
+  webhookId: string | null;
+  lastProviderPush: string | null;
+  lastWebhookEvent: string | null;
+}
+
+interface WebhookHealthData {
+  issues: WebhookIssue[];
+  summary: {
+    totalProducts: number;
+    healthyProducts: number;
+    noWebhook: number;
+    webhookSilent: number;
+  };
+}
 
 interface ScanEntry {
   id: string;
@@ -77,6 +99,7 @@ const TABLE_LABELS: Record<string, string> = {
 export default function AdminSystemPage() {
   usePageMeta();
   const [data, setData] = useState<SystemData | null>(null);
+  const [webhookHealth, setWebhookHealth] = useState<WebhookHealthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -85,9 +108,13 @@ export default function AdminSystemPage() {
   async function fetchData() {
     try {
       const token = localStorage.getItem('session_token');
-      const res = await fetch('/api/admin/system', { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error('Failed to fetch');
-      setData(await res.json());
+      const [sysRes, whRes] = await Promise.all([
+        fetch('/api/admin/system', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/admin/webhook-health', { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      if (!sysRes.ok) throw new Error('Failed to fetch');
+      setData(await sysRes.json());
+      if (whRes.ok) setWebhookHealth(await whRes.json());
     } catch {
       setError('Failed to load system health data');
     } finally {
@@ -234,6 +261,54 @@ export default function AdminSystemPage() {
           )}
         </div>
       </div>
+      {/* Webhook Health */}
+      {webhookHealth && (
+        <div className="as-scans-section">
+          <div className="as-wh-header-row">
+            <h3><Link2 size={16} className="as-purple" /> Webhook Health</h3>
+            <div className="as-wh-badges">
+              <span className="as-wh-badge as-wh-healthy">{webhookHealth.summary.healthyProducts} healthy</span>
+              {webhookHealth.summary.noWebhook + webhookHealth.summary.webhookSilent > 0 && (
+                <span className="as-wh-badge as-wh-issue">{webhookHealth.summary.noWebhook + webhookHealth.summary.webhookSilent} issue{webhookHealth.summary.noWebhook + webhookHealth.summary.webhookSilent !== 1 ? 's' : ''}</span>
+              )}
+            </div>
+          </div>
+          {webhookHealth.issues.length === 0 ? (
+            <div className="as-wh-all-good">
+              <CheckCircle size={16} /> All webhook pipelines healthy
+            </div>
+          ) : (
+            <div className="as-scans-table">
+              <div className="as-wh-table-header">
+                <span>Product</span>
+                <span>Organisation</span>
+                <span>Repository</span>
+                <span>Issue</span>
+                <span>Last Push</span>
+                <span>Last Event</span>
+              </div>
+              {webhookHealth.issues.map((issue) => (
+                <div key={issue.productId} className="as-wh-row">
+                  <span className="as-scan-product">{issue.productName}</span>
+                  <span className="as-wh-org">{issue.orgName}</span>
+                  <span className="as-wh-repo" title={issue.repoUrl}>
+                    {issue.repoUrl.replace(/^https?:\/\//, '').slice(0, 40)}
+                  </span>
+                  <span>
+                    {issue.issueType === 'no_webhook' ? (
+                      <span className="as-status-fail"><XCircle size={13} /> No webhook</span>
+                    ) : (
+                      <span className="as-status-run"><AlertTriangle size={13} /> Silent</span>
+                    )}
+                  </span>
+                  <span className="as-scan-time">{issue.lastProviderPush ? timeAgo(issue.lastProviderPush) : 'Never'}</span>
+                  <span className="as-scan-time">{issue.lastWebhookEvent ? timeAgo(issue.lastWebhookEvent) : 'Never'}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
