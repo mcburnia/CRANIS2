@@ -1,0 +1,185 @@
+.admin-strategy { max-width: 1200px; }
+
+.ast-subtitle {
+  font-size: 0.9rem; color: var(--muted); margin-top: -1.25rem; margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+/* ── Layout: nav + content side by side ──────────────────────────────── */
+
+.ast-layout { display: flex; gap: 2.5rem; align-items: flex-start; }
+
+/* ── Section navigation ──────────────────────────────────────────────── */
+
+.ast-nav { width: 220px; flex-shrink: 0; }
+
+.ast-nav-inner {
+  position: sticky; top: 1rem;
+  display: flex; flex-direction: column; gap: 0.15rem;
+}
+
+.ast-nav-title {
+  font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); padding: 0 0.5rem; margin-bottom: 0.5rem;
+}
+
+.ast-nav-link {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 0.5rem; border: none; background: none; border-radius: 6px;
+  font-size: 0.78rem; color: var(--muted); cursor: pointer; text-align: left;
+  line-height: 1.35; transition: all 0.15s; font-family: inherit;
+}
+.ast-nav-link:hover { background: rgba(168,85,247,0.06); color: var(--text); }
+.ast-nav-link.active {
+  background: rgba(168,85,247,0.1); color: var(--purple); font-weight: 600;
+}
+
+.ast-nav-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 4px; font-size: 0.65rem; font-weight: 700;
+  background: rgba(139,141,152,0.1); color: var(--muted); flex-shrink: 0;
+}
+.ast-nav-link.active .ast-nav-num {
+  background: rgba(168,85,247,0.15); color: var(--purple);
+}
+
+/* ── Content area ────────────────────────────────────────────────────── */
+
+.ast-content { flex: 1; min-width: 0; max-width: 800px; }
+
+.ast-section { margin-bottom: 3rem; scroll-margin-top: 1rem; }
+
+.ast-section h2 {
+  font-size: 1.15rem; font-weight: 700; color: var(--text);
+  padding-bottom: 0.6rem; border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.ast-section h3 {
+  font-size: 0.95rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem;
+}
+
+.ast-section p {
+  font-size: 0.88rem; line-height: 1.8; color: var(--text); margin-bottom: 0.75rem;
+}
+
+.ast-section ul {
+  margin: 0.5rem 0 1rem 1.25rem; padding: 0;
+}
+.ast-section ul li {
+  font-size: 0.88rem; line-height: 1.7; color: var(--text); margin-bottom: 0.35rem;
+}
+.ast-section ul li strong { color: var(--text); }
+
+/* ── Callout boxes ───────────────────────────────────────────────────── */
+
+.ast-callout {
+  background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--purple);
+  border-radius: 8px; padding: 1rem 1.25rem; margin: 1.25rem 0;
+  font-size: 0.88rem; line-height: 1.7; color: var(--text); font-style: italic;
+}
+
+.ast-callout-warn {
+  border-left-color: var(--red);
+  background: rgba(239,68,68,0.04);
+}
+
+.ast-callout-primary {
+  border-left-color: var(--purple);
+  background: rgba(168,85,247,0.05);
+  font-style: normal;
+}
+
+.ast-callout p { margin-bottom: 0.5rem; }
+.ast-callout p:last-child { margin-bottom: 0; }
+
+.ast-core-statement {
+  font-size: 1.05rem !important; font-weight: 700; color: var(--purple) !important;
+}
+
+/* ── Timeline ────────────────────────────────────────────────────────── */
+
+.ast-timeline {
+  display: flex; flex-direction: column; gap: 0; margin: 1.25rem 0;
+  border-left: 2px solid var(--purple); padding-left: 1.25rem;
+}
+
+.ast-timeline-item {
+  display: flex; gap: 0.75rem; align-items: baseline;
+  padding: 0.5rem 0; position: relative;
+}
+.ast-timeline-item::before {
+  content: ''; position: absolute; left: -1.55rem; top: 0.85rem;
+  width: 8px; height: 8px; border-radius: 50%; background: var(--purple);
+}
+
+.ast-timeline-date {
+  font-size: 0.8rem; font-weight: 700; color: var(--purple);
+  white-space: nowrap; min-width: 65px;
+}
+.ast-timeline-desc {
+  font-size: 0.85rem; color: var(--text); line-height: 1.5;
+}
+
+/* ── Two-column list ─────────────────────────────────────────────────── */
+
+.ast-columns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0 2rem;
+  margin: 0.5rem 0 1rem;
+}
+
+/* ── Layer diagram ───────────────────────────────────────────────────── */
+
+.ast-layer-diagram {
+  display: flex; flex-direction: column; gap: 0; margin: 1.25rem 0;
+}
+
+.ast-layer {
+  display: flex; flex-direction: column; gap: 0.15rem;
+  padding: 0.85rem 1.25rem; border: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.ast-layer strong { font-size: 0.85rem; }
+.ast-layer span { font-size: 0.78rem; color: var(--muted); }
+
+.ast-layer-top {
+  background: rgba(168,85,247,0.08); border-color: var(--purple);
+  border-radius: 8px 8px 0 0;
+}
+.ast-layer-top strong { color: var(--purple); }
+
+.ast-layer-mid {
+  background: rgba(59,130,246,0.06); border-color: var(--border);
+}
+
+.ast-layer-base {
+  background: var(--surface);
+  border-radius: 0 0 8px 8px;
+}
+
+/* ── Use case cards (financial ecosystem) ────────────────────────────── */
+
+.ast-use-cases {
+  display: flex; flex-direction: column; gap: 1rem; margin: 1rem 0;
+}
+
+.ast-use-case {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+.ast-use-case h3 { margin-bottom: 0.35rem; }
+.ast-use-case p { margin-bottom: 0; font-size: 0.85rem; }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .ast-layout { flex-direction: column; gap: 0; }
+  .ast-nav { width: 100%; }
+  .ast-nav-inner {
+    position: static; flex-direction: row; flex-wrap: wrap; gap: 0.25rem;
+    padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem;
+  }
+  .ast-nav-title { display: none; }
+  .ast-nav-link { font-size: 0.72rem; padding: 0.3rem 0.5rem; }
+  .ast-columns { grid-template-columns: 1fr; }
+}
