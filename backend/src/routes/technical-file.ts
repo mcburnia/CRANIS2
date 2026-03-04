@@ -153,14 +153,22 @@ const DEFAULT_SECTIONS = [
 
 // ─── Helper: ensure sections exist for a product ─────────────
 async function ensureSections(productId: string): Promise<void> {
+  const values: string[] = [];
+  const params: any[] = [];
+  let idx = 1;
+
   for (const section of DEFAULT_SECTIONS) {
-    await pool.query(
-      `INSERT INTO technical_file_sections (product_id, section_key, title, content, cra_reference)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (product_id, section_key) DO NOTHING`,
-      [productId, section.section_key, section.title, JSON.stringify(section.content), section.cra_reference]
-    );
+    values.push(`($${idx}, $${idx + 1}, $${idx + 2}, $${idx + 3}, $${idx + 4})`);
+    params.push(productId, section.section_key, section.title, JSON.stringify(section.content), section.cra_reference);
+    idx += 5;
   }
+
+  await pool.query(
+    `INSERT INTO technical_file_sections (product_id, section_key, title, content, cra_reference)
+     VALUES ${values.join(', ')}
+     ON CONFLICT (product_id, section_key) DO NOTHING`,
+    params
+  );
 }
 
 // ─── Helper: update Neo4j TechnicalFile node ─────────────────

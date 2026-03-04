@@ -37,13 +37,30 @@ const DEFAULT_SECTIONS = [
   { section_key: 'declaration_of_conformity', title: 'EU Declaration of Conformity', cra_reference: 'Annex VII \u00a77', content: '{}' },
 ];
 
-async function ensureSections(productId: string): Promise<void> {
-  for (const section of DEFAULT_SECTIONS) {
+async function ensureSections(productIds: string[]): Promise<void> {
+  if (productIds.length === 0) return;
+
+  // Batch inserts in chunks to stay within Postgres parameter limits
+  const CHUNK_SIZE = 100; // 100 products × 8 sections × 5 params = 4000 params per chunk
+  for (let c = 0; c < productIds.length; c += CHUNK_SIZE) {
+    const chunk = productIds.slice(c, c + CHUNK_SIZE);
+    const values: string[] = [];
+    const params: any[] = [];
+    let idx = 1;
+
+    for (const productId of chunk) {
+      for (const section of DEFAULT_SECTIONS) {
+        values.push(`($${idx}, $${idx + 1}, $${idx + 2}, $${idx + 3}, $${idx + 4})`);
+        params.push(productId, section.section_key, section.title, section.content, section.cra_reference);
+        idx += 5;
+      }
+    }
+
     await pool.query(
       `INSERT INTO technical_file_sections (product_id, section_key, title, content, cra_reference)
-       VALUES ($1, $2, $3, $4, $5)
+       VALUES ${values.join(', ')}
        ON CONFLICT (product_id, section_key) DO NOTHING`,
-      [productId, section.section_key, section.title, section.content, section.cra_reference]
+      params
     );
   }
 }
@@ -81,13 +98,9 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    // Auto-create sections for all products
-    for (const product of products) {
-      await ensureSections(product.id);
-    }
-
-    // Get all sections for these products
+    // Auto-create sections for all products (single batched INSERT)
     const productIds = products.map(p => p.id);
+    await ensureSections(productIds);
     const sectionsResult = await pool.query(
       `SELECT product_id, section_key, title, status, cra_reference, updated_at
        FROM technical_file_sections

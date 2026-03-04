@@ -153,6 +153,11 @@ export async function initDb() {
       );
     `);
 
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_technical_file_sections_product
+      ON technical_file_sections(product_id);
+    `);
+
 
     // Product versions — dual versioning (CRANIS2 auto + GitHub releases)
     await client.query(`
