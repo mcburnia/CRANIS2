@@ -8,6 +8,7 @@
 
 import { LANGUAGE_PLUGINS, type LanguagePlugin, type DetectedPackage } from './language-plugins.js';
 import { getFileContent, listRepoFiles } from './repo-provider.js';
+import { logger } from '../utils/logger.js';
 
 // ─── Interfaces ────────────────────────────────────────────────────────
 
@@ -122,7 +123,7 @@ async function fetchFilesInBatches(
       // Stop fetching if total content exceeds 50 MB
       if (totalBytes + sizeBytes > MAX_TOTAL_CONTENT_BYTES) {
         skipped += files.length - (i + j);
-        console.log(`[IMPORT-SCAN] Content cap reached (${(totalBytes / 1024 / 1024).toFixed(1)} MB), stopping fetches`);
+        logger.info(`[IMPORT-SCAN] Content cap reached (${(totalBytes / 1024 / 1024).toFixed(1)} MB), stopping fetches`);
         return { contents, skipped };
       }
 
@@ -150,7 +151,7 @@ export async function generateSBOMFromImports(
   // Set up abort controller for total timeout
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => {
-    console.log('[IMPORT-SCAN] Scan timed out after 120 seconds');
+    logger.warn('[IMPORT-SCAN] Scan timed out after 120 seconds');
     abortController.abort();
   }, TOTAL_TIMEOUT_MS);
 
@@ -162,16 +163,16 @@ export async function generateSBOMFromImports(
     let sourceFiles = allFiles.filter(isSourceFile);
 
     if (sourceFiles.length === 0) {
-      console.log('[IMPORT-SCAN] No source files found, skipping import scan');
+      logger.info('[IMPORT-SCAN] No source files found, skipping import scan');
       return null;
     }
 
     if (sourceFiles.length > MAX_SOURCE_FILES) {
-      console.log(`[IMPORT-SCAN] Skipping ${sourceFiles.length - MAX_SOURCE_FILES} files (capped at ${MAX_SOURCE_FILES})`);
+      logger.debug(`[IMPORT-SCAN] Skipping ${sourceFiles.length - MAX_SOURCE_FILES} files (capped at ${MAX_SOURCE_FILES})`);
       sourceFiles = sourceFiles.slice(0, MAX_SOURCE_FILES);
     }
 
-    console.log(`[IMPORT-SCAN] Scanning ${sourceFiles.length} source files...`);
+    logger.info(`[IMPORT-SCAN] Scanning ${sourceFiles.length} source files...`);
 
     // ── Step 3: Fetch content in batches ───────────────────────────────
     const { contents, skipped } = await fetchFilesInBatches(
@@ -179,11 +180,11 @@ export async function generateSBOMFromImports(
     );
 
     if (skipped > 0) {
-      console.log(`[IMPORT-SCAN] Skipping ${skipped} files (size/limit exceeded)`);
+      logger.debug(`[IMPORT-SCAN] Skipping ${skipped} files (size/limit exceeded)`);
     }
 
     if (contents.size === 0) {
-      console.log('[IMPORT-SCAN] No file contents fetched, aborting');
+      logger.info('[IMPORT-SCAN] No file contents fetched, aborting');
       return null;
     }
 
@@ -226,11 +227,11 @@ export async function generateSBOMFromImports(
     const languagesDetected = Array.from(languageSet);
 
     if (languagesDetected.length === 0) {
-      console.log('[IMPORT-SCAN] No languages detected above confidence threshold');
+      logger.info('[IMPORT-SCAN] No languages detected above confidence threshold');
       return null;
     }
 
-    console.log(`[IMPORT-SCAN] Detected languages: ${languagesDetected.join(', ')}`);
+    logger.info(`[IMPORT-SCAN] Detected languages: ${languagesDetected.join(', ')}`);
 
     // ── Step 5: Extract imports ────────────────────────────────────────
     const importMap = new Map<string, { module: string; pluginId: string }>();
@@ -280,10 +281,10 @@ export async function generateSBOMFromImports(
     const packages = Array.from(packagesByPurl.values());
     const totalPackages = packages.length;
 
-    console.log(`[IMPORT-SCAN] Found ${totalImports} imports, ${totalPackages} unique packages`);
+    logger.info(`[IMPORT-SCAN] Found ${totalImports} imports, ${totalPackages} unique packages`);
 
     if (totalPackages === 0) {
-      console.log('[IMPORT-SCAN] No external packages detected, skipping SBOM generation');
+      logger.info('[IMPORT-SCAN] No external packages detected, skipping SBOM generation');
       return null;
     }
 
@@ -377,7 +378,7 @@ export async function generateSBOMFromImports(
     // scanning alone stays at medium at best
 
     const durationMs = Date.now() - scanStart;
-    console.log(
+    logger.info(
       `[IMPORT-SCAN] Scan complete in ${(durationMs / 1000).toFixed(1)}s — ` +
       `${languagesDetected.length} language(s), ${totalImports} imports, ` +
       `${totalPackages} packages, confidence: ${confidence}`
@@ -393,7 +394,7 @@ export async function generateSBOMFromImports(
     };
   } catch (err) {
     if ((err as Error).name === 'AbortError') {
-      console.log('[IMPORT-SCAN] Scan aborted due to timeout');
+      logger.warn('[IMPORT-SCAN] Scan aborted due to timeout');
     } else {
       console.error('[IMPORT-SCAN] Scan failed:', (err as Error).message);
     }

@@ -1,4 +1,5 @@
 import { getDriver } from '../db/neo4j.js';
+import { logger } from '../utils/logger.js';
 
 interface RegistryInfo {
   hash: string;
@@ -106,7 +107,7 @@ export async function enrichDependencyHashes(
   const BATCH_SIZE = 10;
   const BATCH_DELAY_MS = 200;
 
-  console.log(`[HASH] Starting enrichment for ${packages.length} deps (product: ${productId})`);
+  logger.info(`[HASH] Starting enrichment for ${packages.length} deps (product: ${productId})`);
   const startMs = Date.now();
 
   // Collect gap reasons for batch Neo4j write at the end
@@ -132,7 +133,7 @@ export async function enrichDependencyHashes(
   }
 
   if (toEnrich.length === 0) {
-    console.log(`[HASH] No enrichable packages found (${stats.skipped} skipped)`);
+    logger.info(`[HASH] No enrichable packages found (${stats.skipped} skipped)`);
     // Still persist gap reasons even if nothing to enrich
     if (gapEntries.length > 0) {
       const neo4jSession = getDriver().session();
@@ -167,7 +168,7 @@ export async function enrichDependencyHashes(
     });
 
     if (needsEnrichment.length === 0) {
-      console.log(`[HASH] All packages already enriched (${stats.skipped} skipped)`);
+      logger.info(`[HASH] All packages already enriched (${stats.skipped} skipped)`);
       // Still persist gap reasons for pre-filtered packages
       if (gapEntries.length > 0) {
         await neo4jSession.run(
@@ -180,7 +181,7 @@ export async function enrichDependencyHashes(
       return stats;
     }
 
-    console.log(`[HASH] Fetching hashes for ${needsEnrichment.length} packages (${stats.skipped} already enriched or skipped)`);
+    logger.info(`[HASH] Fetching hashes for ${needsEnrichment.length} packages (${stats.skipped} already enriched or skipped)`);
 
     for (let i = 0; i < needsEnrichment.length; i += BATCH_SIZE) {
       const batch = needsEnrichment.slice(i, i + BATCH_SIZE);
@@ -197,7 +198,7 @@ export async function enrichDependencyHashes(
             }
             return { pkg, info, fetchError: false };
           } catch (err) {
-            console.warn(`[HASH] Fetch error for ${pkg.name}@${pkg.version}:`, (err as Error).message);
+            logger.warn(`[HASH] Fetch error for ${pkg.name}@${pkg.version}:`, (err as Error).message);
             return { pkg, info: null, fetchError: true };
           }
         })
@@ -208,7 +209,7 @@ export async function enrichDependencyHashes(
         if (result.status === 'rejected') {
           stats.gaps.fetchError++;
           stats.failed++;
-          console.warn('[HASH] Batch item rejected:', (result as PromiseRejectedResult).reason?.message);
+          logger.warn('[HASH] Batch item rejected:', (result as PromiseRejectedResult).reason?.message);
           continue;
         }
 
@@ -246,7 +247,7 @@ export async function enrichDependencyHashes(
           stats.enriched++;
           successPurls.push(pkg.purl);
         } catch (writeErr) {
-          console.warn(`[HASH] Neo4j write error for ${pkg.name}:`, (writeErr as Error).message);
+          logger.warn(`[HASH] Neo4j write error for ${pkg.name}:`, (writeErr as Error).message);
           stats.gaps.fetchError++;
           stats.failed++;
           gapEntries.push({ purl: pkg.purl, reason: 'fetch_error' });
@@ -284,7 +285,7 @@ export async function enrichDependencyHashes(
   }
 
   const durationSeconds = ((Date.now() - startMs) / 1000).toFixed(2);
-  console.log(
+  logger.info(
     `[HASH] Enrichment complete: ${stats.enriched} enriched, ${stats.skipped} skipped, ${stats.failed} failed ` +
     `(gaps: ${stats.gaps.noVersion} no-version, ${stats.gaps.unsupportedEcosystem} unsupported, ` +
     `${stats.gaps.notFound} not-found, ${stats.gaps.fetchError} fetch-error) (${durationSeconds}s)`

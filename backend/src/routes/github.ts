@@ -32,6 +32,7 @@ import type { RepoProvider, NormalisedRelease } from '../services/repo-provider.
 // Note: provider.parseRepoUrlGeneric, provider.validatePAT, provider.detectProvider now available
 import { createRepo as codebergCreateRepo } from '../services/codeberg.js';
 import { ensureWebhook, removeWebhooksForUser } from '../services/webhook.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -412,7 +413,7 @@ async function storeSBOM(
           { productId, entries: depthEntries }
         );
 
-        console.log(`[SBOM] Depth tagged: ${directPurls.size} direct, ${allPurls.length - directPurls.size} transitive`);
+        logger.debug(`[SBOM] Depth tagged: ${directPurls.size} direct, ${allPurls.length - directPurls.size} transitive`);
       }
     }
   }
@@ -707,7 +708,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
     const syncStartMs = Date.now();
 
     // Fetch ALL data from provider in parallel (ALL READ-ONLY GET requests)
-    console.log(`[SYNC] Fetching data from ${detectedProvider} for`, parsed.owner, parsed.repo);
+    logger.info(`[SYNC] Fetching data from ${detectedProvider} for`, parsed.owner, parsed.repo);
     const [repoData, contributors, languages, sbomData, releases, tags] = await Promise.all([
       provider.getRepo(detectedProvider, repoToken, parsed.owner, parsed.repo, repoInstanceUrl || undefined),
       provider.getContributors(detectedProvider, repoToken, parsed.owner, parsed.repo, repoInstanceUrl || undefined),
@@ -796,7 +797,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
     let effectiveSbomData = sbomData;
     let sbomSource = 'api';
     if (!effectiveSbomData) {
-      console.log("[SYNC] No API SBOM — trying lockfile fallback...");
+      logger.info("[SYNC] No API SBOM — trying lockfile fallback...");
       const lockfileResult = await generateSBOMFromLockfiles(
         parsed.owner, parsed.repo, repoData.default_branch,
         detectedProvider, repoToken, repoData.html_url, repoInstanceUrl || undefined
@@ -804,13 +805,13 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       if (lockfileResult) {
         effectiveSbomData = lockfileResult.sbom as any;
         sbomSource = `lockfile:${lockfileResult.lockfileUsed}`;
-        console.log(`[SYNC] Lockfile SBOM generated from ${lockfileResult.lockfileUsed}: ${lockfileResult.totalDependencies} dependencies`);
+        logger.info(`[SYNC] Lockfile SBOM generated from ${lockfileResult.lockfileUsed}: ${lockfileResult.totalDependencies} dependencies`);
       }
     }
 
     // Tier 3: Source import scanning (if no API SBOM and no lockfile found)
     if (!effectiveSbomData) {
-      console.log("[SYNC] No lockfile SBOM — trying import scan (Tier 3)...");
+      logger.info("[SYNC] No lockfile SBOM — trying import scan (Tier 3)...");
       try {
         const importResult = await generateSBOMFromImports(
           parsed.owner, parsed.repo, repoData.default_branch,
@@ -819,7 +820,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
         if (importResult) {
           effectiveSbomData = { sbom: importResult.sbom } as any;
           sbomSource = `import-scan:${importResult.languagesDetected.join('+')}`;
-          console.log(`[SYNC] Import scan SBOM: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages (confidence: ${importResult.confidence})`);
+          logger.info(`[SYNC] Import scan SBOM: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages (confidence: ${importResult.confidence})`);
         }
       } catch (err: any) {
         console.error(`[SYNC] Import scan failed: ${err.message}`);
@@ -828,7 +829,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
 
     // Store SBOM in Postgres + Neo4j (if available)
     let sbomResult: { packageCount: number; packages: any[] } | null = null;
-    console.log("[SYNC] SBOM result:", effectiveSbomData ? `Found ${effectiveSbomData.sbom?.packages?.length || 0} packages` : "null - no SBOM available");
+    logger.info("[SYNC] SBOM result:", effectiveSbomData ? `Found ${effectiveSbomData.sbom?.packages?.length || 0} packages` : "null - no SBOM available");
     if (effectiveSbomData) {
       sbomResult = await storeSBOM(productId, effectiveSbomData, neo4jSession, sbomSource);
 
@@ -857,14 +858,14 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
             if (pipelineOrgId) {
               try {
                 await scanProductLicenses(pipelineProductId, pipelineOrgId);
-                console.log("[SYNC] License scan completed for", pipelineProductId);
+                logger.debug("[SYNC] License scan completed for", pipelineProductId);
               } catch (lsErr: any) {
                 console.error("[SYNC] License scan failed:", lsErr.message);
               }
               // 6. IP proof timestamp
               try {
                 await createSnapshot(pipelineProductId, pipelineOrgId, pipelineUserId, 'sync');
-                console.log("[SYNC] IP proof snapshot created for", pipelineProductId);
+                logger.debug("[SYNC] IP proof snapshot created for", pipelineProductId);
               } catch (ipErr: any) {
                 console.error("[SYNC] IP proof snapshot failed:", ipErr.message);
               }
@@ -933,7 +934,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       `MATCH (p:Product {id: $productId}) SET p.version = $version`,
       { productId, version: cranisVersion }
     );
-    console.log(`[SYNC] CRANIS2 version: ${cranisVersion}, GitHub releases: ${publishedReleases.length}, tags: ${tags.length}`);
+    logger.info(`[SYNC] CRANIS2 version: ${cranisVersion}, GitHub releases: ${publishedReleases.length}, tags: ${tags.length}`);
 
     // Record telemetry
     const reqData = extractRequestData(req);
@@ -956,7 +957,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
 
     // Record sync duration
     const syncDurationSeconds = (Date.now() - syncStartMs) / 1000;
-    console.log(`[SYNC] Duration: ${syncDurationSeconds.toFixed(2)}s for ${parsed.owner}/${parsed.repo}`);
+    logger.info(`[SYNC] Duration: ${syncDurationSeconds.toFixed(2)}s for ${parsed.owner}/${parsed.repo}`);
     await pool.query(
       `INSERT INTO sync_history (product_id, sync_type, started_at, duration_seconds, package_count, contributor_count, release_count, cranis_version, triggered_by, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
@@ -1126,7 +1127,7 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
     const defaultBranch = repoNode.records[0]?.get('defaultBranch') || 'main';
     if (!sbomData) {
       // Lockfile fallback: generate SBOM from lockfiles
-      console.log("[SBOM-REFRESH] No API SBOM — trying lockfile fallback...");
+      logger.info("[SBOM-REFRESH] No API SBOM — trying lockfile fallback...");
       const lockfileResult = await generateSBOMFromLockfiles(
         parsed.owner, parsed.repo, defaultBranch,
         sbomProvider, sbomToken, repoUrl
@@ -1134,12 +1135,12 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
       if (lockfileResult) {
         sbomData = lockfileResult.sbom as any;
         refreshSbomSource = `lockfile:${lockfileResult.lockfileUsed}`;
-        console.log(`[SBOM-REFRESH] Lockfile SBOM: ${lockfileResult.lockfileUsed} (${lockfileResult.totalDependencies} deps)`);
+        logger.info(`[SBOM-REFRESH] Lockfile SBOM: ${lockfileResult.lockfileUsed} (${lockfileResult.totalDependencies} deps)`);
       }
     }
     // Tier 3: Source import scanning
     if (!sbomData) {
-      console.log("[SBOM-REFRESH] No lockfile SBOM — trying import scan (Tier 3)...");
+      logger.info("[SBOM-REFRESH] No lockfile SBOM — trying import scan (Tier 3)...");
       try {
         const importResult = await generateSBOMFromImports(
           parsed.owner, parsed.repo, defaultBranch,
@@ -1148,7 +1149,7 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
         if (importResult) {
           sbomData = { sbom: importResult.sbom } as any;
           refreshSbomSource = `import-scan:${importResult.languagesDetected.join('+')}`;
-          console.log(`[SBOM-REFRESH] Import scan: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages`);
+          logger.info(`[SBOM-REFRESH] Import scan: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages`);
         }
       } catch (err: any) {
         console.error(`[SBOM-REFRESH] Import scan failed: ${err.message}`);
@@ -1177,14 +1178,14 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
         // 5. Auto license scan
         try {
           await scanProductLicenses(productId, orgId);
-          console.log("[SBOM-REFRESH] License scan completed for", productId);
+          logger.debug("[SBOM-REFRESH] License scan completed for", productId);
         } catch (lsErr: any) {
           console.error("[SBOM-REFRESH] License scan failed:", lsErr.message);
         }
         // 6. IP proof timestamp
         try {
           await createSnapshot(productId, orgId, userId, 'sync');
-          console.log("[SBOM-REFRESH] IP proof snapshot created for", productId);
+          logger.debug("[SBOM-REFRESH] IP proof snapshot created for", productId);
         } catch (ipErr: any) {
           console.error("[SBOM-REFRESH] IP proof snapshot failed:", ipErr.message);
         }
@@ -1253,7 +1254,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
   const expectedSignature = 'sha256=' + crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
   const sigToCompare = signature.startsWith('sha256=') ? signature : `sha256=${signature}`;
   if (!crypto.timingSafeEqual(Buffer.from(sigToCompare), Buffer.from(expectedSignature))) {
-    console.warn(`[WEBHOOK] Invalid ${webhookProvider} signature`);
+    logger.warn(`[WEBHOOK] Invalid ${webhookProvider} signature`);
     res.status(401).json({ error: 'Invalid signature' });
     return;
   }
@@ -1261,7 +1262,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
   // Only process push events
   const event = (req.headers['x-github-event'] || req.headers['x-forgejo-event'] || req.headers['x-gitea-event']) as string;
   if (event !== 'push') {
-    console.log(`[WEBHOOK] Ignoring ${webhookProvider} event: ${event}`);
+    logger.info(`[WEBHOOK] Ignoring ${webhookProvider} event: ${event}`);
     res.json({ status: 'ignored', event });
     return;
   }
@@ -1272,7 +1273,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
     return;
   }
 
-  console.log(`[WEBHOOK] Push event from ${webhookProvider} for ${repoUrl}`);
+  logger.info(`[WEBHOOK] Push event from ${webhookProvider} for ${repoUrl}`);
 
   // Find product(s) linked to this repo
   const neo4jSession = getDriver().session();
@@ -1285,7 +1286,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
     );
 
     if (result.records.length === 0) {
-      console.log(`[WEBHOOK] No product found for repo: ${repoUrl}`);
+      logger.info(`[WEBHOOK] No product found for repo: ${repoUrl}`);
       res.json({ status: 'no_match', repoUrl });
       return;
     }
@@ -1307,7 +1308,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
         { productId }
       );
 
-      console.log(`[WEBHOOK] Marked SBOM stale for product: ${productId}`);
+      logger.info(`[WEBHOOK] Marked SBOM stale for product: ${productId}`);
 
       // Store push event details for the activity feed
       try {
@@ -1335,7 +1336,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
            VALUES ($1, $2, $3, $4)`,
           ['webhook_sbom_stale', req.ip || null, req.headers['user-agent'] || 'GitHub-Hookshot', JSON.stringify({ productId, repoUrl, event: 'push' })]
         );
-        console.log(`[WEBHOOK] Audit event recorded for product: ${productId}`);
+        logger.info(`[WEBHOOK] Audit event recorded for product: ${productId}`);
       } catch (telErr: any) {
         console.error('[WEBHOOK] Failed to record audit event:', telErr.message);
       }

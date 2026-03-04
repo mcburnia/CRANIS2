@@ -26,6 +26,7 @@ import { extractPackageInfo } from '../routes/github.js';
 import { checkTrialExpiry, checkPaymentGrace } from './billing.js';
 import { ensureWebhook } from './webhook.js';
 import { runAllEscrowDeposits } from './escrow-service.js';
+import { logger } from '../utils/logger.js';
 
 
 // How often to check for stale SBOMs (default: every hour)
@@ -147,13 +148,13 @@ async function getProductRepoToken(productId: string, forProvider?: RepoProvider
 const getProductGitHubToken = getProductRepoToken;
 
 async function autoSyncProduct(productId: string): Promise<boolean> {
-  console.log(`[AUTO-SYNC] Syncing product ${productId}`);
+  logger.info(`[AUTO-SYNC] Syncing product ${productId}`);
   const syncStartedAt = new Date();
   const syncStartMs = Date.now();
 
   const auth = await getProductRepoToken(productId);
   if (!auth) {
-    console.log(`[AUTO-SYNC] No repo token found for product ${productId}`);
+    logger.info(`[AUTO-SYNC] No repo token found for product ${productId}`);
     return false;
   }
 
@@ -226,7 +227,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
     let effectiveSbomData = sbomData;
     let schedulerSbomSource = 'api';
     if (!effectiveSbomData) {
-      console.log(`[SCHEDULER] No API SBOM for ${parsed.owner}/${parsed.repo} — trying lockfile fallback...`);
+      logger.info(`[SCHEDULER] No API SBOM for ${parsed.owner}/${parsed.repo} — trying lockfile fallback...`);
       const lockfileResult = await generateSBOMFromLockfiles(
         parsed.owner, parsed.repo, repoData.default_branch,
         syncProvider, auth.token, repoUrl, syncInstanceUrl || undefined
@@ -234,13 +235,13 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
       if (lockfileResult) {
         effectiveSbomData = lockfileResult.sbom as any;
         schedulerSbomSource = `lockfile:${lockfileResult.lockfileUsed}`;
-        console.log(`[SCHEDULER] Lockfile SBOM: ${lockfileResult.lockfileUsed} (${lockfileResult.totalDependencies} deps)`);
+        logger.info(`[SCHEDULER] Lockfile SBOM: ${lockfileResult.lockfileUsed} (${lockfileResult.totalDependencies} deps)`);
       }
     }
 
     // Tier 3: Source import scanning
     if (!effectiveSbomData) {
-      console.log(`[SCHEDULER] No lockfile — trying import scan (Tier 3) for ${parsed.owner}/${parsed.repo}...`);
+      logger.info(`[SCHEDULER] No lockfile — trying import scan (Tier 3) for ${parsed.owner}/${parsed.repo}...`);
       try {
         const importResult = await generateSBOMFromImports(
           parsed.owner, parsed.repo, repoData.default_branch,
@@ -249,7 +250,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
         if (importResult) {
           effectiveSbomData = { sbom: importResult.sbom } as any;
           schedulerSbomSource = `import-scan:${importResult.languagesDetected.join('+')}`;
-          console.log(`[SCHEDULER] Import scan: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages`);
+          logger.info(`[SCHEDULER] Import scan: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages`);
         }
       } catch (err: any) {
         console.error(`[SCHEDULER] Import scan failed: ${err.message}`);
@@ -306,19 +307,19 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
           if (schedOrgId) {
             try {
               await enrichDependencyLicenses(schedProductId, extractedPackages);
-              console.log("[AUTO-SYNC] License enrichment completed for", schedProductId);
+              logger.debug("[AUTO-SYNC] License enrichment completed for", schedProductId);
             } catch (leErr: any) {
               console.error("[AUTO-SYNC] License enrichment failed:", leErr.message);
             }
             try {
               await scanProductLicenses(schedProductId, schedOrgId);
-              console.log("[AUTO-SYNC] License scan completed for", schedProductId);
+              logger.debug("[AUTO-SYNC] License scan completed for", schedProductId);
             } catch (lsErr: any) {
               console.error("[AUTO-SYNC] License scan failed:", lsErr.message);
             }
             try {
               await createSnapshot(schedProductId, schedOrgId, null, 'sync');
-              console.log("[AUTO-SYNC] IP proof snapshot created for", schedProductId);
+              logger.debug("[AUTO-SYNC] IP proof snapshot created for", schedProductId);
             } catch (ipErr: any) {
               console.error("[AUTO-SYNC] IP proof snapshot failed:", ipErr.message);
             }
@@ -373,7 +374,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
 
     // Record sync duration
     const syncDurationSeconds = (Date.now() - syncStartMs) / 1000;
-    console.log(`[AUTO-SYNC] Completed: ${productId} → ${cranisVersion} (${syncDurationSeconds.toFixed(2)}s)`);
+    logger.info(`[AUTO-SYNC] Completed: ${productId} → ${cranisVersion} (${syncDurationSeconds.toFixed(2)}s)`);
     await pool.query(
       `INSERT INTO sync_history (product_id, sync_type, started_at, duration_seconds, package_count, contributor_count, release_count, cranis_version, triggered_by, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
@@ -432,7 +433,7 @@ async function runDailySync(): Promise<void> {
   const now = new Date();
   if (now.getHours() < AUTO_SYNC_HOUR) return; // Not yet time
 
-  console.log('[AUTO-SYNC] Starting daily sync check...');
+  logger.info('[AUTO-SYNC] Starting daily sync check...');
   lastSyncDate = todayStr;
 
   try {
@@ -441,17 +442,17 @@ async function runDailySync(): Promise<void> {
     );
 
     if (result.rows.length === 0) {
-      console.log('[AUTO-SYNC] No stale SBOMs found');
+      logger.info('[AUTO-SYNC] No stale SBOMs found');
       return;
     }
 
-    console.log(`[AUTO-SYNC] Found ${result.rows.length} stale product(s)`);
+    logger.info(`[AUTO-SYNC] Found ${result.rows.length} stale product(s)`);
 
     for (const row of result.rows) {
       await autoSyncProduct(row.product_id);
     }
 
-    console.log('[AUTO-SYNC] Daily sync complete');
+    logger.info('[AUTO-SYNC] Daily sync complete');
   } catch (err: any) {
     console.error('[AUTO-SYNC] Error during daily sync:', err.message);
   }
@@ -466,11 +467,11 @@ async function runDailyVulnScan(): Promise<void> {
   if (now.getHours() < VULN_SCAN_HOUR) return; // Not yet time
 
   lastVulnScanDate = todayStr;
-  console.log('[VULN-SCHEDULER] Starting daily platform vulnerability scan...');
+  logger.info('[VULN-SCHEDULER] Starting daily platform vulnerability scan...');
 
   try {
     const result = await runPlatformScan('scheduler', 'scheduled');
-    console.log('[VULN-SCHEDULER] Daily scan complete: run ' + result.runId + ', ' + result.totalFindings + ' findings');
+    logger.info('[VULN-SCHEDULER] Daily scan complete: run ' + result.runId + ', ' + result.totalFindings + ' findings');
   } catch (err: any) {
     console.error('[VULN-SCHEDULER] Daily vulnerability scan failed:', err.message);
   }
@@ -485,11 +486,11 @@ async function runDailyVulnDbSync(): Promise<void> {
   if (now.getHours() < VULN_DB_SYNC_HOUR) return; // Not yet time
 
   lastVulnDbSyncDate = todayStr;
-  console.log('[VULN-DB-SCHEDULER] Starting daily vulnerability database sync...');
+  logger.info('[VULN-DB-SCHEDULER] Starting daily vulnerability database sync...');
 
   try {
     await syncVulnDatabases();
-    console.log('[VULN-DB-SCHEDULER] Daily DB sync complete');
+    logger.info('[VULN-DB-SCHEDULER] Daily DB sync complete');
   } catch (err: any) {
     console.error('[VULN-DB-SCHEDULER] Daily DB sync failed:', err.message);
   }
@@ -506,12 +507,12 @@ async function runDailyBillingChecks(): Promise<void> {
   if (now.getHours() < BILLING_CHECK_HOUR) return; // Not yet time
 
   lastBillingCheckDate = todayStr;
-  console.log('[BILLING-SCHEDULER] Starting daily billing checks...');
+  logger.info('[BILLING-SCHEDULER] Starting daily billing checks...');
 
   try {
     await checkTrialExpiry();
     await checkPaymentGrace();
-    console.log('[BILLING-SCHEDULER] Daily billing checks complete');
+    logger.info('[BILLING-SCHEDULER] Daily billing checks complete');
   } catch (err: any) {
     console.error('[BILLING-SCHEDULER] Daily billing checks failed:', err.message);
   }
@@ -640,7 +641,7 @@ async function checkCraDeadlines(): Promise<void> {
         sendDeadlineAlertEmail(row.org_id, stageName, Math.max(0, Math.round(hoursRemaining)), row.id).catch(() => {});
       }
 
-      console.log('[CRA-DEADLINE] ' + (isOverdue ? 'OVERDUE' : 'Approaching') + ': ' + stageName + ' for ' + productName + ' (' + timeStr + ')');
+      logger.info('[CRA-DEADLINE] ' + (isOverdue ? 'OVERDUE' : 'Approaching') + ': ' + stageName + ' for ' + productName + ' (' + timeStr + ')');
     }
   } catch (err: any) {
     console.error('[CRA-DEADLINE] Error checking deadlines:', err.message);
@@ -655,11 +656,11 @@ async function runDailyEscrowDeposits(): Promise<void> {
   if (now.getHours() < ESCROW_DEPOSIT_HOUR) return;
 
   lastEscrowDepositDate = todayStr;
-  console.log('[ESCROW-SCHEDULER] Starting daily escrow deposits...');
+  logger.info('[ESCROW-SCHEDULER] Starting daily escrow deposits...');
 
   try {
     await runAllEscrowDeposits();
-    console.log('[ESCROW-SCHEDULER] Daily escrow deposits complete');
+    logger.info('[ESCROW-SCHEDULER] Daily escrow deposits complete');
   } catch (err: any) {
     console.error('[ESCROW-SCHEDULER] Daily escrow deposits failed:', err.message);
   }
@@ -673,7 +674,7 @@ async function runDailyWebhookHealthCheck(): Promise<void> {
   if (now.getHours() < WEBHOOK_HEALTH_HOUR) return;
 
   lastWebhookHealthDate = todayStr;
-  console.log('[WEBHOOK-HEALTH] Starting daily webhook health check...');
+  logger.info('[WEBHOOK-HEALTH] Starting daily webhook health check...');
 
   const driver = getDriver();
   const session = driver.session();
@@ -688,7 +689,7 @@ async function runDailyWebhookHealthCheck(): Promise<void> {
     );
 
     if (neo4jResult.records.length === 0) {
-      console.log('[WEBHOOK-HEALTH] No products with repos found');
+      logger.info('[WEBHOOK-HEALTH] No products with repos found');
       return;
     }
 
@@ -736,18 +737,18 @@ async function runDailyWebhookHealthCheck(): Promise<void> {
     }
 
     if (issues.length === 0) {
-      console.log(`[WEBHOOK-HEALTH] All ${neo4jResult.records.length} product(s) healthy`);
+      logger.info(`[WEBHOOK-HEALTH] All ${neo4jResult.records.length} product(s) healthy`);
       return;
     }
 
-    console.log(`[WEBHOOK-HEALTH] Found ${issues.length} issue(s):`);
+    logger.info(`[WEBHOOK-HEALTH] Found ${issues.length} issue(s):`);
 
     // 4. Create notifications for platform admins (debounced)
     const admins = await pool.query('SELECT id, org_id FROM users WHERE is_platform_admin = true');
 
     for (const issue of issues) {
       const issueLabel = issue.issueType === 'no_webhook' ? 'Webhook not registered' : 'Webhook silent — pushes not received';
-      console.log(`[WEBHOOK-HEALTH]   ${issue.productName}: ${issueLabel} (${issue.repoUrl})`);
+      logger.debug(`[WEBHOOK-HEALTH]   ${issue.productName}: ${issueLabel} (${issue.repoUrl})`);
 
       // Debounce: skip if unread notification already exists for this product
       const existing = await pool.query(
@@ -774,7 +775,7 @@ async function runDailyWebhookHealthCheck(): Promise<void> {
       }
     }
 
-    console.log('[WEBHOOK-HEALTH] Daily check complete');
+    logger.info('[WEBHOOK-HEALTH] Daily check complete');
   } catch (err: any) {
     console.error('[WEBHOOK-HEALTH] Error during health check:', err.message);
   } finally {
@@ -783,7 +784,7 @@ async function runDailyWebhookHealthCheck(): Promise<void> {
 }
 
 export function startScheduler(): void {
-  console.log('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00');
+  logger.info('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00');
 
   // Run check periodically — all three have hour-gating and date-tracking
   setInterval(() => {

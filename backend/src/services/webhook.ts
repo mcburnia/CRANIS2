@@ -8,6 +8,7 @@
 
 import { getDriver } from '../db/neo4j.js';
 import * as provider from './repo-provider.js';
+import { logger } from '../utils/logger.js';
 import type { RepoProvider } from './repo-provider.js';
 
 const APP_BASE_URL = process.env.FRONTEND_URL || 'https://dev.cranis2.dev';
@@ -31,7 +32,7 @@ export async function ensureWebhook(
 
   const secret = provider.getWebhookSecret(prov);
   if (!secret) {
-    console.warn(`[WEBHOOK] No webhook secret configured for ${prov} — skipping auto-registration`);
+    logger.warn(`[WEBHOOK] No webhook secret configured for ${prov} — skipping auto-registration`);
     return;
   }
 
@@ -44,16 +45,16 @@ export async function ensureWebhook(
     );
     const currentId = existing.records[0]?.get('webhookId');
     if (currentId) {
-      console.log(`[WEBHOOK] Already registered (id=${currentId}) for ${owner}/${repo} — skipping`);
+      logger.info(`[WEBHOOK] Already registered (id=${currentId}) for ${owner}/${repo} — skipping`);
       return;
     }
 
     // Register webhook with provider
-    console.log(`[WEBHOOK] Registering push webhook for ${prov}:${owner}/${repo} → ${WEBHOOK_CALLBACK}`);
+    logger.info(`[WEBHOOK] Registering push webhook for ${prov}:${owner}/${repo} → ${WEBHOOK_CALLBACK}`);
     const webhookId = await provider.createWebhook(prov, token, owner, repo, WEBHOOK_CALLBACK, secret, instanceUrl);
 
     if (!webhookId) {
-      console.warn(`[WEBHOOK] Provider returned no webhook ID for ${owner}/${repo}`);
+      logger.warn(`[WEBHOOK] Provider returned no webhook ID for ${owner}/${repo}`);
       return;
     }
 
@@ -62,7 +63,7 @@ export async function ensureWebhook(
       `MATCH (r:Repository {url: $url}) SET r.webhookId = $webhookId`,
       { url: repoUrl, webhookId: String(webhookId) }
     );
-    console.log(`[WEBHOOK] Registered webhook id=${webhookId} for ${prov}:${owner}/${repo}`);
+    logger.info(`[WEBHOOK] Registered webhook id=${webhookId} for ${prov}:${owner}/${repo}`);
   } catch (err: any) {
     // Non-blocking — log but don't throw
     console.error(`[WEBHOOK] Failed to register webhook for ${owner}/${repo}: ${err.message}`);
@@ -107,7 +108,7 @@ export async function removeWebhooksForUser(
           `MATCH (r:Repository {url: $url}) REMOVE r.webhookId`,
           { url: repoUrl }
         );
-        console.log(`[WEBHOOK] Removed webhook id=${webhookId} from ${prov}:${repoOwner}/${repoName}`);
+        logger.info(`[WEBHOOK] Removed webhook id=${webhookId} from ${prov}:${repoOwner}/${repoName}`);
       } catch (err: any) {
         console.error(`[WEBHOOK] Failed to remove webhook from ${repoOwner}/${repoName}: ${err.message}`);
       }

@@ -3,6 +3,7 @@
 // compatible with the existing storeSBOM() pipeline.
 
 import * as repoProvider from './repo-provider.js';
+import { logger } from '../utils/logger.js';
 import type { RepoProvider } from './repo-provider.js';
 import { LOCKFILE_CONFIGS, parseLockfile, type ParsedDependency } from './lockfile-parsers.js';
 
@@ -61,7 +62,7 @@ export async function generateSBOMFromLockfiles(
   repoUrl: string,
   instanceUrl?: string
 ): Promise<LockfileSBOMResult | null> {
-  console.log(`[LOCKFILE-SBOM] Attempting lockfile SBOM for ${owner}/${repo} (${provider}, branch: ${branch})`);
+  logger.info(`[LOCKFILE-SBOM] Attempting lockfile SBOM for ${owner}/${repo} (${provider}, branch: ${branch})`);
 
   for (const config of LOCKFILE_CONFIGS) {
     try {
@@ -70,17 +71,17 @@ export async function generateSBOMFromLockfiles(
 
       // Memory guard
       if (content.length > MAX_LOCKFILE_SIZE) {
-        console.warn(`[LOCKFILE-SBOM] ${config.filename} is ${(content.length / 1024 / 1024).toFixed(1)} MB — skipping (limit: 10 MB)`);
+        logger.warn(`[LOCKFILE-SBOM] ${config.filename} is ${(content.length / 1024 / 1024).toFixed(1)} MB — skipping (limit: 10 MB)`);
         continue;
       }
 
       const parseResult = parseLockfile(config.filename, content);
       if (parseResult.dependencies.length === 0) {
-        console.log(`[LOCKFILE-SBOM] ${config.filename} found but contains no dependencies`);
+        logger.info(`[LOCKFILE-SBOM] ${config.filename} found but contains no dependencies`);
         continue;
       }
 
-      console.log(`[LOCKFILE-SBOM] Found ${config.filename}: ${parseResult.dependencies.length} dependencies (${parseResult.ecosystem})`);
+      logger.info(`[LOCKFILE-SBOM] Found ${config.filename}: ${parseResult.dependencies.length} dependencies (${parseResult.ecosystem})`);
 
       const spdx = buildSpdxDocument(parseResult.dependencies, owner, repo, repoUrl, config.filename);
 
@@ -90,11 +91,11 @@ export async function generateSBOMFromLockfiles(
         totalDependencies: parseResult.dependencies.length,
       };
     } catch (err) {
-      console.warn(`[LOCKFILE-SBOM] Error with ${config.filename}:`, (err as Error).message);
+      logger.warn(`[LOCKFILE-SBOM] Error with ${config.filename}:`, (err as Error).message);
     }
   }
 
-  console.log(`[LOCKFILE-SBOM] No lockfile found for ${owner}/${repo}`);
+  logger.info(`[LOCKFILE-SBOM] No lockfile found for ${owner}/${repo}`);
   return null;
 }
 

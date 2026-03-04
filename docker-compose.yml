@@ -48,6 +48,7 @@ services:
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
       FORGEJO_ADMIN_TOKEN: ${FORGEJO_ADMIN_TOKEN}
       FORGEJO_URL: ${FORGEJO_URL}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     volumes:
       - ./docs:/app/docs:ro
     deploy:
