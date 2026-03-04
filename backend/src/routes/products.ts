@@ -421,6 +421,47 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       metadata: { productId, productName: name.trim(), productType, craCategory, repoUrl: repoUrl?.trim() || '' },
     });
 
+    // Auto-populate stakeholder contacts if requested
+    if (req.body.autoAssignContacts) {
+      try {
+        const orgNameResult = await session.run(
+          'MATCH (o:Organisation {id: $orgId}) RETURN o.name AS orgName',
+          { orgId }
+        );
+        const orgName = orgNameResult.records[0]?.get('orgName') || '';
+
+        // Ensure org-level stakeholder rows exist
+        for (const roleKey of ['manufacturer_contact', 'authorised_representative', 'compliance_officer']) {
+          await pool.query(
+            `INSERT INTO stakeholders (org_id, product_id, role_key) VALUES ($1, NULL, $2) ON CONFLICT DO NOTHING`,
+            [orgId, roleKey]
+          );
+        }
+        // Ensure product-level stakeholder rows exist
+        for (const roleKey of ['security_contact', 'technical_file_owner', 'incident_response_lead']) {
+          await pool.query(
+            `INSERT INTO stakeholders (org_id, product_id, role_key) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+            [orgId, productId, roleKey]
+          );
+        }
+
+        // Fill org-level roles (only where email is currently empty — never overwrite)
+        await pool.query(
+          `UPDATE stakeholders SET email = $1, organisation = $2, updated_by = $3, updated_at = NOW()
+           WHERE org_id = $4 AND product_id IS NULL AND email = ''`,
+          [userEmail, orgName, userEmail, orgId]
+        );
+        // Fill product-level roles
+        await pool.query(
+          `UPDATE stakeholders SET email = $1, organisation = $2, updated_by = $3, updated_at = NOW()
+           WHERE org_id = $4 AND product_id = $5 AND email = ''`,
+          [userEmail, orgName, userEmail, orgId, productId]
+        );
+      } catch (err: any) {
+        console.error('[PRODUCT] Auto-assign contacts failed (non-blocking):', err.message);
+      }
+    }
+
     res.status(201).json({
       id: productId,
       name: name.trim(),

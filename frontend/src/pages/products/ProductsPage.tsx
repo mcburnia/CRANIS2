@@ -66,6 +66,7 @@ export default function ProductsPage() {
   const [formType, setFormType] = useState('saas');
   const [formCategory, setFormCategory] = useState('default');
   const [formRepoUrl, setFormRepoUrl] = useState('');
+  const [formAutoContacts, setFormAutoContacts] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -93,7 +94,7 @@ export default function ProductsPage() {
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: formName, description: formDesc, version: formVersion, productType: formType, craCategory: formCategory, repoUrl: formRepoUrl }),
+        body: JSON.stringify({ name: formName, description: formDesc, version: formVersion, productType: formType, craCategory: formCategory, repoUrl: formRepoUrl, autoAssignContacts: formAutoContacts }),
       });
 
       if (!res.ok) {
@@ -104,7 +105,7 @@ export default function ProductsPage() {
       }
 
       setShowAdd(false);
-      setFormName(''); setFormDesc(''); setFormVersion(''); setFormType('saas'); setFormCategory('default'); setFormRepoUrl('');
+      setFormName(''); setFormDesc(''); setFormVersion(''); setFormType('saas'); setFormCategory('default'); setFormRepoUrl(''); setFormAutoContacts(true);
       await fetchProducts();
     } catch {
       setError('Network error');
@@ -240,6 +241,14 @@ export default function ProductsPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-checkbox-row">
+                  <input type="checkbox" checked={formAutoContacts} onChange={e => setFormAutoContacts(e.target.checked)} />
+                  <span>Set me as the contact for all compliance roles</span>
+                </label>
+                <span className="form-hint">Auto-fills your email across all stakeholder roles (Security Contact, Compliance Officer, etc.)</span>
               </div>
 
               <div className="modal-actions">

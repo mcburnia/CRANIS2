@@ -247,6 +247,86 @@ describe('/api/products', () => {
     });
   });
 
+  // ─── Auto-Assign Contacts ────────────────────────────────────────────
+
+  describe('POST /api/products — autoAssignContacts', () => {
+    it('should populate stakeholder emails when autoAssignContacts is true', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const productName = `test-autocontact-${Date.now()}`;
+      const createRes = await api.post('/api/products', {
+        auth: token,
+        body: { name: productName, craCategory: 'default', autoAssignContacts: true },
+      });
+      expect(createRes.status).toBe(201);
+      const newId = createRes.body.id;
+
+      // Fetch stakeholders — the product-level roles should have email set
+      const stakRes = await api.get('/api/stakeholders', { auth: token });
+      expect(stakRes.status).toBe(200);
+
+      // Product-level contacts should have the user's email
+      const productStakeholders = stakRes.body.productStakeholders[newId];
+      expect(productStakeholders).toBeTruthy();
+      expect(productStakeholders.stakeholders.length).toBe(3);
+
+      for (const s of productStakeholders.stakeholders) {
+        expect(s.email).toBe(TEST_USERS.mfgAdmin);
+      }
+
+      // Org-level contacts should also have the user's email
+      expect(stakRes.body.orgStakeholders.length).toBeGreaterThanOrEqual(3);
+      for (const s of stakRes.body.orgStakeholders) {
+        expect(s.email).toBe(TEST_USERS.mfgAdmin);
+      }
+    });
+
+    it('should NOT populate stakeholder emails when autoAssignContacts is false', async () => {
+      const token = await loginTestUser(TEST_USERS.impAdmin);
+      const productName = `test-noautocontact-${Date.now()}`;
+      const createRes = await api.post('/api/products', {
+        auth: token,
+        body: { name: productName, craCategory: 'default', autoAssignContacts: false },
+      });
+      expect(createRes.status).toBe(201);
+      const newId = createRes.body.id;
+
+      const stakRes = await api.get('/api/stakeholders', { auth: token });
+      expect(stakRes.status).toBe(200);
+
+      const productStakeholders = stakRes.body.productStakeholders[newId];
+      expect(productStakeholders).toBeTruthy();
+
+      // Product-level contacts should have empty emails (ensureStakeholders creates them lazily on GET)
+      for (const s of productStakeholders.stakeholders) {
+        expect(s.email).toBe('');
+      }
+    });
+
+    it('should not overwrite existing org-level contacts', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+
+      // First, check current org-level stakeholders (may already have emails from previous tests)
+      const beforeRes = await api.get('/api/stakeholders', { auth: token });
+      expect(beforeRes.status).toBe(200);
+      const existingEmails = beforeRes.body.orgStakeholders.map((s: any) => s.email);
+
+      // Create another product with autoAssignContacts
+      const productName = `test-nooverwrite-${Date.now()}`;
+      const createRes = await api.post('/api/products', {
+        auth: token,
+        body: { name: productName, craCategory: 'default', autoAssignContacts: true },
+      });
+      expect(createRes.status).toBe(201);
+
+      // Org-level emails should be unchanged
+      const afterRes = await api.get('/api/stakeholders', { auth: token });
+      expect(afterRes.status).toBe(200);
+      const afterEmails = afterRes.body.orgStakeholders.map((s: any) => s.email);
+
+      expect(afterEmails).toEqual(existingEmails);
+    });
+  });
+
   // ─── Cross-Org Isolation ──────────────────────────────────────────────
 
   describe('Cross-org isolation', () => {
