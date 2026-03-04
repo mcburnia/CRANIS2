@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRANIS2 — Strategy &amp; Ecosystem</title>
+<style>
+  /* ── Reset & base ──────────────────────────────────────────────────── */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f0f14; color: #e4e4e7; min-height: 100vh;
+    line-height: 1.6;
+  }
+  a { color: #a855f7; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Header ────────────────────────────────────────────────────────── */
+  .site-header {
+    border-bottom: 1px solid #2a2a35; padding: 1.25rem 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; background: #0f0f14; z-index: 100;
+  }
+  .site-logo { font-size: 1.3rem; font-weight: 800; color: #a855f7; letter-spacing: -0.02em; }
+  .site-title { font-size: 0.85rem; color: #71717a; }
+  .site-logout {
+    font-size: 0.78rem; color: #71717a; text-decoration: none;
+    padding: 0.35rem 0.75rem; border: 1px solid #2a2a35; border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .site-logout:hover { color: #e4e4e7; border-color: #3f3f50; text-decoration: none; }
+
+  /* ── Main container ────────────────────────────────────────────────── */
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+  .subtitle {
+    font-size: 0.9rem; color: #71717a; margin-bottom: 2rem; line-height: 1.6;
+  }
+
+  /* ── Layout: nav + content side by side ────────────────────────────── */
+  .layout { display: flex; gap: 2.5rem; align-items: flex-start; }
+
+  /* ── Section navigation ────────────────────────────────────────────── */
+  .nav { width: 220px; flex-shrink: 0; }
+
+  .nav-inner {
+    position: sticky; top: 5rem;
+    display: flex; flex-direction: column; gap: 0.15rem;
+  }
+
+  .nav-title {
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #71717a; padding: 0 0.5rem; margin-bottom: 0.5rem;
+  }
+
+  .nav-link {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.5rem; border: none; background: none; border-radius: 6px;
+    font-size: 0.78rem; color: #71717a; cursor: pointer; text-align: left;
+    line-height: 1.35; transition: all 0.15s; font-family: inherit;
+    text-decoration: none;
+  }
+  .nav-link:hover { background: rgba(168,85,247,0.06); color: #e4e4e7; text-decoration: none; }
+  .nav-link.active { background: rgba(168,85,247,0.1); color: #a855f7; font-weight: 600; }
+
+  .nav-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 4px; font-size: 0.65rem; font-weight: 700;
+    background: rgba(113,113,122,0.15); color: #71717a; flex-shrink: 0;
+  }
+  .nav-link.active .nav-num { background: rgba(168,85,247,0.15); color: #a855f7; }
+
+  /* ── Content area ──────────────────────────────────────────────────── */
+  .content { flex: 1; min-width: 0; max-width: 800px; }
+
+  .section { margin-bottom: 3rem; scroll-margin-top: 5rem; }
+
+  .section h2 {
+    font-size: 1.15rem; font-weight: 700; color: #e4e4e7;
+    padding-bottom: 0.6rem; border-bottom: 1px solid #2a2a35;
+    margin-bottom: 1rem;
+  }
+
+  .section h3 {
+    font-size: 0.95rem; font-weight: 600; color: #e4e4e7; margin-bottom: 0.5rem;
+  }
+
+  .section p {
+    font-size: 0.88rem; line-height: 1.8; color: #e4e4e7; margin-bottom: 0.75rem;
+  }
+
+  .section ul {
+    margin: 0.5rem 0 1rem 1.25rem; padding: 0;
+  }
+  .section ul li {
+    font-size: 0.88rem; line-height: 1.7; color: #e4e4e7; margin-bottom: 0.35rem;
+  }
+  .section ul li strong { color: #e4e4e7; }
+
+  /* ── Callout boxes ─────────────────────────────────────────────────── */
+  .callout {
+    background: #1a1a22; border: 1px solid #2a2a35; border-left: 3px solid #a855f7;
+    border-radius: 8px; padding: 1rem 1.25rem; margin: 1.25rem 0;
+    font-size: 0.88rem; line-height: 1.7; color: #e4e4e7; font-style: italic;
+  }
+
+  .callout-warn {
+    border-left-color: #ef4444;
+    background: rgba(239,68,68,0.06);
+  }
+
+  .callout-primary {
+    border-left-color: #a855f7;
+    background: rgba(168,85,247,0.06);
+    font-style: normal;
+  }
+
+  .callout p { margin-bottom: 0.5rem; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .core-statement {
+    font-size: 1.05rem !important; font-weight: 700; color: #a855f7 !important;
+  }
+
+  /* ── Timeline ──────────────────────────────────────────────────────── */
+  .timeline {
+    display: flex; flex-direction: column; gap: 0; margin: 1.25rem 0;
+    border-left: 2px solid #a855f7; padding-left: 1.25rem;
+  }
+
+  .timeline-item {
+    display: flex; gap: 0.75rem; align-items: baseline;
+    padding: 0.5rem 0; position: relative;
+  }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -1.55rem; top: 0.85rem;
+    width: 8px; height: 8px; border-radius: 50%; background: #a855f7;
+  }
+
+  .timeline-date {
+    font-size: 0.8rem; font-weight: 700; color: #a855f7;
+    white-space: nowrap; min-width: 65px;
+  }
+  .timeline-desc {
+    font-size: 0.85rem; color: #e4e4e7; line-height: 1.5;
+  }
+
+  /* ── Two-column list ───────────────────────────────────────────────── */
+  .columns {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0 2rem;
+    margin: 0.5rem 0 1rem;
+  }
+
+  /* ── Layer diagram ─────────────────────────────────────────────────── */
+  .layer-diagram {
+    display: flex; flex-direction: column; gap: 0; margin: 1.25rem 0;
+  }
+
+  .layer {
+    display: flex; flex-direction: column; gap: 0.15rem;
+    padding: 0.85rem 1.25rem; border: 1px solid #2a2a35;
+    font-size: 0.85rem;
+  }
+  .layer strong { font-size: 0.85rem; color: #e4e4e7; }
+  .layer span { font-size: 0.78rem; color: #71717a; }
+
+  .layer-top {
+    background: rgba(168,85,247,0.1); border-color: #a855f7;
+    border-radius: 8px 8px 0 0;
+  }
+  .layer-top strong { color: #a855f7; }
+
+  .layer-mid {
+    background: rgba(59,130,246,0.08); border-color: #2a2a35;
+  }
+
+  .layer-base {
+    background: #1a1a22;
+    border-radius: 0 0 8px 8px;
+  }
+
+  /* ── Use case cards ────────────────────────────────────────────────── */
+  .use-cases {
+    display: flex; flex-direction: column; gap: 1rem; margin: 1rem 0;
+  }
+
+  .use-case {
+    background: #1a1a22; border: 1px solid #2a2a35; border-radius: 8px;
+    padding: 1rem 1.25rem;
+  }
+  .use-case h3 { margin-bottom: 0.35rem; }
+  .use-case p { margin-bottom: 0; font-size: 0.85rem; }
+
+  /* ── Footer ────────────────────────────────────────────────────────── */
+  .site-footer {
+    border-top: 1px solid #2a2a35; padding: 1.5rem 2rem; margin-top: 2rem;
+    text-align: center;
+  }
+  .site-footer p { font-size: 0.78rem; color: #52525b; }
+
+  /* ── Responsive ────────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; gap: 0; }
+    .nav { width: 100%; }
+    .nav-inner {
+      position: static; flex-direction: row; flex-wrap: wrap; gap: 0.25rem;
+      padding-bottom: 1.5rem; border-bottom: 1px solid #2a2a35; margin-bottom: 1.5rem;
+    }
+    .nav-title { display: none; }
+    .nav-link { font-size: 0.72rem; padding: 0.3rem 0.5rem; }
+    .columns { grid-template-columns: 1fr; }
+    .section { scroll-margin-top: 4rem; }
+  }
+
+  @media (max-width: 600px) {
+    .container { padding: 1rem; }
+    .site-header { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ────────────────────────────────────────────────────────── -->
+<header class="site-header">
+  <div>
+    <div class="site-logo">CRANIS2</div>
+    <div class="site-title">Strategy &amp; Ecosystem Context</div>
+  </div>
+  <a href="/logout" class="site-logout">Sign Out</a>
+</header>
+
+<!-- ── Main ──────────────────────────────────────────────────────────── -->
+<div class="container">
+  <p class="subtitle">
+    Internal reference for the CRANIS2 team. This document explains the regulatory drivers, market opportunity,
+    ecosystem positioning, and strategic direction of the platform.
+  </p>
+
+  <div class="layout">
+
+    <!-- ── Section nav ───────────────────────────────────────────────── -->
+    <nav class="nav">
+      <div class="nav-inner" id="nav-inner">
+        <span class="nav-title">Contents</span>
+        <a href="#regulations" class="nav-link active" data-section="regulations">
+          <span class="nav-num">1</span> Why These Regulations Exist
+        </a>
+        <a href="#supply-chain" class="nav-link" data-section="supply-chain">
+          <span class="nav-num">2</span> The Supply Chain Problem
+        </a>
+        <a href="#compliance-gap" class="nav-link" data-section="compliance-gap">
+          <span class="nav-num">3</span> The Compliance Gap
+        </a>
+        <a href="#role-of-cranis2" class="nav-link" data-section="role-of-cranis2">
+          <span class="nav-num">4</span> The Role of CRANIS2
+        </a>
+        <a href="#dev-platforms" class="nav-link" data-section="dev-platforms">
+          <span class="nav-num">5</span> Development Platforms in Context
+        </a>
+        <a href="#long-tail" class="nav-link" data-section="long-tail">
+          <span class="nav-num">6</span> The Long Tail of Software
+        </a>
+        <a href="#marketplace" class="nav-link" data-section="marketplace">
+          <span class="nav-num">7</span> The CRANIS2 Marketplace
+        </a>
+        <a href="#trust-network" class="nav-link" data-section="trust-network">
+          <span class="nav-num">8</span> The Trust Network
+        </a>
+        <a href="#software-ecosystem" class="nav-link" data-section="software-ecosystem">
+          <span class="nav-num">9</span> Within the Software Ecosystem
+        </a>
+        <a href="#financial-ecosystem" class="nav-link" data-section="financial-ecosystem">
+          <span class="nav-num">10</span> Within the Financial Ecosystem
+        </a>
+        <a href="#strategic-positioning" class="nav-link" data-section="strategic-positioning">
+          <span class="nav-num">11</span> Strategic Positioning
+        </a>
+        <a href="#core-message" class="nav-link" data-section="core-message">
+          <span class="nav-num">12</span> The Core Message
+        </a>
+      </div>
+    </nav>
+
+    <!-- ── Content ───────────────────────────────────────────────────── -->
+    <div class="content">
+
+      <!-- 1. Why These Regulations Exist -->
+      <section id="regulations" class="section">
+        <h2>1. Why These Regulations Exist</h2>
+        <p>
+          Europe introduced two major cybersecurity regulations that are fundamentally changing the software industry:
+        </p>
+        <ul>
+          <li><strong>The Cyber Resilience Act (CRA)</strong> — entered into force December 2024. Any product containing digital elements sold in the EU must meet cybersecurity requirements, carry a CE mark, and maintain ongoing compliance.</li>
+          <li><strong>The NIS2 Directive</strong> — already being transposed into national law. Organisations operating critical infrastructure must demonstrate security baselines.</li>
+        </ul>
+        <p>
+          These regulations exist because software supply chains have become a major security risk.
+          Modern software products often contain hundreds or thousands of third-party components, many of which
+          are poorly maintained or not well understood by the companies using them.
+        </p>
+        <p>
+          Governments recognised that organisations frequently do not know what software components they are using,
+          and therefore cannot effectively manage security risks.
+        </p>
+        <p>The regulations aim to ensure that companies placing digital products on the EU market:</p>
+        <ul>
+          <li>Understand their software composition</li>
+          <li>Monitor vulnerabilities</li>
+          <li>Maintain security processes</li>
+          <li>Provide compliance evidence</li>
+        </ul>
+        <p>The regulations are designed to protect citizens, businesses, and critical infrastructure.</p>
+
+        <div class="timeline">
+          <div class="timeline-item">
+            <span class="timeline-date">Dec 2024</span>
+            <span class="timeline-desc">CRA enters into force</span>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-date">Sep 2026</span>
+            <span class="timeline-desc">CRA reporting obligations begin — companies must report actively exploited vulnerabilities within 24 hours</span>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-date">Dec 2027</span>
+            <span class="timeline-desc">Full CRA compliance required — products without CE mark cannot be sold in the EU</span>
+          </div>
+        </div>
+
+        <div class="callout callout-warn">
+          Penalties for non-compliance: up to EUR 15 million or 2.5% of global annual turnover (CRA);
+          up to EUR 10 million or 2% of global annual turnover (NIS2).
+        </div>
+      </section>
+
+      <!-- 2. The Software Supply Chain Problem -->
+      <section id="supply-chain" class="section">
+        <h2>2. The Software Supply Chain Problem</h2>
+        <p>
+          Most software today is assembled rather than written from scratch.
+          Applications commonly depend on frameworks, libraries, sub-libraries, open-source components,
+          and external services. This creates a complex supply chain where vulnerabilities can propagate rapidly.
+        </p>
+        <p>
+          Major incidents such as Log4j demonstrated that many organisations cannot even answer
+          simple questions like:
+        </p>
+        <div class="callout">
+          "Are we using this vulnerable component anywhere in our systems?"
+        </div>
+        <p>
+          This lack of visibility is the problem regulators are trying to solve.
+          When a critical vulnerability is disclosed, companies need to know within hours — not days or weeks —
+          whether they are affected. Without a structured inventory of software components, this is impossible.
+        </p>
+        <p>
+          The supply chain problem is compounded by transitive dependencies — dependencies of dependencies.
+          A typical web application may declare 20 direct dependencies but actually include 200 or more
+          transitive packages. Each one is a potential vector for vulnerability, licence conflict, or
+          supply chain attack.
+        </p>
+      </section>
+
+      <!-- 3. The Compliance Gap -->
+      <section id="compliance-gap" class="section">
+        <h2>3. The Compliance Gap</h2>
+        <p>
+          Most software companies — especially smaller ones — do not currently maintain:
+        </p>
+        <ul>
+          <li>Software bills of materials (SBOMs)</li>
+          <li>Dependency inventories</li>
+          <li>Vulnerability monitoring processes</li>
+          <li>Licence compliance tracking</li>
+          <li>Regulatory documentation (technical files, declarations of conformity)</li>
+        </ul>
+        <p>Without automation, this work requires:</p>
+        <ul>
+          <li>Expensive consultants (typically EUR 500–1,500/day)</li>
+          <li>Manual audits that become stale immediately</li>
+          <li>Complex spreadsheets that no one maintains</li>
+        </ul>
+        <p>
+          Small engineering teams simply cannot manage this effectively alongside product development.
+          The compliance burden is real but the tooling has not existed to make it manageable.
+          This is the gap that CRANIS2 fills.
+        </p>
+      </section>
+
+      <!-- 4. The Role of CRANIS2 -->
+      <section id="role-of-cranis2" class="section">
+        <h2>4. The Role of CRANIS2</h2>
+        <p>
+          CRANIS2 exists to automate the mechanical work required to manage software supply chain governance.
+        </p>
+        <p>It provides:</p>
+        <ul>
+          <li><strong>Dependency discovery</strong> — three-tier detection across 28 lockfile formats and 26 languages</li>
+          <li><strong>SBOM generation</strong> — in CycloneDX 1.6 and SPDX 2.3 formats</li>
+          <li><strong>Vulnerability monitoring</strong> — local database of 445,000+ known vulnerabilities updated daily, scanned in sub-second time</li>
+          <li><strong>Licence tracking</strong> — SPDX classification, copyleft detection, cross-licence incompatibility analysis</li>
+          <li><strong>Technical documentation</strong> — CRA Annex VII technical file with auto-population from platform data</li>
+          <li><strong>EU Declaration of Conformity</strong> — professionally formatted PDF generation</li>
+          <li><strong>Regulatory reporting</strong> — ENISA Article 14 reporting with deadline tracking</li>
+          <li><strong>Intellectual property proof</strong> — RFC 3161 cryptographic timestamps</li>
+          <li><strong>Source code escrow</strong> — self-hosted Forgejo deposits with European data sovereignty</li>
+        </ul>
+        <p>
+          Rather than creating a compliance department inside a small company, CRANIS2 allows compliance
+          to become an automated system that runs alongside development.
+        </p>
+        <div class="callout">
+          The platform turns engineering activity that is already happening — writing code, managing dependencies,
+          running builds — into structured compliance evidence.
+        </div>
+      </section>
+
+      <!-- 5. Development Platforms in Context -->
+      <section id="dev-platforms" class="section">
+        <h2>5. Development Platforms in Context</h2>
+        <p>
+          Many developers assume that GitHub and its associated tools solve the software supply chain problem.
+        </p>
+        <p>
+          GitHub is an extremely powerful development platform and works very well for source code management,
+          collaboration, CI/CD, and dependency alerts. However, GitHub and tools like Dependabot were not
+          designed to manage regulatory compliance or full software governance.
+        </p>
+        <p>
+          Dependabot focuses on specific package ecosystems and dependency manifests.
+          It provides alerts and automated pull requests for outdated or vulnerable packages.
+          This is valuable but represents only one part of what compliance requires.
+        </p>
+        <p>
+          What development platforms do not provide:
+        </p>
+        <ul>
+          <li>Structured SBOMs in regulatory formats (CycloneDX, SPDX)</li>
+          <li>CRA technical file documentation</li>
+          <li>EU Declaration of Conformity generation</li>
+          <li>ENISA incident reporting workflows</li>
+          <li>Licence compliance analysis with cross-licence incompatibility detection</li>
+          <li>Cryptographic IP proof (RFC 3161)</li>
+          <li>Obligation tracking against specific CRA articles</li>
+          <li>Source code escrow with defined release models</li>
+        </ul>
+        <p>
+          CRANIS2 therefore complements development platforms by adding a governance and compliance layer
+          on top of existing engineering workflows. It connects to GitHub, Codeberg, Gitea, Forgejo, and GitLab —
+          including self-hosted instances — and converts the development activity already happening into
+          compliance evidence.
+        </p>
+        <div class="callout">
+          CRANIS2 does not compete with development platforms. It sits on top of them and provides
+          the compliance visibility they were not designed to deliver.
+        </div>
+      </section>
+
+      <!-- 6. The Long Tail of Software Ecosystems -->
+      <section id="long-tail" class="section">
+        <h2>6. The Long Tail of Software Ecosystems</h2>
+        <p>
+          A large portion of global software development happens outside the most popular modern package ecosystems.
+          These environments are common in sectors that are most affected by CRA and NIS2 requirements.
+        </p>
+        <p>Examples include environments built around:</p>
+        <div class="columns">
+          <ul>
+            <li>C and C++</li>
+            <li>Pascal and Delphi</li>
+            <li>Ada</li>
+            <li>Fortran</li>
+            <li>COBOL</li>
+          </ul>
+          <ul>
+            <li>Embedded systems</li>
+            <li>Industrial control systems</li>
+            <li>Medical device firmware</li>
+            <li>Energy infrastructure</li>
+            <li>Telecommunications</li>
+          </ul>
+        </div>
+        <p>
+          These environments often use custom dependency mechanisms and build systems that mainstream
+          dependency scanners do not support.
+        </p>
+        <p>
+          CRANIS2 currently supports modern ecosystems — 26 languages via import scanning
+          and 28 lockfile formats — including C and C++ header detection. The legacy and embedded
+          environments listed above represent significant expansion opportunities as the CRA compliance
+          deadline approaches and these sectors begin looking for tooling.
+        </p>
+        <div class="callout">
+          The sectors with the most complex dependency challenges — healthcare, energy, transport,
+          industrial automation — are also the sectors most directly regulated by NIS2. This alignment
+          between market need and regulatory pressure represents an important strategic opportunity.
+        </div>
+      </section>
+
+      <!-- 7. The CRANIS2 Marketplace -->
+      <section id="marketplace" class="section">
+        <h2>7. The CRANIS2 Marketplace</h2>
+        <p>
+          CRANIS2 already includes a marketplace capability. This is strategically important and must be
+          clearly understood by the team.
+        </p>
+        <p>
+          The marketplace allows organisations to publish software products that meet compliance expectations.
+          Other organisations can discover and evaluate these products. Compliance badges displayed on
+          marketplace listings are computed from real platform data — vulnerability scan results,
+          obligation completion, licence scan coverage — and cannot be self-declared.
+        </p>
+        <p>The marketplace connects:</p>
+        <ul>
+          <li><strong>Software vendors</strong> — who want to demonstrate that their products are compliant and trustworthy</li>
+          <li><strong>Enterprises and NIS2 organisations</strong> — who need to evaluate the security posture of their suppliers</li>
+          <li><strong>Investors</strong> — who want visibility into software governance before committing capital</li>
+          <li><strong>Insurers</strong> — who need to assess cyber risk exposure</li>
+          <li><strong>Regulators</strong> — who may reference compliance evidence during market surveillance</li>
+        </ul>
+        <p>
+          This creates a trusted discovery environment for software suppliers — a place where compliance
+          is demonstrable rather than declarative.
+        </p>
+        <p>
+          Marketplace listings require platform admin approval before becoming visible. This curation
+          step ensures quality and prevents misuse.
+        </p>
+      </section>
+
+      <!-- 8. The Trust Network -->
+      <section id="trust-network" class="section">
+        <h2>8. The Trust Network</h2>
+        <p>
+          As more vendors register products and maintain compliance evidence inside CRANIS2, the platform
+          becomes a trusted supply chain network. Each registered product contributes to a growing ecosystem
+          of verified software.
+        </p>
+        <p>Over time the platform can evolve into a trusted directory for:</p>
+        <ul>
+          <li>Compliant software products with verified evidence</li>
+          <li>Verified supply chains with dependency transparency</li>
+          <li>Secure software vendors with auditable governance</li>
+        </ul>
+        <p>
+          This creates strong network effects. More vendors attract more buyers and evaluators,
+          which attracts more vendors. The compliance evidence generated on the platform — SBOMs,
+          vulnerability scan histories, obligation completion records — accumulates over time and
+          becomes increasingly valuable.
+        </p>
+        <div class="callout">
+          The trust network effect is the long-term strategic differentiator. Individual compliance tools
+          can be replicated. A network of verified vendors with accumulated compliance histories
+          is significantly harder to replicate.
+        </div>
+      </section>
+
+      <!-- 9. CRANIS2 Within the Software Ecosystem -->
+      <section id="software-ecosystem" class="section">
+        <h2>9. CRANIS2 Within the Software Ecosystem</h2>
+        <p>CRANIS2 sits on top of the existing development ecosystem.</p>
+        <div class="layer-diagram">
+          <div class="layer layer-top">
+            <strong>CRANIS2</strong>
+            <span>Compliance evidence, governance visibility, regulatory documentation</span>
+          </div>
+          <div class="layer layer-mid">
+            <strong>Security Scanners &amp; Dependency Tools</strong>
+            <span>Vulnerability alerts, dependency updates, code scanning</span>
+          </div>
+          <div class="layer layer-base">
+            <strong>Development Platforms</strong>
+            <span>GitHub, GitLab, Codeberg, Gitea, Forgejo — source code, CI/CD, collaboration</span>
+          </div>
+        </div>
+        <p>
+          Developers build software using their existing tools and workflows. Security scanners
+          and dependency tools provide alerts about vulnerabilities and outdated packages.
+        </p>
+        <p>
+          CRANIS2 then converts the engineering activity and dependency data into:
+        </p>
+        <ul>
+          <li>Compliance evidence (SBOMs, licence analyses, vulnerability reports)</li>
+          <li>Governance visibility (obligation tracking, stakeholder management)</li>
+          <li>Regulatory documentation (technical files, declarations of conformity, ENISA reports)</li>
+        </ul>
+        <p>
+          This allows organisations to demonstrate that their products are safe and compliant
+          without changing how they build software. The compliance layer is additive, not disruptive.
+        </p>
+      </section>
+
+      <!-- 10. CRANIS2 Within the Financial Ecosystem -->
+      <section id="financial-ecosystem" class="section">
+        <h2>10. CRANIS2 Within the Financial Ecosystem</h2>
+        <p>
+          CRANIS2 produces evidence that is useful well beyond technical compliance.
+          The structured information generated by the platform can support several financial
+          and commercial processes:
+        </p>
+
+        <div class="use-cases">
+          <div class="use-case">
+            <h3>Professional Indemnity Insurance</h3>
+            <p>
+              Insurers assessing cyber risk exposure can use security posture evidence —
+              vulnerability scan histories, obligation completion, dependency governance — to
+              make more informed underwriting decisions. Companies with demonstrable governance
+              may qualify for lower premiums.
+            </p>
+          </div>
+          <div class="use-case">
+            <h3>R&amp;D Tax Credit Claims</h3>
+            <p>
+              Development activity records — repository sync histories, dependency analyses,
+              technical documentation — can support tax relief documentation by demonstrating
+              systematic R&amp;D activity and technological advancement.
+            </p>
+          </div>
+          <div class="use-case">
+            <h3>Business Loan Credibility</h3>
+            <p>
+              Banks can better evaluate software companies when their digital assets and governance
+              processes are visible. A structured compliance programme signals operational maturity
+              that lenders find reassuring.
+            </p>
+          </div>
+          <div class="use-case">
+            <h3>Investor Due Diligence</h3>
+            <p>
+              Investors can review security posture, software governance, dependency health,
+              and compliance readiness as part of their evaluation process. The due diligence export
+              provides this in a single downloadable package.
+            </p>
+          </div>
+          <div class="use-case">
+            <h3>Company Acquisition Processes</h3>
+            <p>
+              Acquirers can audit software supply chains, intellectual property provenance (via RFC 3161
+              timestamps), licence compliance, and vulnerability exposure. This reduces acquisition risk
+              and can accelerate deal timelines.
+            </p>
+          </div>
+        </div>
+
+        <div class="callout">
+          CRANIS2 becomes part of the broader financial ecosystem surrounding software companies —
+          not just a compliance checkbox, but a source of structured evidence that multiple
+          stakeholders can use for decision-making.
+        </div>
+      </section>
+
+      <!-- 11. Strategic Positioning -->
+      <section id="strategic-positioning" class="section">
+        <h2>11. Strategic Positioning</h2>
+        <p>
+          CRANIS2 is not just a compliance tool. It can become a form of digital infrastructure
+          for software governance and trust.
+        </p>
+        <p>The platform connects:</p>
+        <ul>
+          <li><strong>Software developers</strong> — who need to demonstrate compliance without disrupting workflows</li>
+          <li><strong>Regulators</strong> — who need evidence that products meet CRA and NIS2 requirements</li>
+          <li><strong>Enterprises</strong> — who need to evaluate their software supply chain security</li>
+          <li><strong>Insurers</strong> — who need to quantify cyber risk</li>
+          <li><strong>Investors</strong> — who need governance visibility before committing capital</li>
+          <li><strong>Financial institutions</strong> — who need to evaluate software companies as creditworthy businesses</li>
+        </ul>
+        <p>
+          Its role is to transform software engineering activity into verifiable trust signals.
+          Every SBOM generated, every vulnerability scan completed, every obligation met — these are
+          data points that contribute to a picture of trustworthiness that multiple stakeholders
+          can rely on.
+        </p>
+      </section>
+
+      <!-- 12. The Core Message -->
+      <section id="core-message" class="section">
+        <h2>12. The Core Message</h2>
+        <div class="callout callout-primary">
+          <p class="core-statement">
+            CRANIS2 helps organisations prove that their software can be trusted.
+          </p>
+          <p>
+            It does this by turning development activity, dependency data, and security monitoring
+            into structured compliance evidence.
+          </p>
+          <p>
+            Over time the platform can evolve into a trusted ecosystem for software supply chains
+            within the European digital market.
+          </p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Footer ────────────────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <p>CRANIS2 — Cyber Resilience Act &amp; NIS2 compliance, automated.</p>
+</footer>
+
+<!-- ── Scroll highlighting ───────────────────────────────────────────── -->
+<script>
+(function() {
+  const links = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('.section');
+
+  const observer = new IntersectionObserver(function(entries) {
+    const visible = entries.filter(function(e) { return e.isIntersecting; });
+    if (visible.length > 0) {
+      visible.sort(function(a, b) { return a.boundingClientRect.top - b.boundingClientRect.top; });
+      const activeId = visible[0].target.id;
+      links.forEach(function(link) {
+        if (link.getAttribute('data-section') === activeId) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+    }
+  }, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
+
+  sections.forEach(function(s) { observer.observe(s); });
+})();
+</script>
+</body>
+</html>

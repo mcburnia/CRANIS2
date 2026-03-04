@@ -143,6 +143,26 @@ services:
       - cranis2_net
     restart: unless-stopped
 
+  welcome:
+    build: ./welcome
+    container_name: cranis2_welcome
+    ports:
+      - "3004:3004"
+    environment:
+      WELCOME_USER: ${WELCOME_USER}
+      WELCOME_PASS: ${WELCOME_PASS}
+      WELCOME_SECRET: ${WELCOME_SECRET}
+      PORT: "3004"
+    volumes:
+      - cranis2_welcome_data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+    networks:
+      - cranis2_net
+    restart: unless-stopped
+
   forgejo:
     image: codeberg.org/forgejo/forgejo:10
     container_name: cranis2_forgejo
@@ -174,6 +194,7 @@ services:
       - "3003:3000"
 
 volumes:
+  cranis2_welcome_data:
   cranis2_forgejo_data:
   cranis2_pg_data:
   cranis2_neo4j_data:
