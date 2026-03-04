@@ -1197,7 +1197,51 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
         </div>
       )}
 
-            {/* CRA Compliance Checklist Card */}
+      {/* Product Details Card */}
+      <div className="pd-card">
+        <div className="pd-card-header">
+          <Package size={18} />
+          <h3>Product Details</h3>
+        </div>
+        <div className="pd-class-details">
+          <div className="pd-detail-row">
+            <span className="pd-detail-label">Product ID</span>
+            <span className="pd-detail-value pd-mono">{product.id}</span>
+          </div>
+          <div className="pd-detail-row">
+            <span className="pd-detail-label">Product Type</span>
+            <span className="pd-detail-value">{TYPE_LABELS[product.productType] || product.productType}</span>
+          </div>
+          <div className="pd-detail-row">
+            <span className="pd-detail-label">Version</span>
+            <span className="pd-detail-value">{product.version || '—'}</span>
+          </div>
+          <div className="pd-detail-row">
+            <span className="pd-detail-label">Repository</span>
+            <span className="pd-detail-value">
+              {product.repoUrl ? (
+                <a href={product.repoUrl} target="_blank" rel="noopener noreferrer" className="pd-repo-detail-link">
+                  {product.repoUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\.git$/, '')} <ExternalLink size={10} />
+                </a>
+              ) : '—'}
+            </span>
+          </div>
+          <div className="pd-detail-row">
+            <span className="pd-detail-label">Status</span>
+            <span className="pd-detail-value">{product.status}</span>
+          </div>
+          <div className="pd-detail-row">
+            <span className="pd-detail-label">Created</span>
+            <span className="pd-detail-value">{formatDateTime(product.createdAt)}</span>
+          </div>
+          <div className="pd-detail-row">
+            <span className="pd-detail-label">Last Updated</span>
+            <span className="pd-detail-value">{formatDateTime(product.updatedAt)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* CRA Compliance Checklist Card */}
       <div className="pd-card pd-card-checklist">
         <div className="pd-card-header">
           <CheckCircle2 size={18} />
@@ -1260,50 +1304,6 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
               <span>Loading checklist…</span>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Product Details Card */}
-      <div className="pd-card">
-        <div className="pd-card-header">
-          <Package size={18} />
-          <h3>Product Details</h3>
-        </div>
-        <div className="pd-class-details">
-          <div className="pd-detail-row">
-            <span className="pd-detail-label">Product ID</span>
-            <span className="pd-detail-value pd-mono">{product.id}</span>
-          </div>
-          <div className="pd-detail-row">
-            <span className="pd-detail-label">Product Type</span>
-            <span className="pd-detail-value">{TYPE_LABELS[product.productType] || product.productType}</span>
-          </div>
-          <div className="pd-detail-row">
-            <span className="pd-detail-label">Version</span>
-            <span className="pd-detail-value">{product.version || '—'}</span>
-          </div>
-          <div className="pd-detail-row">
-            <span className="pd-detail-label">Repository</span>
-            <span className="pd-detail-value">
-              {product.repoUrl ? (
-                <a href={product.repoUrl} target="_blank" rel="noopener noreferrer" className="pd-repo-detail-link">
-                  {product.repoUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\.git$/, '')} <ExternalLink size={10} />
-                </a>
-              ) : '—'}
-            </span>
-          </div>
-          <div className="pd-detail-row">
-            <span className="pd-detail-label">Status</span>
-            <span className="pd-detail-value">{product.status}</span>
-          </div>
-          <div className="pd-detail-row">
-            <span className="pd-detail-label">Created</span>
-            <span className="pd-detail-value">{formatDateTime(product.createdAt)}</span>
-          </div>
-          <div className="pd-detail-row">
-            <span className="pd-detail-label">Last Updated</span>
-            <span className="pd-detail-value">{formatDateTime(product.updatedAt)}</span>
-          </div>
         </div>
       </div>
     </div>
