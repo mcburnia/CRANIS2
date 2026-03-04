@@ -190,7 +190,7 @@ export default function AdminStrategyPage() {
             <ul>
               <li><strong>Dependency discovery</strong> — three-tier detection across 28 lockfile formats and 26 languages</li>
               <li><strong>SBOM generation</strong> — in CycloneDX 1.6 and SPDX 2.3 formats</li>
-              <li><strong>Vulnerability monitoring</strong> — local database of 445,000+ known vulnerabilities, scanned in sub-second time</li>
+              <li><strong>Vulnerability monitoring</strong> — local database of 445,000+ known vulnerabilities updated daily, scanned in sub-second time</li>
               <li><strong>Licence tracking</strong> — SPDX classification, copyleft detection, cross-licence incompatibility analysis</li>
               <li><strong>Technical documentation</strong> — CRA Annex VII technical file with auto-population from platform data</li>
               <li><strong>EU Declaration of Conformity</strong> — professionally formatted PDF generation</li>
