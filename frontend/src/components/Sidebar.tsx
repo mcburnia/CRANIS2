@@ -1,12 +1,11 @@
 import { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUnreadCount } from '../hooks/useNotifications';
 import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
   FolderGit2, Users, Box, AlertTriangle, CreditCard,
-  BarChart3, UserCircle, Settings, ScrollText, LogOut, Trash2, Shield, MessageSquareMore, Scale, Fingerprint, FileBarChart2, Store,
+  BarChart3, UserCircle, Settings, ScrollText, LogOut, Shield, MessageSquareMore, Scale, Fingerprint, FileBarChart2, Store,
   ChevronRight, BookOpen
 } from 'lucide-react';
 import FeedbackModal from './FeedbackModal';
@@ -72,9 +71,7 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { unreadCount } = useUnreadCount();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   // Determine which section the current route belongs to
   const activeSection = useMemo(() => {
@@ -96,30 +93,6 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
     logout();
     if (onNavigate) onNavigate();
     navigate('/');
-  }
-
-  async function handleDeleteAccount() {
-    setDeleting(true);
-    try {
-      const token = localStorage.getItem('session_token');
-      const res = await fetch('/api/dev/nuke-account', {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        logout();
-        if (onNavigate) onNavigate();
-        navigate('/');
-      } else {
-        const data = await res.json();
-        alert('Failed to delete: ' + (data.error || 'Unknown error'));
-      }
-    } catch {
-      alert('Network error');
-    } finally {
-      setDeleting(false);
-      setShowDeleteConfirm(false);
-    }
   }
 
   return (
@@ -182,40 +155,13 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
         </div>
       )}
       <div className="sidebar-footer">
-        <button className="sidebar-user-btn" onClick={() => setShowDeleteConfirm(true)} title="DEV: Delete account & org data">
-          <Trash2 size={14} className="dev-trash-icon" />
-          {user?.email}
-        </button>
+        <span className="sidebar-user-email">{user?.email}</span>
         <button className="nav-item logout-btn" onClick={handleLogout}>
           <LogOut size={18} className="nav-icon" />
           Sign Out
         </button>
       </div>
 
-      {/* DEV ONLY: Delete confirmation modal */}
-      {showDeleteConfirm && createPortal(
-        <div className="dev-modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
-          <div className="dev-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="dev-modal-badge">DEV ONLY</div>
-            <h3>Delete Account & Organisation</h3>
-            <p>This will permanently remove:</p>
-            <ul>
-              <li>Your user account ({user?.email})</li>
-              <li>All event/telemetry data</li>
-              <li>Your organisation and all its graph data</li>
-            </ul>
-            <div className="dev-modal-actions">
-              <button className="btn-cancel" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
-                Cancel
-              </button>
-              <button className="btn-delete" onClick={handleDeleteAccount} disabled={deleting}>
-                {deleting ? 'Deleting...' : 'Delete Everything'}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
       <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} />
     </>
   );

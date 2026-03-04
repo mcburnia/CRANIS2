@@ -6,7 +6,6 @@ import authRoutes from './routes/auth.js';
 import orgRoutes from './routes/org.js';
 import auditRoutes from './routes/audit.js';
 import productRoutes from './routes/products.js';
-import devRoutes from './routes/dev.js';  // DEV ONLY — REMOVE BEFORE PRODUCTION
 import githubRoutes from './routes/github.js';
 import technicalFileRoutes from './routes/technical-file.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -47,7 +46,7 @@ app.use(express.json({
 
 // Global billing gate — blocks write operations for restricted accounts
 // Skips: auth, billing, admin, health, webhooks, and all GET/OPTIONS requests
-const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/dev', '/api/docs'];
+const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs'];
 app.use('/api', (req, res, next) => {
   // Only gate write operations
   if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
@@ -67,7 +66,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/org', orgRoutes);
 app.use('/api/audit-log', auditRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/dev', devRoutes);  // DEV ONLY — REMOVE BEFORE PRODUCTION
 app.use('/api/github', githubRoutes);
 app.use('/api/repo', githubRoutes);  // Unified repo routes (same router, canonical path)
 app.use('/api/technical-file', technicalFileRoutes);
