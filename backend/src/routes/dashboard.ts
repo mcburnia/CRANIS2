@@ -9,6 +9,21 @@ import {
 
 const router = Router();
 
+type SupportStatus = 'active' | 'ending_soon' | 'ended' | 'not_set';
+
+function computeSupportStatus(endDateStr: string | null): { status: SupportStatus; daysRemaining: number | null; endDate: string | null } {
+  if (!endDateStr) return { status: 'not_set', daysRemaining: null, endDate: null };
+  const end = new Date(endDateStr);
+  if (isNaN(end.getTime())) return { status: 'not_set', daysRemaining: null, endDate: null };
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  const days = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  if (days < 0) return { status: 'ended', daysRemaining: days, endDate: endDateStr };
+  if (days <= 90) return { status: 'ending_soon', daysRemaining: days, endDate: endDateStr };
+  return { status: 'active', daysRemaining: days, endDate: endDateStr };
+}
+
 async function requireAuth(req: Request, res: Response, next: Function) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) { res.status(401).json({ error: 'No token provided' }); return; }
@@ -94,11 +109,15 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       totalDependencies = parseInt(depResult.rows[0]?.total) || 0;
     }
 
-    // --- Postgres: tech file sections ---
+    // --- Postgres: tech file sections + support period end dates ---
     let techFileMap: Record<string, { total: number; completed: number }> = {};
+    let supportEndMap: Record<string, string | null> = {};
     if (productIds.length > 0) {
       const tfResult = await pool.query(
-        `SELECT product_id, section_key, status FROM technical_file_sections WHERE product_id = ANY($1)`,
+        `SELECT product_id, section_key, status,
+                CASE WHEN section_key = 'support_period'
+                     THEN content->'fields'->>'end_date' ELSE NULL END AS support_end_date
+         FROM technical_file_sections WHERE product_id = ANY($1)`,
         [productIds]
       );
       for (const row of tfResult.rows) {
@@ -108,6 +127,9 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
         techFileMap[row.product_id].total++;
         if (row.status === 'complete') {
           techFileMap[row.product_id].completed++;
+        }
+        if (row.section_key === 'support_period' && row.support_end_date) {
+          supportEndMap[row.product_id] = row.support_end_date;
         }
       }
     }
@@ -247,11 +269,12 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
         : 0;
     }
 
-    // Enrich products with risk + readiness data
+    // Enrich products with risk + readiness + support status data
     const finalProducts = enrichedProducts.map(p => ({
       ...p,
       riskFindings: productRiskMap[p.id] || { total: 0, critical: 0, high: 0, open: 0 },
       craReadiness: readinessMap[p.id] || { met: 0, total: 0, readiness: 0 },
+      supportStatus: computeSupportStatus(supportEndMap[p.id] || null),
     }));
 
     res.json({

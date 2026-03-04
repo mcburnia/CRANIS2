@@ -323,3 +323,50 @@ export async function sendDeadlineAlertEmail(
     console.error('[ALERT-EMAIL] Failed to send deadline alert:', (err as Error).message);
   }
 }
+
+/**
+ * 6. Support period ending/ended — product approaching or past end-of-support.
+ */
+export async function sendSupportEndAlertEmail(
+  orgId: string,
+  productName: string,
+  daysRemaining: number,
+  productId: string
+): Promise<void> {
+  try {
+    const threshold = daysRemaining <= 0 ? 0 : daysRemaining <= 7 ? 7 : daysRemaining <= 30 ? 30 : daysRemaining <= 60 ? 60 : 90;
+    const alertKey = `support-end:${productId}:${threshold}d`;
+    if (!(await shouldSendAlert(alertKey))) return;
+
+    const recipients = await getAlertRecipients(orgId, productId, [
+      'compliance_officer', 'manufacturer_contact', 'security_contact',
+    ]);
+    if (recipients.length === 0) return;
+
+    const isExpired = daysRemaining <= 0;
+    const severity = isExpired ? 'critical' : daysRemaining <= 7 ? 'high' : 'medium';
+    const timeLabel = isExpired
+      ? 'has ended'
+      : daysRemaining === 0 ? 'ends today'
+      : `ends in ${daysRemaining} days`;
+
+    const subject = `CRANIS2: Support period ${timeLabel} for ${productName}`;
+
+    const html = wrapEmail(
+      isExpired ? 'Support Period Ended' : 'Support Period Ending Soon',
+      severityBadge(severity) +
+      textParagraph(`The support period for <strong>${productName}</strong> ${timeLabel}.`) +
+      textParagraph(isExpired
+        ? 'CRA Article 13(8) requires that security patches are provided free of charge for the duration of the support period. As support has ended, ensure all end-of-support communications have been made to users.'
+        : 'CRA Article 13(8) requires security patches to be provided for the full support period. Plan your end-of-support communications to users.') +
+      actionButton('View Product', `${frontendUrl}/products/${productId}?tab=technical-file`) +
+      roleFooter(['compliance_officer', 'manufacturer_contact', 'security_contact'])
+    );
+
+    await resend.emails.send({ from: `CRANIS2 <${from}>`, to: recipients, subject, html });
+    await recordAlertSent(orgId, alertKey, subject);
+    console.log(`[ALERT-EMAIL] Support end alert sent to ${recipients.length} recipients (${productName}, ${daysRemaining}d remaining)`);
+  } catch (err) {
+    console.error('[ALERT-EMAIL] Failed to send support end alert:', (err as Error).message);
+  }
+}

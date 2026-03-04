@@ -19,7 +19,7 @@ import { resolveLockfileVersions } from './lockfile-resolver.js';
 import { generateSBOMFromLockfiles } from './lockfile-sbom-generator.js';
 import { generateSBOMFromImports } from './import-scanner.js';
 import { sendComplianceGapNotification } from './notifications.js';
-import { sendScanFailedEmail, sendComplianceGapEmail, sendDeadlineAlertEmail } from './alert-emails.js';
+import { sendScanFailedEmail, sendComplianceGapEmail, sendDeadlineAlertEmail, sendSupportEndAlertEmail } from './alert-emails.js';
 import { scanProductLicenses } from './license-scanner.js';
 import { createSnapshot } from './ip-proof.js';
 import { extractPackageInfo } from '../routes/github.js';
@@ -48,12 +48,16 @@ const WEBHOOK_HEALTH_HOUR = 6;
 // Hour of the day to sync vulnerability databases (0-23, default: 1 AM — before SBOM sync)
 const VULN_DB_SYNC_HOUR = 1;
 
+// Hour of the day to check for approaching end-of-support dates (0-23, default: 7 AM)
+const SUPPORT_CHECK_HOUR = 7;
+
 let lastSyncDate = '';
 let lastVulnScanDate = '';
 let lastVulnDbSyncDate = '';
 let lastBillingCheckDate = '';
 let lastEscrowDepositDate = '';
 let lastWebhookHealthDate = '';
+let lastSupportCheckDate = '';
 
 async function getProductRepoToken(productId: string, forProvider?: RepoProvider): Promise<{ token: string; userId: string; provider: RepoProvider; instanceUrl: string | null } | null> {
   // Find the user who owns this product (via org) and has a repo connection
@@ -783,8 +787,116 @@ async function runDailyWebhookHealthCheck(): Promise<void> {
   }
 }
 
+async function checkSupportPeriodExpiry(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (lastSupportCheckDate === todayStr) return;
+
+  const now = new Date();
+  if (now.getUTCHours() < SUPPORT_CHECK_HOUR) return;
+
+  lastSupportCheckDate = todayStr;
+  logger.info('[SUPPORT-CHECK] Starting daily support period expiry check...');
+
+  try {
+    // Get all products with a non-empty support period end_date
+    const result = await pool.query(
+      `SELECT product_id,
+              content->'fields'->>'end_date' AS end_date
+       FROM technical_file_sections
+       WHERE section_key = 'support_period'
+         AND content->'fields'->>'end_date' IS NOT NULL
+         AND content->'fields'->>'end_date' != ''`
+    );
+
+    if (result.rows.length === 0) {
+      logger.info('[SUPPORT-CHECK] No products with support end dates');
+      return;
+    }
+
+    // Get product names + org IDs from Neo4j
+    const driver = getDriver();
+    const session = driver.session();
+    const productIds = result.rows.map((r: any) => r.product_id);
+    const productInfo: Record<string, { name: string; orgId: string }> = {};
+
+    try {
+      const neo = await session.run(
+        `UNWIND $ids AS pid
+         MATCH (p:Product {id: pid})-[:BELONGS_TO]->(o:Organisation)
+         RETURN p.id AS id, p.name AS name, o.id AS orgId`,
+        { ids: productIds }
+      );
+      for (const rec of neo.records) {
+        productInfo[rec.get('id')] = { name: rec.get('name') || 'Unknown', orgId: rec.get('orgId') };
+      }
+    } finally {
+      await session.close();
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const thresholds = [90, 60, 30, 7, 0];
+    let alertsSent = 0;
+
+    for (const row of result.rows) {
+      const endDate = new Date(row.end_date);
+      if (isNaN(endDate.getTime())) continue;
+      endDate.setHours(0, 0, 0, 0);
+
+      const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const info = productInfo[row.product_id];
+      if (!info) continue;
+
+      // Check each threshold — trigger if days remaining is at or below the threshold
+      for (const threshold of thresholds) {
+        if (daysRemaining <= threshold) {
+          // Create bell notification (debounced by checking for existing unread)
+          const existingNotif = await pool.query(
+            `SELECT id FROM notifications
+             WHERE type = 'support_period_expiry' AND is_read = false
+               AND metadata->>'productId' = $1
+               AND metadata->>'threshold' = $2
+             LIMIT 1`,
+            [row.product_id, String(threshold)]
+          );
+
+          if (existingNotif.rows.length === 0) {
+            const isExpired = daysRemaining <= 0;
+            const timeLabel = isExpired
+              ? `ended ${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) !== 1 ? 's' : ''} ago`
+              : daysRemaining === 0 ? 'ends today'
+              : `ends in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`;
+            const severity = isExpired ? 'critical' : daysRemaining <= 7 ? 'high' : 'medium';
+
+            await createNotification({
+              orgId: info.orgId,
+              type: 'support_period_expiry',
+              severity,
+              title: `Support period ${isExpired ? 'ended' : 'ending soon'}: ${info.name}`,
+              body: `The support period for ${info.name} ${timeLabel}. CRA Article 13(8) requires security patches for the full support period.`,
+              link: `/products/${row.product_id}?tab=technical-file`,
+              metadata: { productId: row.product_id, threshold: String(threshold), daysRemaining },
+            });
+
+            // Send email alert
+            sendSupportEndAlertEmail(info.orgId, info.name, daysRemaining, row.product_id).catch(() => {});
+            alertsSent++;
+          }
+
+          // Only trigger the tightest matching threshold per product
+          break;
+        }
+      }
+    }
+
+    logger.info(`[SUPPORT-CHECK] Check complete — ${result.rows.length} product(s) checked, ${alertsSent} alert(s) sent`);
+  } catch (err: any) {
+    console.error('[SUPPORT-CHECK] Error checking support period expiry:', err.message);
+  }
+}
+
 export function startScheduler(): void {
-  logger.info('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00');
+  logger.info('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00');
 
   // Run check periodically — all three have hour-gating and date-tracking
   setInterval(() => {
@@ -795,5 +907,6 @@ export function startScheduler(): void {
     checkCraDeadlines().catch(err => console.error("[SCHEDULER] Uncaught error in CRA deadline check:", err));
     runDailyEscrowDeposits().catch(err => console.error('[SCHEDULER] Uncaught error in escrow deposits:', err));
     runDailyWebhookHealthCheck().catch(err => console.error('[SCHEDULER] Uncaught error in webhook health:', err));
+    checkSupportPeriodExpiry().catch(err => console.error('[SCHEDULER] Uncaught error in support period check:', err));
   }, CHECK_INTERVAL_MS);
 }

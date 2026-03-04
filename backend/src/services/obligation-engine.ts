@@ -99,21 +99,24 @@ export async function computeDerivedStatuses(
     openFindingsByProduct[row.product_id] = parseInt(row.open_count, 10);
   }
 
-  // 4. Technical file sections (status + key content fields)
+  // 4. Technical file sections (status + key content fields + support period end date)
   const techFileResult = await pool.query(
     `SELECT product_id, section_key, status,
             content->>'disclosure_policy_url' AS cvd_url,
-            content->>'notified_body' AS notified_body
+            content->>'notified_body' AS notified_body,
+            CASE WHEN section_key = 'support_period'
+                 THEN content->'fields'->>'end_date' ELSE NULL END AS support_end_date
      FROM technical_file_sections WHERE product_id = ANY($1)`,
     [productIds]
   );
-  const techFileByProduct: Record<string, Record<string, { status: string; cvdUrl: string | null; notifiedBody: string | null }>> = {};
+  const techFileByProduct: Record<string, Record<string, { status: string; cvdUrl: string | null; notifiedBody: string | null; supportEndDate?: string | null }>> = {};
   for (const row of techFileResult.rows) {
     if (!techFileByProduct[row.product_id]) techFileByProduct[row.product_id] = {};
     techFileByProduct[row.product_id][row.section_key] = {
       status: row.status,
       cvdUrl: row.cvd_url || null,
       notifiedBody: row.notified_body || null,
+      ...(row.support_end_date ? { supportEndDate: row.support_end_date } : {}),
     };
   }
 
@@ -224,6 +227,26 @@ export async function computeDerivedStatuses(
     // art_13_3 — Component Currency
     if (sbom) {
       derived['art_13_3'] = { status: 'in_progress', reason: `Component inventory tracked via SBOM (${sbom.packageCount} packages)` };
+    }
+
+    // art_13_7 / art_13_8 — Support period awareness
+    const spSection = sections['support_period'];
+    const supportEndDate = spSection?.supportEndDate;
+    if (spSection?.status === 'completed' && supportEndDate) {
+      const endDate = new Date(supportEndDate);
+      if (!isNaN(endDate.getTime())) {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        endDate.setHours(0, 0, 0, 0);
+        if (endDate < now) {
+          derived['art_13_7'] = { status: 'met', reason: 'Support period ended — obligation discharged' };
+          derived['art_13_8'] = { status: 'met', reason: 'Support period ended — obligation discharged' };
+        } else {
+          const formattedEnd = supportEndDate.slice(0, 10);
+          derived['art_13_7'] = { status: 'in_progress', reason: `Support active until ${formattedEnd} — automatic updates required` };
+          derived['art_13_8'] = { status: 'in_progress', reason: `Support active until ${formattedEnd} — free patches required` };
+        }
+      }
     }
 
     // art_13_5 — No Known Exploitable Vulnerabilities at Market Placement

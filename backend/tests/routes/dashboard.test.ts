@@ -96,4 +96,50 @@ describe('/api/dashboard', () => {
       }
     });
   });
+
+  // ─── Support Status ──────────────────────────────────────────────
+
+  describe('Support Status', () => {
+    it('should include supportStatus on each product', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      for (const product of res.body.products) {
+        expect(product).toHaveProperty('supportStatus');
+        expect(product.supportStatus).toHaveProperty('status');
+        expect(product.supportStatus).toHaveProperty('daysRemaining');
+        expect(product.supportStatus).toHaveProperty('endDate');
+      }
+    });
+
+    it('supportStatus.status should be a valid value', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      const validStatuses = ['active', 'ending_soon', 'ended', 'not_set'];
+      for (const product of res.body.products) {
+        expect(validStatuses).toContain(product.supportStatus.status);
+      }
+    });
+
+    it('should return not_set with null daysRemaining when no end date', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      const notSetProducts = res.body.products.filter(
+        (p: any) => p.supportStatus.status === 'not_set'
+      );
+      for (const p of notSetProducts) {
+        expect(p.supportStatus.daysRemaining).toBeNull();
+        expect(p.supportStatus.endDate).toBeNull();
+      }
+    });
+
+    it('should return supportStatus for empty org without error', async () => {
+      const token = await loginTestUser(TEST_USERS.emptyAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      expect(res.body.products).toHaveLength(0);
+    });
+  });
 });

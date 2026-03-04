@@ -20,6 +20,7 @@ interface DashboardProduct {
   lastSync: string | null;
   riskFindings: { total: number; critical: number; high: number; open: number };
   craReadiness: { met: number; total: number; readiness: number };
+  supportStatus: { status: string; daysRemaining: number | null; endDate: string | null };
 }
 
 interface DashboardStats {
@@ -110,6 +111,15 @@ function getStatusBadge(progress: number): { label: string; color: string } {
   if (progress === 0) return { label: 'Not Started', color: 'red' };
   if (progress >= 100) return { label: 'Complete', color: 'green' };
   return { label: 'In Progress', color: 'amber' };
+}
+
+function getSupportBadge(ss: { status: string; daysRemaining: number | null }): { label: string; color: string; sub?: string } {
+  switch (ss.status) {
+    case 'active': return { label: 'Active', color: 'green', sub: ss.daysRemaining != null ? `${ss.daysRemaining}d remaining` : undefined };
+    case 'ending_soon': return { label: 'Ending Soon', color: 'amber', sub: ss.daysRemaining != null ? `${ss.daysRemaining}d remaining` : undefined };
+    case 'ended': return { label: 'Ended', color: 'red', sub: ss.daysRemaining != null ? `${Math.abs(ss.daysRemaining)}d ago` : undefined };
+    default: return { label: 'Not Set', color: 'muted' };
+  }
 }
 
 function getActivityDotColor(eventType: string): string {
@@ -296,6 +306,7 @@ export default function DashboardPage() {
                 <th>CRA Category</th>
                 <th>Technical File</th>
                 <th>CRA Readiness</th>
+                <th>Support</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -306,6 +317,7 @@ export default function DashboardPage() {
                 const progressColor = p.techFileProgress === 0 ? 'red' : p.techFileProgress >= 100 ? 'green' : 'amber';
                 const readinessColour = getReadinessColour(p.craReadiness?.readiness ?? 0);
                 const readinessPct = p.craReadiness?.readiness ?? 0;
+                const support = getSupportBadge(p.supportStatus || { status: 'not_set', daysRemaining: null });
                 return (
                   <tr key={p.id}>
                     <td><Link to={`/products/${p.id}`}><strong>{p.name}</strong></Link></td>
@@ -317,6 +329,10 @@ export default function DashboardPage() {
                     <td>
                       <div className="progress-bar"><div className={`progress-fill ${readinessColour}`} style={{ width: `${Math.max(readinessPct, 2)}%` }} /></div>
                       <span className="progress-text">{readinessPct}% <span className="readiness-fraction">({p.craReadiness?.met ?? 0}/{p.craReadiness?.total ?? 0})</span></span>
+                    </td>
+                    <td>
+                      <span className={`badge ${support.color}`}>{support.label}</span>
+                      {support.sub && <div className="support-sub">{support.sub}</div>}
                     </td>
                     <td><span className={`badge ${status.color}`}>{status.label}</span></td>
                   </tr>

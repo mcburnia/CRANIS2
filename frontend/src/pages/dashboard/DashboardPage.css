@@ -159,6 +159,12 @@
 .readiness-sub { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
 .readiness-detail { font-size: 0.85rem; color: var(--muted); }
 
+.support-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
 .readiness-fraction {
   font-size: 0.7rem;
   color: var(--muted);
