@@ -60,6 +60,53 @@
 .activity-text { font-size: 0.85rem; }
 .activity-time { font-size: 0.75rem; color: var(--muted); }
 
+/* ── Compliance Checklist Widget ───────────────────────────── */
+.dash-checklist-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 0.6rem;
+}
+.dash-cl-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+.dash-cl-name { font-weight: 600; font-size: 0.9rem; }
+.dash-cl-count { font-size: 0.75rem; color: var(--muted); }
+.dash-cl-bar-wrap {
+  display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem;
+}
+.dash-cl-bar {
+  flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.dash-cl-bar-fill {
+  height: 100%; background: var(--accent); border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.dash-cl-pct { font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+.dash-cl-steps {
+  display: flex; gap: 4px; margin-bottom: 0.5rem; flex-wrap: wrap;
+}
+.dash-cl-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.dash-cl-dot.done { background: var(--green); }
+.dash-cl-dot.todo { background: var(--border); border: 1px solid var(--muted); }
+.dash-cl-next {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; color: var(--text); margin-top: 0.4rem;
+}
+.dash-cl-next span { flex: 1; }
+.dash-cl-action {
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 0.75rem; padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border); border-radius: 5px;
+  background: none; color: var(--accent); cursor: pointer;
+  white-space: nowrap; transition: all 0.15s;
+}
+.dash-cl-action:hover { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+
 @media (max-width: 768px) {
   .welcome-banner { padding: 1rem; }
   .risk-header { flex-direction: column; align-items: flex-start; }

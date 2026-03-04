@@ -966,6 +966,50 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
 .pd-delete-confirm-btn:hover { opacity: 0.9; }
 .pd-delete-confirm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ── CRA Compliance Checklist (Overview tab) ─────────────── */
+.pd-card-checklist { grid-column: 1 / -1; }
+.pd-cl-count {
+  margin-left: auto; font-size: 0.78rem; color: var(--muted);
+  background: var(--border); border-radius: 10px; padding: 0.15rem 0.5rem;
+}
+.pd-cl-deadlines {
+  display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;
+}
+.pd-cl-deadline {
+  display: flex; align-items: center; gap: 0.35rem;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.25rem 0.6rem; font-size: 0.75rem; color: var(--muted);
+}
+.pd-cl-deadline.urgent { border-color: rgba(245,158,11,0.4); color: var(--amber); }
+.pd-cl-dl-days { font-weight: 700; font-size: 0.85rem; }
+.pd-cl-steps { display: flex; flex-direction: column; gap: 0.35rem; }
+.pd-cl-step {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  padding: 0.4rem 0.5rem; border-radius: 6px; transition: background 0.1s;
+}
+.pd-cl-step.done { opacity: 0.55; }
+.pd-cl-step.todo:hover { background: rgba(255,255,255,0.03); }
+.pd-cl-step-icon { margin-top: 1px; flex-shrink: 0; }
+.pd-cl-step-body { flex: 1; min-width: 0; }
+.pd-cl-step-title { font-size: 0.83rem; font-weight: 500; }
+.pd-cl-step-desc {
+  font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem;
+  line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.pd-cl-step-action {
+  display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;
+  font-size: 0.72rem; padding: 0.2rem 0.45rem;
+  border: 1px solid var(--border); border-radius: 5px;
+  background: none; color: var(--accent); cursor: pointer;
+  flex-shrink: 0; transition: all 0.15s;
+}
+.pd-cl-step-action:hover { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+.pd-cl-loading {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; color: var(--muted); padding: 0.5rem;
+}
+
 /* Codeberg SBOM info note */
 .pd-codeberg-sbom-note {
   display: flex;

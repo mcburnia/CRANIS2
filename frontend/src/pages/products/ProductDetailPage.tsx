@@ -6,7 +6,7 @@ import PageHeader from '../../components/PageHeader';
 import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
-  CheckCircle2, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
+  CheckCircle2, Circle, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
   GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive, Server, Sparkles
 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -903,7 +903,26 @@ export default function ProductDetailPage() {
 }
 
 /* ── Overview Tab ─────────────────────────────────────── */
-function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFileProgress, versionHistory, syncHistory, syncStats, onConnect, onSync, syncing, onDisconnect, repoProvider, isProviderConnected, providerConnection }: {
+interface ChecklistStepPD {
+  id: string;
+  step: number;
+  title: string;
+  description: string;
+  complete: boolean;
+  actionLabel: string;
+  actionTab: string | null;
+  actionPath: string | null;
+}
+
+interface ProductChecklistPD {
+  stepsComplete: number;
+  stepsTotal: number;
+  complete: boolean;
+  deadlines: { id: string; label: string; date: string; daysRemaining: number }[];
+  steps: ChecklistStepPD[];
+}
+
+function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, techFileProgress: _techFileProgress, versionHistory, syncHistory, syncStats, onConnect, onSync, syncing, onDisconnect, repoProvider, isProviderConnected, providerConnection }: {
   product: Product; catInfo: { label: string; color: string; desc: string };
   ghStatus: GitHubStatus; ghData: GitHubData; sbomData: SBOMData;
   techFileProgress: { total: number; completed: number; inProgress: number; notStarted: number };
@@ -916,6 +935,17 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFilePro
   providerConnection?: RepoConnection;
 }) {
   const pLabel = providerLabel(repoProvider);
+  const [checklist, setChecklist] = useState<ProductChecklistPD | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('session_token');
+    fetch(`/api/products/${product.id}/compliance-checklist`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setChecklist(d); })
+      .catch(() => {});
+  }, [product.id]);
   return (
     <div className="pd-overview-grid">
       {/* GitHub Repo Card — only if synced */}
@@ -1110,19 +1140,69 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFilePro
         </div>
       )}
 
-            {/* Compliance Progress Card */}
-      <div className="pd-card">
+            {/* CRA Compliance Checklist Card */}
+      <div className="pd-card pd-card-checklist">
         <div className="pd-card-header">
           <CheckCircle2 size={18} />
-          <h3>Compliance Progress</h3>
+          <h3>CRA Compliance Checklist</h3>
+          {checklist && (
+            <span className="pd-cl-count">{checklist.stepsComplete}/{checklist.stepsTotal}</span>
+          )}
         </div>
-        <div className="pd-progress-list">
-          <ProgressItem label="Essential Requirements" status="not_started" />
-          <ProgressItem label="Vulnerability Handling" status="not_started" />
-          <ProgressItem label="Technical Documentation" status={techFileProgress.completed === techFileProgress.total && techFileProgress.total > 0 ? 'completed' : techFileProgress.completed > 0 || techFileProgress.inProgress > 0 ? 'in_progress' : 'not_started'} />
-          <ProgressItem label="SBOM Generation" status={sbomData.hasSBOM ? 'completed' : ghData.synced ? 'in_progress' : 'not_started'} />
-          <ProgressItem label="Conformity Assessment" status="not_started" />
-          <ProgressItem label="EU Declaration of Conformity" status="not_started" />
+
+        {/* Deadlines */}
+        {checklist && (
+          <div className="pd-cl-deadlines">
+            {checklist.deadlines.map(d => (
+              <div key={d.id} className={`pd-cl-deadline ${d.daysRemaining < 180 ? 'urgent' : ''}`}>
+                <span className="pd-cl-dl-days">{d.daysRemaining}d</span>
+                <span className="pd-cl-dl-label">{d.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Steps */}
+        <div className="pd-cl-steps">
+          {checklist ? checklist.steps.map(step => {
+            const navigate = (path: string) => window.location.assign(path);
+            return (
+              <div key={step.id} className={`pd-cl-step ${step.complete ? 'done' : 'todo'}`}>
+                <div className="pd-cl-step-icon">
+                  {step.complete
+                    ? <CheckCircle2 size={15} style={{ color: 'var(--green)' }} />
+                    : <Circle size={15} style={{ color: 'var(--border)' }} />
+                  }
+                </div>
+                <div className="pd-cl-step-body">
+                  <div className="pd-cl-step-title">{step.title}</div>
+                  {!step.complete && (
+                    <div className="pd-cl-step-desc">{step.description}</div>
+                  )}
+                </div>
+                {!step.complete && (
+                  <button
+                    className="pd-cl-step-action"
+                    onClick={() => {
+                      if (step.actionPath) {
+                        navigate(step.actionPath);
+                      } else if (step.actionTab) {
+                        window.history.pushState({}, '', `?tab=${step.actionTab}`);
+                        window.dispatchEvent(new PopStateEvent('popstate'));
+                      }
+                    }}
+                  >
+                    {step.actionLabel} <ChevronRight size={11} />
+                  </button>
+                )}
+              </div>
+            );
+          }) : (
+            <div className="pd-cl-loading">
+              <Loader2 size={14} className="spin" style={{ color: 'var(--muted)' }} />
+              <span>Loading checklist…</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1173,21 +1253,6 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData, techFilePro
   );
 }
 
-function ProgressItem({ label, status }: { label: string; status: 'completed' | 'in_progress' | 'not_started' }) {
-  const statusConfig = {
-    completed: { icon: CheckCircle2, color: 'var(--green)', text: 'Complete' },
-    in_progress: { icon: Clock, color: 'var(--amber)', text: 'In Progress' },
-    not_started: { icon: Clock, color: 'var(--muted)', text: 'Not Started' },
-  };
-  const cfg = statusConfig[status];
-  return (
-    <div className="pd-progress-item">
-      <cfg.icon size={16} style={{ color: cfg.color }} />
-      <span className="pd-progress-label">{label}</span>
-      <span className="pd-progress-status" style={{ color: cfg.color }}>{cfg.text}</span>
-    </div>
-  );
-}
 
 /* ── Obligations Tab ─────────────────────────────────────── */
 type ObligationRecord = {

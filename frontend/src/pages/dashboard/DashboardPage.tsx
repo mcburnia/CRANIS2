@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
-import { Package, Users, ScrollText, ShieldAlert } from 'lucide-react';
+import { Package, Users, ScrollText, ShieldAlert, Circle, ChevronRight, ClipboardCheck } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './DashboardPage.css';
 
@@ -52,6 +52,34 @@ interface DashboardData {
   stats: DashboardStats;
   riskFindings: RiskFindingsSummary;
   recentActivity: ActivityItem[];
+}
+
+interface ChecklistStep {
+  id: string;
+  step: number;
+  title: string;
+  description: string;
+  complete: boolean;
+  actionLabel: string;
+  actionTab: string | null;
+  actionPath: string | null;
+}
+
+interface ChecklistDeadline {
+  id: string;
+  label: string;
+  date: string;
+  daysRemaining: number;
+}
+
+interface ProductChecklist {
+  productId: string;
+  productName: string;
+  stepsComplete: number;
+  stepsTotal: number;
+  complete: boolean;
+  deadlines: ChecklistDeadline[];
+  steps: ChecklistStep[];
 }
 
 function timeAgo(dateStr: string): string {
@@ -112,18 +140,37 @@ function getActivityText(item: ActivityItem): string {
 
 export default function DashboardPage() {
   usePageMeta();
+  const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checklists, setChecklists] = useState<ProductChecklist[]>([]);
 
   useEffect(() => {
     async function fetchDashboard() {
       try {
+        const token = localStorage.getItem('session_token');
         const res = await fetch('/api/dashboard/summary', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('session_token')}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
           const json = await res.json();
           setData(json);
+          // Fetch checklists for each product in parallel (max 5)
+          if (json.products && json.products.length > 0) {
+            const productSlice = json.products.slice(0, 5);
+            const results = await Promise.allSettled(
+              productSlice.map((p: DashboardProduct) =>
+                fetch(`/api/products/${p.id}/compliance-checklist`, {
+                  headers: { Authorization: `Bearer ${token}` },
+                }).then(r => r.ok ? r.json() : null)
+              )
+            );
+            setChecklists(
+              results
+                .filter(r => r.status === 'fulfilled' && r.value)
+                .map(r => (r as PromiseFulfilledResult<ProductChecklist>).value)
+            );
+          }
         }
       } catch (err) {
         console.error('Failed to fetch dashboard:', err);
@@ -306,6 +353,73 @@ export default function DashboardPage() {
           </table>
         )}
       </div>
+
+      {/* ── CRA Compliance Checklist ────────────────────────────── */}
+      {checklists.length > 0 && !checklists.every(c => c.complete) && (
+        <div className="section">
+          <h3><ClipboardCheck size={18} /> CRA Compliance Checklist</h3>
+          <p style={{ fontSize: '0.82rem', color: 'var(--muted)', marginBottom: '0.75rem' }}>
+            Track your path from connected repo to audit-ready.
+            {' '}<span style={{ color: 'var(--amber)', fontWeight: 600 }}>
+              {checklists[0]?.deadlines.find(d => d.id === 'incident_reporting')?.daysRemaining} days
+            </span>{' '}to incident reporting deadline (11 Sep 2026).
+            {' '}<span style={{ color: 'var(--muted)' }}>
+              {checklists[0]?.deadlines.find(d => d.id === 'full_compliance')?.daysRemaining} days
+            </span>{' '}to full compliance (11 Dec 2027).
+          </p>
+          {checklists.map(cl => {
+            if (cl.complete) return null;
+            const nextStep = cl.steps.find(s => !s.complete);
+            const progressPct = Math.round((cl.stepsComplete / cl.stepsTotal) * 100);
+            return (
+              <div key={cl.productId} className="dash-checklist-card">
+                <div className="dash-cl-header">
+                  <span className="dash-cl-name">{cl.productName}</span>
+                  <span className="dash-cl-count">{cl.stepsComplete}/{cl.stepsTotal} steps complete</span>
+                </div>
+                <div className="dash-cl-bar-wrap">
+                  <div className="dash-cl-bar">
+                    <div className="dash-cl-bar-fill" style={{ width: `${Math.max(progressPct, 2)}%` }} />
+                  </div>
+                  <span className="dash-cl-pct">{progressPct}%</span>
+                </div>
+                {/* Step dots */}
+                <div className="dash-cl-steps">
+                  {cl.steps.map(s => (
+                    <span key={s.id} className={`dash-cl-dot ${s.complete ? 'done' : 'todo'}`} title={s.title} />
+                  ))}
+                </div>
+                {/* Next action */}
+                {nextStep && (
+                  <div className="dash-cl-next">
+                    <Circle size={13} style={{ color: 'var(--amber)', flexShrink: 0 }} />
+                    <span>
+                      <strong>Next: </strong>{nextStep.title}
+                    </span>
+                    <button
+                      className="dash-cl-action"
+                      onClick={() => {
+                        if (nextStep.actionPath) {
+                          navigate(nextStep.actionPath);
+                        } else {
+                          navigate(`/products/${cl.productId}${nextStep.actionTab ? `?tab=${nextStep.actionTab}` : ''}`);
+                        }
+                      }}
+                    >
+                      {nextStep.actionLabel} <ChevronRight size={12} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {checklists.length > 0 && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.5rem' }}>
+              Showing {checklists.filter(c => !c.complete).length} product{checklists.filter(c => !c.complete).length !== 1 ? 's' : ''} with outstanding steps.
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="section">
         <h3><ScrollText size={18} /> Recent Activity</h3>
