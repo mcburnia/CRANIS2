@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Scale, RefreshCw, ChevronDown, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
+import { Scale, RefreshCw, ChevronDown, ChevronRight, CheckCircle2, XCircle, Download, Loader2 } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -95,6 +95,7 @@ export default function LicenseCompliancePage() {
   const [waiverReason, setWaiverReason] = useState('');
   const [showMatrix, setShowMatrix] = useState(false);
   const [matrixData, setMatrixData] = useState<any>(null);
+  const [exportingLic, setExportingLic] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOverview();
@@ -108,6 +109,27 @@ export default function LicenseCompliancePage() {
       if (res.ok) setMatrixData(await res.json());
     } catch (err) {
       console.error('Failed to fetch compatibility matrix:', err);
+    }
+  }
+
+  async function handleExportLic(productId: string, format: 'pdf' | 'csv') {
+    setExportingLic(`${productId}-${format}`);
+    try {
+      const res = await fetch(`/api/products/${productId}/reports/licences?format=${format}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || `licence-report.${format}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to export licence report.');
+    } finally {
+      setExportingLic(null);
     }
   }
 
@@ -378,6 +400,14 @@ export default function LicenseCompliancePage() {
                         <div className="lc-findings-panel">
                           <div className="lc-findings-header">
                             <h4>License Findings — {p.productName}</h4>
+                            <button className="tf-doc-download-btn" onClick={(e) => { e.stopPropagation(); handleExportLic(p.productId, 'pdf'); }} disabled={!!exportingLic}>
+                              {exportingLic === `${p.productId}-pdf` ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+                              {exportingLic === `${p.productId}-pdf` ? 'Generating...' : 'Export PDF'}
+                            </button>
+                            <button className="tf-doc-download-btn" onClick={(e) => { e.stopPropagation(); handleExportLic(p.productId, 'csv'); }} disabled={!!exportingLic}>
+                              {exportingLic === `${p.productId}-csv` ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+                              {exportingLic === `${p.productId}-csv` ? 'Generating...' : 'Export CSV'}
+                            </button>
                             <div className="lc-filter-pills">
                               {['all', 'critical', 'warning', 'ok'].map(f => (
                                 <button

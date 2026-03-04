@@ -1349,7 +1349,29 @@ function ObligationsTab({ product }: { product: Product }) {
   const [obligations, setObligations] = useState<ObligationRecord[]>([]);
   const [obLoading, setObLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [exportingObl, setExportingObl] = useState<string | null>(null);
   const token = localStorage.getItem('session_token');
+
+  async function handleExportObl(format: 'pdf' | 'csv') {
+    setExportingObl(format);
+    try {
+      const res = await fetch(`/api/products/${product.id}/reports/obligations?format=${format}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || `obligations-report.${format}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to export obligation report.');
+    } finally {
+      setExportingObl(null);
+    }
+  }
 
   async function fetchObligations() {
     try {
@@ -1401,6 +1423,16 @@ function ObligationsTab({ product }: { product: Product }) {
           <h3>CRA Obligations for {CATEGORY_INFO[product.craCategory]?.label || 'Default'} Products</h3>
           <p>These are the key regulatory obligations under the EU Cyber Resilience Act that apply to your product. Use the dropdown to set your manual compliance status, or let the platform auto-detect progress from your data.</p>
         </div>
+      </div>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+        <button className="tf-doc-download-btn" onClick={() => handleExportObl('pdf')} disabled={!!exportingObl}>
+          {exportingObl === 'pdf' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+          {exportingObl === 'pdf' ? 'Generating...' : 'Export PDF'}
+        </button>
+        <button className="tf-doc-download-btn" onClick={() => handleExportObl('csv')} disabled={!!exportingObl}>
+          {exportingObl === 'csv' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+          {exportingObl === 'csv' ? 'Generating...' : 'Export CSV'}
+        </button>
       </div>
       <p className="pd-ob-legend">
         <span className="pd-ob-legend-dot" /> Manual&nbsp;&nbsp;&nbsp;
@@ -1915,8 +1947,30 @@ function RiskFindingsTab({ productId }: { productId: string }) {
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [exportingVuln, setExportingVuln] = useState<string | null>(null);
 
   const token = localStorage.getItem('session_token');
+
+  async function handleExportVuln(format: 'pdf' | 'csv') {
+    setExportingVuln(format);
+    try {
+      const res = await fetch(`/api/products/${productId}/reports/vulnerabilities?format=${format}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || `vuln-report.${format}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to export vulnerability report.');
+    } finally {
+      setExportingVuln(null);
+    }
+  }
 
   const fetchFindings = () => {
     fetch(`/api/risk-findings/${productId}`, { headers: { Authorization: `Bearer ${token}` } })
@@ -2000,11 +2054,21 @@ function RiskFindingsTab({ productId }: { productId: string }) {
           )}
           {lastScan && <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '1rem' }}>Last scan: {new Date(lastScan.completed_at).toLocaleString()}</span>}
         </div>
-        <button onClick={handleScan} disabled={scanning}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 1rem', borderRadius: '6px', border: '1px solid var(--accent)', background: 'var(--accent)', color: '#fff', cursor: scanning ? 'not-allowed' : 'pointer', fontSize: '0.85rem', opacity: scanning ? 0.6 : 1 }}>
-          {scanning ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={14} />}
-          {scanning ? 'Scanning...' : 'Scan Now'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button className="tf-doc-download-btn" onClick={() => handleExportVuln('pdf')} disabled={!!exportingVuln}>
+            {exportingVuln === 'pdf' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+            {exportingVuln === 'pdf' ? 'Generating...' : 'Export PDF'}
+          </button>
+          <button className="tf-doc-download-btn" onClick={() => handleExportVuln('csv')} disabled={!!exportingVuln}>
+            {exportingVuln === 'csv' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+            {exportingVuln === 'csv' ? 'Generating...' : 'Export CSV'}
+          </button>
+          <button onClick={handleScan} disabled={scanning}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 1rem', borderRadius: '6px', border: '1px solid var(--accent)', background: 'var(--accent)', color: '#fff', cursor: scanning ? 'not-allowed' : 'pointer', fontSize: '0.85rem', opacity: scanning ? 0.6 : 1 }}>
+            {scanning ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={14} />}
+            {scanning ? 'Scanning...' : 'Scan Now'}
+          </button>
+        </div>
       </div>
 
       {findings.length === 0 && !lastScan && (

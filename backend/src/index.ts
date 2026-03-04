@@ -31,6 +31,7 @@ import escrowRoutes from "./routes/escrow.js";
 import docsRoutes from "./routes/docs.js";
 import reportsRoutes from "./routes/reports.js";
 import complianceChecklistRoutes from "./routes/compliance-checklist.js";
+import productReportsRoutes from "./routes/product-reports.js";
 import { startScheduler } from './services/scheduler.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
 
@@ -92,6 +93,7 @@ app.use('/api/escrow', escrowRoutes);
 app.use('/api/docs', docsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/products', complianceChecklistRoutes);
+app.use('/api/products', productReportsRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
