@@ -197,6 +197,48 @@ describe('/api/technical-file/:productId/declaration-of-conformity/pdf', () => {
   });
 });
 
+// ─── CVD Policy PDF endpoint ─────────────────────────────────────────────────
+
+describe('/api/technical-file/:productId/cvd-policy/pdf', () => {
+  let mfgToken: string;
+  let impToken: string;
+
+  beforeAll(async () => {
+    mfgToken = await loginTestUser(TEST_USERS.mfgAdmin);
+    impToken = await loginTestUser(TEST_USERS.impAdmin);
+  });
+
+  it('should reject unauthenticated request', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/cvd-policy/pdf`);
+    expect(res.status).toBe(401);
+  });
+
+  it('should return 404 for a product belonging to another org', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/cvd-policy/pdf`, { auth: impToken });
+    expect(res.status).toBe(404);
+  });
+
+  it('should return 200 with Content-Type application/pdf', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/cvd-policy/pdf`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toMatch(/application\/pdf/);
+  });
+
+  it('should return a valid PDF (starts with %PDF magic bytes)', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/cvd-policy/pdf`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    const buf = Buffer.from(res.body as ArrayBuffer);
+    expect(buf.slice(0, 4).toString()).toBe('%PDF');
+  });
+
+  it('should include Content-Disposition attachment header', async () => {
+    const res = await api.get(`/api/technical-file/${PRODUCT_ID}/cvd-policy/pdf`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-disposition')).toMatch(/attachment/);
+    expect(res.headers.get('content-disposition')).toMatch(/cvd-policy/);
+  });
+});
+
 // ─── Technical file auto-population suggestions endpoint ─────────────────────
 
 describe('/api/technical-file/:productId/suggestions', () => {

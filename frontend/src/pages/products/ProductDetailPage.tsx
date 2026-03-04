@@ -1448,6 +1448,7 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [downloadingDoc, setDownloadingDoc] = useState(false);
+  const [downloadingCvd, setDownloadingCvd] = useState(false);
   const [editContent, setEditContent] = useState<Record<string, any>>({});
   const [editNotes, setEditNotes] = useState<Record<string, string>>({});
   const [editStatus, setEditStatus] = useState<Record<string, string>>({});
@@ -1518,6 +1519,28 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
       alert('Failed to generate EU Declaration of Conformity. Please try again.');
     } finally {
       setDownloadingDoc(false);
+    }
+  }
+
+  async function handleDownloadCvd() {
+    setDownloadingCvd(true);
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/technical-file/${productId}/cvd-policy/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || 'cvd-policy.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to generate CVD Policy. Please try again.');
+    } finally {
+      setDownloadingCvd(false);
     }
   }
 
@@ -1846,6 +1869,17 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
                       >
                         {downloadingDoc ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
                         {downloadingDoc ? 'Generating…' : 'Download EU DoC PDF'}
+                      </button>
+                    )}
+                    {section.sectionKey === 'vulnerability_handling' && (
+                      <button
+                        className="btn tf-doc-download-btn"
+                        onClick={handleDownloadCvd}
+                        disabled={downloadingCvd}
+                        title="Download Coordinated Vulnerability Disclosure policy as PDF"
+                      >
+                        {downloadingCvd ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+                        {downloadingCvd ? 'Generating…' : 'Download CVD Policy'}
                       </button>
                     )}
                   </div>
