@@ -158,6 +158,65 @@ export async function getRawFile(
   return res.text();
 }
 
+// ─── Webhook management ──────────────────────────────────────────
+
+/**
+ * Create a push-event webhook on a Codeberg/Gitea/Forgejo repository.
+ * Works with any Gitea-compatible API.  Pass apiBase for self-hosted.
+ */
+export async function createWebhook(
+  token: string,
+  owner: string,
+  repo: string,
+  callbackUrl: string,
+  secret: string,
+  apiBase: string = CODEBERG_API
+): Promise<number> {
+  const res = await fetch(`${apiBase}/repos/${owner}/${repo}/hooks`, {
+    method: 'POST',
+    headers: {
+      Authorization: `token ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      type: 'gitea',
+      active: true,
+      events: ['push'],
+      config: {
+        url: callbackUrl,
+        content_type: 'json',
+        secret,
+      },
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Gitea API POST ${res.status}: ${text}`);
+  }
+  const result = await res.json() as { id: number };
+  return result.id;
+}
+
+/**
+ * Delete a webhook from a Codeberg/Gitea/Forgejo repository.
+ */
+export async function deleteWebhook(
+  token: string,
+  owner: string,
+  repo: string,
+  webhookId: number,
+  apiBase: string = CODEBERG_API
+): Promise<void> {
+  const res = await fetch(`${apiBase}/repos/${owner}/${repo}/hooks/${webhookId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `token ${token}` },
+  });
+  if (!res.ok && res.status !== 404) {
+    const text = await res.text();
+    throw new Error(`Gitea API DELETE ${res.status}: ${text}`);
+  }
+}
+
 export async function createRepo(
   token: string,
   name: string,

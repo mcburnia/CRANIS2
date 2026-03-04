@@ -30,6 +30,7 @@ import * as provider from '../services/repo-provider.js';
 import type { RepoProvider, NormalisedRelease } from '../services/repo-provider.js';
 // Note: provider.parseRepoUrlGeneric, provider.validatePAT, provider.detectProvider now available
 import { createRepo as codebergCreateRepo } from '../services/codeberg.js';
+import { ensureWebhook, removeWebhooksForUser } from '../services/webhook.js';
 
 const router = Router();
 
@@ -763,6 +764,10 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       }
     );
 
+    // Auto-register push webhook (non-blocking — must not fail the sync)
+    ensureWebhook(detectedProvider, repoToken, parsed.owner, parsed.repo, repoData.html_url, repoInstanceUrl || undefined)
+      .catch(err => console.error(`[SYNC] Webhook registration failed (non-blocking): ${err.message}`));
+
     // Store contributors in Neo4j
     for (const contrib of contributors) {
       await neo4jSession.run(
@@ -1472,6 +1477,20 @@ router.delete('/disconnect/{:provider}', requireAuth, async (req: Request, res: 
   const userId = (req as any).userId;
   const userEmail = (req as any).email;
   const disconnectProvider = (req.params.provider || 'github') as RepoProvider;
+
+  // Retrieve token before deleting connection — needed for webhook cleanup
+  const connRow = await pool.query(
+    'SELECT access_token, instance_url FROM repo_connections WHERE user_id = $1 AND provider = $2',
+    [userId, disconnectProvider]
+  );
+  if (connRow.rows.length > 0 && connRow.rows[0].access_token) {
+    try {
+      const decryptedToken = decrypt(connRow.rows[0].access_token);
+      await removeWebhooksForUser(disconnectProvider, decryptedToken, userId, connRow.rows[0].instance_url || undefined);
+    } catch (err: any) {
+      console.error(`[DISCONNECT] Webhook cleanup failed (non-blocking): ${err.message}`);
+    }
+  }
 
   const result = await pool.query(
     'DELETE FROM repo_connections WHERE user_id = $1 AND provider = $2 RETURNING provider_username',

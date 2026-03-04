@@ -1,8 +1,8 @@
 /**
- * GitHub API Service — READ-ONLY operations only
+ * GitHub API Service
  *
- * This service ONLY performs GET requests to the GitHub API.
- * No write, update, or delete operations are exposed.
+ * GET operations for repo metadata, SBOM, contributors, etc.
+ * Webhook management (create/delete) for push event auto-sync.
  */
 
 export interface GitHubRepo {
@@ -264,5 +264,75 @@ export async function getTags(token: string, owner: string, repo: string): Promi
   } catch (err: any) {
     console.log(`[TAGS] Error fetching tags: ${err.message}`);
     return [];
+  }
+}
+
+// ─── Webhook management ──────────────────────────────────────────
+
+async function githubPost<T>(path: string, token: string, body: unknown): Promise<T> {
+  const res = await fetch(`${GITHUB_API}${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'CRANIS2/1.0',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`GitHub API POST ${res.status}: ${text}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+/**
+ * Create a push-event webhook on a GitHub repository.
+ * Returns the webhook ID assigned by GitHub.
+ */
+export async function createWebhook(
+  token: string,
+  owner: string,
+  repo: string,
+  callbackUrl: string,
+  secret: string
+): Promise<number> {
+  const result = await githubPost<{ id: number }>(`/repos/${owner}/${repo}/hooks`, token, {
+    name: 'web',
+    active: true,
+    events: ['push'],
+    config: {
+      url: callbackUrl,
+      content_type: 'json',
+      secret,
+      insecure_ssl: '0',
+    },
+  });
+  return result.id;
+}
+
+/**
+ * Delete a webhook from a GitHub repository by its ID.
+ */
+export async function deleteWebhook(
+  token: string,
+  owner: string,
+  repo: string,
+  webhookId: number
+): Promise<void> {
+  const res = await fetch(`${GITHUB_API}/repos/${owner}/${repo}/hooks/${webhookId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'CRANIS2/1.0',
+    },
+  });
+  if (!res.ok && res.status !== 404) {
+    const text = await res.text();
+    throw new Error(`GitHub API DELETE ${res.status}: ${text}`);
   }
 }

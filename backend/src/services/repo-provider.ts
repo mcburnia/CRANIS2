@@ -568,6 +568,81 @@ export async function getTags(
   }
 }
 
+// ── Webhook management ────────────────────────────────────────────
+
+/**
+ * Create a push-event webhook on a repository.
+ * Returns the provider-assigned webhook ID.
+ */
+export async function createWebhook(
+  prov: RepoProvider,
+  token: string,
+  owner: string,
+  repo: string,
+  callbackUrl: string,
+  secret: string,
+  instanceUrl?: string
+): Promise<number> {
+  switch (prov) {
+    case 'github':
+      return github.createWebhook(token, owner, repo, callbackUrl, secret);
+    case 'codeberg':
+      return codeberg.createWebhook(token, owner, repo, callbackUrl, secret);
+    case 'gitea':
+    case 'forgejo': {
+      if (!instanceUrl) throw new Error(`${prov} requires instanceUrl for webhook creation`);
+      return codeberg.createWebhook(token, owner, repo, callbackUrl, secret, `${instanceUrl}/api/v1`);
+    }
+    case 'gitlab':
+      console.warn(`[WEBHOOK] GitLab webhook auto-registration not yet supported — configure manually`);
+      return 0;
+  }
+}
+
+/**
+ * Delete a webhook from a repository by its provider-assigned ID.
+ */
+export async function deleteWebhook(
+  prov: RepoProvider,
+  token: string,
+  owner: string,
+  repo: string,
+  webhookId: number,
+  instanceUrl?: string
+): Promise<void> {
+  switch (prov) {
+    case 'github':
+      return github.deleteWebhook(token, owner, repo, webhookId);
+    case 'codeberg':
+      return codeberg.deleteWebhook(token, owner, repo, webhookId);
+    case 'gitea':
+    case 'forgejo': {
+      if (!instanceUrl) throw new Error(`${prov} requires instanceUrl for webhook deletion`);
+      return codeberg.deleteWebhook(token, owner, repo, webhookId, `${instanceUrl}/api/v1`);
+    }
+    case 'gitlab':
+      console.warn(`[WEBHOOK] GitLab webhook deletion not yet supported`);
+      return;
+  }
+}
+
+/**
+ * Resolve the HMAC secret used for webhook signature verification.
+ * GitHub and Codeberg/Gitea/Forgejo use separate secrets.
+ */
+export function getWebhookSecret(prov: RepoProvider): string | null {
+  switch (prov) {
+    case 'github':
+      return process.env.GITHUB_WEBHOOK_SECRET || null;
+    case 'codeberg':
+    case 'gitea':
+    case 'forgejo':
+      return process.env.CODEBERG_WEBHOOK_SECRET || null;
+    case 'gitlab':
+      return null;
+  }
+}
+
 export async function exchangeCodeForToken(
   prov: RepoProvider,
   code: string,

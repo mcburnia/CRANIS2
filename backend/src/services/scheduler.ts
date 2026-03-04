@@ -23,6 +23,7 @@ import { scanProductLicenses } from './license-scanner.js';
 import { createSnapshot } from './ip-proof.js';
 import { extractPackageInfo } from '../routes/github.js';
 import { checkTrialExpiry, checkPaymentGrace } from './billing.js';
+import { ensureWebhook } from './webhook.js';
 import { runAllEscrowDeposits } from './escrow-service.js';
 
 
@@ -211,6 +212,10 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
         productId,
       }
     );
+
+    // Auto-register push webhook (non-blocking — must not fail the sync)
+    ensureWebhook(syncProvider, auth.token, parsed.owner, parsed.repo, repoUrl, syncInstanceUrl || undefined)
+      .catch(err => console.error(`[AUTO-SYNC] Webhook registration failed (non-blocking): ${err.message}`));
 
     // Lockfile fallback: if provider API has no SBOM (e.g. Codeberg), generate from lockfiles
     let effectiveSbomData = sbomData;
