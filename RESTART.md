@@ -1018,7 +1018,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-04 (session 15)
+**Last updated:** 2026-03-04 (session 17)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -1134,8 +1134,17 @@ sudo systemctl restart cloudflared
 - **Email alerts for critical compliance events (P0 #1)** — New `backend/src/services/alert-emails.ts` with 5 alert types: vulnerability found (critical/high), scan failed, SBOM stale, compliance gaps (>10%), CRA deadline approaching (12h/1h thresholds). Recipients resolved from stakeholders table by role_key at product + org levels, deduplicated. 24-hour deduplication via notifications metadata. Non-blocking (fire-and-forget). Wired into vulnerability-scanner.ts (sendScanNotifications), scheduler.ts (autoSyncProduct error, compliance gap, CRA deadline), github.ts (webhook stale handler). 12 new tests. **Total: 943 backend tests passing.**
 - **Technical file N+1 query fix** — `ensureSections()` was running 8 individual INSERT queries per product sequentially (2,209 test products × 8 = 17,672 round trips). Refactored to chunked multi-row INSERT (100 products per chunk). Added `idx_technical_file_sections_product` index on `product_id`. Response time: 15s+ timeout → ~2s. Fixed the only flaky test in the suite.
 
+**Session 16 (2026-03-04):**
+- **CRA readiness scorecard on dashboard (P0 #3)** — SVG ring gauge showing overall CRA compliance percentage on Dashboard. Per-product CRA readiness column in the products table. Shared `obligation-engine.ts` for obligation counting. 6 new tests. **Total: 949 backend tests passing.**
+- **CVD policy template generator (P0 #4)** — New endpoint `GET /api/technical-file/:productId/cvd-policy/pdf`. Generates an ISO 29147-aligned Coordinated Vulnerability Disclosure policy PDF pre-filled with org/product data. PDFKit with EU-blue styling, DRAFT watermark. "Download CVD Policy" button on vulnerability_handling section in ProductDetailPage. 5 new tests. **Total: 954 backend tests passing.**
+- **Ghost button contrast fix** — Brightened dark text buttons from `#003399`/`#7c3aed` to `#60a5fa`/`#a78bfa` across ProductDetailPage.css and TechnicalFilesPage.css for visibility on dark surfaces.
+- **Pre-prod cleanup (P0 #5)** — Deleted `backend/src/routes/dev.ts` (nuke-account + seed-notifications). Removed nuke-account UI from Sidebar. Created `backend/src/utils/logger.ts` with LOG_LEVEL gating (error/warn/info/debug). Converted ~80 console.log/warn across 6 service files to structured logger. Added LOG_LEVEL env var to docker-compose.yml. DEV_SKIP_EMAIL verified false in production.
+
+**Session 17 (2026-03-04):**
+- **In-field tooltips and contextual help (P1 #7)** — New reusable `HelpTip` component (`frontend/src/components/HelpTip.tsx` + CSS). Info icon with hover/tap tooltip, click-outside dismiss, dark theme styling. Integrated in 4 locations: ObligationsPage (obligation descriptions from existing API data), StakeholdersPage (6 CRA role explanations), ProductDetailPage CRA category selector (Default/Important I/II/Critical), ProductDetailPage technical file sections (Annex VII guidance for all 8 sections).
+- **Standalone report exports (P1 #6)** — New route `backend/src/routes/product-reports.ts` with 3 per-product export endpoints supporting PDF and CSV: `GET /api/products/:productId/reports/vulnerabilities`, `GET /api/products/:productId/reports/licences`, `GET /api/products/:productId/reports/obligations`. PDFKit-styled PDFs with cover page, summary stats, and data tables. Export PDF/CSV buttons added to RiskFindingsTab and ObligationsTab in ProductDetailPage, and to LicenseCompliancePage expanded findings panel. 18 new tests. **Total: 972 backend tests passing.**
+
 **Next Steps:**
-- Multi-Language support
-- Remove dev routes before production deployment
-- Remove SBOM debug logging from services/github.ts
+- Smart deadline alerts (P1 #8) — scheduled CRA milestone notifications
+- End-of-support tracking (P1 #9) — per-product support period dates
 - Production deployment planning (Infomaniak hosting, cranis2.com)
