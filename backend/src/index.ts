@@ -35,6 +35,7 @@ import productReportsRoutes from "./routes/product-reports.js";
 import productActivityRoutes from "./routes/product-activity.js";
 import copilotRoutes from "./routes/copilot.js";
 import { startScheduler } from './services/scheduler.js';
+import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
 
 const app = express();
@@ -126,6 +127,9 @@ async function start() {
     } finally {
       await migrationSession.close();
     }
+
+    // Ensure Stripe prices exist (non-blocking)
+    ensureStripePrices().catch(err => console.error('[STRIPE] Price init error (non-fatal):', err.message));
 
     app.listen(PORT, () => {
       console.log(`CRANIS2 backend listening on port ${PORT}`);

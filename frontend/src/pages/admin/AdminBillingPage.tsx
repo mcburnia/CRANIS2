@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Clock, DollarSign, Building2, AlertTriangle, ChevronDown, X } from 'lucide-react';
+import { Clock, DollarSign, Building2, AlertTriangle, ChevronDown, X, Settings, Save, Loader2 } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -57,17 +57,28 @@ export default function AdminBillingPage() {
   const [modalOrgId, setModalOrgId] = useState<string | null>(null);
   const [modalValue, setModalValue] = useState('');
   const [modalReason, setModalReason] = useState('');
+  const [pricingContributor, setPricingContributor] = useState('');
+  const [pricingProProduct, setPricingProProduct] = useState('');
+  const [pricingLoading, setPricingLoading] = useState(false);
+  const [pricingSaved, setPricingSaved] = useState(false);
 
   const token = localStorage.getItem('session_token');
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch('/api/billing/admin/overview', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Failed to load billing overview');
-      const d = await res.json();
+      const [overviewRes, pricingRes] = await Promise.all([
+        fetch('/api/billing/admin/overview', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/billing/admin/pricing', { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      if (!overviewRes.ok) throw new Error('Failed to load billing overview');
+      const d = await overviewRes.json();
       setData(d);
+
+      if (pricingRes.ok) {
+        const p = await pricingRes.json();
+        setPricingContributor((p.contributorPriceCents / 100).toFixed(2));
+        setPricingProProduct((p.proProductPriceCents / 100).toFixed(2));
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -76,6 +87,28 @@ export default function AdminBillingPage() {
   }, [token]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  async function handleSavePricing() {
+    setPricingLoading(true);
+    setPricingSaved(false);
+    try {
+      const res = await fetch('/api/billing/admin/pricing', {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contributorPriceCents: Math.round(parseFloat(pricingContributor) * 100),
+          proProductPriceCents: Math.round(parseFloat(pricingProProduct) * 100),
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to update pricing');
+      setPricingSaved(true);
+      setTimeout(() => setPricingSaved(false), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setPricingLoading(false);
+    }
+  }
 
   async function handleAction(orgId: string, action: string, body: any) {
     setActionLoading(`${action}-${orgId}`);
@@ -140,6 +173,48 @@ export default function AdminBillingPage() {
         <StatCard label="Trials" value={totals?.trials || 0} color="blue" />
         <StatCard label="Past Due" value={totals?.pastDue || 0} color={totals?.pastDue ? 'red' : 'green'} />
       </div>
+
+      {/* Pricing Configuration */}
+      <section className="abill-pricing-section">
+        <h2><Settings size={18} /> Pricing Configuration</h2>
+        <div className="abill-pricing-grid">
+          <div className="abill-pricing-field">
+            <label>Standard — per contributor/month</label>
+            <div className="abill-pricing-input-group">
+              <span className="abill-pricing-currency">&euro;</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                className="abill-pricing-input"
+                value={pricingContributor}
+                onChange={e => setPricingContributor(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="abill-pricing-field">
+            <label>Pro — per product/month (+ contributor fee)</label>
+            <div className="abill-pricing-input-group">
+              <span className="abill-pricing-currency">&euro;</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                className="abill-pricing-input"
+                value={pricingProProduct}
+                onChange={e => setPricingProProduct(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="abill-pricing-actions">
+            <button className="abill-btn abill-btn-primary" onClick={handleSavePricing} disabled={pricingLoading}>
+              {pricingLoading ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+              {pricingLoading ? 'Saving…' : pricingSaved ? 'Saved!' : 'Save Pricing'}
+            </button>
+            <span className="abill-pricing-note">Changes apply to new subscriptions only.</span>
+          </div>
+        </div>
+      </section>
 
       <section className="abill-section">
         <h2>All Organisations</h2>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CreditCard, ExternalLink, UserMinus, UserPlus, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { CreditCard, ExternalLink, UserMinus, UserPlus, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Loader2 } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -17,6 +17,7 @@ interface ContributorInfo {
 
 interface BillingStatus {
   status: string;
+  plan: string;
   trialEndsAt: string | null;
   trialDaysRemaining: number | null;
   currentPeriodEnd: string | null;
@@ -28,8 +29,15 @@ interface BillingStatus {
     total: number;
     contributors: ContributorInfo[];
   };
+  productCount: number;
   monthlyAmountCents: number;
   pricePerContributor: number;
+  pricing: {
+    contributorPriceCents: number;
+    proProductPriceCents: number;
+  };
+  standardMonthlyCents: number;
+  proMonthlyCents: number;
   stripeCustomerId: string | null;
   exempt: boolean;
   exemptReason: string | null;
@@ -83,26 +91,66 @@ export default function BillingPage() {
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
-      setSuccessMessage('Subscription activated successfully! Welcome to CRANIS2 Standard.');
-      // Clear the URL param
+      setSuccessMessage('Subscription activated successfully! Welcome to CRANIS2.');
       window.history.replaceState({}, '', '/billing');
     }
     if (searchParams.get('cancelled') === 'true') {
-      // User cancelled checkout — no message needed
       window.history.replaceState({}, '', '/billing');
     }
   }, [searchParams]);
 
-  async function handleCheckout() {
-    setActionLoading('checkout');
+  async function handleCheckout(plan: 'standard' | 'pro' = 'standard') {
+    setActionLoading(`checkout-${plan}`);
     try {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
       });
       if (!res.ok) throw new Error('Failed to create checkout');
       const { url } = await res.json();
       window.location.href = url;
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading('');
+    }
+  }
+
+  async function handleUpgrade() {
+    setActionLoading('upgrade');
+    try {
+      const res = await fetch('/api/billing/upgrade', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to upgrade');
+      }
+      setSuccessMessage('Upgraded to Pro! AI Copilot features are now available.');
+      await fetchBilling();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading('');
+    }
+  }
+
+  async function handleDowngrade() {
+    if (!confirm('Downgrade to Standard? You will lose access to AI Copilot features.')) return;
+    setActionLoading('downgrade');
+    try {
+      const res = await fetch('/api/billing/downgrade', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to downgrade');
+      }
+      setSuccessMessage('Downgraded to Standard.');
+      await fetchBilling();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -178,6 +226,7 @@ export default function BillingPage() {
   }
 
   const status = billing?.status || 'none';
+  const plan = billing?.plan || 'standard';
   const statusInfo = STATUS_LABELS[status] || STATUS_LABELS.none;
   const monthlyCost = billing ? (billing.monthlyAmountCents / 100).toFixed(2) : '0.00';
   const nextInvoice = billing?.currentPeriodEnd
@@ -185,6 +234,10 @@ export default function BillingPage() {
     : 'N/A';
   const contributors = billing?.contributorCounts?.contributors || [];
   const activeCount = billing?.contributorCounts?.active || 0;
+  const productCount = billing?.productCount || 0;
+  const contribPrice = billing?.pricing?.contributorPriceCents ?? 600;
+  const proProductPrice = billing?.pricing?.proProductPriceCents ?? 2000;
+  const planLabel = plan === 'pro' ? 'Pro' : 'Standard';
 
   return (
     <>
@@ -229,8 +282,8 @@ export default function BillingPage() {
               ? 'Your trial has ended. Upgrade within the grace period to keep full access.'
               : `${billing?.trialDaysRemaining} days remaining.`}
           </span>
-          <button className="bill-btn bill-btn-primary bill-btn-sm" onClick={handleCheckout} disabled={!!actionLoading}>
-            {actionLoading === 'checkout' ? 'Processing...' : 'Upgrade to Standard'}
+          <button className="bill-btn bill-btn-primary bill-btn-sm" onClick={() => handleCheckout('standard')} disabled={!!actionLoading}>
+            {actionLoading ? 'Processing...' : 'Choose a Plan'}
           </button>
         </div>
       )}
@@ -264,7 +317,7 @@ export default function BillingPage() {
               Update Payment
             </button>
           ) : (
-            <button className="bill-btn bill-btn-primary bill-btn-sm" onClick={handleCheckout} disabled={!!actionLoading}>
+            <button className="bill-btn bill-btn-primary bill-btn-sm" onClick={() => handleCheckout('standard')} disabled={!!actionLoading}>
               Subscribe Now
             </button>
           )}
@@ -275,8 +328,9 @@ export default function BillingPage() {
       <div className="stats">
         <StatCard
           label="Plan"
-          value={statusInfo.label}
+          value={status === 'active' ? planLabel : statusInfo.label}
           color={statusInfo.color}
+          sub={status === 'active' ? 'subscription' : undefined}
         />
         <StatCard
           label="Contributors"
@@ -306,7 +360,7 @@ export default function BillingPage() {
           </button>
         </div>
         <p className="bill-section-desc">
-          Active contributors are billed at <strong>&euro;6/month</strong> each.
+          Active contributors are billed at <strong>&euro;{(contribPrice / 100).toFixed(2)}/month</strong> each.
           Bots and departed contributors are excluded from billing.
         </p>
         {contributors.length === 0 ? (
@@ -374,69 +428,136 @@ export default function BillingPage() {
       {/* Plan section */}
       <section className="bill-section">
         <h2>Subscription</h2>
-        {status === 'trial' && (
-          <div className="bill-plan-card">
-            <div className="bill-plan-info">
-              <h3>Standard Plan</h3>
-              <p>&euro;6 per active contributor per month</p>
-              <ul className="bill-plan-features">
-                <li>Unlimited products &amp; repositories</li>
-                <li>Full CRA/NIS2 compliance tooling</li>
-                <li>Automatic vulnerability scanning</li>
-                <li>IP proof timestamping</li>
-                <li>Due diligence report exports</li>
-                <li>Automatic VAT/tax handling</li>
-              </ul>
+
+        {/* Trial or Cancelled — show both plan cards */}
+        {(status === 'trial' || status === 'cancelled' || status === 'read_only' || status === 'suspended') && (
+          <>
+            {status === 'cancelled' && (
+              <div className="bill-plan-cancelled-notice">
+                {billing?.currentPeriodEnd
+                  ? `Access continues until ${nextInvoice}. After that, your account will become read-only.`
+                  : 'Your account will become read-only soon.'}
+                {' '}Your data will be retained for 12 months.
+              </div>
+            )}
+            <div className="bill-plans-grid">
+              {/* Standard Plan */}
+              <div className="bill-plan-card">
+                <div className="bill-plan-info">
+                  <h3>Standard</h3>
+                  <div className="bill-plan-price">
+                    <span className="bill-plan-amount">&euro;{(contribPrice / 100).toFixed(2)}</span>
+                    <span className="bill-plan-unit">/ contributor / month</span>
+                  </div>
+                  <p className="bill-plan-estimate">
+                    Estimated: <strong>&euro;{((billing?.standardMonthlyCents ?? 0) / 100).toFixed(2)}/month</strong>
+                    {' '}({activeCount} contributor{activeCount !== 1 ? 's' : ''})
+                  </p>
+                  <ul className="bill-plan-features">
+                    <li>Unlimited products &amp; repositories</li>
+                    <li>Full CRA/NIS2 compliance tooling</li>
+                    <li>Automatic vulnerability scanning</li>
+                    <li>IP proof timestamping</li>
+                    <li>Due diligence report exports</li>
+                    <li>Automatic VAT/tax handling</li>
+                  </ul>
+                </div>
+                <button
+                  className="bill-btn bill-btn-secondary"
+                  onClick={() => handleCheckout('standard')}
+                  disabled={!!actionLoading}
+                >
+                  {actionLoading === 'checkout-standard' ? <Loader2 size={14} className="spin" /> : null}
+                  {actionLoading === 'checkout-standard' ? 'Processing…' : status === 'cancelled' ? 'Resubscribe Standard' : 'Subscribe to Standard'}
+                </button>
+              </div>
+
+              {/* Pro Plan */}
+              <div className="bill-plan-card bill-plan-card-pro">
+                <div className="bill-plan-recommended">Recommended</div>
+                <div className="bill-plan-info">
+                  <h3><Sparkles size={16} /> Pro</h3>
+                  <div className="bill-plan-price">
+                    <span className="bill-plan-amount">&euro;{(proProductPrice / 100).toFixed(2)}</span>
+                    <span className="bill-plan-unit">/ product / month</span>
+                  </div>
+                  <div className="bill-plan-price-sub">
+                    + &euro;{(contribPrice / 100).toFixed(2)} / contributor / month
+                  </div>
+                  <p className="bill-plan-estimate">
+                    Estimated: <strong>&euro;{((billing?.proMonthlyCents ?? 0) / 100).toFixed(2)}/month</strong>
+                    {' '}({productCount} product{productCount !== 1 ? 's' : ''} + {activeCount} contributor{activeCount !== 1 ? 's' : ''})
+                  </p>
+                  <ul className="bill-plan-features">
+                    <li>Everything in Standard</li>
+                    <li><strong>AI Copilot</strong> — AI-generated technical file drafts</li>
+                    <li><strong>AI Copilot</strong> — AI-generated obligation evidence</li>
+                    <li>Priority support</li>
+                  </ul>
+                </div>
+                <button
+                  className="bill-btn bill-btn-primary"
+                  onClick={() => handleCheckout('pro')}
+                  disabled={!!actionLoading}
+                >
+                  {actionLoading === 'checkout-pro' ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
+                  {actionLoading === 'checkout-pro' ? 'Processing…' : status === 'cancelled' ? 'Resubscribe Pro' : 'Subscribe to Pro'}
+                </button>
+              </div>
             </div>
-            <button
-              className="bill-btn bill-btn-primary"
-              onClick={handleCheckout}
-              disabled={!!actionLoading}
-            >
-              {actionLoading === 'checkout' ? 'Processing...' : 'Upgrade to Standard'}
-            </button>
-          </div>
+          </>
         )}
+
+        {/* Active — show current plan with upgrade/downgrade */}
         {status === 'active' && (
-          <div className="bill-plan-card">
+          <div className={`bill-plan-card ${plan === 'pro' ? 'bill-plan-card-pro' : ''}`}>
             <div className="bill-plan-info">
-              <h3>Standard Plan — Active</h3>
-              <p>
-                {activeCount} contributor{activeCount !== 1 ? 's' : ''} &times; &euro;6/month = <strong>&euro;{monthlyCost}/month</strong>
-              </p>
+              <h3>{plan === 'pro' && <Sparkles size={16} />} {planLabel} Plan — Active</h3>
+              {plan === 'pro' ? (
+                <p>
+                  {productCount} product{productCount !== 1 ? 's' : ''} &times; &euro;{(proProductPrice / 100).toFixed(2)}/month
+                  {' '}+ {activeCount} contributor{activeCount !== 1 ? 's' : ''} &times; &euro;{(contribPrice / 100).toFixed(2)}/month
+                  {' '}= <strong>&euro;{monthlyCost}/month</strong>
+                </p>
+              ) : (
+                <p>
+                  {activeCount} contributor{activeCount !== 1 ? 's' : ''} &times; &euro;{(contribPrice / 100).toFixed(2)}/month = <strong>&euro;{monthlyCost}/month</strong>
+                </p>
+              )}
               {billing?.currentPeriodEnd && (
                 <p className="bill-plan-period">Current period ends {nextInvoice}</p>
               )}
             </div>
-            <button
-              className="bill-btn bill-btn-secondary"
-              onClick={handlePortal}
-              disabled={!!actionLoading}
-            >
-              <CreditCard size={16} />
-              {actionLoading === 'portal' ? 'Opening...' : 'Manage Subscription'}
-              <ExternalLink size={14} />
-            </button>
-          </div>
-        )}
-        {status === 'cancelled' && (
-          <div className="bill-plan-card bill-plan-cancelled">
-            <div className="bill-plan-info">
-              <h3>Subscription Cancelled</h3>
-              <p>
-                {billing?.currentPeriodEnd
-                  ? `Access continues until ${nextInvoice}. After that, your account will become read-only.`
-                  : 'Your account will become read-only soon.'}
-              </p>
-              <p>Your data will be retained for 12 months.</p>
+            <div className="bill-plan-actions">
+              <button
+                className="bill-btn bill-btn-secondary"
+                onClick={handlePortal}
+                disabled={!!actionLoading}
+              >
+                <CreditCard size={16} />
+                {actionLoading === 'portal' ? 'Opening...' : 'Manage Subscription'}
+                <ExternalLink size={14} />
+              </button>
+              {plan === 'standard' && (
+                <button
+                  className="bill-btn bill-btn-primary"
+                  onClick={handleUpgrade}
+                  disabled={!!actionLoading}
+                >
+                  {actionLoading === 'upgrade' ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
+                  {actionLoading === 'upgrade' ? 'Upgrading…' : 'Upgrade to Pro'}
+                </button>
+              )}
+              {plan === 'pro' && (
+                <button
+                  className="bill-btn bill-btn-ghost bill-btn-sm"
+                  onClick={handleDowngrade}
+                  disabled={!!actionLoading}
+                >
+                  {actionLoading === 'downgrade' ? 'Downgrading…' : 'Downgrade to Standard'}
+                </button>
+              )}
             </div>
-            <button
-              className="bill-btn bill-btn-primary"
-              onClick={handleCheckout}
-              disabled={!!actionLoading}
-            >
-              {actionLoading === 'checkout' ? 'Processing...' : 'Resubscribe'}
-            </button>
           </div>
         )}
       </section>

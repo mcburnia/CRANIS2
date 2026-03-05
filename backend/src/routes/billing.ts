@@ -4,6 +4,7 @@ import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import {
   countActiveContributors,
+  countProducts,
   getOrgBillingStatus,
   ensureOrgBilling,
   updateBillingStatus,
@@ -11,6 +12,11 @@ import {
   createPortalSession,
   processWebhookEvent,
   constructWebhookEvent,
+  upgradeToProPlan,
+  downgradeToStandardPlan,
+  getPricingConfig,
+  setPlatformSetting,
+  ensureStripePrices,
 } from '../services/billing.js';
 import { requirePlatformAdmin } from '../middleware/requirePlatformAdmin.js';
 
@@ -79,8 +85,10 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
 
     const billing = await ensureOrgBilling(orgId);
 
-    // Get live contributor count
+    // Get live contributor count + product count
     const counts = await countActiveContributors(orgId);
+    const productCount = await countProducts(orgId);
+    const pricing = await getPricingConfig();
 
     // Calculate days remaining for trial
     let trialDaysRemaining: number | null = null;
@@ -90,12 +98,25 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
       trialDaysRemaining = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
     }
 
+    // Calculate monthly costs for both plans
+    const standardMonthlyCents = counts.active * pricing.contributorPriceCents;
+    const proMonthlyCents = (counts.active * pricing.contributorPriceCents) + (productCount * pricing.proProductPriceCents);
+
     res.json({
       ...billing,
       contributorCounts: counts,
+      productCount,
       trialDaysRemaining,
-      monthlyAmountCents: counts.active * 600,
-      pricePerContributor: 600,
+      monthlyAmountCents: billing.status === 'active'
+        ? billing.monthlyAmountCents
+        : standardMonthlyCents,
+      pricePerContributor: pricing.contributorPriceCents,
+      pricing: {
+        contributorPriceCents: pricing.contributorPriceCents,
+        proProductPriceCents: pricing.proProductPriceCents,
+      },
+      standardMonthlyCents,
+      proMonthlyCents,
     });
   } catch (err) {
     console.error('Failed to fetch billing status:', err);
@@ -126,12 +147,13 @@ router.post('/checkout', requireAuth, async (req: Request, res: Response) => {
     const orgId = await getOrgId(userId);
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-    const url = await createCheckoutSession(orgId, email);
+    const plan = req.body?.plan === 'pro' ? 'pro' : 'standard';
+    const url = await createCheckoutSession(orgId, email, plan as 'standard' | 'pro');
 
     const reqData = extractRequestData(req);
     await recordEvent({
       userId, email, eventType: 'billing_checkout_started', ...reqData,
-      metadata: { orgId },
+      metadata: { orgId, plan },
     });
 
     res.json({ url });
@@ -153,6 +175,52 @@ router.post('/portal', requireAuth, async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error('Failed to create portal session:', err);
     res.status(500).json({ error: err.message || 'Failed to create portal session' });
+  }
+});
+
+// POST /api/billing/upgrade — Upgrade current subscription to Pro
+router.post('/upgrade', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    const billing = await getOrgBillingStatus(orgId);
+    if (!billing || billing.status !== 'active') {
+      res.status(400).json({ error: 'No active subscription to upgrade' });
+      return;
+    }
+    if ((billing as any).plan === 'pro') {
+      res.status(400).json({ error: 'Already on Pro plan' });
+      return;
+    }
+
+    await upgradeToProPlan(orgId);
+    res.json({ success: true, plan: 'pro' });
+  } catch (err: any) {
+    console.error('Failed to upgrade plan:', err);
+    res.status(500).json({ error: err.message || 'Failed to upgrade plan' });
+  }
+});
+
+// POST /api/billing/downgrade — Downgrade current subscription to Standard
+router.post('/downgrade', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    const billing = await getOrgBillingStatus(orgId);
+    if (!billing || billing.status !== 'active') {
+      res.status(400).json({ error: 'No active subscription to downgrade' });
+      return;
+    }
+
+    await downgradeToStandardPlan(orgId);
+    res.json({ success: true, plan: 'standard' });
+  } catch (err: any) {
+    console.error('Failed to downgrade plan:', err);
+    res.status(500).json({ error: err.message || 'Failed to downgrade plan' });
   }
 });
 
@@ -371,6 +439,63 @@ router.put('/admin/:orgId/pause', requirePlatformAdmin, async (req: Request, res
   } catch (err) {
     console.error('Failed to apply payment pause:', err);
     res.status(500).json({ error: 'Failed to apply payment pause' });
+  }
+});
+
+// GET /api/billing/admin/pricing — Get current pricing configuration
+router.get('/admin/pricing', requirePlatformAdmin, async (_req: Request, res: Response) => {
+  try {
+    const pricing = await getPricingConfig();
+    res.json(pricing);
+  } catch (err) {
+    console.error('Failed to fetch pricing config:', err);
+    res.status(500).json({ error: 'Failed to fetch pricing config' });
+  }
+});
+
+// PUT /api/billing/admin/pricing — Update pricing configuration
+router.put('/admin/pricing', requirePlatformAdmin, async (req: Request, res: Response) => {
+  const { contributorPriceCents, proProductPriceCents } = req.body;
+  const userId = (req as any).userId;
+
+  try {
+    const currentPricing = await getPricingConfig();
+    let newStripePriceCreated = false;
+
+    if (contributorPriceCents !== undefined && contributorPriceCents !== currentPricing.contributorPriceCents) {
+      await setPlatformSetting('billing.contributor_price_cents', contributorPriceCents, userId);
+    }
+
+    if (proProductPriceCents !== undefined && proProductPriceCents !== currentPricing.proProductPriceCents) {
+      await setPlatformSetting('billing.pro_product_price_cents', proProductPriceCents, userId);
+
+      // Create new Stripe price for the updated amount
+      try {
+        const Stripe = (await import('stripe')).default;
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2025-01-27.acacia' as any });
+        const product = await stripe.products.create({
+          name: `CRANIS2 Pro — Per Product (€${(proProductPriceCents / 100).toFixed(2)})`,
+          description: 'CRA compliance with AI Copilot — per-product monthly charge',
+        });
+        const price = await stripe.prices.create({
+          product: product.id,
+          unit_amount: proProductPriceCents,
+          currency: 'eur',
+          recurring: { interval: 'month' },
+        });
+        await setPlatformSetting('billing.stripe_pro_product_price_id', price.id, userId);
+        newStripePriceCreated = true;
+        console.log(`[ADMIN] Created new pro product price: ${price.id} (€${(proProductPriceCents / 100).toFixed(2)})`);
+      } catch (stripeErr: any) {
+        console.error('[ADMIN] Failed to create new Stripe price:', stripeErr.message);
+      }
+    }
+
+    const updated = await getPricingConfig();
+    res.json({ ...updated, newStripePriceCreated });
+  } catch (err) {
+    console.error('Failed to update pricing config:', err);
+    res.status(500).json({ error: 'Failed to update pricing config' });
   }
 });
 

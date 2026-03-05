@@ -18,9 +18,92 @@ function getStripe(): Stripe {
   return _stripe;
 }
 
-const PRICE_ID = process.env.STRIPE_PRICE_ID || '';
+const INITIAL_PRICE_ID = process.env.STRIPE_PRICE_ID || '';
 const APP_BASE_URL = process.env.FRONTEND_URL || 'https://dev.cranis2.dev';
-const PRICE_PER_CONTRIBUTOR_CENTS = 600; // €6.00
+
+// ── Platform Settings helpers ──
+
+export async function getPlatformSetting(key: string): Promise<any> {
+  const result = await pool.query('SELECT value FROM platform_settings WHERE key = $1', [key]);
+  return result.rows[0]?.value ?? null;
+}
+
+export async function setPlatformSetting(key: string, value: any, userId?: string): Promise<void> {
+  await pool.query(
+    `INSERT INTO platform_settings (key, value, updated_by) VALUES ($1, $2::jsonb, $3)
+     ON CONFLICT (key) DO UPDATE SET value = $2::jsonb, updated_at = NOW(), updated_by = $3`,
+    [key, JSON.stringify(value), userId || null]
+  );
+}
+
+export async function getPricingConfig(): Promise<{
+  contributorPriceCents: number;
+  proProductPriceCents: number;
+  stripeContributorPriceId: string | null;
+  stripeProProductPriceId: string | null;
+}> {
+  const result = await pool.query(
+    `SELECT key, value FROM platform_settings WHERE key LIKE 'billing.%'`
+  );
+  const settings: Record<string, any> = {};
+  for (const row of result.rows) settings[row.key] = row.value;
+  return {
+    contributorPriceCents: settings['billing.contributor_price_cents'] ?? 600,
+    proProductPriceCents: settings['billing.pro_product_price_cents'] ?? 2000,
+    stripeContributorPriceId: settings['billing.stripe_contributor_price_id'] || null,
+    stripeProProductPriceId: settings['billing.stripe_pro_product_price_id'] || null,
+  };
+}
+
+// ── Stripe Price Auto-Creation ──
+
+export async function ensureStripePrices(): Promise<void> {
+  try {
+    const stripe = getStripe();
+    const config = await getPricingConfig();
+
+    // Ensure contributor price exists
+    if (!config.stripeContributorPriceId && INITIAL_PRICE_ID) {
+      await setPlatformSetting('billing.stripe_contributor_price_id', INITIAL_PRICE_ID);
+      console.log('[STRIPE] Stored initial contributor price ID:', INITIAL_PRICE_ID);
+    }
+
+    // Ensure pro product price exists
+    if (!config.stripeProProductPriceId) {
+      const product = await stripe.products.create({
+        name: 'CRANIS2 Pro — Per Product',
+        description: 'CRA compliance with AI Copilot — per-product monthly charge',
+      });
+      const price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: config.proProductPriceCents,
+        currency: 'eur',
+        recurring: { interval: 'month' },
+      });
+      await setPlatformSetting('billing.stripe_pro_product_price_id', price.id);
+      console.log('[STRIPE] Created pro product price:', price.id);
+    }
+  } catch (err: any) {
+    console.error('[STRIPE] Failed to ensure prices (non-fatal):', err.message);
+  }
+}
+
+// ── Product Counting ──
+
+export async function countProducts(orgId: string): Promise<number> {
+  const driver = getDriver();
+  const session = driver.session();
+  try {
+    const result = await session.run(
+      `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product) RETURN count(p) AS cnt`,
+      { orgId }
+    );
+    const cnt = result.records[0]?.get('cnt');
+    return typeof cnt === 'object' ? (cnt as any).toNumber?.() ?? 0 : Number(cnt) || 0;
+  } finally {
+    await session.close();
+  }
+}
 
 // ── Bot detection ──
 const BOT_SUFFIXES = ['[bot]', '-bot', '_bot'];
@@ -129,6 +212,7 @@ export async function countActiveContributors(orgId: string): Promise<Contributo
 export interface BillingStatus {
   orgId: string;
   status: string;
+  plan: string;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   trialEndsAt: string | null;
@@ -159,6 +243,7 @@ export async function getOrgBillingStatus(orgId: string): Promise<BillingStatus 
   return {
     orgId: row.org_id,
     status: row.status,
+    plan: row.plan || 'standard',
     stripeCustomerId: row.stripe_customer_id,
     stripeSubscriptionId: row.stripe_subscription_id,
     trialEndsAt: row.trial_ends_at,
@@ -224,10 +309,12 @@ export async function updateBillingStatus(orgId: string, updates: Record<string,
 
 // ── Stripe Operations ──
 
-export async function createCheckoutSession(orgId: string, email: string): Promise<string> {
+export async function createCheckoutSession(orgId: string, email: string, plan: 'standard' | 'pro' = 'standard'): Promise<string> {
+  const config = await getPricingConfig();
+
   // Count contributors to set initial quantity
   const counts = await countActiveContributors(orgId);
-  const quantity = Math.max(1, counts.active); // Minimum 1 contributor
+  const contributorQty = Math.max(1, counts.active); // Minimum 1 contributor
 
   // Get or create Stripe customer
   const billing = await getOrgBillingStatus(orgId);
@@ -242,22 +329,32 @@ export async function createCheckoutSession(orgId: string, email: string): Promi
     await updateBillingStatus(orgId, { stripeCustomerId: customerId });
   }
 
+  // Build line items based on plan
+  const lineItems: Array<{ price: string; quantity: number }> = [];
+
+  const contributorPriceId = config.stripeContributorPriceId || INITIAL_PRICE_ID;
+  if (!contributorPriceId) throw new Error('Stripe contributor price not configured');
+  lineItems.push({ price: contributorPriceId, quantity: contributorQty });
+
+  if (plan === 'pro') {
+    if (!config.stripeProProductPriceId) throw new Error('Stripe Pro product price not configured — run ensureStripePrices() first');
+    const productQty = Math.max(1, await countProducts(orgId));
+    lineItems.push({ price: config.stripeProProductPriceId, quantity: productQty });
+  }
+
   const session = await getStripe().checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
-    line_items: [{
-      price: PRICE_ID,
-      quantity,
-    }],
+    line_items: lineItems,
     subscription_data: {
-      metadata: { orgId },
+      metadata: { orgId, plan },
     },
     automatic_tax: { enabled: true },
     tax_id_collection: { enabled: true },
     billing_address_collection: 'required',
     success_url: `${APP_BASE_URL}/billing?success=true`,
     cancel_url: `${APP_BASE_URL}/billing?cancelled=true`,
-    metadata: { orgId },
+    metadata: { orgId, plan },
   });
 
   return session.url || '';
@@ -275,6 +372,51 @@ export async function createPortalSession(orgId: string): Promise<string> {
   });
 
   return session.url;
+}
+
+// ── Plan Upgrade / Downgrade ──
+
+export async function upgradeToProPlan(orgId: string): Promise<void> {
+  const billing = await getOrgBillingStatus(orgId);
+  if (!billing?.stripeSubscriptionId) throw new Error('No active subscription found');
+
+  const config = await getPricingConfig();
+  if (!config.stripeProProductPriceId) throw new Error('Pro product price not configured');
+
+  const productQty = Math.max(1, await countProducts(orgId));
+  const stripe = getStripe();
+
+  // Add pro product line item to existing subscription
+  await stripe.subscriptionItems.create({
+    subscription: billing.stripeSubscriptionId,
+    price: config.stripeProProductPriceId,
+    quantity: productQty,
+    proration_behavior: 'create_prorations',
+  });
+
+  await updateBillingStatus(orgId, { plan: 'pro' });
+  await logBillingEvent(orgId, 'plan_upgraded', { from: 'standard', to: 'pro', productCount: productQty });
+}
+
+export async function downgradeToStandardPlan(orgId: string): Promise<void> {
+  const billing = await getOrgBillingStatus(orgId);
+  if (!billing?.stripeSubscriptionId) throw new Error('No active subscription found');
+
+  const config = await getPricingConfig();
+  const stripe = getStripe();
+
+  // Find and remove the pro product line item
+  const sub = await stripe.subscriptions.retrieve(billing.stripeSubscriptionId);
+  const proItem = sub.items.data.find((item: any) =>
+    item.price.id === config.stripeProProductPriceId
+  );
+
+  if (proItem) {
+    await stripe.subscriptionItems.del(proItem.id, { proration_behavior: 'create_prorations' });
+  }
+
+  await updateBillingStatus(orgId, { plan: 'standard' });
+  await logBillingEvent(orgId, 'plan_downgraded', { from: 'pro', to: 'standard' });
 }
 
 // ── Webhook Processing ──
@@ -296,8 +438,11 @@ export async function processWebhookEvent(event: Stripe.Event): Promise<void> {
       const orgId = session.metadata?.orgId;
       if (!orgId) break;
 
+      const checkoutPlan = session.metadata?.plan || 'standard';
+
       await updateBillingStatus(orgId, {
         status: 'active',
+        plan: checkoutPlan,
         stripeCustomerId: session.customer as string,
         stripeSubscriptionId: session.subscription as string,
       });
@@ -305,10 +450,20 @@ export async function processWebhookEvent(event: Stripe.Event): Promise<void> {
       // Get subscription details for period end
       if (session.subscription) {
         const sub = await getStripe().subscriptions.retrieve(session.subscription as string) as any;
+        // Sum total monthly amount from all line items
+        let totalMonthly = 0;
+        let contributorCount = 1;
+        for (const item of (sub.items?.data || [])) {
+          const qty = item.quantity || 1;
+          const unitAmount = item.price?.unit_amount || 0;
+          totalMonthly += qty * unitAmount;
+          // First line item is always contributors
+          if (item === sub.items.data[0]) contributorCount = qty;
+        }
         await updateBillingStatus(orgId, {
           currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
-          contributorCount: sub.items.data[0]?.quantity || 1,
-          monthlyAmountCents: (sub.items.data[0]?.quantity || 1) * PRICE_PER_CONTRIBUTOR_CENTS,
+          contributorCount,
+          monthlyAmountCents: totalMonthly,
         });
       }
 
@@ -328,15 +483,15 @@ export async function processWebhookEvent(event: Stripe.Event): Promise<void> {
         }
       }
 
-      await logBillingEvent(orgId, 'subscription_created', { sessionId: session.id }, event.id);
+      await logBillingEvent(orgId, 'subscription_created', { sessionId: session.id, plan: checkoutPlan }, event.id);
 
-      // Send welcome notification
+      const planLabel = checkoutPlan === 'pro' ? 'Pro' : 'Standard';
       await createNotification({
         orgId,
         type: 'billing',
         severity: 'info',
         title: 'Subscription activated',
-        body: 'Your CRANIS2 Standard subscription is now active. Thank you!',
+        body: `Your CRANIS2 ${planLabel} subscription is now active. Thank you!`,
         link: '/billing',
       });
       break;
@@ -353,16 +508,31 @@ export async function processWebhookEvent(event: Stripe.Event): Promise<void> {
         : sub.status === 'unpaid' ? 'suspended'
         : 'active';
 
+      // Sum total monthly amount from all line items
+      let totalMonthly = 0;
+      let contributorCount = 1;
+      for (const item of (sub.items?.data || [])) {
+        const qty = item.quantity || 1;
+        const unitAmount = item.price?.unit_amount || 0;
+        totalMonthly += qty * unitAmount;
+        if (item === sub.items.data[0]) contributorCount = qty;
+      }
+
+      // Detect plan from line item count (2+ items = pro)
+      const plan = (sub.items?.data?.length || 1) > 1 ? 'pro' : 'standard';
+
       await updateBillingStatus(orgId, {
         status: newStatus,
+        plan,
         currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
-        contributorCount: sub.items.data[0]?.quantity || 1,
-        monthlyAmountCents: (sub.items.data[0]?.quantity || 1) * PRICE_PER_CONTRIBUTOR_CENTS,
+        contributorCount,
+        monthlyAmountCents: totalMonthly,
       });
 
       await logBillingEvent(orgId, 'subscription_updated', {
         stripeStatus: sub.status,
-        quantity: sub.items.data[0]?.quantity,
+        plan,
+        itemCount: sub.items?.data?.length || 1,
       }, event.id);
       break;
     }

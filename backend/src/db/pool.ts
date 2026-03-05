@@ -877,6 +877,27 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     await client.query(`CREATE INDEX IF NOT EXISTS idx_copilot_usage_org ON copilot_usage(org_id, created_at DESC)`);
     await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT 'standard'`);
 
+    // ── Platform Settings ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS platform_settings (
+        key         VARCHAR(100) PRIMARY KEY,
+        value       JSONB NOT NULL,
+        updated_at  TIMESTAMPTZ DEFAULT NOW(),
+        updated_by  UUID
+      );
+    `);
+
+    // Seed default pricing
+    const PRICE_ID = process.env.STRIPE_PRICE_ID || '';
+    await client.query(`
+      INSERT INTO platform_settings (key, value) VALUES
+        ('billing.contributor_price_cents', '600'::jsonb),
+        ('billing.pro_product_price_cents', '2000'::jsonb),
+        ('billing.stripe_contributor_price_id', $1::jsonb),
+        ('billing.stripe_pro_product_price_id', 'null'::jsonb)
+      ON CONFLICT (key) DO NOTHING
+    `, [JSON.stringify(PRICE_ID)]);
+
   } finally {
     client.release();
   }

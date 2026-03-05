@@ -294,3 +294,51 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Pricing Configuration */
+.abill-pricing-section {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 1.25rem; margin-bottom: 1.5rem;
+}
+.abill-pricing-section h2 {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 1rem; margin: 0 0 1rem;
+}
+.abill-pricing-grid {
+  display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;
+}
+.abill-pricing-field label {
+  display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 0.3rem;
+}
+.abill-pricing-input-group {
+  display: flex; align-items: center; gap: 0.3rem;
+}
+.abill-pricing-currency {
+  font-size: 0.9rem; font-weight: 600; color: var(--text);
+}
+.abill-pricing-input {
+  width: 100px; padding: 0.4rem 0.6rem;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); font-size: 0.85rem;
+}
+.abill-pricing-input:focus { outline: none; border-color: var(--accent); }
+.abill-pricing-actions {
+  display: flex; flex-direction: column; gap: 0.3rem;
+}
+.abill-btn-primary {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.45rem 1rem; font-size: 0.8rem;
+  border: none; border-radius: 6px;
+  background: var(--accent); color: #fff;
+  cursor: pointer; transition: filter 0.15s; white-space: nowrap;
+}
+.abill-btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
+.abill-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.abill-btn-primary .spin { animation: abill-spin 0.8s linear infinite; }
+@keyframes abill-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.abill-pricing-note {
+  font-size: 0.72rem; color: var(--muted); font-style: italic;
+}
+@media (max-width: 768px) {
+  .abill-pricing-grid { grid-template-columns: 1fr; }
+}
