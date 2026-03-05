@@ -1352,6 +1352,12 @@ function ObligationsTab({ product }: { product: Product }) {
   const [obLoading, setObLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [exportingObl, setExportingObl] = useState<string | null>(null);
+  const [expandedNotes, setExpandedNotes] = useState<string | null>(null);
+  const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
+  const [savingNotes, setSavingNotes] = useState<string | null>(null);
+  const [obAiSuggesting, setObAiSuggesting] = useState<string | null>(null);
+  const [obShowUpgrade, setObShowUpgrade] = useState(false);
+  const [obAiError, setObAiError] = useState<string | null>(null);
   const token = localStorage.getItem('session_token');
 
   async function handleExportObl(format: 'pdf' | 'csv') {
@@ -1410,6 +1416,62 @@ function ObligationsTab({ product }: { product: Product }) {
       console.error('Failed to update obligation:', err);
     } finally {
       setUpdatingId(null);
+    }
+  }
+
+  async function handleSaveNotes(ob: ObligationRecord) {
+    setSavingNotes(ob.id);
+    try {
+      const res = await fetch(`/api/obligations/${ob.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ notes: editingNotes[ob.id] ?? ob.notes }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setObligations(prev => prev.map(o => o.id === ob.id ? { ...o, notes: updated.notes ?? editingNotes[ob.id] ?? ob.notes } : o));
+      }
+    } catch (err) {
+      console.error('Failed to save notes:', err);
+    } finally {
+      setSavingNotes(null);
+    }
+  }
+
+  async function handleObAiSuggest(ob: ObligationRecord) {
+    setObAiSuggesting(ob.id);
+    setObAiError(null);
+    setObShowUpgrade(false);
+    try {
+      const existingNotes = editingNotes[ob.id] ?? ob.notes;
+      const res = await fetch('/api/copilot/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          productId: product.id,
+          sectionKey: ob.obligationKey,
+          type: 'obligation',
+          existingContent: existingNotes || undefined,
+        }),
+      });
+
+      if (res.status === 403) {
+        const data = await res.json();
+        if (data.error === 'feature_requires_plan') {
+          setObShowUpgrade(true);
+          return;
+        }
+      }
+      if (!res.ok) throw new Error('Failed to generate suggestion');
+
+      const data = await res.json();
+      setEditingNotes(prev => ({ ...prev, [ob.id]: data.suggestion }));
+      // Auto-expand notes if not already
+      setExpandedNotes(ob.id);
+    } catch (err: any) {
+      setObAiError(err.message || 'AI suggestion failed');
+    } finally {
+      setObAiSuggesting(null);
     }
   }
 
@@ -1481,6 +1543,77 @@ function ObligationsTab({ product }: { product: Product }) {
               {ob.derivedReason && ob.derivedStatus && (
                 <p className="pd-ob-derived-reason">{ob.derivedReason}</p>
               )}
+
+              {/* Notes toggle + AI Suggest */}
+              <div className="ob-notes-toggle-row">
+                <button
+                  className="ob-notes-toggle"
+                  onClick={() => {
+                    if (expandedNotes === ob.id) {
+                      setExpandedNotes(null);
+                    } else {
+                      setExpandedNotes(ob.id);
+                      if (editingNotes[ob.id] === undefined) {
+                        setEditingNotes(prev => ({ ...prev, [ob.id]: ob.notes || '' }));
+                      }
+                    }
+                  }}
+                >
+                  {expandedNotes === ob.id ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  Evidence Notes {ob.notes ? '(has content)' : ''}
+                </button>
+                <button
+                  className="btn ai-suggest-btn ai-suggest-btn-sm"
+                  onClick={() => handleObAiSuggest(ob)}
+                  disabled={obAiSuggesting === ob.id}
+                  title="Generate AI-drafted evidence notes (Pro plan)"
+                >
+                  {obAiSuggesting === ob.id
+                    ? <Loader2 size={12} className="spin" />
+                    : <Sparkles size={12} />}
+                  {obAiSuggesting === ob.id ? 'Generating…' : 'AI Suggest'}
+                </button>
+              </div>
+
+              {expandedNotes === ob.id && (
+                <div className="ob-notes-editor">
+                  {obAiSuggesting === ob.id && (
+                    <div className="ai-suggesting-banner">
+                      <Loader2 size={14} className="spin" />
+                      <span>Generating evidence notes with AI…</span>
+                    </div>
+                  )}
+                  {obShowUpgrade && expandedNotes === ob.id && (
+                    <div className="ai-upgrade-banner">
+                      <Info size={14} />
+                      <span>AI Suggest requires the <strong>Pro</strong> plan. <a href="/billing">Upgrade now</a></span>
+                    </div>
+                  )}
+                  {obAiError && expandedNotes === ob.id && (
+                    <div className="ai-error-banner">
+                      <AlertTriangle size={14} />
+                      <span>{obAiError}</span>
+                    </div>
+                  )}
+                  <textarea
+                    className="ob-notes-textarea"
+                    rows={5}
+                    placeholder="Document how this obligation is met — evidence, references, compliance notes…"
+                    value={editingNotes[ob.id] ?? ob.notes ?? ''}
+                    onChange={(e) => setEditingNotes(prev => ({ ...prev, [ob.id]: e.target.value }))}
+                  />
+                  <div className="ob-notes-actions">
+                    <button
+                      className="btn btn-primary ob-notes-save"
+                      onClick={() => handleSaveNotes(ob)}
+                      disabled={savingNotes === ob.id}
+                    >
+                      {savingNotes === ob.id ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+                      {savingNotes === ob.id ? 'Saving…' : 'Save Notes'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -1503,6 +1636,9 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
   const [suggestions, setSuggestions] = useState<any>(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState<string | null>(null);
   const [autoFilledSections, setAutoFilledSections] = useState<Set<string>>(new Set());
+  const [aiSuggesting, setAiSuggesting] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
 
   const statusConfig = {
     completed: { icon: CheckCircle2, color: 'var(--green)', text: 'Complete' },
@@ -1652,6 +1788,86 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
       // Silently ignore — auto-fill is best-effort
     } finally {
       setLoadingSuggestion(null);
+    }
+  }
+
+  async function handleAiSuggest(sectionKey: string) {
+    setAiSuggesting(sectionKey);
+    setAiError(null);
+    setShowUpgradeBanner(false);
+    try {
+      const token = localStorage.getItem('session_token');
+      const existingContent = editContent[sectionKey] ? JSON.stringify(editContent[sectionKey]) : undefined;
+      const res = await fetch('/api/copilot/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ productId, sectionKey, type: 'technical_file', existingContent }),
+      });
+
+      if (res.status === 403) {
+        const data = await res.json();
+        if (data.error === 'feature_requires_plan') {
+          setShowUpgradeBanner(true);
+          return;
+        }
+      }
+      if (!res.ok) throw new Error('Failed to generate suggestion');
+
+      const data = await res.json();
+      const suggestion = data.suggestion;
+
+      // Parse JSON response — the service returns structured JSON for tech file sections
+      try {
+        // Strip markdown code fences if present
+        const cleaned = suggestion.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+        const parsed = JSON.parse(cleaned);
+
+        setEditContent(prev => {
+          const current = prev[sectionKey] || {};
+
+          if (parsed.fields) {
+            // Sections with field structure (product_description, design_development, etc.)
+            const currentFields = current.fields || {};
+            const mergedFields = { ...currentFields };
+            for (const [k, v] of Object.entries(parsed.fields)) {
+              if (!mergedFields[k]) mergedFields[k] = v as string;
+            }
+            return { ...prev, [sectionKey]: { ...current, fields: mergedFields } };
+          }
+          if (parsed.standards) {
+            const currentStandards = current.standards || [];
+            if (currentStandards.length === 0) {
+              return { ...prev, [sectionKey]: { ...current, standards: parsed.standards } };
+            }
+            return prev;
+          }
+          if (parsed.reports) {
+            const currentReports = current.reports || [];
+            if (currentReports.length === 0) {
+              return { ...prev, [sectionKey]: { ...current, reports: parsed.reports } };
+            }
+            return prev;
+          }
+
+          // Direct field mapping (e.g. { intended_purpose: "...", ... })
+          const currentFields = current.fields || {};
+          const mergedFields = { ...currentFields };
+          for (const [k, v] of Object.entries(parsed)) {
+            if (typeof v === 'string' && !mergedFields[k]) mergedFields[k] = v;
+          }
+          return { ...prev, [sectionKey]: { ...current, fields: mergedFields } };
+        });
+      } catch {
+        // If JSON parsing fails, put raw text into notes
+        setEditNotes(prev => ({
+          ...prev,
+          [sectionKey]: prev[sectionKey] ? prev[sectionKey] + '\n\n' + suggestion : suggestion,
+        }));
+      }
+    } catch (err: any) {
+      setAiError(err.message || 'AI suggestion failed');
+    } finally {
+      setAiSuggesting(null);
     }
   }
 
@@ -1849,6 +2065,30 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
                     </div>
                   )}
 
+                  {/* AI suggesting overlay */}
+                  {aiSuggesting === section.sectionKey && (
+                    <div className="ai-suggesting-banner">
+                      <Loader2 size={14} className="spin" />
+                      <span>Generating draft with AI — this may take a few seconds…</span>
+                    </div>
+                  )}
+
+                  {/* Upgrade banner */}
+                  {showUpgradeBanner && expandedSection === section.sectionKey && (
+                    <div className="ai-upgrade-banner">
+                      <Info size={14} />
+                      <span>AI Suggest requires the <strong>Pro</strong> plan or higher. <a href="/billing">Upgrade now</a></span>
+                    </div>
+                  )}
+
+                  {/* AI error message */}
+                  {aiError && expandedSection === section.sectionKey && (
+                    <div className="ai-error-banner">
+                      <AlertTriangle size={14} />
+                      <span>{aiError}</span>
+                    </div>
+                  )}
+
                   {/* Status selector */}
                   <div className="tf-status-row">
                     <label className="tf-field-label">Section Status</label>
@@ -1908,6 +2148,17 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
                         {loadingSuggestion === section.sectionKey ? 'Filling…' : 'Auto-fill'}
                       </button>
                     )}
+                    <button
+                      className="btn ai-suggest-btn"
+                      onClick={() => handleAiSuggest(section.sectionKey)}
+                      disabled={aiSuggesting === section.sectionKey}
+                      title="Generate AI-drafted content using your product data (Pro plan)"
+                    >
+                      {aiSuggesting === section.sectionKey
+                        ? <Loader2 size={14} className="spin" />
+                        : <Sparkles size={14} />}
+                      {aiSuggesting === section.sectionKey ? 'Generating…' : 'AI Suggest'}
+                    </button>
                     {section.sectionKey === 'declaration_of_conformity' && (
                       <button
                         className="btn tf-doc-download-btn"

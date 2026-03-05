@@ -49,6 +49,7 @@ services:
       FORGEJO_ADMIN_TOKEN: ${FORGEJO_ADMIN_TOKEN}
       FORGEJO_URL: ${FORGEJO_URL}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     volumes:
       - ./docs:/app/docs:ro
     deploy:

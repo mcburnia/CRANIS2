@@ -8,6 +8,7 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "adm-zip": "^0.5.16",
     "archiver": "^7.0.1",
     "asn1js": "^3.0.7",

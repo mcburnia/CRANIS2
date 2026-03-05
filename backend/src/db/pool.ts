@@ -859,6 +859,24 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
       console.log('[DB] Seeded doc_pages with USER-GUIDE.md and FAQ.md');
     }
 
+    // ── AI Copilot ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS copilot_usage (
+        id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id       UUID NOT NULL,
+        user_id      UUID,
+        product_id   VARCHAR(255),
+        section_key  VARCHAR(100),
+        type         VARCHAR(30),
+        input_tokens INT,
+        output_tokens INT,
+        model        VARCHAR(50),
+        created_at   TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_copilot_usage_org ON copilot_usage(org_id, created_at DESC)`);
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT 'standard'`);
+
   } finally {
     client.release();
   }
