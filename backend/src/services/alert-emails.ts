@@ -370,3 +370,86 @@ export async function sendSupportEndAlertEmail(
     console.error('[ALERT-EMAIL] Failed to send support end alert:', (err as Error).message);
   }
 }
+
+/**
+ * 7. CRA milestone approaching — organisation-wide regulatory deadline alert.
+ */
+export async function sendCraMilestoneAlertEmail(
+  orgId: string,
+  milestoneLabel: string,
+  daysRemaining: number,
+  milestoneId: string
+): Promise<void> {
+  try {
+    const alertKey = `cra-milestone:${orgId}:${milestoneId}:${daysRemaining}d`;
+    if (!(await shouldSendAlert(alertKey))) return;
+
+    const recipients = await getAlertRecipients(orgId, null, [
+      'compliance_officer', 'manufacturer_contact',
+    ]);
+    if (recipients.length === 0) return;
+
+    const severity = daysRemaining <= 30 ? 'high' : daysRemaining <= 60 ? 'medium' : 'info';
+    const subject = `CRANIS2: CRA milestone in ${daysRemaining} days — ${milestoneLabel}`;
+
+    const html = wrapEmail(
+      'CRA Milestone Approaching',
+      severityBadge(severity) +
+      textParagraph(`The <strong>${milestoneLabel}</strong> deadline is in <strong>${daysRemaining} days</strong>.`) +
+      textParagraph(daysRemaining <= 30
+        ? 'This deadline is approaching rapidly. Ensure all required compliance activities are completed before this date.'
+        : 'Use this time to review your compliance readiness and address any outstanding gaps.') +
+      textParagraph('The Cyber Resilience Act (EU 2024/2847) imposes mandatory deadlines. Non-compliance may result in enforcement action by market surveillance authorities.') +
+      actionButton('View Compliance Checklist', `${frontendUrl}/products`) +
+      roleFooter(['compliance_officer', 'manufacturer_contact'])
+    );
+
+    await resend.emails.send({ from: `CRANIS2 <${from}>`, to: recipients, subject, html });
+    await recordAlertSent(orgId, alertKey, subject);
+    console.log(`[ALERT-EMAIL] CRA milestone alert sent to ${recipients.length} recipients (${milestoneLabel}, ${daysRemaining}d remaining)`);
+  } catch (err) {
+    console.error('[ALERT-EMAIL] Failed to send CRA milestone alert:', (err as Error).message);
+  }
+}
+
+/**
+ * 8. Compliance stall — product compliance progress has stalled for >7 days.
+ */
+export async function sendComplianceStallAlertEmail(
+  orgId: string,
+  productName: string,
+  daysSinceUpdate: number,
+  readiness: number,
+  productId: string
+): Promise<void> {
+  try {
+    // Weekly deduplication: one alert per product per ISO week
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const weekNumber = Math.ceil(((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24) + startOfYear.getDay() + 1) / 7);
+    const alertKey = `compliance-stall:${productId}:w${weekNumber}`;
+    if (!(await shouldSendAlert(alertKey))) return;
+
+    const recipients = await getAlertRecipients(orgId, productId, [
+      'compliance_officer', 'technical_file_owner',
+    ]);
+    if (recipients.length === 0) return;
+
+    const subject = `CRANIS2: Compliance progress stalled for ${productName}`;
+
+    const html = wrapEmail(
+      'Compliance Progress Stalled',
+      severityBadge('medium') +
+      textParagraph(`No obligation updates have been made for <strong>${productName}</strong> in the last <strong>${daysSinceUpdate} days</strong>. Current CRA readiness is <strong>${readiness}%</strong>.`) +
+      textParagraph('Consistent progress on compliance obligations helps avoid last-minute scrambles before CRA deadlines. Review your outstanding obligations and update their status.') +
+      actionButton('View Obligations', `${frontendUrl}/products/${productId}?tab=obligations`) +
+      roleFooter(['compliance_officer', 'technical_file_owner'])
+    );
+
+    await resend.emails.send({ from: `CRANIS2 <${from}>`, to: recipients, subject, html });
+    await recordAlertSent(orgId, alertKey, subject);
+    console.log(`[ALERT-EMAIL] Compliance stall alert sent to ${recipients.length} recipients (${productName}, ${daysSinceUpdate}d stalled, ${readiness}% readiness)`);
+  } catch (err) {
+    console.error('[ALERT-EMAIL] Failed to send compliance stall alert:', (err as Error).message);
+  }
+}

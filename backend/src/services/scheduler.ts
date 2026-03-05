@@ -19,7 +19,7 @@ import { resolveLockfileVersions } from './lockfile-resolver.js';
 import { generateSBOMFromLockfiles } from './lockfile-sbom-generator.js';
 import { generateSBOMFromImports } from './import-scanner.js';
 import { sendComplianceGapNotification } from './notifications.js';
-import { sendScanFailedEmail, sendComplianceGapEmail, sendDeadlineAlertEmail, sendSupportEndAlertEmail } from './alert-emails.js';
+import { sendScanFailedEmail, sendComplianceGapEmail, sendDeadlineAlertEmail, sendSupportEndAlertEmail, sendCraMilestoneAlertEmail, sendComplianceStallAlertEmail } from './alert-emails.js';
 import { scanProductLicenses } from './license-scanner.js';
 import { createSnapshot } from './ip-proof.js';
 import { extractPackageInfo } from '../routes/github.js';
@@ -27,6 +27,11 @@ import { checkTrialExpiry, checkPaymentGrace } from './billing.js';
 import { ensureWebhook } from './webhook.js';
 import { runAllEscrowDeposits } from './escrow-service.js';
 import { logger } from '../utils/logger.js';
+import { DEADLINES } from '../routes/compliance-checklist.js';
+import {
+  getApplicableObligations, ensureObligations,
+  computeDerivedStatuses, higherStatus,
+} from './obligation-engine.js';
 
 
 // How often to check for stale SBOMs (default: every hour)
@@ -51,6 +56,9 @@ const VULN_DB_SYNC_HOUR = 1;
 // Hour of the day to check for approaching end-of-support dates (0-23, default: 7 AM)
 const SUPPORT_CHECK_HOUR = 7;
 
+// Hour of the day to check CRA milestone + compliance stall alerts (0-23, default: 8 AM)
+const SMART_DEADLINE_HOUR = 8;
+
 let lastSyncDate = '';
 let lastVulnScanDate = '';
 let lastVulnDbSyncDate = '';
@@ -58,6 +66,7 @@ let lastBillingCheckDate = '';
 let lastEscrowDepositDate = '';
 let lastWebhookHealthDate = '';
 let lastSupportCheckDate = '';
+let lastSmartDeadlineDate = '';
 
 async function getProductRepoToken(productId: string, forProvider?: RepoProvider): Promise<{ token: string; userId: string; provider: RepoProvider; instanceUrl: string | null } | null> {
   // Find the user who owns this product (via org) and has a repo connection
@@ -895,8 +904,193 @@ async function checkSupportPeriodExpiry(): Promise<void> {
   }
 }
 
+async function checkSmartDeadlineAlerts(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (lastSmartDeadlineDate === todayStr) return;
+
+  const now = new Date();
+  if (now.getUTCHours() < SMART_DEADLINE_HOUR) return;
+
+  lastSmartDeadlineDate = todayStr;
+  logger.info('[SMART-DEADLINE] Starting daily CRA milestone + compliance stall check...');
+
+  try {
+    // ── Part A: CRA Milestone Alerts ──────────────────────────────
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const milestoneThresholds = [90, 60, 30];
+
+    // Get all orgs
+    const orgResult = await pool.query('SELECT DISTINCT org_id FROM users WHERE org_id IS NOT NULL');
+    const orgIds = orgResult.rows.map((r: any) => r.org_id);
+
+    let milestoneAlertsSent = 0;
+
+    for (const deadline of DEADLINES) {
+      const target = new Date(deadline.date);
+      target.setHours(0, 0, 0, 0);
+      const daysRemaining = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      // Only alert for future milestones
+      if (daysRemaining < 0) continue;
+
+      for (const threshold of milestoneThresholds) {
+        if (daysRemaining <= threshold) {
+          // Alert each org
+          for (const orgId of orgIds) {
+            // Dedup: check for existing unread notification at this threshold
+            const existing = await pool.query(
+              `SELECT id FROM notifications
+               WHERE type = 'cra_milestone' AND is_read = false
+                 AND metadata->>'milestoneId' = $1
+                 AND metadata->>'threshold' = $2
+                 AND org_id = $3
+               LIMIT 1`,
+              [deadline.id, String(threshold), orgId]
+            );
+            if (existing.rows.length > 0) continue;
+
+            const severity = threshold <= 30 ? 'high' : threshold <= 60 ? 'medium' : 'info';
+
+            await createNotification({
+              orgId,
+              type: 'cra_milestone',
+              severity,
+              title: `CRA deadline in ${daysRemaining} days: ${deadline.label}`,
+              body: `The ${deadline.label} deadline (${deadline.date}) is ${daysRemaining} days away. Review your compliance readiness.`,
+              link: '/products',
+              metadata: { milestoneId: deadline.id, threshold: String(threshold), daysRemaining },
+            });
+
+            sendCraMilestoneAlertEmail(orgId, deadline.label, daysRemaining, deadline.id).catch(() => {});
+            milestoneAlertsSent++;
+          }
+
+          // Only trigger tightest matching threshold per milestone
+          break;
+        }
+      }
+    }
+
+    // ── Part B: Compliance Stall Detection ────────────────────────
+
+    const driver = getDriver();
+    const session = driver.session();
+    let stallAlertsSent = 0;
+
+    try {
+      // Get all products with their org IDs and categories
+      const productResult = await session.run(
+        `MATCH (p:Product)-[:BELONGS_TO]->(o:Organisation)
+         RETURN p.id AS id, p.name AS name, o.id AS orgId, p.craCategory AS category`
+      );
+
+      if (productResult.records.length > 0) {
+        const products = productResult.records.map(r => ({
+          id: r.get('id'),
+          name: r.get('name') || 'Unknown',
+          orgId: r.get('orgId'),
+          category: r.get('category') || null,
+        }));
+        const productIds = products.map(p => p.id);
+
+        // Get last obligation update per product
+        const lastUpdateResult = await pool.query(
+          `SELECT product_id, MAX(updated_at) AS last_update
+           FROM obligations
+           WHERE product_id = ANY($1)
+           GROUP BY product_id`,
+          [productIds]
+        );
+        const lastUpdateMap: Record<string, Date> = {};
+        for (const row of lastUpdateResult.rows) {
+          lastUpdateMap[row.product_id] = new Date(row.last_update);
+        }
+
+        // Compute readiness per product (reuse obligation engine)
+        const categoryMap: Record<string, string | null> = {};
+        const orgMap: Record<string, string> = {};
+        for (const p of products) {
+          categoryMap[p.id] = p.category;
+          orgMap[p.id] = p.orgId;
+        }
+
+        // Group products by org for ensureObligations
+        for (const p of products) {
+          await ensureObligations(p.orgId, p.id, p.category);
+        }
+
+        const obResult = await pool.query(
+          `SELECT product_id, obligation_key, status
+           FROM obligations WHERE product_id = ANY($1)`,
+          [productIds]
+        );
+
+        const derivedMap = await computeDerivedStatuses(productIds, Object.values(orgMap)[0] || '', categoryMap);
+
+        // Compute per-product readiness
+        const obByProduct: Record<string, { key: string; effectiveStatus: string }[]> = {};
+        for (const row of obResult.rows) {
+          if (!obByProduct[row.product_id]) obByProduct[row.product_id] = [];
+          const derivedStatus = derivedMap[row.product_id]?.[row.obligation_key]?.status ?? null;
+          const effectiveStatus = higherStatus(row.status, derivedStatus);
+          obByProduct[row.product_id].push({ key: row.obligation_key, effectiveStatus });
+        }
+
+        for (const p of products) {
+          const obligations = obByProduct[p.id] || [];
+          const applicable = getApplicableObligations(p.category);
+          const total = applicable.length;
+          const met = obligations.filter(o => o.effectiveStatus === 'met').length;
+          const readiness = total > 0 ? Math.round((met / total) * 100) : 0;
+
+          // Skip products at 100% readiness or with no obligations
+          if (readiness >= 100 || total === 0) continue;
+
+          // Check for stall (>7 days since last update)
+          const lastUpdate = lastUpdateMap[p.id];
+          if (!lastUpdate) continue; // No obligations updated yet — don't nag
+
+          const daysSinceUpdate = Math.floor((today.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysSinceUpdate <= 7) continue;
+
+          // Dedup: check for existing unread notification
+          const existing = await pool.query(
+            `SELECT id FROM notifications
+             WHERE type = 'compliance_stall' AND is_read = false
+               AND metadata->>'productId' = $1
+             LIMIT 1`,
+            [p.id]
+          );
+          if (existing.rows.length > 0) continue;
+
+          await createNotification({
+            orgId: p.orgId,
+            type: 'compliance_stall',
+            severity: 'medium',
+            title: `Compliance progress stalled: ${p.name}`,
+            body: `No obligation updates for ${daysSinceUpdate} days. Current CRA readiness: ${readiness}%. Review and update your obligations.`,
+            link: `/products/${p.id}?tab=obligations`,
+            metadata: { productId: p.id, daysSinceUpdate, readiness },
+          });
+
+          sendComplianceStallAlertEmail(p.orgId, p.name, daysSinceUpdate, readiness, p.id).catch(() => {});
+          stallAlertsSent++;
+        }
+      }
+    } finally {
+      await session.close();
+    }
+
+    logger.info(`[SMART-DEADLINE] Check complete — ${milestoneAlertsSent} milestone alert(s), ${stallAlertsSent} stall alert(s) sent`);
+  } catch (err: any) {
+    console.error('[SMART-DEADLINE] Error during smart deadline check:', err.message);
+  }
+}
+
 export function startScheduler(): void {
-  logger.info('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00');
+  logger.info('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00');
 
   // Run check periodically — all three have hour-gating and date-tracking
   setInterval(() => {
@@ -908,5 +1102,6 @@ export function startScheduler(): void {
     runDailyEscrowDeposits().catch(err => console.error('[SCHEDULER] Uncaught error in escrow deposits:', err));
     runDailyWebhookHealthCheck().catch(err => console.error('[SCHEDULER] Uncaught error in webhook health:', err));
     checkSupportPeriodExpiry().catch(err => console.error('[SCHEDULER] Uncaught error in support period check:', err));
+    checkSmartDeadlineAlerts().catch(err => console.error('[SCHEDULER] Uncaught error in smart deadline check:', err));
   }, CHECK_INTERVAL_MS);
 }

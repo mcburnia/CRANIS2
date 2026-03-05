@@ -26,7 +26,7 @@ async function getUserOrgId(userId: string): Promise<string | null> {
 }
 
 // CRA compliance deadlines (fixed dates per Regulation (EU) 2024/2847)
-const DEADLINES = [
+export const DEADLINES = [
   {
     id: 'incident_reporting',
     label: 'Incident reporting obligations (Art. 14)',
