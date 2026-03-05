@@ -1018,7 +1018,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-04 (session 17)
+**Last updated:** 2026-03-05 (session 24)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -1167,6 +1167,18 @@ sudo systemctl restart cloudflared
 - **Stripe checkout fix** — Added `customer_update: { address: 'auto', name: 'auto' }` to Stripe checkout session for automatic tax + tax ID collection. Pro product price reduced from €20 to €3/month.
 - **Full route test coverage** — Test coverage audit identified 7 untested routes. Created 7 new test files (54 tests): `copilot.test.ts` (9 — auth, status shape, Pro plan gating, validation, cross-org), `product-activity.test.ts` (9 — auth, shape, pagination, filters, cross-org), `dependencies-overview.test.ts` (6 — auth, shape, totals, cross-org, empty org), `repos-overview.test.ts` (6), `contributors-overview.test.ts` (6), `technical-files-overview.test.ts` (7 — sections, progress), `docs.test.ts` (11 — public GET, admin PUT, validation). Route test coverage: 33/33 (100%). **Total: 1051 backend tests passing (62 files).**
 
+**Session 24 (2026-03-05):**
+- **AI auto-triage vulnerabilities (P3 #15)** — AI-powered vulnerability triage on Risk Findings tab. Claude analyses each finding against product context (SBOM, description, category) and suggests dismiss/acknowledge/escalate with confidence scores and mitigation CLI commands. Pro plan gated. `POST /api/copilot/triage` endpoint. 5 new tests.
+- **Copilot usage dashboard (P3 #27)** — Org-level billing page section showing Copilot usage: current month totals (requests, input/output tokens, estimated cost USD), 6-month history, breakdown by type and product. `GET /api/copilot/usage` endpoint. Admin billing page shows platform-wide usage. Product overview shows compact usage widget. 9 new tests.
+- **Risk assessment generator (P3 #16)** — AI-powered CRA risk assessment generation. Produces structured methodology, threat model, risk register, and 13 Annex I Part I requirement mappings from product context. PDF export. `POST /api/copilot/generate-risk-assessment` endpoint. 5 new tests.
+- **Removed Export PDF from Risk Findings tab** — Poor quality PDF removed.
+- **AI incident report drafter (P3 #17)** — AI-powered drafting for ENISA Article 14 report stages (early warning, notification, final report). Generates stage-appropriate content grounded in product data, linked vulnerability findings, and previously submitted stages. Non-destructive merge (only fills empty fields). `POST /api/copilot/draft-incident-report` endpoint with `gatherIncidentReportContext()` and `generateIncidentReportDraft()` in copilot service. `REPORT_STAGE_FIELDS` maps 6 stage×type combinations to exact form fields. CRA Article 14-specific system prompt for CSIRT/ENISA regulatory tone. 5 new tests. **Total: 1070 backend tests passing (62 files).**
+- **Org-level CSIRT country setting** — New `csirt_country` column on `org_billing`. "ENISA Reporting Settings" card on Billing page with country dropdown. Report creation auto-populates CSIRT from org default (per-report override preserved). `GET/PUT /api/billing/csirt-country` endpoints.
+- **Select All EU member states** — One-click "Select All EU" / "Deselect All" toggle in the create report modal member states grid.
+
 **Next Steps:**
-- P3 #14 — MCP API (Model Context Protocol server for external AI tools)
+- P3 #18 — CRA category recommender
+- P3 #19 — Supplier due diligence questionnaire
+- P3 #20 — Compliance gap narrator
+- P4 #14 — MCP API (Model Context Protocol server for external AI tools)
 - Production deployment planning (Infomaniak hosting, cranis2.com)

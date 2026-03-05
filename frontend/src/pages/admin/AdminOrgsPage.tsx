@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Users, Package, AlertTriangle, ChevronDown, ChevronRight, Shield, FileText, Loader, Search, ExternalLink, CheckCircle } from 'lucide-react';
+import { Building2, Users, Package, AlertTriangle, ChevronDown, ChevronRight, Shield, FileText, Loader, Search, ExternalLink, CheckCircle, MoreVertical, Trash2, Crown, Calendar } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -22,6 +22,8 @@ interface Org {
   lastActivity: string | null;
   vulnerabilities: OrgVulns;
   obligations: OrgObligations;
+  plan: string;
+  billingStatus: string;
 }
 
 interface OrgDetailUser {
@@ -87,6 +89,12 @@ export default function AdminOrgsPage() {
   const [expandedOrg, setExpandedOrg] = useState<string | null>(null);
   const [orgDetail, setOrgDetail] = useState<OrgDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ orgId: string; orgName: string; action: 'change_plan' | 'extend_trial' | 'delete' } | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<'standard' | 'pro'>('standard');
+  const [trialDays, setTrialDays] = useState(30);
 
   useEffect(() => { fetchOrgs(); }, []);
 
@@ -124,6 +132,70 @@ export default function AdminOrgsPage() {
     } finally {
       setDetailLoading(false);
     }
+  }
+
+  function openAction(orgId: string, orgName: string, action: 'change_plan' | 'extend_trial' | 'delete') {
+    const org = orgs.find(o => o.id === orgId);
+    if (action === 'change_plan' && org) setSelectedPlan(org.plan === 'pro' ? 'pro' : 'standard');
+    if (action === 'extend_trial') setTrialDays(30);
+    setConfirmAction({ orgId, orgName, action });
+    setActionMenuId(null);
+    setActionError('');
+  }
+
+  async function handleChangePlan() {
+    if (!confirmAction) return;
+    setActionLoading(true);
+    setActionError('');
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/admin/orgs/${confirmAction.orgId}/plan`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: selectedPlan }),
+      });
+      if (!res.ok) { const d = await res.json(); setActionError(d.error || 'Failed'); return; }
+      setConfirmAction(null);
+      await fetchOrgs();
+    } catch { setActionError('Network error'); }
+    finally { setActionLoading(false); }
+  }
+
+  async function handleExtendTrial() {
+    if (!confirmAction) return;
+    setActionLoading(true);
+    setActionError('');
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/billing/admin/${confirmAction.orgId}/trial`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ daysToAdd: trialDays }),
+      });
+      if (!res.ok) { const d = await res.json(); setActionError(d.error || 'Failed'); return; }
+      setConfirmAction(null);
+      await fetchOrgs();
+    } catch { setActionError('Network error'); }
+    finally { setActionLoading(false); }
+  }
+
+  async function handleDeleteOrg() {
+    if (!confirmAction) return;
+    setActionLoading(true);
+    setActionError('');
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/admin/orgs/${confirmAction.orgId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) { const d = await res.json(); setActionError(d.error || 'Failed'); return; }
+      setConfirmAction(null);
+      setExpandedOrg(null);
+      setOrgDetail(null);
+      await fetchOrgs();
+    } catch { setActionError('Network error'); }
+    finally { setActionLoading(false); }
   }
 
   const filtered = orgs.filter(o =>
@@ -170,6 +242,10 @@ export default function AdminOrgsPage() {
                 <div className="ao-org-name">
                   <Building2 size={16} />
                   {org.name}
+                  <span className={`ao-badge-plan ao-plan-${org.plan || 'standard'}`}>{org.plan === 'pro' ? 'Pro' : 'Standard'}</span>
+                  {org.billingStatus && org.billingStatus !== 'active' && (
+                    <span className={`ao-badge-status ao-status-${org.billingStatus}`}>{org.billingStatus.replace(/_/g, ' ')}</span>
+                  )}
                 </div>
                 <div className="ao-org-meta">
                   {org.craRole && <span className="ao-tag ao-tag-role">{CRA_ROLE_LABELS[org.craRole] || org.craRole}</span>}
@@ -193,6 +269,24 @@ export default function AdminOrgsPage() {
                 <div className="ao-mini-stat ao-activity" title="Last activity">
                   {timeAgo(org.lastActivity)}
                 </div>
+              </div>
+              <div className="ao-action-menu-wrap" onClick={e => e.stopPropagation()}>
+                <button className="ao-action-trigger" onClick={() => setActionMenuId(actionMenuId === org.id ? null : org.id)}>
+                  <MoreVertical size={16} />
+                </button>
+                {actionMenuId === org.id && (
+                  <div className="ao-action-dropdown">
+                    <button onClick={() => openAction(org.id, org.name, 'change_plan')}>
+                      <Crown size={13} /> Change Plan
+                    </button>
+                    <button onClick={() => openAction(org.id, org.name, 'extend_trial')}>
+                      <Calendar size={13} /> Extend Trial
+                    </button>
+                    <button className="ao-delete-action" onClick={() => openAction(org.id, org.name, 'delete')}>
+                      <Trash2 size={13} /> Delete Organisation
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -278,6 +372,69 @@ export default function AdminOrgsPage() {
           </div>
         ))}
       </div>
+
+      {/* Action modals */}
+      {confirmAction && confirmAction.action === 'change_plan' && (
+        <div className="ao-modal-overlay" onClick={() => setConfirmAction(null)}>
+          <div className="ao-modal" onClick={e => e.stopPropagation()}>
+            <h3>Change Plan</h3>
+            <p>Update the plan for <strong>{confirmAction.orgName}</strong>.</p>
+            <div className="ao-plan-radio">
+              <label className={selectedPlan === 'standard' ? 'ao-radio-active' : ''}>
+                <input type="radio" name="plan" value="standard" checked={selectedPlan === 'standard'} onChange={() => setSelectedPlan('standard')} />
+                Standard
+              </label>
+              <label className={selectedPlan === 'pro' ? 'ao-radio-active' : ''}>
+                <input type="radio" name="plan" value="pro" checked={selectedPlan === 'pro'} onChange={() => setSelectedPlan('pro')} />
+                Pro
+              </label>
+            </div>
+            {actionError && <div className="ao-action-error">{actionError}</div>}
+            <div className="ao-modal-actions">
+              <button className="ao-btn-cancel" onClick={() => setConfirmAction(null)} disabled={actionLoading}>Cancel</button>
+              <button className="ao-btn-confirm ao-btn-grant" onClick={handleChangePlan} disabled={actionLoading}>
+                {actionLoading ? 'Updating...' : 'Update Plan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmAction && confirmAction.action === 'extend_trial' && (
+        <div className="ao-modal-overlay" onClick={() => setConfirmAction(null)}>
+          <div className="ao-modal" onClick={e => e.stopPropagation()}>
+            <h3>Extend Trial</h3>
+            <p>Add days to the trial period for <strong>{confirmAction.orgName}</strong>.</p>
+            <div className="ao-trial-input">
+              <label>Days to add</label>
+              <input type="number" min={1} max={365} value={trialDays} onChange={e => setTrialDays(parseInt(e.target.value) || 0)} />
+            </div>
+            {actionError && <div className="ao-action-error">{actionError}</div>}
+            <div className="ao-modal-actions">
+              <button className="ao-btn-cancel" onClick={() => setConfirmAction(null)} disabled={actionLoading}>Cancel</button>
+              <button className="ao-btn-confirm ao-btn-grant" onClick={handleExtendTrial} disabled={actionLoading}>
+                {actionLoading ? 'Extending...' : 'Extend Trial'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmAction && confirmAction.action === 'delete' && (
+        <div className="ao-modal-overlay" onClick={() => setConfirmAction(null)}>
+          <div className="ao-modal" onClick={e => e.stopPropagation()}>
+            <h3>Delete Organisation</h3>
+            <p>Permanently delete <strong>{confirmAction.orgName}</strong>? This removes all users, products, and data. This cannot be undone.</p>
+            {actionError && <div className="ao-action-error">{actionError}</div>}
+            <div className="ao-modal-actions">
+              <button className="ao-btn-cancel" onClick={() => setConfirmAction(null)} disabled={actionLoading}>Cancel</button>
+              <button className="ao-btn-confirm ao-btn-revoke" onClick={handleDeleteOrg} disabled={actionLoading}>
+                {actionLoading ? 'Deleting...' : 'Delete Organisation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -323,12 +323,26 @@ router.get('/orgs', requirePlatformAdmin, async (req: Request, res: Response) =>
       }
     }
 
+    // Postgres: billing plan + status per org
+    let billingMap: Record<string, { plan: string; billingStatus: string }> = {};
+    if (orgIds.length > 0) {
+      const billingResult = await pool.query(
+        `SELECT org_id, plan, status FROM org_billing WHERE org_id = ANY($1)`,
+        [orgIds]
+      );
+      for (const row of billingResult.rows) {
+        billingMap[row.org_id] = { plan: row.plan || 'standard', billingStatus: row.status || 'trial' };
+      }
+    }
+
     const enrichedOrgs = orgs.map(o => ({
       ...o,
       userCount: userCountMap[o.id] || 0,
       lastActivity: lastActivityMap[o.id] || null,
       vulnerabilities: vulnCountMap[o.id] || { total: 0, critical: 0, high: 0, open: 0 },
       obligations: oblCountMap[o.id] || { total: 0, met: 0 },
+      plan: billingMap[o.id]?.plan || 'standard',
+      billingStatus: billingMap[o.id]?.billingStatus || 'trial',
     }));
 
     res.json({
@@ -481,6 +495,160 @@ router.get('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Respo
   }
 });
 
+// PUT /api/admin/orgs/:orgId/plan — Change organisation plan
+router.put('/orgs/:orgId/plan', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const { orgId } = req.params;
+    const { plan } = req.body;
+    const adminUserId = (req as any).userId;
+    const adminEmail = (req as any).email;
+
+    if (!plan || !['standard', 'pro'].includes(plan)) {
+      res.status(400).json({ error: 'Invalid plan. Must be "standard" or "pro".' });
+      return;
+    }
+
+    // Get current plan for telemetry
+    const current = await pool.query('SELECT plan FROM org_billing WHERE org_id = $1', [orgId]);
+    if (current.rows.length === 0) {
+      res.status(404).json({ error: 'Organisation billing record not found' });
+      return;
+    }
+    const oldPlan = current.rows[0].plan;
+
+    await pool.query('UPDATE org_billing SET plan = $1, updated_at = NOW() WHERE org_id = $2', [plan, orgId]);
+
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: adminUserId, email: adminEmail,
+      eventType: 'admin_org_plan_changed', ...reqData,
+      metadata: { orgId, oldPlan, newPlan: plan },
+    });
+
+    res.json({ success: true, plan });
+  } catch (err) {
+    console.error('Admin change org plan error:', err);
+    res.status(500).json({ error: 'Failed to change organisation plan' });
+  }
+});
+
+// DELETE /api/admin/orgs/:orgId — Delete organisation and all data
+router.delete('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const { orgId } = req.params;
+    const adminUserId = (req as any).userId;
+    const adminEmail = (req as any).email;
+
+    // Safety: cannot delete your own org
+    const adminUser = await pool.query('SELECT org_id FROM users WHERE id = $1', [adminUserId]);
+    if (adminUser.rows.length > 0 && adminUser.rows[0].org_id === orgId) {
+      res.status(400).json({ error: 'Cannot delete your own organisation' });
+      return;
+    }
+
+    // Verify org exists in Neo4j
+    const driver = getDriver();
+    const neo4jSession = driver.session();
+    try {
+      const orgCheck = await neo4jSession.run(
+        'MATCH (o:Organisation {id: $orgId}) RETURN o.name AS name', { orgId }
+      );
+      if (orgCheck.records.length === 0) {
+        res.status(404).json({ error: 'Organisation not found' });
+        return;
+      }
+      const orgName = orgCheck.records[0].get('name');
+
+      // Get user IDs for this org
+      const usersResult = await pool.query('SELECT id FROM users WHERE org_id = $1', [orgId]);
+      const userIds = usersResult.rows.map(r => r.id);
+
+      // Get product IDs from Neo4j (needed for product-only tables)
+      const prodResult = await neo4jSession.run(
+        'MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product) RETURN p.id AS id', { orgId }
+      );
+      const productIds = prodResult.records.map(r => r.get('id'));
+
+      // Cascading Postgres deletes — order matters for FK constraints
+      // Tables with org_id (direct)
+      await pool.query('DELETE FROM copilot_usage WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM product_activity_log WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM marketplace_profiles WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM marketplace_contact_log WHERE to_org_id = $1', [orgId]);
+      await pool.query('DELETE FROM billing_events WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM departed_contributors WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM contributor_snapshots WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM escrow_users WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM escrow_deposits WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM escrow_configs WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM ip_proof_snapshots WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM license_findings WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM license_scans WHERE org_id = $1', [orgId]);
+
+      // cra_report_stages cascade via cra_reports FK
+      const reportIds = await pool.query('SELECT id FROM cra_reports WHERE org_id = $1', [orgId]);
+      if (reportIds.rows.length > 0) {
+        const rIds = reportIds.rows.map(r => r.id);
+        await pool.query('DELETE FROM cra_report_stages WHERE report_id = ANY($1)', [rIds]);
+      }
+      await pool.query('DELETE FROM cra_reports WHERE org_id = $1', [orgId]);
+
+      await pool.query('DELETE FROM vulnerability_findings WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM vulnerability_scans WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM obligations WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM stakeholders WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM notifications WHERE org_id = $1', [orgId]);
+
+      // Product-only tables (no org_id column — delete by product_id)
+      if (productIds.length > 0) {
+        await pool.query('DELETE FROM sync_history WHERE product_id = ANY($1)', [productIds]);
+        await pool.query('DELETE FROM repo_push_events WHERE product_id = ANY($1)', [productIds]);
+        await pool.query('DELETE FROM product_sboms WHERE product_id = ANY($1)', [productIds]);
+        await pool.query('DELETE FROM technical_file_sections WHERE product_id = ANY($1)', [productIds]);
+        await pool.query('DELETE FROM product_versions WHERE product_id = ANY($1)', [productIds]);
+      }
+
+      // User-linked tables
+      if (userIds.length > 0) {
+        await pool.query('DELETE FROM feedback WHERE user_id = ANY($1)', [userIds]);
+        await pool.query('DELETE FROM user_events WHERE user_id = ANY($1)', [userIds]);
+        await pool.query('DELETE FROM repo_connections WHERE user_id = ANY($1)', [userIds]);
+        await pool.query('DELETE FROM marketplace_contact_log WHERE from_user_id = ANY($1)', [userIds]);
+      }
+
+      // Org billing and users last
+      await pool.query('DELETE FROM org_billing WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM users WHERE org_id = $1', [orgId]);
+
+      // Neo4j: delete org and all linked nodes
+      await neo4jSession.run(
+        `MATCH (o:Organisation {id: $orgId})
+         OPTIONAL MATCH (o)<-[:BELONGS_TO]-(p:Product)
+         OPTIONAL MATCH (p)-[:HAS_REPO]->(r:Repository)
+         OPTIONAL MATCH (r)-[:HAS_CONTRIBUTOR]->(c:Contributor)
+         OPTIONAL MATCH (p)-[:DEPENDS_ON]->(d:Dependency)
+         OPTIONAL MATCH (p)-[:HAS_SBOM]->(s:SBOM)
+         OPTIONAL MATCH (p)-[:HAS_TECH_FILE]->(tf:TechnicalFile)
+         DETACH DELETE o, p, r, c, d, s, tf`,
+        { orgId }
+      );
+
+      const reqData = extractRequestData(req);
+      await recordEvent({
+        userId: adminUserId, email: adminEmail,
+        eventType: 'admin_org_deleted', ...reqData,
+        metadata: { orgId, orgName, userCount: userIds.length },
+      });
+
+      res.json({ success: true });
+    } finally {
+      await neo4jSession.close();
+    }
+  } catch (err) {
+    console.error('Admin delete org error:', err);
+    res.status(500).json({ error: 'Failed to delete organisation' });
+  }
+});
 
 // GET /api/admin/users — List all users with org info and activity
 router.get('/users', requirePlatformAdmin, async (req: Request, res: Response) => {
