@@ -1680,7 +1680,6 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
   const [aiError, setAiError] = useState<string | null>(null);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
   const [generatingRiskAssessment, setGeneratingRiskAssessment] = useState(false);
-  const [downloadingRiskPdf, setDownloadingRiskPdf] = useState(false);
 
   const statusConfig = {
     completed: { icon: CheckCircle2, color: 'var(--green)', text: 'Complete' },
@@ -1972,27 +1971,6 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
     }
   }
 
-  async function handleDownloadRiskPdf() {
-    setDownloadingRiskPdf(true);
-    try {
-      const token = localStorage.getItem('session_token');
-      const res = await fetch(`/api/products/${productId}/reports/risk-assessment?format=pdf`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Download failed');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || 'risk-assessment.pdf';
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      alert('Failed to generate Risk Assessment PDF. Please ensure the risk assessment section has content.');
-    } finally {
-      setDownloadingRiskPdf(false);
-    }
-  }
 
   function renderFieldEditor(sectionKey: string, fields: Record<string, string>, fieldLabels?: Record<string, string>) {
     const labels: Record<string, string> = fieldLabels || {
@@ -2301,17 +2279,6 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
                           ? <Loader2 size={14} className="spin" />
                           : <Sparkles size={14} />}
                         {generatingRiskAssessment ? 'Generating…' : 'Generate Full Assessment'}
-                      </button>
-                    )}
-                    {section.sectionKey === 'risk_assessment' && (
-                      <button
-                        className="btn tf-doc-download-btn"
-                        onClick={handleDownloadRiskPdf}
-                        disabled={downloadingRiskPdf}
-                        title="Download Risk Assessment as PDF"
-                      >
-                        {downloadingRiskPdf ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
-                        {downloadingRiskPdf ? 'Generating…' : 'Download PDF'}
                       </button>
                     )}
                     {section.sectionKey === 'declaration_of_conformity' && (
