@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import {
   ArrowLeft, Shield, AlertTriangle, Clock, CheckCircle2,
-  Send, AlertCircle, X, Save, Info
+  Send, AlertCircle, X, Save, Info, Sparkles, Loader2
 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './ReportDetailPage.css';
@@ -129,6 +129,11 @@ export default function ReportDetailPage() {
     threatType: '', ongoingMitigation: '',
   });
 
+  // AI draft state
+  const [draftingStage, setDraftingStage] = useState<StageKey | null>(null);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const [showDraftUpgrade, setShowDraftUpgrade] = useState(false);
+
   const token = localStorage.getItem('session_token');
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
@@ -241,6 +246,93 @@ export default function ReportDetailPage() {
       if (res.ok) fetchReport();
     } catch (err) {
       console.error('Failed to close report:', err);
+    }
+  }
+
+  async function handleDraftWithAI(stage: StageKey) {
+    setDraftingStage(stage);
+    setDraftError(null);
+    setShowDraftUpgrade(false);
+    try {
+      const res = await fetch('/api/copilot/draft-incident-report', {
+        method: 'POST', headers,
+        body: JSON.stringify({ reportId: id, stage }),
+      });
+
+      if (res.status === 403) {
+        const data = await res.json();
+        if (data.error === 'feature_requires_plan') {
+          setShowDraftUpgrade(true);
+          return;
+        }
+      }
+      if (!res.ok) throw new Error('Failed to generate draft');
+
+      const data = await res.json();
+      const fields = data.fields;
+
+      // Non-destructive: only fill empty fields
+      if (stage === 'early_warning') {
+        setEarlyWarningForm(prev => ({
+          ...prev,
+          summary: prev.summary || fields.summary || '',
+          memberStatesDetail: prev.memberStatesDetail || fields.memberStatesDetail || '',
+          sensitivityNote: prev.sensitivityNote || fields.sensitivityNote || '',
+          ...(report?.reportType === 'incident' && prev.suspectedMalicious === 'unknown' && fields.suspectedMalicious
+            ? { suspectedMalicious: fields.suspectedMalicious }
+            : {}),
+        }));
+      } else if (stage === 'notification') {
+        if (report?.reportType === 'vulnerability') {
+          setNotificationForm(prev => ({
+            ...prev,
+            vulnerabilityDetails: prev.vulnerabilityDetails || fields.vulnerabilityDetails || '',
+            exploitNature: prev.exploitNature || fields.exploitNature || '',
+            affectedComponent: prev.affectedComponent || fields.affectedComponent || '',
+            correctiveMeasures: prev.correctiveMeasures || fields.correctiveMeasures || '',
+            userMitigations: prev.userMitigations || fields.userMitigations || '',
+            ...(prev.patchStatus === 'in_progress' && fields.patchStatus
+              ? { patchStatus: fields.patchStatus as any }
+              : {}),
+          }));
+        } else {
+          setNotificationForm(prev => ({
+            ...prev,
+            incidentNature: prev.incidentNature || fields.incidentNature || '',
+            initialAssessment: prev.initialAssessment || fields.initialAssessment || '',
+            correctiveMeasures: prev.correctiveMeasures || fields.correctiveMeasures || '',
+            userMitigations: prev.userMitigations || fields.userMitigations || '',
+          }));
+        }
+      } else if (stage === 'final_report') {
+        if (report?.reportType === 'vulnerability') {
+          setFinalForm(prev => ({
+            ...prev,
+            detailedDescription: prev.detailedDescription || fields.detailedDescription || '',
+            severityAssessment: prev.severityAssessment || fields.severityAssessment || '',
+            rootCause: prev.rootCause || fields.rootCause || '',
+            maliciousActorInfo: prev.maliciousActorInfo || fields.maliciousActorInfo || '',
+            securityUpdates: prev.securityUpdates || fields.securityUpdates || '',
+            preventiveMeasures: prev.preventiveMeasures || fields.preventiveMeasures || '',
+            ...(prev.userNotificationStatus === 'informed' && fields.userNotificationStatus
+              ? { userNotificationStatus: fields.userNotificationStatus as any }
+              : {}),
+          }));
+        } else {
+          setFinalForm(prev => ({
+            ...prev,
+            detailedDescription: prev.detailedDescription || fields.detailedDescription || '',
+            severityAssessment: prev.severityAssessment || fields.severityAssessment || '',
+            threatType: prev.threatType || fields.threatType || '',
+            ongoingMitigation: prev.ongoingMitigation || fields.ongoingMitigation || '',
+            preventiveMeasures: prev.preventiveMeasures || fields.preventiveMeasures || '',
+          }));
+        }
+      }
+    } catch (err: any) {
+      setDraftError(err.message || 'Draft generation failed');
+    } finally {
+      setDraftingStage(null);
     }
   }
 
@@ -370,8 +462,43 @@ export default function ReportDetailPage() {
             <div className="rd-stage-panel">
               <div className="rd-stage-header">
                 <h3>{timelineStages.find(t => t.key === activeStage)?.label}</h3>
+                {!stageNames.includes(activeStage) && (
+                  <button
+                    className="rd-draft-ai-btn"
+                    onClick={() => handleDraftWithAI(activeStage)}
+                    disabled={draftingStage === activeStage}
+                    title="Generate AI-drafted content for this stage (Pro plan)"
+                  >
+                    {draftingStage === activeStage
+                      ? <Loader2 size={14} className="spin" />
+                      : <Sparkles size={14} />}
+                    {draftingStage === activeStage ? 'Drafting…' : 'Draft with AI'}
+                  </button>
+                )}
                 <button className="rd-stage-close" onClick={() => setActiveStage(null)}><X size={18} /></button>
               </div>
+
+              {/* AI Draft banners */}
+              {showDraftUpgrade && (
+                <div className="rd-ai-upgrade-banner">
+                  <Info size={14} />
+                  <span>Draft with AI requires the <strong>Pro</strong> plan. <a href="/billing">Upgrade now</a></span>
+                  <button onClick={() => setShowDraftUpgrade(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}><X size={14} /></button>
+                </div>
+              )}
+              {draftError && (
+                <div className="rd-ai-error-banner">
+                  <AlertCircle size={14} />
+                  <span>{draftError}</span>
+                  <button onClick={() => setDraftError(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}><X size={14} /></button>
+                </div>
+              )}
+              {draftingStage === activeStage && (
+                <div className="rd-ai-suggesting-banner">
+                  <Loader2 size={14} className="spin" />
+                  <span>Generating draft with AI — this may take a few seconds…</span>
+                </div>
+              )}
 
               {/* If already submitted, show read-only */}
               {stageNames.includes(activeStage) ? (

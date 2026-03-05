@@ -326,4 +326,54 @@ describe('/api/copilot', () => {
       expect(res.body.error).toBe('feature_requires_plan');
     });
   });
+
+  // ═══════════════════════════════════════════════════════
+  // POST /api/copilot/draft-incident-report
+  // ═══════════════════════════════════════════════════════
+
+  describe('POST /api/copilot/draft-incident-report', () => {
+    it('should reject unauthenticated requests', async () => {
+      const res = await api.post('/api/copilot/draft-incident-report', {
+        body: { reportId: TEST_IDS.reports.draft, stage: 'early_warning' },
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it('should reject standard-plan user with 403', async () => {
+      const res = await api.post('/api/copilot/draft-incident-report', {
+        auth: mfgToken,
+        body: { reportId: TEST_IDS.reports.draft, stage: 'early_warning' },
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('feature_requires_plan');
+      expect(res.body.requiredPlan).toBe('pro');
+    });
+
+    it('should reject trial-org user with 403', async () => {
+      const res = await api.post('/api/copilot/draft-incident-report', {
+        auth: impToken,
+        body: { reportId: TEST_IDS.reports.draft, stage: 'early_warning' },
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('feature_requires_plan');
+    });
+
+    it('should reject missing reportId with 403 (plan gate first)', async () => {
+      const res = await api.post('/api/copilot/draft-incident-report', {
+        auth: mfgToken,
+        body: { stage: 'early_warning' },
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('feature_requires_plan');
+    });
+
+    it('should reject missing stage with 403 (plan gate first)', async () => {
+      const res = await api.post('/api/copilot/draft-incident-report', {
+        auth: mfgToken,
+        body: { reportId: TEST_IDS.reports.draft },
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('feature_requires_plan');
+    });
+  });
 });

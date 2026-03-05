@@ -520,6 +520,242 @@ ${licenceDetails}`;
   };
 }
 
+// ─── Incident report draft ──────────────────────────────────
+
+export interface IncidentReportContext {
+  productContext: ProductContext;
+  report: {
+    id: string;
+    productId: string;
+    reportType: 'vulnerability' | 'incident';
+    status: string;
+    awarenessAt: string | null;
+    csirtCountry: string | null;
+    memberStatesAffected: string[];
+    sensitivityTlp: string;
+    enisaReference: string | null;
+  };
+  linkedFinding: {
+    title: string;
+    severity: string;
+    cvssScore: number | null;
+    source: string;
+    sourceId: string;
+    dependencyName: string;
+    dependencyVersion: string;
+    fixedVersion: string | null;
+    description: string;
+  } | null;
+  previousStages: Record<string, Record<string, any>>;
+}
+
+export interface IncidentReportDraftResult {
+  fields: Record<string, string>;
+  inputTokens: number;
+  outputTokens: number;
+  model: string;
+}
+
+const REPORT_STAGE_FIELDS: Record<string, Record<string, string[]>> = {
+  early_warning: {
+    vulnerability: ['summary', 'memberStatesDetail', 'sensitivityNote'],
+    incident: ['summary', 'suspectedMalicious', 'memberStatesDetail', 'sensitivityNote'],
+  },
+  notification: {
+    vulnerability: ['vulnerabilityDetails', 'exploitNature', 'affectedComponent',
+                     'correctiveMeasures', 'userMitigations', 'patchStatus'],
+    incident: ['incidentNature', 'initialAssessment', 'correctiveMeasures', 'userMitigations'],
+  },
+  final_report: {
+    vulnerability: ['detailedDescription', 'severityAssessment', 'rootCause',
+                     'maliciousActorInfo', 'securityUpdates', 'preventiveMeasures',
+                     'userNotificationStatus'],
+    incident: ['detailedDescription', 'severityAssessment', 'threatType',
+               'ongoingMitigation', 'preventiveMeasures'],
+  },
+};
+
+const REPORT_DRAFT_SYSTEM_PROMPT = `You are a CRA (EU Cyber Resilience Act) incident and vulnerability reporting expert embedded in the CRANIS2 compliance platform. Your role is to draft content for ENISA Article 14 report stages.
+
+Background: Under CRA Article 14, manufacturers must report actively exploited vulnerabilities and severe incidents to their designated CSIRT within strict deadlines:
+- Early Warning: within 24 hours of awareness
+- Notification: within 72 hours of awareness
+- Final Report: within 14 days (vulnerabilities) or 1 month (incidents) of awareness
+
+Rules:
+1. Ground all content in the product's actual data (SBOM, vulnerability findings, linked finding details, repo metadata).
+2. Write in a professional, factual tone suitable for CSIRT/ENISA regulatory submissions.
+3. Be specific — reference actual CVE IDs, dependency names, versions, and statistics when available.
+4. Where data is insufficient, note what the user should add manually with "[TO COMPLETE: ...]" placeholders.
+5. Use British English spelling throughout.
+6. Never invent data not provided in the context.
+7. Keep content concise but thorough — these are regulatory submissions, not essays.
+8. If previous stages have been submitted, maintain consistency with their content and build upon them.
+9. For the suspectedMalicious field, use only "yes", "no", or "unknown".
+10. For patchStatus, use only "available", "in_progress", or "planned".
+11. For userNotificationStatus, use only "informed", "pending", or "not_required".
+
+Return ONLY a JSON object with the requested fields as keys and string values. No markdown fences, no additional text.`;
+
+export async function gatherIncidentReportContext(
+  reportId: string,
+  orgId: string
+): Promise<IncidentReportContext> {
+  // 1. Fetch report row (also validates org ownership)
+  const reportResult = await pool.query(
+    `SELECT id, product_id, report_type, status, awareness_at,
+            csirt_country, member_states_affected, sensitivity_tlp,
+            enisa_reference, linked_finding_id
+     FROM cra_reports WHERE id = $1 AND org_id = $2`,
+    [reportId, orgId]
+  );
+  if (reportResult.rows.length === 0) throw new Error('Report not found');
+  const r = reportResult.rows[0];
+
+  // 2. Gather product context + linked finding + previous stages in parallel
+  const [productContext, findingResult, stagesResult] = await Promise.all([
+    gatherProductContext(r.product_id, orgId),
+    r.linked_finding_id
+      ? pool.query(
+          `SELECT title, severity, cvss_score, source, source_id,
+                  dependency_name, dependency_version, fixed_version, description
+           FROM vulnerability_findings WHERE id = $1`,
+          [r.linked_finding_id]
+        )
+      : Promise.resolve({ rows: [] }),
+    pool.query(
+      `SELECT stage, content FROM cra_report_stages
+       WHERE report_id = $1 ORDER BY submitted_at ASC`,
+      [reportId]
+    ),
+  ]);
+
+  // 3. Map linked finding
+  let linkedFinding: IncidentReportContext['linkedFinding'] = null;
+  if (findingResult.rows.length > 0) {
+    const f = findingResult.rows[0];
+    linkedFinding = {
+      title: f.title,
+      severity: f.severity,
+      cvssScore: f.cvss_score ? parseFloat(f.cvss_score) : null,
+      source: f.source,
+      sourceId: f.source_id,
+      dependencyName: f.dependency_name,
+      dependencyVersion: f.dependency_version,
+      fixedVersion: f.fixed_version,
+      description: f.description,
+    };
+  }
+
+  // 4. Map previous stages
+  const previousStages: Record<string, Record<string, any>> = {};
+  for (const s of stagesResult.rows) {
+    previousStages[s.stage] = typeof s.content === 'string'
+      ? JSON.parse(s.content) : s.content;
+  }
+
+  return {
+    productContext,
+    report: {
+      id: r.id,
+      productId: r.product_id,
+      reportType: r.report_type,
+      status: r.status,
+      awarenessAt: r.awareness_at,
+      csirtCountry: r.csirt_country,
+      memberStatesAffected: r.member_states_affected || [],
+      sensitivityTlp: r.sensitivity_tlp,
+      enisaReference: r.enisa_reference,
+    },
+    linkedFinding,
+    previousStages,
+  };
+}
+
+export async function generateIncidentReportDraft(
+  context: IncidentReportContext,
+  stage: 'early_warning' | 'notification' | 'final_report'
+): Promise<IncidentReportDraftResult> {
+  const anthropic = getClient();
+  const { productContext: pc, report, linkedFinding, previousStages } = context;
+  const reportType = report.reportType;
+
+  const fields = REPORT_STAGE_FIELDS[stage]?.[reportType];
+  if (!fields) throw new Error(`Unknown stage/type: ${stage}/${reportType}`);
+
+  const findingBlock = linkedFinding
+    ? `Linked vulnerability finding:
+- Title: ${linkedFinding.title}
+- Severity: ${linkedFinding.severity}${linkedFinding.cvssScore ? ` (CVSS ${linkedFinding.cvssScore})` : ''}
+- Source: ${linkedFinding.source} — ${linkedFinding.sourceId}
+- Affected: ${linkedFinding.dependencyName}@${linkedFinding.dependencyVersion}
+- Fix: ${linkedFinding.fixedVersion || 'none available'}
+- Description: ${linkedFinding.description?.substring(0, 500) || 'N/A'}`
+    : 'No linked vulnerability finding.';
+
+  const previousBlock = Object.keys(previousStages).length > 0
+    ? `Previously submitted stages:\n${Object.entries(previousStages).map(([s, c]) =>
+        `${s}:\n${JSON.stringify(c, null, 2)}`
+      ).join('\n\n')}`
+    : 'No previous stages submitted yet.';
+
+  const stageLabel = stage === 'early_warning' ? 'Early Warning (24h)'
+    : stage === 'notification' ? 'Notification (72h)'
+    : 'Final Report (14d/1m)';
+
+  const userPrompt = `Draft content for the ${stageLabel} stage of a CRA Article 14 ${reportType} report.
+
+Report metadata:
+- Report type: ${reportType}
+- CSIRT country: ${report.csirtCountry || 'not set'}
+- Member states affected: ${report.memberStatesAffected.length > 0 ? report.memberStatesAffected.join(', ') : 'not specified'}
+- TLP classification: ${report.sensitivityTlp}
+- Awareness date: ${report.awarenessAt || 'not set'}
+
+Product context:
+- Name: ${pc.productName}
+- Version: ${pc.productVersion || 'not set'}
+- CRA Category: ${pc.craCategory || 'default'}
+- Repository: ${pc.repoUrl || 'not connected'}
+- SBOM: ${pc.sbom ? `${pc.sbom.packageCount} packages${pc.sbom.isStale ? ' (stale)' : ''}, top deps: ${pc.sbom.topDeps.join(', ') || 'none parsed'}` : 'not available'}
+- Vulnerabilities: ${pc.vulns ? `${pc.vulns.critical} critical, ${pc.vulns.high} high, ${pc.vulns.medium} medium, ${pc.vulns.low} low (${pc.vulns.open} open)` : 'no scans yet'}
+
+${findingBlock}
+
+${previousBlock}
+
+Return a JSON object with these exact fields: ${JSON.stringify(fields)}
+Each field value must be a string.`;
+
+  const response = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 3000,
+    system: REPORT_DRAFT_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userPrompt }],
+  });
+
+  const text = response.content
+    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+    .map(block => block.text)
+    .join('\n');
+
+  const cleaned = text.replace(/^```(?:json)?\s*\n?/m, '').replace(/\n?```\s*$/m, '').trim();
+  const parsed = JSON.parse(cleaned);
+
+  // Validate all fields present, default to empty string
+  const result: Record<string, string> = {};
+  for (const f of fields) {
+    result[f] = typeof parsed[f] === 'string' ? parsed[f] : '';
+  }
+
+  return {
+    fields: result,
+    inputTokens: response.usage?.input_tokens || 0,
+    outputTokens: response.usage?.output_tokens || 0,
+    model: MODEL,
+  };
+}
+
 // ─── Generation ────────────────────────────────────────────
 
 export interface SuggestionParams {

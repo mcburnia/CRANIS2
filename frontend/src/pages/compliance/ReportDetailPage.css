@@ -344,6 +344,53 @@
 .rd-deadline-countdown { font-size: 0.75rem; color: var(--amber); width: 100%; }
 .rd-deadline-countdown.overdue { color: var(--red); font-weight: 600; }
 
+/* Draft with AI button */
+.rd-draft-ai-btn {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.375rem 0.75rem; font-size: 0.8125rem;
+  border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 6px;
+  background: rgba(139, 92, 246, 0.08); color: #a78bfa;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  margin-left: auto; margin-right: 0.5rem;
+}
+.rd-draft-ai-btn:hover:not(:disabled) { border-color: #a78bfa; background: rgba(139, 92, 246, 0.14); }
+.rd-draft-ai-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.rd-draft-ai-btn .spin { animation: rd-spin 0.8s linear infinite; }
+
+@keyframes rd-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* AI draft feedback banners */
+.rd-ai-upgrade-banner {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 0.75rem; margin: 0 1rem 0.75rem;
+  background: rgba(251, 191, 36, 0.06); border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 6px; font-size: 0.78rem; color: #fbbf24;
+}
+.rd-ai-upgrade-banner a { color: #60a5fa; text-decoration: underline; }
+
+.rd-ai-error-banner {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 0.75rem; margin: 0 1rem 0.75rem;
+  background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px; font-size: 0.78rem; color: #ef4444;
+}
+
+.rd-ai-suggesting-banner {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 0.75rem; margin: 0 1rem 0.75rem;
+  background: rgba(139, 92, 246, 0.06); border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 6px; font-size: 0.78rem; color: #a78bfa;
+  animation: rd-ai-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes rd-ai-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 @media (max-width: 960px) {
   .rd-layout { grid-template-columns: 1fr; }
 }

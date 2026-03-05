@@ -3,7 +3,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { requirePlan } from '../middleware/requirePlan.js';
-import { isCopilotConfigured, gatherProductContext, generateSuggestion, generateTriageSuggestions, TriageFinding, gatherEnrichedRiskContext, generateRiskAssessment } from '../services/copilot.js';
+import { isCopilotConfigured, gatherProductContext, generateSuggestion, generateTriageSuggestions, TriageFinding, gatherEnrichedRiskContext, generateRiskAssessment, gatherIncidentReportContext, generateIncidentReportDraft } from '../services/copilot.js';
 
 const router = Router();
 
@@ -442,6 +442,58 @@ router.post('/generate-risk-assessment', requireAuth, requirePlan('pro'), async 
   } catch (err: any) {
     console.error('[COPILOT] Failed to generate risk assessment:', err);
     res.status(500).json({ error: 'Failed to generate risk assessment' });
+  }
+});
+
+// POST /api/copilot/draft-incident-report — AI-drafted ENISA report stage
+router.post('/draft-incident-report', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+
+  if (!isCopilotConfigured()) {
+    res.status(503).json({ error: 'AI copilot is not configured. Please set ANTHROPIC_API_KEY.' });
+    return;
+  }
+
+  const { reportId, stage } = req.body;
+
+  if (!reportId) {
+    res.status(400).json({ error: 'Missing required field: reportId' });
+    return;
+  }
+  if (!stage || !['early_warning', 'notification', 'final_report'].includes(stage)) {
+    res.status(400).json({ error: 'stage must be: early_warning, notification, or final_report' });
+    return;
+  }
+
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    // Gather context (also verifies report belongs to org)
+    const context = await gatherIncidentReportContext(reportId, orgId);
+
+    // Generate draft
+    const result = await generateIncidentReportDraft(context, stage as 'early_warning' | 'notification' | 'final_report');
+
+    // Log usage
+    pool.query(
+      `INSERT INTO copilot_usage (org_id, user_id, product_id, section_key, type, input_tokens, output_tokens, model)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [orgId, userId, context.report.productId, `report_draft_${stage}`, 'incident_report_draft',
+       result.inputTokens, result.outputTokens, result.model]
+    ).catch(err => console.error('[COPILOT] Failed to log report draft usage:', err));
+
+    res.json({
+      fields: result.fields,
+      tokensUsed: result.inputTokens + result.outputTokens,
+    });
+  } catch (err: any) {
+    if (err.message === 'Report not found') {
+      res.status(404).json({ error: 'Report not found' });
+      return;
+    }
+    console.error('[COPILOT] Failed to draft incident report:', err);
+    res.status(500).json({ error: 'Failed to generate report draft' });
   }
 });
 
