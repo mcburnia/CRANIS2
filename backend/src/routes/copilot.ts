@@ -79,6 +79,119 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// ─── Cost estimation ────────────────────────────────────────────────────────
+// Anthropic Claude Sonnet pricing (USD per 1M tokens)
+const INPUT_COST_PER_M = 3;   // $3 / 1M input tokens
+const OUTPUT_COST_PER_M = 15;  // $15 / 1M output tokens
+
+function estimateCostUsd(inputTokens: number, outputTokens: number): number {
+  return (inputTokens * INPUT_COST_PER_M + outputTokens * OUTPUT_COST_PER_M) / 1_000_000;
+}
+
+// GET /api/copilot/usage — detailed usage breakdown for the org
+router.get('/usage', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    const months = Math.min(Math.max(parseInt(req.query.months as string) || 1, 1), 12);
+
+    // 1. Monthly totals
+    const historyResult = await pool.query(
+      `SELECT date_trunc('month', created_at) AS month,
+              COUNT(*)::int AS requests,
+              COALESCE(SUM(input_tokens), 0)::bigint AS input_tokens,
+              COALESCE(SUM(output_tokens), 0)::bigint AS output_tokens
+       FROM copilot_usage
+       WHERE org_id = $1 AND created_at >= date_trunc('month', NOW()) - ($2 || ' months')::interval
+       GROUP BY month ORDER BY month DESC`,
+      [orgId, String(months)]
+    );
+
+    // 2. Current month by type
+    const byTypeResult = await pool.query(
+      `SELECT type,
+              COUNT(*)::int AS requests,
+              COALESCE(SUM(input_tokens), 0)::bigint AS input_tokens,
+              COALESCE(SUM(output_tokens), 0)::bigint AS output_tokens
+       FROM copilot_usage
+       WHERE org_id = $1 AND created_at >= date_trunc('month', NOW())
+       GROUP BY type ORDER BY SUM(COALESCE(input_tokens, 0)) + SUM(COALESCE(output_tokens, 0)) DESC`,
+      [orgId]
+    );
+
+    // 3. Current month by product
+    const byProductResult = await pool.query(
+      `SELECT product_id,
+              COUNT(*)::int AS requests,
+              COALESCE(SUM(input_tokens), 0)::bigint AS input_tokens,
+              COALESCE(SUM(output_tokens), 0)::bigint AS output_tokens
+       FROM copilot_usage
+       WHERE org_id = $1 AND created_at >= date_trunc('month', NOW()) AND product_id IS NOT NULL
+       GROUP BY product_id ORDER BY SUM(COALESCE(input_tokens, 0)) + SUM(COALESCE(output_tokens, 0)) DESC`,
+      [orgId]
+    );
+
+    // Resolve product names via Neo4j
+    const productIds = byProductResult.rows.map((r: any) => r.product_id).filter(Boolean);
+    const productNames: Record<string, string> = {};
+    if (productIds.length > 0) {
+      const neo4jSession = getDriver().session();
+      try {
+        const result = await neo4jSession.run(
+          `MATCH (p:Product) WHERE p.id IN $ids RETURN p.id AS id, p.name AS name`,
+          { ids: productIds }
+        );
+        for (const r of result.records) {
+          productNames[r.get('id')] = r.get('name') || 'Unknown';
+        }
+      } finally {
+        await neo4jSession.close();
+      }
+    }
+
+    // Current month totals
+    const current = historyResult.rows[0];
+    const currentInput = current ? Number(current.input_tokens) : 0;
+    const currentOutput = current ? Number(current.output_tokens) : 0;
+
+    res.json({
+      currentMonth: {
+        requests: current?.requests || 0,
+        inputTokens: currentInput,
+        outputTokens: currentOutput,
+        estimatedCostUsd: parseFloat(estimateCostUsd(currentInput, currentOutput).toFixed(4)),
+      },
+      history: historyResult.rows.map((r: any) => ({
+        month: r.month,
+        requests: r.requests,
+        inputTokens: Number(r.input_tokens),
+        outputTokens: Number(r.output_tokens),
+        estimatedCostUsd: parseFloat(estimateCostUsd(Number(r.input_tokens), Number(r.output_tokens)).toFixed(4)),
+      })),
+      byType: byTypeResult.rows.map((r: any) => ({
+        type: r.type,
+        requests: r.requests,
+        inputTokens: Number(r.input_tokens),
+        outputTokens: Number(r.output_tokens),
+        estimatedCostUsd: parseFloat(estimateCostUsd(Number(r.input_tokens), Number(r.output_tokens)).toFixed(4)),
+      })),
+      byProduct: byProductResult.rows.map((r: any) => ({
+        productId: r.product_id,
+        productName: productNames[r.product_id] || 'Unknown',
+        requests: r.requests,
+        inputTokens: Number(r.input_tokens),
+        outputTokens: Number(r.output_tokens),
+        estimatedCostUsd: parseFloat(estimateCostUsd(Number(r.input_tokens), Number(r.output_tokens)).toFixed(4)),
+      })),
+    });
+  } catch (err) {
+    console.error('[COPILOT] Failed to fetch usage:', err);
+    res.status(500).json({ error: 'Failed to fetch copilot usage' });
+  }
+});
+
 // POST /api/copilot/suggest — generate AI suggestion
 router.post('/suggest', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;

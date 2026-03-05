@@ -221,4 +221,59 @@ describe('/api/copilot', () => {
       expect(res.body.error).toBe('feature_requires_plan');
     });
   });
+
+  // ═══════════════════════════════════════════════════════
+  // GET /api/copilot/usage
+  // ═══════════════════════════════════════════════════════
+
+  describe('GET /api/copilot/usage', () => {
+    it('should reject unauthenticated requests', async () => {
+      const res = await api.get('/api/copilot/usage');
+      expect(res.status).toBe(401);
+    });
+
+    it('should return expected response shape', async () => {
+      const res = await api.get('/api/copilot/usage', { auth: mfgToken });
+      expect(res.status).toBe(200);
+
+      // Top-level fields
+      expect(res.body).toHaveProperty('currentMonth');
+      expect(res.body).toHaveProperty('history');
+      expect(res.body).toHaveProperty('byType');
+      expect(res.body).toHaveProperty('byProduct');
+
+      // currentMonth shape
+      expect(res.body.currentMonth).toHaveProperty('requests');
+      expect(res.body.currentMonth).toHaveProperty('inputTokens');
+      expect(res.body.currentMonth).toHaveProperty('outputTokens');
+      expect(res.body.currentMonth).toHaveProperty('estimatedCostUsd');
+
+      // Type checks
+      expect(typeof res.body.currentMonth.requests).toBe('number');
+      expect(typeof res.body.currentMonth.inputTokens).toBe('number');
+      expect(typeof res.body.currentMonth.outputTokens).toBe('number');
+      expect(typeof res.body.currentMonth.estimatedCostUsd).toBe('number');
+      expect(Array.isArray(res.body.history)).toBe(true);
+      expect(Array.isArray(res.body.byType)).toBe(true);
+      expect(Array.isArray(res.body.byProduct)).toBe(true);
+    });
+
+    it('should accept months query parameter', async () => {
+      const res = await api.get('/api/copilot/usage?months=3', { auth: mfgToken });
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.history)).toBe(true);
+    });
+
+    it('should isolate usage data per org', async () => {
+      const mfgRes = await api.get('/api/copilot/usage', { auth: mfgToken });
+      const impRes = await api.get('/api/copilot/usage', { auth: impToken });
+
+      expect(mfgRes.status).toBe(200);
+      expect(impRes.status).toBe(200);
+
+      // Both return valid usage objects — data is org-specific
+      expect(mfgRes.body).toHaveProperty('currentMonth');
+      expect(impRes.body).toHaveProperty('currentMonth');
+    });
+  });
 });

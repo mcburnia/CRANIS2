@@ -1817,4 +1817,120 @@ router.get('/webhook-health', requirePlatformAdmin, async (req: Request, res: Re
   }
 });
 
+// ─── GET /api/admin/copilot-usage — Platform-wide AI copilot usage ──────────
+const INPUT_COST_PER_M = 3;
+const OUTPUT_COST_PER_M = 15;
+function estimateCostUsd(inputTokens: number, outputTokens: number): number {
+  return (inputTokens * INPUT_COST_PER_M + outputTokens * OUTPUT_COST_PER_M) / 1_000_000;
+}
+
+router.get('/copilot-usage', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const months = Math.min(Math.max(parseInt(req.query.months as string) || 1, 1), 12);
+
+    // 1. Platform totals (current month)
+    const totalsResult = await pool.query(
+      `SELECT COUNT(*)::int AS requests,
+              COALESCE(SUM(input_tokens), 0)::bigint AS input_tokens,
+              COALESCE(SUM(output_tokens), 0)::bigint AS output_tokens,
+              COUNT(DISTINCT org_id)::int AS active_orgs
+       FROM copilot_usage
+       WHERE created_at >= date_trunc('month', NOW())`
+    );
+    const totals = totalsResult.rows[0];
+
+    // 2. Monthly history
+    const historyResult = await pool.query(
+      `SELECT date_trunc('month', created_at) AS month,
+              COUNT(*)::int AS requests,
+              COALESCE(SUM(input_tokens), 0)::bigint AS input_tokens,
+              COALESCE(SUM(output_tokens), 0)::bigint AS output_tokens,
+              COUNT(DISTINCT org_id)::int AS active_orgs
+       FROM copilot_usage
+       WHERE created_at >= date_trunc('month', NOW()) - ($1 || ' months')::interval
+       GROUP BY month ORDER BY month DESC`,
+      [String(months)]
+    );
+
+    // 3. Per-org breakdown (current month)
+    const byOrgResult = await pool.query(
+      `SELECT org_id,
+              COUNT(*)::int AS requests,
+              COALESCE(SUM(input_tokens), 0)::bigint AS input_tokens,
+              COALESCE(SUM(output_tokens), 0)::bigint AS output_tokens
+       FROM copilot_usage
+       WHERE created_at >= date_trunc('month', NOW())
+       GROUP BY org_id ORDER BY SUM(COALESCE(input_tokens, 0)) + SUM(COALESCE(output_tokens, 0)) DESC`
+    );
+
+    // 4. By type (current month)
+    const byTypeResult = await pool.query(
+      `SELECT type,
+              COUNT(*)::int AS requests,
+              COALESCE(SUM(input_tokens), 0)::bigint AS input_tokens,
+              COALESCE(SUM(output_tokens), 0)::bigint AS output_tokens
+       FROM copilot_usage
+       WHERE created_at >= date_trunc('month', NOW())
+       GROUP BY type ORDER BY SUM(COALESCE(input_tokens, 0)) + SUM(COALESCE(output_tokens, 0)) DESC`
+    );
+
+    // Resolve org names via Neo4j
+    const orgIds = byOrgResult.rows.map((r: any) => r.org_id).filter(Boolean);
+    const orgNames: Record<string, string> = {};
+    if (orgIds.length > 0) {
+      const neo4jSession = getDriver().session();
+      try {
+        const result = await neo4jSession.run(
+          `MATCH (o:Organisation) WHERE o.id IN $ids RETURN o.id AS id, o.name AS name`,
+          { ids: orgIds }
+        );
+        for (const r of result.records) {
+          orgNames[r.get('id')] = r.get('name') || 'Unknown';
+        }
+      } finally {
+        await neo4jSession.close();
+      }
+    }
+
+    const totalInput = Number(totals.input_tokens);
+    const totalOutput = Number(totals.output_tokens);
+
+    res.json({
+      currentMonth: {
+        requests: totals.requests,
+        inputTokens: totalInput,
+        outputTokens: totalOutput,
+        estimatedCostUsd: parseFloat(estimateCostUsd(totalInput, totalOutput).toFixed(4)),
+        activeOrgs: totals.active_orgs,
+      },
+      history: historyResult.rows.map((r: any) => ({
+        month: r.month,
+        requests: r.requests,
+        inputTokens: Number(r.input_tokens),
+        outputTokens: Number(r.output_tokens),
+        estimatedCostUsd: parseFloat(estimateCostUsd(Number(r.input_tokens), Number(r.output_tokens)).toFixed(4)),
+        activeOrgs: r.active_orgs,
+      })),
+      byOrg: byOrgResult.rows.map((r: any) => ({
+        orgId: r.org_id,
+        orgName: orgNames[r.org_id] || 'Unknown',
+        requests: r.requests,
+        inputTokens: Number(r.input_tokens),
+        outputTokens: Number(r.output_tokens),
+        estimatedCostUsd: parseFloat(estimateCostUsd(Number(r.input_tokens), Number(r.output_tokens)).toFixed(4)),
+      })),
+      byType: byTypeResult.rows.map((r: any) => ({
+        type: r.type,
+        requests: r.requests,
+        inputTokens: Number(r.input_tokens),
+        outputTokens: Number(r.output_tokens),
+        estimatedCostUsd: parseFloat(estimateCostUsd(Number(r.input_tokens), Number(r.output_tokens)).toFixed(4)),
+      })),
+    });
+  } catch (err) {
+    console.error('Admin copilot-usage error:', err);
+    res.status(500).json({ error: 'Failed to fetch copilot usage' });
+  }
+});
+
 export default router;

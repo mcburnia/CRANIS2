@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CreditCard, ExternalLink, UserMinus, UserPlus, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Loader2 } from 'lucide-react';
+import { CreditCard, ExternalLink, UserMinus, UserPlus, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Loader2, Cpu } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -68,7 +68,18 @@ export default function BillingPage() {
   const [actionLoading, setActionLoading] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  const [copilotUsage, setCopilotUsage] = useState<any>(null);
+
   const token = localStorage.getItem('session_token');
+
+  const fetchCopilotUsage = useCallback(async () => {
+    try {
+      const res = await fetch('/api/copilot/usage?months=3', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setCopilotUsage(await res.json());
+    } catch { /* non-critical */ }
+  }, [token]);
 
   const fetchBilling = useCallback(async () => {
     try {
@@ -87,7 +98,8 @@ export default function BillingPage() {
 
   useEffect(() => {
     fetchBilling();
-  }, [fetchBilling]);
+    fetchCopilotUsage();
+  }, [fetchBilling, fetchCopilotUsage]);
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
@@ -238,6 +250,19 @@ export default function BillingPage() {
   const contribPrice = billing?.pricing?.contributorPriceCents ?? 600;
   const proProductPrice = billing?.pricing?.proProductPriceCents ?? 2000;
   const planLabel = plan === 'pro' ? 'Pro' : 'Standard';
+  const hasCopilotAccess = billing?.exempt || plan === 'pro' || plan === 'enterprise';
+
+  function formatTokens(n: number): string {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return String(n);
+  }
+
+  const TYPE_LABELS: Record<string, string> = {
+    technical_file: 'Technical File',
+    obligation: 'Obligation',
+    vulnerability_triage: 'Vulnerability Triage',
+  };
 
   return (
     <>
@@ -578,6 +603,103 @@ export default function BillingPage() {
           </a>
         </div>
       </section>
+
+      {/* AI Copilot Usage */}
+      {hasCopilotAccess && copilotUsage && (
+        <section className="bill-section">
+          <div className="bill-section-header">
+            <h2><Cpu size={18} /> AI Copilot Usage</h2>
+          </div>
+          <p className="bill-section-desc">
+            Token usage and estimated cost for AI Copilot features this month.
+            Cost estimates based on Anthropic Sonnet pricing.
+          </p>
+
+          <div className="stats" style={{ marginBottom: '1.25rem' }}>
+            <StatCard label="AI Requests" value={copilotUsage.currentMonth.requests} color="blue" sub="this month" />
+            <StatCard label="Tokens Used" value={formatTokens(copilotUsage.currentMonth.inputTokens + copilotUsage.currentMonth.outputTokens)} color="amber" sub={`${formatTokens(copilotUsage.currentMonth.inputTokens)} in / ${formatTokens(copilotUsage.currentMonth.outputTokens)} out`} />
+            <StatCard label="Estimated Cost" value={`$${copilotUsage.currentMonth.estimatedCostUsd.toFixed(2)}`} color="green" sub="USD this month" />
+          </div>
+
+          {/* By Type */}
+          {copilotUsage.byType.length > 0 && (
+            <div className="bill-table-wrap" style={{ marginBottom: '1rem' }}>
+              <table className="bill-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Requests</th>
+                    <th>Tokens</th>
+                    <th>Est. Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {copilotUsage.byType.map((t: any) => (
+                    <tr key={t.type}>
+                      <td>{TYPE_LABELS[t.type] || t.type}</td>
+                      <td>{t.requests}</td>
+                      <td>{formatTokens(t.inputTokens + t.outputTokens)}</td>
+                      <td>${t.estimatedCostUsd.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* By Product */}
+          {copilotUsage.byProduct.length > 0 && (
+            <div className="bill-table-wrap">
+              <table className="bill-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Requests</th>
+                    <th>Tokens</th>
+                    <th>Est. Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {copilotUsage.byProduct.map((p: any) => (
+                    <tr key={p.productId}>
+                      <td>{p.productName}</td>
+                      <td>{p.requests}</td>
+                      <td>{formatTokens(p.inputTokens + p.outputTokens)}</td>
+                      <td>${p.estimatedCostUsd.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* History */}
+          {copilotUsage.history.length > 1 && (
+            <div className="bill-table-wrap" style={{ marginTop: '1rem' }}>
+              <table className="bill-table">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Requests</th>
+                    <th>Tokens</th>
+                    <th>Est. Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {copilotUsage.history.map((h: any) => (
+                    <tr key={h.month}>
+                      <td>{new Date(h.month).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</td>
+                      <td>{h.requests}</td>
+                      <td>{formatTokens(h.inputTokens + h.outputTokens)}</td>
+                      <td>${h.estimatedCostUsd.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Clock, DollarSign, Building2, AlertTriangle, ChevronDown, X, Settings, Save, Loader2 } from 'lucide-react';
+import { Clock, DollarSign, Building2, AlertTriangle, ChevronDown, X, Settings, Save, Loader2, Cpu } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -61,14 +61,16 @@ export default function AdminBillingPage() {
   const [pricingProProduct, setPricingProProduct] = useState('');
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingSaved, setPricingSaved] = useState(false);
+  const [copilotUsage, setCopilotUsage] = useState<any>(null);
 
   const token = localStorage.getItem('session_token');
 
   const fetchData = useCallback(async () => {
     try {
-      const [overviewRes, pricingRes] = await Promise.all([
+      const [overviewRes, pricingRes, copilotRes] = await Promise.all([
         fetch('/api/billing/admin/overview', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/billing/admin/pricing', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/admin/copilot-usage?months=3', { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       if (!overviewRes.ok) throw new Error('Failed to load billing overview');
       const d = await overviewRes.json();
@@ -79,6 +81,7 @@ export default function AdminBillingPage() {
         setPricingContributor((p.contributorPriceCents / 100).toFixed(2));
         setPricingProProduct((p.proProductPriceCents / 100).toFixed(2));
       }
+      if (copilotRes.ok) setCopilotUsage(await copilotRes.json());
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -155,6 +158,17 @@ export default function AdminBillingPage() {
   const orgs = data?.orgs || [];
   const mrr = totals ? (totals.mrr / 100).toFixed(2) : '0.00';
 
+  function formatTokens(n: number): string {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return String(n);
+  }
+  const TYPE_LABELS: Record<string, string> = {
+    technical_file: 'Technical File',
+    obligation: 'Obligation',
+    vulnerability_triage: 'Vulnerability Triage',
+  };
+
   return (
     <>
       <PageHeader title="Billing Management" />
@@ -215,6 +229,78 @@ export default function AdminBillingPage() {
           </div>
         </div>
       </section>
+
+      {/* AI Copilot Usage */}
+      {copilotUsage && (
+        <section className="abill-section">
+          <h2><Cpu size={18} /> AI Copilot Usage — Platform</h2>
+
+          <div className="stats" style={{ marginBottom: '1.25rem' }}>
+            <StatCard label="AI Requests" value={copilotUsage.currentMonth.requests} color="blue" sub="this month" />
+            <StatCard label="Active Orgs" value={copilotUsage.currentMonth.activeOrgs} color="green" sub="using copilot" />
+            <StatCard label="Total Tokens" value={formatTokens(copilotUsage.currentMonth.inputTokens + copilotUsage.currentMonth.outputTokens)} color="amber" sub={`${formatTokens(copilotUsage.currentMonth.inputTokens)} in / ${formatTokens(copilotUsage.currentMonth.outputTokens)} out`} />
+            <StatCard label="Estimated Cost" value={`$${copilotUsage.currentMonth.estimatedCostUsd.toFixed(2)}`} color="green" sub="USD this month" />
+          </div>
+
+          {/* Per-Org Usage */}
+          {copilotUsage.byOrg.length > 0 && (
+            <div className="abill-table-wrap" style={{ marginBottom: '1rem' }}>
+              <table className="abill-table">
+                <thead>
+                  <tr>
+                    <th>Organisation</th>
+                    <th>Requests</th>
+                    <th>Input Tokens</th>
+                    <th>Output Tokens</th>
+                    <th>Est. Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {copilotUsage.byOrg.map((o: any) => (
+                    <tr key={o.orgId}>
+                      <td>{o.orgName}</td>
+                      <td>{o.requests}</td>
+                      <td>{formatTokens(o.inputTokens)}</td>
+                      <td>{formatTokens(o.outputTokens)}</td>
+                      <td>${o.estimatedCostUsd.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* By Type */}
+          {copilotUsage.byType.length > 0 && (
+            <div className="abill-table-wrap">
+              <table className="abill-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Requests</th>
+                    <th>Tokens</th>
+                    <th>Est. Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {copilotUsage.byType.map((t: any) => (
+                    <tr key={t.type}>
+                      <td>{TYPE_LABELS[t.type] || t.type}</td>
+                      <td>{t.requests}</td>
+                      <td>{formatTokens(t.inputTokens + t.outputTokens)}</td>
+                      <td>${t.estimatedCostUsd.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {copilotUsage.currentMonth.requests === 0 && (
+            <div className="abill-empty">No AI Copilot usage this month.</div>
+          )}
+        </section>
+      )}
 
       <section className="abill-section">
         <h2>All Organisations</h2>

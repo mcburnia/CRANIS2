@@ -984,6 +984,7 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
 }) {
   const pLabel = providerLabel(repoProvider);
   const [checklist, setChecklist] = useState<ProductChecklistPD | null>(null);
+  const [copilotUsage, setCopilotUsage] = useState<any>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('session_token');
@@ -992,6 +993,16 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
     })
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setChecklist(d); })
+      .catch(() => {});
+    // Fetch copilot usage for this product
+    fetch('/api/copilot/usage', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d) {
+          const productUsage = d.byProduct?.find((p: any) => p.productId === product.id);
+          if (productUsage) setCopilotUsage(productUsage);
+        }
+      })
       .catch(() => {});
   }, [product.id]);
   return (
@@ -1256,6 +1267,35 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
           </div>
         </div>
       </div>
+
+      {/* AI Copilot Usage Card */}
+      {copilotUsage && (
+        <div className="pd-card" style={{ borderColor: 'rgba(139, 92, 246, 0.2)' }}>
+          <div className="pd-card-header">
+            <Sparkles size={18} style={{ color: '#a78bfa' }} />
+            <h3>AI Copilot Usage</h3>
+            <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--muted)' }}>this month</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', padding: '0.75rem 0 0.25rem' }}>
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Requests</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text)' }}>{copilotUsage.requests}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Tokens</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text)' }}>
+                {copilotUsage.inputTokens + copilotUsage.outputTokens >= 1000
+                  ? `${((copilotUsage.inputTokens + copilotUsage.outputTokens) / 1000).toFixed(1)}K`
+                  : copilotUsage.inputTokens + copilotUsage.outputTokens}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Est. Cost</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--green)' }}>${copilotUsage.estimatedCostUsd.toFixed(2)}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CRA Compliance Checklist Card */}
       <div className="pd-card pd-card-checklist">
