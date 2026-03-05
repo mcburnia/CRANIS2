@@ -2755,10 +2755,6 @@ function RiskFindingsTab({ productId }: { productId: string }) {
             {triaging ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
             {triaging ? 'Triaging…' : 'AI Triage All'}
           </button>
-          <button className="tf-doc-download-btn" onClick={() => handleExportVuln('pdf')} disabled={!!exportingVuln}>
-            {exportingVuln === 'pdf' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
-            {exportingVuln === 'pdf' ? 'Generating...' : 'Export PDF'}
-          </button>
           <button className="tf-doc-download-btn" onClick={() => handleExportVuln('csv')} disabled={!!exportingVuln}>
             {exportingVuln === 'csv' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
             {exportingVuln === 'csv' ? 'Generating...' : 'Export CSV'}
