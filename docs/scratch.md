@@ -43,5 +43,5 @@ P4 — MCP Interface (external integration)
 P5 - Buggs
 #	Description | Status
 27  All Organisations -> Actions button does nothing DONE
-28  ENISA Reporting -> Cancel button does nothing TODO
+28  ENISA Reporting -> Cancel button does nothing DONE
 29. Products & Compliance -> CRANIS2 -> Not Stated?

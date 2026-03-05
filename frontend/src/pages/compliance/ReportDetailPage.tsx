@@ -443,7 +443,7 @@ export default function ReportDetailPage() {
                             </div>
                           )}
                           {canSubmit && (
-                            <button className="rd-submit-stage-btn" onClick={() => setActiveStage(ts.key)}>
+                            <button className="rd-submit-stage-btn" onClick={() => setActiveStage(activeStage === ts.key ? null : ts.key)}>
                               <Send size={14} /> {activeStage === ts.key ? 'Cancel' : `Prepare ${ts.label}`}
                             </button>
                           )}
