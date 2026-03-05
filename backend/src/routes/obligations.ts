@@ -6,6 +6,7 @@ import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import {
   ensureObligations, computeDerivedStatuses, enrichObligation,
 } from '../services/obligation-engine.js';
+import { logProductActivity } from '../services/activity-log.js';
 
 const router = Router();
 
@@ -198,9 +199,9 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    // Verify belongs to org
+    // Verify belongs to org + capture old values for audit
     const check = await pool.query(
-      `SELECT id, obligation_key, product_id FROM obligations WHERE id = $1 AND org_id = $2`,
+      `SELECT id, obligation_key, product_id, status AS old_status, notes AS old_notes FROM obligations WHERE id = $1 AND org_id = $2`,
       [obligationId, orgId]
     );
     if (check.rows.length === 0) {
@@ -237,6 +238,34 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
         newStatus: status,
       },
     });
+
+    // Activity log — obligation changes with before/after
+    const obKey = check.rows[0].obligation_key;
+    const productId = check.rows[0].product_id;
+    if (status !== undefined && status !== check.rows[0].old_status) {
+      logProductActivity({
+        productId, orgId, userId, userEmail,
+        action: 'obligation_status_changed',
+        entityType: 'obligation',
+        entityId: obligationId,
+        summary: `Changed ${obKey} status from ${check.rows[0].old_status} to ${status}`,
+        oldValues: { status: check.rows[0].old_status },
+        newValues: { status },
+        metadata: { obligationKey: obKey },
+      }).catch(() => {});
+    }
+    if (notes !== undefined && notes !== check.rows[0].old_notes) {
+      logProductActivity({
+        productId, orgId, userId, userEmail,
+        action: 'obligation_notes_updated',
+        entityType: 'obligation',
+        entityId: obligationId,
+        summary: `Updated notes for ${obKey}`,
+        oldValues: { notes: check.rows[0].old_notes || '' },
+        newValues: { notes },
+        metadata: { obligationKey: obKey },
+      }).catch(() => {});
+    }
 
     res.json(enrichObligation(result.rows[0]));
 

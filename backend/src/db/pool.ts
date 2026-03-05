@@ -824,6 +824,27 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
       CREATE INDEX IF NOT EXISTS idx_push_events_product ON repo_push_events(product_id, created_at DESC);
     `);
 
+    // ── Product activity log (audit trail for compliance evidence) ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS product_activity_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id VARCHAR(255) NOT NULL,
+        org_id UUID NOT NULL,
+        user_id UUID REFERENCES users(id),
+        user_email VARCHAR(255),
+        action VARCHAR(100) NOT NULL,
+        entity_type VARCHAR(50) NOT NULL,
+        entity_id VARCHAR(255),
+        summary TEXT NOT NULL,
+        old_values JSONB,
+        new_values JSONB,
+        metadata JSONB DEFAULT '{}',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_pal_product ON product_activity_log(product_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_pal_org ON product_activity_log(org_id, created_at DESC);
+    `);
+
     // Seed doc_pages from markdown files on first run
     const docCount = await client.query('SELECT COUNT(*) FROM doc_pages');
     if (parseInt(docCount.rows[0].count) === 0) {

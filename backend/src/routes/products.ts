@@ -5,6 +5,7 @@ import { getDriver } from '../db/neo4j.js';
 import pool from '../db/pool.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
+import { logProductActivity } from '../services/activity-log.js';
 import { cleanupProductEscrow } from '../services/escrow-service.js';
 import { generateCycloneDX } from '../services/sbom-service.js';
 
@@ -421,6 +422,16 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       metadata: { productId, productName: name.trim(), productType, craCategory, repoUrl: repoUrl?.trim() || '' },
     });
 
+    // Activity log — product creation
+    logProductActivity({
+      productId, orgId, userId, userEmail,
+      action: 'product_created',
+      entityType: 'product',
+      entityId: productId,
+      summary: `Created product "${name.trim()}"`,
+      newValues: { name: name.trim(), craCategory, productType, repoUrl: repoUrl?.trim() || null },
+    }).catch(() => {});
+
     // Auto-populate stakeholder contacts if requested
     if (req.body.autoAssignContacts) {
       try {
@@ -485,14 +496,32 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
 
 // ─── PUT /api/products/:id — Update product ─────────────────────────
 router.put('/:id', requireAuth, async (req: Request, res: Response) => {
-  const orgId = await getUserOrgId((req as any).userId);
+  const userId = (req as any).userId;
+  const userEmail = (req as any).email;
+  const orgId = await getUserOrgId(userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
   const { name, description, version, productType, craCategory, repoUrl, distributionModel, provider, instanceUrl } = req.body;
   if (!name?.trim()) { res.status(400).json({ error: 'Product name is required' }); return; }
 
+  const productId = req.params.id as string;
   const session = getDriver().session();
   try {
+    // Capture old values for audit trail
+    const oldResult = await session.run(
+      `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
+       RETURN p.name AS name, p.craCategory AS craCategory, p.repoUrl AS repoUrl,
+              p.distributionModel AS distributionModel, p.productType AS productType`,
+      { orgId, productId }
+    );
+    const oldProps = oldResult.records.length > 0 ? {
+      name: oldResult.records[0].get('name'),
+      craCategory: oldResult.records[0].get('craCategory'),
+      repoUrl: oldResult.records[0].get('repoUrl'),
+      distributionModel: oldResult.records[0].get('distributionModel'),
+      productType: oldResult.records[0].get('productType'),
+    } : null;
+
     const result = await session.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
        SET p.name = $name, p.description = $description, p.version = $version,
@@ -502,7 +531,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
        RETURN p`,
       {
         orgId,
-        productId: req.params.id,
+        productId,
         name: name.trim(),
         description: description?.trim() || '',
         version: version?.trim() || '',
@@ -518,6 +547,36 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     if (result.records.length === 0) {
       res.status(404).json({ error: 'Product not found' });
       return;
+    }
+
+    // Activity log — product updates with diff
+    if (oldProps) {
+      const changes: Record<string, any> = {};
+      const oldVals: Record<string, any> = {};
+      const newName = name.trim();
+      const newCategory = craCategory || 'default';
+      const newRepoUrl = repoUrl?.trim() || '';
+      const newDistModel = VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null;
+      const newProductType = productType || 'other';
+
+      if (oldProps.name !== newName) { oldVals.name = oldProps.name; changes.name = newName; }
+      if (oldProps.craCategory !== newCategory) { oldVals.craCategory = oldProps.craCategory; changes.craCategory = newCategory; }
+      if ((oldProps.repoUrl || '') !== newRepoUrl) { oldVals.repoUrl = oldProps.repoUrl; changes.repoUrl = newRepoUrl; }
+      if (oldProps.distributionModel !== newDistModel) { oldVals.distributionModel = oldProps.distributionModel; changes.distributionModel = newDistModel; }
+      if (oldProps.productType !== newProductType) { oldVals.productType = oldProps.productType; changes.productType = newProductType; }
+
+      if (Object.keys(changes).length > 0) {
+        const changedFields = Object.keys(changes).join(', ');
+        logProductActivity({
+          productId, orgId, userId, userEmail,
+          action: 'product_updated',
+          entityType: 'product',
+          entityId: productId,
+          summary: `Updated product: ${changedFields}`,
+          oldValues: oldVals,
+          newValues: changes,
+        }).catch(() => {});
+      }
     }
 
     const p = result.records[0].get('p').properties;

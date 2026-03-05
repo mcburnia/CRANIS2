@@ -3,6 +3,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
+import { logProductActivity } from '../services/activity-log.js';
 
 const router = Router();
 
@@ -150,9 +151,9 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     const stakeholderId = req.params.id as string;
     const { name, email, phone, organisation, address } = req.body;
 
-    // Verify stakeholder belongs to user's org
+    // Verify stakeholder belongs to user's org + capture old values
     const check = await pool.query(
-      `SELECT id, role_key, product_id FROM stakeholders WHERE id = $1 AND org_id = $2`,
+      `SELECT id, role_key, product_id, name AS old_name, email AS old_email FROM stakeholders WHERE id = $1 AND org_id = $2`,
       [stakeholderId, orgId]
     );
     if (check.rows.length === 0) {
@@ -184,6 +185,28 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
         productId: check.rows[0].product_id,
       },
     });
+
+    // Activity log — stakeholder changes (product-level only)
+    const stakeholderProductId = check.rows[0].product_id;
+    if (stakeholderProductId) {
+      const roleKey = check.rows[0].role_key;
+      const oldEmail = check.rows[0].old_email || '';
+      const oldName = check.rows[0].old_name || '';
+      const newEmail = email || '';
+      const newName = name || '';
+      if (oldEmail !== newEmail || oldName !== newName) {
+        logProductActivity({
+          productId: stakeholderProductId, orgId, userId, userEmail,
+          action: 'stakeholder_updated',
+          entityType: 'stakeholder',
+          entityId: stakeholderId,
+          summary: `Updated ${roleKey} contact${newName ? ': ' + newName : ''}`,
+          oldValues: { name: oldName, email: oldEmail },
+          newValues: { name: newName, email: newEmail },
+          metadata: { roleKey },
+        }).catch(() => {});
+      }
+    }
 
     res.json({
       id: row.id,

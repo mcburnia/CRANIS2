@@ -5,6 +5,7 @@ import { getDriver } from '../db/neo4j.js';
 import pool from '../db/pool.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
+import { logProductActivity } from '../services/activity-log.js';
 
 const router = Router();
 
@@ -290,6 +291,13 @@ router.put('/:productId/:sectionKey', requireAuth, async (req: Request, res: Res
       return;
     }
 
+    // Capture old status for audit trail
+    const oldSection = await pool.query(
+      `SELECT status FROM technical_file_sections WHERE product_id = $1 AND section_key = $2`,
+      [productId, sectionKey]
+    );
+    const oldStatus = oldSection.rows[0]?.status || null;
+
     // Build dynamic update
     const updates: string[] = [];
     const params: any[] = [];
@@ -347,6 +355,22 @@ router.put('/:productId/:sectionKey', requireAuth, async (req: Request, res: Res
       ...reqData,
       metadata: { productId, sectionKey, status: status || row.status },
     });
+
+    // Activity log — technical file edits
+    const newStatus = status || row.status;
+    const statusChanged = status !== undefined && status !== oldStatus;
+    logProductActivity({
+      productId, orgId, userId, userEmail,
+      action: 'technical_file_updated',
+      entityType: 'technical_file_section',
+      entityId: sectionKey,
+      summary: statusChanged
+        ? `Updated ${sectionKey} section (${oldStatus} → ${newStatus})`
+        : `Edited ${sectionKey} section content`,
+      oldValues: statusChanged ? { status: oldStatus } : null,
+      newValues: statusChanged ? { status: newStatus } : null,
+      metadata: { sectionKey, title: row.title },
+    }).catch(() => {});
 
     res.json({
       sectionKey: row.section_key,

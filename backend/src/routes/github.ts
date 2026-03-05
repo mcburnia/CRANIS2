@@ -33,6 +33,7 @@ import type { RepoProvider, NormalisedRelease } from '../services/repo-provider.
 import { createRepo as codebergCreateRepo } from '../services/codeberg.js';
 import { ensureWebhook, removeWebhooksForUser } from '../services/webhook.js';
 import { logger } from '../utils/logger.js';
+import { logProductActivity } from '../services/activity-log.js';
 
 const router = Router();
 
@@ -954,6 +955,16 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
         sbomPackages: sbomResult?.packageCount || 0,
       },
     });
+
+    // Activity log — repo sync
+    logProductActivity({
+      productId, orgId, userId, userEmail,
+      action: 'repo_synced',
+      entityType: 'repository',
+      entityId: repoData.full_name,
+      summary: `Synced repository ${repoData.full_name} (${sbomResult?.packageCount || 0} packages)`,
+      newValues: { packageCount: sbomResult?.packageCount || 0, contributors: contributors.length, version: cranisVersion },
+    }).catch(() => {});
 
     // Record sync duration
     const syncDurationSeconds = (Date.now() - syncStartMs) / 1000;
