@@ -1163,6 +1163,10 @@ sudo systemctl restart cloudflared
 
 - **Pro plan + admin-configurable pricing** — Two-tier billing system enabling AI Copilot gating. Backend: `platform_settings` key-value table for admin-configurable pricing (seeded: contributor €6, pro product €20), `ensureStripePrices()` auto-creates Stripe products/prices at startup via API, `createCheckoutSession()` accepts plan param with multi-line-item checkout for Pro (product × count + contributor × count), webhook handlers updated for multi-plan (metadata + line item count detection), `upgradeToProPlan()` / `downgradeToStandardPlan()` modify existing Stripe subscriptions with proration, new routes POST `/upgrade`, POST `/downgrade`, GET/PUT `/admin/pricing`. Frontend billing page: two-column plan selection grid (Standard + Pro with "Recommended" badge) for trial/cancelled users, dynamic pricing from API, active subscribers see current plan with Upgrade/Downgrade buttons. Admin billing page: Pricing Configuration card with editable contributor and pro product prices, save creates new Stripe prices if amounts changed. **Total: 997 backend tests passing (55 files).**
 
+**Session 23 (2026-03-05):**
+- **Stripe checkout fix** — Added `customer_update: { address: 'auto', name: 'auto' }` to Stripe checkout session for automatic tax + tax ID collection. Pro product price reduced from €20 to €3/month.
+- **Full route test coverage** — Test coverage audit identified 7 untested routes. Created 7 new test files (54 tests): `copilot.test.ts` (9 — auth, status shape, Pro plan gating, validation, cross-org), `product-activity.test.ts` (9 — auth, shape, pagination, filters, cross-org), `dependencies-overview.test.ts` (6 — auth, shape, totals, cross-org, empty org), `repos-overview.test.ts` (6), `contributors-overview.test.ts` (6), `technical-files-overview.test.ts` (7 — sections, progress), `docs.test.ts` (11 — public GET, admin PUT, validation). Route test coverage: 33/33 (100%). **Total: 1051 backend tests passing (62 files).**
+
 **Next Steps:**
 - P3 #14 — MCP API (Model Context Protocol server for external AI tools)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
