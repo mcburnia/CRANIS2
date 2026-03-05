@@ -349,6 +349,7 @@ export async function createCheckoutSession(orgId: string, email: string, plan: 
     subscription_data: {
       metadata: { orgId, plan },
     },
+    customer_update: { address: 'auto', name: 'auto' },
     automatic_tax: { enabled: true },
     tax_id_collection: { enabled: true },
     billing_address_collection: 'required',
