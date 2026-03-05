@@ -1158,5 +1158,9 @@ sudo systemctl restart cloudflared
 
 - **Multi-product compliance heat map (P2 #11)** — Visual heat map grid on dashboard for orgs with 2+ products. CSS Grid with products as rows (sorted worst-first) and 5 compliance dimensions as columns: CRA Readiness, Technical File, Vulnerabilities (critical+high), SBOM Health, Support Period. Each cell colour-coded green/amber/red with value. Top Blockers section beneath shows prioritised actions with linked product names (critical compliance gaps, critical vulns, expired support, stale SBOMs, low tech file). Frontend-only — all data from existing `GET /api/dashboard/summary`. **Total: 997 backend tests passing (55 files).**
 
+**Session 22 (2026-03-05):**
+- **AI Copilot — contextual AI Suggest buttons (P3 #13)** — In-app AI assistant that generates CRA compliance content using Claude (claude-sonnet-4-20250514), grounded in the product's actual data. Backend: new `copilot.ts` service gathers `ProductContext` from Postgres + Neo4j (SBOM, vulnerabilities, obligations, tech file statuses, repo metadata), builds context-rich prompts, returns structured JSON for tech file sections or plain text for obligation evidence. New `copilot.ts` route with `POST /api/copilot/suggest` and `GET /api/copilot/status`. Usage tracked in `copilot_usage` table (org_id, user_id, tokens, model). New `requirePlan.ts` middleware gates features behind billing tiers (standard < pro < enterprise). Frontend: "AI Suggest" button on all 8 tech file sections (blue gradient, distinct from purple Auto-fill) with pulsing "Generating…" feedback banner. Collapsible "Evidence Notes" textarea on each obligation card with save button and AI Suggest. 403 handling shows upgrade-to-Pro banner. **Total: 997 backend tests passing (55 files).**
+
 **Next Steps:**
+- P3 #14 — MCP API (Model Context Protocol server for external AI tools)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
