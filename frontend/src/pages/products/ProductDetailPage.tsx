@@ -8,7 +8,7 @@ import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
   CheckCircle2, Circle, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
-  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive, Server, Sparkles, Activity
+  GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive, Server, Sparkles, Activity, Copy, Check
 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './ProductDetailPage.css';
@@ -2417,6 +2417,7 @@ function RiskFindingsTab({ productId }: { productId: string }) {
   const [triageError, setTriageError] = useState<string | null>(null);
   const [showTriageUpgrade, setShowTriageUpgrade] = useState(false);
   const [bulkAutoApply, setBulkAutoApply] = useState(false);
+  const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
 
   const token = localStorage.getItem('session_token');
 
@@ -2743,6 +2744,22 @@ function RiskFindingsTab({ productId }: { productId: string }) {
                     Suggested: <strong>{triageSuggestions[f.id].suggestedAction === 'dismiss' ? 'Dismiss' : triageSuggestions[f.id].suggestedAction === 'acknowledge' ? 'Acknowledge' : 'Escalate & Mitigate'}</strong>
                   </div>
                   <div className="ai-triage-reasoning">{triageSuggestions[f.id].reasoning}</div>
+                  {triageSuggestions[f.id].mitigationCommand && (
+                    <div className="ai-triage-cmd">
+                      <code>{triageSuggestions[f.id].mitigationCommand}</code>
+                      <button
+                        className="ai-triage-copy-btn"
+                        title="Copy command"
+                        onClick={() => {
+                          navigator.clipboard.writeText(triageSuggestions[f.id].mitigationCommand);
+                          setCopiedCmd(f.id);
+                          setTimeout(() => setCopiedCmd(null), 2000);
+                        }}
+                      >
+                        {copiedCmd === f.id ? <Check size={13} /> : <Copy size={13} />}
+                      </button>
+                    </div>
+                  )}
                   {!triageSuggestions[f.id].autoApplied && (
                     <div className="ai-triage-actions">
                       <button className="ai-triage-accept" onClick={() => handleAcceptTriage(f.id, triageSuggestions[f.id])}>

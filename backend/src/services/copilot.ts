@@ -183,6 +183,7 @@ export interface TriageSuggestion {
   confidence: number;
   reasoning: string;
   dismissReason?: string;
+  mitigationCommand?: string;
   automatable: boolean;
 }
 
@@ -211,12 +212,15 @@ Rules:
 8. If dismissing, include a brief dismissReason suitable for an audit trail.
 9. Use British English.
 
+10. When the action is "acknowledge" or "escalate_mitigate" and a fix is available, include a mitigationCommand — the exact CLI command to resolve the issue (e.g. "npm install lodash@4.17.21", "pip install requests>=2.31.0", "composer require guzzlehttp/guzzle:^7.8"). Tailor the command to the dependency's ecosystem (npm, pip, maven, composer, cargo, go, nuget, gem, etc.). If no fix version is known, suggest the general upgrade command (e.g. "npm update lodash"). For dismiss actions, omit this field.
+
 Return a JSON array of objects with these fields:
 - findingId (string)
 - suggestedAction ("dismiss" | "acknowledge" | "escalate_mitigate")
 - confidence (number 0-1)
 - reasoning (string)
 - dismissReason (string, only when action is dismiss)
+- mitigationCommand (string, only when action is acknowledge or escalate_mitigate)
 - automatable (boolean)
 
 Return ONLY the JSON array, no markdown fences, no additional text.`;

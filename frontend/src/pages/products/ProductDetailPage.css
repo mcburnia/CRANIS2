@@ -1288,6 +1288,24 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
   font-size: 0.78rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem;
 }
 
+.ai-triage-cmd {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 5px; padding: 0.45rem 0.65rem; margin-bottom: 0.5rem;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+.ai-triage-cmd code {
+  flex: 1; font-size: 0.78rem; color: #e0d4ff; word-break: break-all;
+}
+.ai-triage-copy-btn {
+  background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #c4b5fd; border-radius: 4px; padding: 0.25rem 0.4rem; cursor: pointer;
+  display: flex; align-items: center; transition: all 0.15s;
+}
+.ai-triage-copy-btn:hover {
+  background: rgba(139, 92, 246, 0.3); color: #fff;
+}
+
 .ai-triage-actions {
   display: flex; gap: 0.5rem;
 }
