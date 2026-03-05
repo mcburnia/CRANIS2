@@ -160,6 +160,143 @@ Rules:
 6. Never invent data that isn't provided in the context. If data is missing, say so clearly.
 7. Keep content concise but thorough — aim for evidence-grade documentation.`;
 
+// ─── Triage ─────────────────────────────────────────────────
+
+export interface TriageFinding {
+  id: string;
+  title: string;
+  severity: string;
+  cvssScore: number | null;
+  source: string;
+  sourceId: string;
+  dependencyName: string;
+  dependencyVersion: string;
+  dependencyEcosystem: string;
+  fixedVersion: string | null;
+  description: string;
+  status: string;
+}
+
+export interface TriageSuggestion {
+  findingId: string;
+  suggestedAction: 'dismiss' | 'acknowledge' | 'escalate_mitigate';
+  confidence: number;
+  reasoning: string;
+  dismissReason?: string;
+  automatable: boolean;
+}
+
+export interface TriageResult {
+  suggestions: TriageSuggestion[];
+  inputTokens: number;
+  outputTokens: number;
+  model: string;
+}
+
+const TRIAGE_SYSTEM_PROMPT = `You are a CRA (EU Cyber Resilience Act) vulnerability triage expert. Your task is to analyse vulnerability findings for a software product and suggest an appropriate action for each.
+
+For each finding, suggest one of:
+- "dismiss": The vulnerability is not exploitable in the product's context, is a false positive, affects only dev dependencies, or has negligible real-world risk.
+- "acknowledge": The vulnerability is real but low priority — the team should track it but no immediate action is required.
+- "escalate_mitigate": The vulnerability requires urgent attention — a fix, upgrade, or mitigation must be applied.
+
+Rules:
+1. Consider the product's CRA category when assessing risk. For "important_i", "important_ii", and "critical" categories, be significantly stricter — escalate more aggressively.
+2. A fix being available (fixedVersion) should increase urgency to escalate.
+3. Critical/high severity with a high CVSS score should almost always escalate unless clearly not applicable.
+4. Low severity findings in dev-only dependencies are strong dismiss candidates.
+5. Set confidence between 0 and 1. Be conservative — only use confidence >= 0.85 when the decision is clear-cut.
+6. Set automatable to true ONLY when confidence >= 0.85 AND action is "dismiss".
+7. Provide reasoning of 2-4 sentences explaining your assessment.
+8. If dismissing, include a brief dismissReason suitable for an audit trail.
+9. Use British English.
+
+Return a JSON array of objects with these fields:
+- findingId (string)
+- suggestedAction ("dismiss" | "acknowledge" | "escalate_mitigate")
+- confidence (number 0-1)
+- reasoning (string)
+- dismissReason (string, only when action is dismiss)
+- automatable (boolean)
+
+Return ONLY the JSON array, no markdown fences, no additional text.`;
+
+const TRIAGE_BATCH_SIZE = 20;
+
+export async function generateTriageSuggestions(
+  findings: TriageFinding[],
+  productContext: ProductContext
+): Promise<TriageResult> {
+  const anthropic = getClient();
+  const allSuggestions: TriageSuggestion[] = [];
+  let totalInput = 0;
+  let totalOutput = 0;
+
+  // Process in batches of TRIAGE_BATCH_SIZE
+  for (let i = 0; i < findings.length; i += TRIAGE_BATCH_SIZE) {
+    const batch = findings.slice(i, i + TRIAGE_BATCH_SIZE);
+
+    const userPrompt = `Triage the following ${batch.length} vulnerability finding(s) for this product.
+
+Product context:
+- Name: ${productContext.productName}
+- Version: ${productContext.productVersion || 'not set'}
+- CRA Category: ${productContext.craCategory || 'default'}
+- Repository: ${productContext.repoUrl || 'not connected'}
+- SBOM: ${productContext.sbom ? `${productContext.sbom.packageCount} packages, top deps: ${productContext.sbom.topDeps.join(', ') || 'none parsed'}` : 'not available'}
+- Vulnerability summary: ${productContext.vulns ? `${productContext.vulns.critical} critical, ${productContext.vulns.high} high, ${productContext.vulns.medium} medium, ${productContext.vulns.low} low (${productContext.vulns.open} open)` : 'unknown'}
+
+Findings to triage:
+${JSON.stringify(batch.map(f => ({
+  findingId: f.id,
+  title: f.title,
+  severity: f.severity,
+  cvssScore: f.cvssScore,
+  source: f.source,
+  sourceId: f.sourceId,
+  dependency: `${f.dependencyName}@${f.dependencyVersion}`,
+  ecosystem: f.dependencyEcosystem,
+  fixAvailable: f.fixedVersion || null,
+  description: f.description?.substring(0, 300),
+})), null, 2)}`;
+
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 4000,
+      system: TRIAGE_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userPrompt }],
+    });
+
+    totalInput += response.usage?.input_tokens || 0;
+    totalOutput += response.usage?.output_tokens || 0;
+
+    const text = response.content
+      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+      .map(block => block.text)
+      .join('\n');
+
+    try {
+      const parsed: TriageSuggestion[] = JSON.parse(text);
+      // Validate and sanitise
+      for (const s of parsed) {
+        if (!s.findingId || !s.suggestedAction || typeof s.confidence !== 'number') continue;
+        // Enforce automatable rules
+        s.automatable = s.confidence >= 0.85 && s.suggestedAction === 'dismiss';
+        allSuggestions.push(s);
+      }
+    } catch (parseErr) {
+      console.error('[COPILOT] Failed to parse triage response:', parseErr, text);
+    }
+  }
+
+  return {
+    suggestions: allSuggestions,
+    inputTokens: totalInput,
+    outputTokens: totalOutput,
+    model: MODEL,
+  };
+}
+
 // ─── Generation ────────────────────────────────────────────
 
 export interface SuggestionParams {

@@ -3,7 +3,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { requirePlan } from '../middleware/requirePlan.js';
-import { isCopilotConfigured, gatherProductContext, generateSuggestion } from '../services/copilot.js';
+import { isCopilotConfigured, gatherProductContext, generateSuggestion, generateTriageSuggestions, TriageFinding } from '../services/copilot.js';
 
 const router = Router();
 
@@ -146,6 +146,130 @@ router.post('/suggest', requireAuth, requirePlan('pro'), async (req: Request, re
   } catch (err: any) {
     console.error('[COPILOT] Failed to generate suggestion:', err);
     res.status(500).json({ error: 'Failed to generate suggestion' });
+  }
+});
+
+// POST /api/copilot/triage — AI triage vulnerability findings
+router.post('/triage', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+
+  if (!isCopilotConfigured()) {
+    res.status(503).json({ error: 'AI copilot is not configured. Please set ANTHROPIC_API_KEY.' });
+    return;
+  }
+
+  const { productId, findingIds, autoApply } = req.body;
+
+  if (!productId) {
+    res.status(400).json({ error: 'Missing required field: productId' });
+    return;
+  }
+
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    // Verify product belongs to org
+    const neo4jSession = getDriver().session();
+    try {
+      const result = await neo4jSession.run(
+        `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
+         RETURN p.id AS id`,
+        { orgId, productId }
+      );
+      if (result.records.length === 0) {
+        res.status(404).json({ error: 'Product not found' });
+        return;
+      }
+    } finally {
+      await neo4jSession.close();
+    }
+
+    // Fetch findings
+    let findingsQuery = `SELECT id, title, severity, cvss_score, source, source_id,
+      dependency_name, dependency_version, dependency_ecosystem,
+      fixed_version, description, status
+      FROM vulnerability_findings
+      WHERE product_id = $1`;
+    const params: any[] = [productId];
+
+    if (findingIds && Array.isArray(findingIds) && findingIds.length > 0) {
+      findingsQuery += ` AND id = ANY($2)`;
+      params.push(findingIds);
+    } else {
+      // Default: triage open and acknowledged findings
+      findingsQuery += ` AND status IN ('open', 'acknowledged')`;
+    }
+
+    findingsQuery += ` ORDER BY severity DESC, cvss_score DESC NULLS LAST LIMIT 100`;
+
+    const findingsResult = await pool.query(findingsQuery, params);
+    const findings: TriageFinding[] = findingsResult.rows.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      severity: r.severity,
+      cvssScore: r.cvss_score ? parseFloat(r.cvss_score) : null,
+      source: r.source,
+      sourceId: r.source_id,
+      dependencyName: r.dependency_name,
+      dependencyVersion: r.dependency_version,
+      dependencyEcosystem: r.dependency_ecosystem,
+      fixedVersion: r.fixed_version,
+      description: r.description,
+      status: r.status,
+    }));
+
+    if (findings.length === 0) {
+      res.json({
+        suggestions: [],
+        totalTriaged: 0,
+        autoApplied: 0,
+        tokensUsed: 0,
+      });
+      return;
+    }
+
+    // Gather context and generate triage suggestions
+    const productContext = await gatherProductContext(productId, orgId);
+    const triageResult = await generateTriageSuggestions(findings, productContext);
+
+    // Auto-apply if requested
+    let autoAppliedCount = 0;
+    if (autoApply) {
+      for (const s of triageResult.suggestions) {
+        if (s.automatable && s.suggestedAction === 'dismiss') {
+          await pool.query(
+            `UPDATE vulnerability_findings
+             SET status = 'dismissed', dismissed_by = 'ai-triage', dismissed_reason = $2, dismissed_at = NOW()
+             WHERE id = $1 AND status IN ('open', 'acknowledged')`,
+            [s.findingId, s.dismissReason || 'AI auto-triage: ' + s.reasoning.substring(0, 200)]
+          );
+          autoAppliedCount++;
+        }
+      }
+    }
+
+    // Log usage
+    const totalTokens = triageResult.inputTokens + triageResult.outputTokens;
+    pool.query(
+      `INSERT INTO copilot_usage (org_id, user_id, product_id, section_key, type, input_tokens, output_tokens, model)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [orgId, userId, productId, 'vulnerability_triage', 'vulnerability_triage',
+       triageResult.inputTokens, triageResult.outputTokens, triageResult.model]
+    ).catch(err => console.error('[COPILOT] Failed to log triage usage:', err));
+
+    res.json({
+      suggestions: triageResult.suggestions.map(s => ({
+        ...s,
+        autoApplied: autoApply && s.automatable && s.suggestedAction === 'dismiss',
+      })),
+      totalTriaged: triageResult.suggestions.length,
+      autoApplied: autoAppliedCount,
+      tokensUsed: totalTokens,
+    });
+  } catch (err: any) {
+    console.error('[COPILOT] Failed to triage findings:', err);
+    res.status(500).json({ error: 'Failed to triage findings' });
   }
 });
 

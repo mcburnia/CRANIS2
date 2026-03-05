@@ -170,4 +170,55 @@ describe('/api/copilot', () => {
       expect(res.body.error).toBe('feature_requires_plan');
     });
   });
+
+  // ═══════════════════════════════════════════════════════
+  // POST /api/copilot/triage
+  // ═══════════════════════════════════════════════════════
+
+  describe('POST /api/copilot/triage', () => {
+    it('should reject unauthenticated requests', async () => {
+      const res = await api.post('/api/copilot/triage', {
+        body: { productId: MFG_PRODUCT },
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it('should reject standard-plan user with 403', async () => {
+      const res = await api.post('/api/copilot/triage', {
+        auth: mfgToken,
+        body: { productId: MFG_PRODUCT },
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('feature_requires_plan');
+      expect(res.body.requiredPlan).toBe('pro');
+    });
+
+    it('should reject trial-org user with 403', async () => {
+      const res = await api.post('/api/copilot/triage', {
+        auth: impToken,
+        body: { productId: IMP_PRODUCT },
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('feature_requires_plan');
+    });
+
+    it('should reject cross-org product access (plan gate first)', async () => {
+      const res = await api.post('/api/copilot/triage', {
+        auth: impToken,
+        body: { productId: MFG_PRODUCT },
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('feature_requires_plan');
+    });
+
+    it('should reject missing productId with 403 (plan gate first)', async () => {
+      // Plan gating runs before body validation for standard plan users
+      const res = await api.post('/api/copilot/triage', {
+        auth: mfgToken,
+        body: {},
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('feature_requires_plan');
+    });
+  });
 });

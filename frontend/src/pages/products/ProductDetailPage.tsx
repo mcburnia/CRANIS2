@@ -2410,6 +2410,14 @@ function RiskFindingsTab({ productId }: { productId: string }) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [exportingVuln, setExportingVuln] = useState<string | null>(null);
 
+  // AI Triage state
+  const [triaging, setTriaging] = useState(false);
+  const [triagingSingle, setTriagingSingle] = useState<string | null>(null);
+  const [triageSuggestions, setTriageSuggestions] = useState<Record<string, any>>({});
+  const [triageError, setTriageError] = useState<string | null>(null);
+  const [showTriageUpgrade, setShowTriageUpgrade] = useState(false);
+  const [bulkAutoApply, setBulkAutoApply] = useState(false);
+
   const token = localStorage.getItem('session_token');
 
   async function handleExportVuln(format: 'pdf' | 'csv') {
@@ -2432,6 +2440,106 @@ function RiskFindingsTab({ productId }: { productId: string }) {
       setExportingVuln(null);
     }
   }
+
+  // AI Triage — bulk (all open findings)
+  const handleTriageAll = async () => {
+    setTriaging(true);
+    setTriageError(null);
+    setShowTriageUpgrade(false);
+    try {
+      const res = await fetch('/api/copilot/triage', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, autoApply: bulkAutoApply }),
+      });
+      if (res.status === 403) {
+        const data = await res.json();
+        if (data.error === 'feature_requires_plan') {
+          setShowTriageUpgrade(true);
+        } else {
+          setTriageError(data.error || 'Access denied');
+        }
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json();
+        setTriageError(data.error || 'Triage failed');
+        return;
+      }
+      const data = await res.json();
+      const map: Record<string, any> = {};
+      for (const s of data.suggestions || []) {
+        map[s.findingId] = s;
+      }
+      setTriageSuggestions(prev => ({ ...prev, ...map }));
+      if (data.autoApplied > 0) {
+        fetchFindings();
+      }
+    } catch {
+      setTriageError('Failed to connect to AI triage service');
+    } finally {
+      setTriaging(false);
+    }
+  };
+
+  // AI Triage — single finding
+  const handleTriageSingle = async (findingId: string) => {
+    setTriagingSingle(findingId);
+    setTriageError(null);
+    setShowTriageUpgrade(false);
+    try {
+      const res = await fetch('/api/copilot/triage', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, findingIds: [findingId] }),
+      });
+      if (res.status === 403) {
+        const data = await res.json();
+        if (data.error === 'feature_requires_plan') {
+          setShowTriageUpgrade(true);
+        } else {
+          setTriageError(data.error || 'Access denied');
+        }
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json();
+        setTriageError(data.error || 'Triage failed');
+        return;
+      }
+      const data = await res.json();
+      for (const s of data.suggestions || []) {
+        setTriageSuggestions(prev => ({ ...prev, [s.findingId]: s }));
+      }
+    } catch {
+      setTriageError('Failed to connect to AI triage service');
+    } finally {
+      setTriagingSingle(null);
+    }
+  };
+
+  // Accept triage suggestion — update finding status
+  const handleAcceptTriage = async (findingId: string, suggestion: any) => {
+    const statusMap: Record<string, string> = {
+      dismiss: 'dismissed',
+      acknowledge: 'acknowledged',
+      escalate_mitigate: 'mitigated',
+    };
+    const newStatus = statusMap[suggestion.suggestedAction] || 'acknowledged';
+    const reason = suggestion.dismissReason || suggestion.reasoning?.substring(0, 200) || '';
+    await fetch(`/api/risk-findings/${findingId}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus, reason }),
+    });
+    setTriageSuggestions(prev => { const next = { ...prev }; delete next[findingId]; return next; });
+    fetchFindings();
+  };
+
+  // Reject triage suggestion — just remove the card
+  const handleRejectTriage = (findingId: string) => {
+    setTriageSuggestions(prev => { const next = { ...prev }; delete next[findingId]; return next; });
+  };
 
   const fetchFindings = () => {
     fetch(`/api/risk-findings/${productId}`, { headers: { Authorization: `Bearer ${token}` } })
@@ -2515,7 +2623,15 @@ function RiskFindingsTab({ productId }: { productId: string }) {
           )}
           {lastScan && <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '1rem' }}>Last scan: {new Date(lastScan.completed_at).toLocaleString()}</span>}
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <label className="ai-triage-auto-label" title="Automatically dismiss findings where AI confidence is 85%+">
+            <input type="checkbox" checked={bulkAutoApply} onChange={e => setBulkAutoApply(e.target.checked)} />
+            Auto-dismiss
+          </label>
+          <button className="btn ai-triage-all-btn" onClick={handleTriageAll} disabled={triaging || findings.filter(f => f.status === 'open' || f.status === 'acknowledged').length === 0}>
+            {triaging ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
+            {triaging ? 'Triaging…' : 'AI Triage All'}
+          </button>
           <button className="tf-doc-download-btn" onClick={() => handleExportVuln('pdf')} disabled={!!exportingVuln}>
             {exportingVuln === 'pdf' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
             {exportingVuln === 'pdf' ? 'Generating...' : 'Export PDF'}
@@ -2531,6 +2647,22 @@ function RiskFindingsTab({ productId }: { productId: string }) {
           </button>
         </div>
       </div>
+
+      {showTriageUpgrade && (
+        <div className="ai-upgrade-banner" style={{ marginBottom: '0.75rem' }}>
+          <Info size={14} />
+          <span>AI Triage requires the <strong>Pro</strong> plan. <a href="/billing">Upgrade now</a></span>
+          <button onClick={() => setShowTriageUpgrade(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}><X size={14} /></button>
+        </div>
+      )}
+
+      {triageError && (
+        <div className="ai-error-banner" style={{ marginBottom: '0.75rem' }}>
+          <AlertTriangle size={14} />
+          <span>{triageError}</span>
+          <button onClick={() => setTriageError(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}><X size={14} /></button>
+        </div>
+      )}
 
       {findings.length === 0 && !lastScan && (
         <div className="pd-placeholder">
@@ -2584,8 +2716,45 @@ function RiskFindingsTab({ productId }: { productId: string }) {
               {f.status === 'dismissed' && (<div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginTop: '0.75rem' }}><div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--green)', marginBottom: '0.2rem' }}>✓ DISMISSED</div>{f.dismissed_reason && <div style={{ fontSize: '0.8rem', color: 'var(--text)' }}>{f.dismissed_reason}</div>}{f.dismissed_at && <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.2rem' }}>on {new Date(f.dismissed_at).toLocaleDateString()}</div>}</div>)}
               {f.status === 'resolved' && (<div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginTop: '0.75rem' }}><div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--green)', marginBottom: '0.2rem' }}>✓ RESOLVED</div>{f.mitigation_notes && <div style={{ fontSize: '0.8rem', color: 'var(--text)' }}>{f.mitigation_notes}</div>}{f.resolved_at && <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.2rem' }}>on {new Date(f.resolved_at).toLocaleDateString()}</div>}</div>)}
               {f.status === 'mitigated' && (<div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '6px', padding: '0.6rem 0.75rem', marginTop: '0.75rem' }}><div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--green)', marginBottom: '0.2rem' }}>✓ MITIGATED</div>{f.mitigation_notes && <div style={{ fontSize: '0.8rem', color: 'var(--text)' }}>{f.mitigation_notes}</div>}</div>)}
-              {(f.status === 'open' || f.status === 'acknowledged') && <button onClick={() => handleDismiss(f.id)} style={{ background: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', color: 'var(--green)', padding: '0.3rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', marginTop: '0.75rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem' }}><CheckCircle2 size={13} /> Mark as Mitigated</button>}
-              <a href={"/vulnerability-reports?create=true&productId=" + productId + "&findingId=" + f.id} style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.3)', color: 'var(--purple)', padding: '0.3rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', marginTop: '0.75rem', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '0.3rem', textDecoration: 'none' }}><Shield size={13} /> Report to ENISA</a>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                {(f.status === 'open' || f.status === 'acknowledged') && <button onClick={() => handleDismiss(f.id)} style={{ background: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', color: 'var(--green)', padding: '0.3rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem' }}><CheckCircle2 size={13} /> Mark as Mitigated</button>}
+                {(f.status === 'open' || f.status === 'acknowledged') && !triageSuggestions[f.id] && (
+                  <button className="btn ai-triage-single-btn" onClick={() => handleTriageSingle(f.id)} disabled={triagingSingle === f.id}>
+                    {triagingSingle === f.id ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />}
+                    {triagingSingle === f.id ? 'Triaging…' : 'AI Triage'}
+                  </button>
+                )}
+                <a href={"/vulnerability-reports?create=true&productId=" + productId + "&findingId=" + f.id} style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.3)', color: 'var(--purple)', padding: '0.3rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '0.3rem', textDecoration: 'none' }}><Shield size={13} /> Report to ENISA</a>
+              </div>
+
+              {/* AI Triage suggestion card */}
+              {triageSuggestions[f.id] && (
+                <div className="ai-triage-suggestion">
+                  <div className="ai-triage-header">
+                    <Sparkles size={14} />
+                    <span className="ai-triage-title">AI Triage Suggestion</span>
+                    <span className={`ai-triage-confidence ${triageSuggestions[f.id].confidence >= 0.85 ? 'high' : triageSuggestions[f.id].confidence >= 0.6 ? 'medium' : 'low'}`}>
+                      {Math.round(triageSuggestions[f.id].confidence * 100)}% confidence
+                    </span>
+                    {triageSuggestions[f.id].automatable && <span className="ai-auto-badge">Auto</span>}
+                    {triageSuggestions[f.id].autoApplied && <span className="ai-auto-badge applied">Applied</span>}
+                  </div>
+                  <div className="ai-triage-action-label">
+                    Suggested: <strong>{triageSuggestions[f.id].suggestedAction === 'dismiss' ? 'Dismiss' : triageSuggestions[f.id].suggestedAction === 'acknowledge' ? 'Acknowledge' : 'Escalate & Mitigate'}</strong>
+                  </div>
+                  <div className="ai-triage-reasoning">{triageSuggestions[f.id].reasoning}</div>
+                  {!triageSuggestions[f.id].autoApplied && (
+                    <div className="ai-triage-actions">
+                      <button className="ai-triage-accept" onClick={() => handleAcceptTriage(f.id, triageSuggestions[f.id])}>
+                        <CheckCircle2 size={13} /> Accept
+                      </button>
+                      <button className="ai-triage-reject" onClick={() => handleRejectTriage(f.id)}>
+                        <X size={13} /> Reject
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
