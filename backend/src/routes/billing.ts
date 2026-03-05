@@ -499,4 +499,50 @@ router.put('/admin/pricing', requirePlatformAdmin, async (req: Request, res: Res
   }
 });
 
+// ═══════════════════════════════════════════════
+// CSIRT Country — org-level default
+// ═══════════════════════════════════════════════
+
+router.get('/csirt-country', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    const result = await pool.query(
+      'SELECT csirt_country FROM org_billing WHERE org_id = $1',
+      [orgId]
+    );
+    res.json({ csirtCountry: result.rows[0]?.csirt_country || null });
+  } catch (err) {
+    console.error('Failed to get CSIRT country:', err);
+    res.status(500).json({ error: 'Failed to get CSIRT country' });
+  }
+});
+
+router.put('/csirt-country', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const { csirtCountry } = req.body;
+
+  if (csirtCountry && (typeof csirtCountry !== 'string' || csirtCountry.length !== 2)) {
+    res.status(400).json({ error: 'csirtCountry must be a 2-letter EU country code' });
+    return;
+  }
+
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    await pool.query(
+      `UPDATE org_billing SET csirt_country = $1, updated_at = NOW() WHERE org_id = $2`,
+      [csirtCountry || null, orgId]
+    );
+
+    res.json({ csirtCountry: csirtCountry || null });
+  } catch (err) {
+    console.error('Failed to update CSIRT country:', err);
+    res.status(500).json({ error: 'Failed to update CSIRT country' });
+  }
+});
+
 export default router;

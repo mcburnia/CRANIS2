@@ -220,6 +220,16 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       res.status(400).json({ error: 'reportType must be vulnerability or incident' }); return;
     }
 
+    // Fall back to org-level CSIRT country if not provided per-report
+    let effectiveCsirtCountry = csirtCountry || null;
+    if (!effectiveCsirtCountry) {
+      const orgBilling = await pool.query(
+        'SELECT csirt_country FROM org_billing WHERE org_id = $1',
+        [orgId]
+      );
+      effectiveCsirtCountry = orgBilling.rows[0]?.csirt_country || null;
+    }
+
     // Verify product belongs to org
     const driver = getDriver();
     const session = driver.session();
@@ -266,7 +276,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       [
         orgId, productId, reportType, awareness,
         deadlines.earlyWarning, deadlines.notification, deadlines.finalReport,
-        csirtCountry || null,
+        effectiveCsirtCountry,
         memberStatesAffected.length > 0 ? memberStatesAffected : null,
         linkedFindingId || null,
         sensitivityTlp, userId,

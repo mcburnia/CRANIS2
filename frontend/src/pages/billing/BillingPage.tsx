@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CreditCard, ExternalLink, UserMinus, UserPlus, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Loader2, Cpu } from 'lucide-react';
+import { CreditCard, ExternalLink, UserMinus, UserPlus, RefreshCw, CheckCircle2, AlertTriangle, Sparkles, Loader2, Cpu, Globe, Save } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -69,6 +69,9 @@ export default function BillingPage() {
   const [successMessage, setSuccessMessage] = useState('');
 
   const [copilotUsage, setCopilotUsage] = useState<any>(null);
+  const [csirtCountry, setCsirtCountry] = useState('');
+  const [csirtSaving, setCsirtSaving] = useState(false);
+  const [csirtSaved, setCsirtSaved] = useState(false);
 
   const token = localStorage.getItem('session_token');
 
@@ -99,6 +102,11 @@ export default function BillingPage() {
   useEffect(() => {
     fetchBilling();
     fetchCopilotUsage();
+    // Fetch org CSIRT country
+    fetch('/api/billing/csirt-country', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.csirtCountry) setCsirtCountry(data.csirtCountry); })
+      .catch(() => {});
   }, [fetchBilling, fetchCopilotUsage]);
 
   useEffect(() => {
@@ -262,7 +270,36 @@ export default function BillingPage() {
     technical_file: 'Technical File',
     obligation: 'Obligation',
     vulnerability_triage: 'Vulnerability Triage',
+    incident_report_draft: 'Incident Report Draft',
+    risk_assessment: 'Risk Assessment',
   };
+
+  const EU_COUNTRIES: Record<string, string> = {
+    AT: 'Austria', BE: 'Belgium', BG: 'Bulgaria', HR: 'Croatia',
+    CY: 'Cyprus', CZ: 'Czechia', DK: 'Denmark', EE: 'Estonia',
+    FI: 'Finland', FR: 'France', DE: 'Germany', GR: 'Greece',
+    HU: 'Hungary', IE: 'Ireland', IT: 'Italy', LV: 'Latvia',
+    LT: 'Lithuania', LU: 'Luxembourg', MT: 'Malta', NL: 'Netherlands',
+    PL: 'Poland', PT: 'Portugal', RO: 'Romania', SK: 'Slovakia',
+    SI: 'Slovenia', ES: 'Spain', SE: 'Sweden',
+  };
+
+  async function handleSaveCsirt() {
+    setCsirtSaving(true);
+    setCsirtSaved(false);
+    try {
+      const res = await fetch('/api/billing/csirt-country', {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ csirtCountry: csirtCountry || null }),
+      });
+      if (res.ok) {
+        setCsirtSaved(true);
+        setTimeout(() => setCsirtSaved(false), 3000);
+      }
+    } catch { /* ignore */ }
+    finally { setCsirtSaving(false); }
+  }
 
   return (
     <>
@@ -601,6 +638,33 @@ export default function BillingPage() {
           <a href="mailto:sales@cranis2.com" className="bill-btn bill-btn-secondary">
             Contact Sales
           </a>
+        </div>
+      </section>
+
+      {/* ENISA / CSIRT Settings */}
+      <section className="bill-section">
+        <div className="bill-section-header">
+          <h2><Globe size={18} /> ENISA Reporting Settings</h2>
+        </div>
+        <p className="bill-section-desc">
+          Set your organisation&apos;s designated CSIRT country (CRA Article 14). This will be pre-selected when creating new ENISA reports.
+        </p>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.75rem' }}>
+          <select
+            value={csirtCountry}
+            onChange={e => { setCsirtCountry(e.target.value); setCsirtSaved(false); }}
+            style={{ padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', minWidth: '220px' }}
+          >
+            <option value="">No default CSIRT</option>
+            {Object.entries(EU_COUNTRIES).sort((a, b) => a[1].localeCompare(b[1])).map(([code, name]) => (
+              <option key={code} value={code}>{name} ({code})</option>
+            ))}
+          </select>
+          <button className="bill-btn bill-btn-primary bill-btn-sm" onClick={handleSaveCsirt} disabled={csirtSaving}>
+            {csirtSaving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+            {csirtSaving ? 'Saving…' : 'Save'}
+          </button>
+          {csirtSaved && <span style={{ fontSize: '0.8rem', color: 'var(--green)' }}>Saved</span>}
         </div>
       </section>
 

@@ -876,6 +876,7 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_copilot_usage_org ON copilot_usage(org_id, created_at DESC)`);
     await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT 'standard'`);
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS csirt_country VARCHAR(2)`);
 
     // ── Platform Settings ──
     await client.query(`
