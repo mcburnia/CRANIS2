@@ -301,6 +301,225 @@ ${JSON.stringify(batch.map(f => ({
   };
 }
 
+// ─── Risk assessment generation ─────────────────────────────
+
+export interface EnrichedRiskContext extends ProductContext {
+  topVulnerabilities: {
+    sourceId: string;
+    title: string;
+    severity: string;
+    cvssScore: number | null;
+    dependencyName: string;
+    dependencyVersion: string;
+    dependencyEcosystem: string;
+    fixedVersion: string | null;
+    status: string;
+  }[];
+  licenceRisks: {
+    dependencyName: string;
+    licenseDeclared: string;
+    riskLevel: string;
+    riskReason: string;
+  }[];
+  ecosystemBreakdown: Record<string, number>;
+}
+
+export async function gatherEnrichedRiskContext(productId: string, orgId: string): Promise<EnrichedRiskContext> {
+  const base = await gatherProductContext(productId, orgId);
+
+  const [vulnRows, licenceRows, ecoRows] = await Promise.all([
+    pool.query(
+      `SELECT source_id, title, severity, cvss_score, dependency_name, dependency_version,
+              dependency_ecosystem, fixed_version, status
+       FROM vulnerability_findings
+       WHERE product_id = $1 AND org_id = $2 AND status IN ('open', 'acknowledged')
+       ORDER BY CASE severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END,
+                cvss_score DESC NULLS LAST
+       LIMIT 20`,
+      [productId, orgId]
+    ),
+    pool.query(
+      `SELECT dependency_name, license_declared, risk_level, risk_reason
+       FROM license_findings
+       WHERE product_id = $1 AND org_id = $2 AND risk_level IN ('critical', 'warning')
+       ORDER BY CASE risk_level WHEN 'critical' THEN 0 ELSE 1 END
+       LIMIT 20`,
+      [productId, orgId]
+    ),
+    pool.query(
+      `SELECT dependency_ecosystem, COUNT(DISTINCT dependency_name)::int AS dep_count
+       FROM vulnerability_findings
+       WHERE product_id = $1
+       GROUP BY dependency_ecosystem
+       ORDER BY dep_count DESC`,
+      [productId]
+    ),
+  ]);
+
+  const topVulnerabilities = vulnRows.rows.map((r: any) => ({
+    sourceId: r.source_id,
+    title: r.title,
+    severity: r.severity,
+    cvssScore: r.cvss_score ? parseFloat(r.cvss_score) : null,
+    dependencyName: r.dependency_name,
+    dependencyVersion: r.dependency_version,
+    dependencyEcosystem: r.dependency_ecosystem,
+    fixedVersion: r.fixed_version,
+    status: r.status,
+  }));
+
+  const licenceRisks = licenceRows.rows.map((r: any) => ({
+    dependencyName: r.dependency_name,
+    licenseDeclared: r.license_declared,
+    riskLevel: r.risk_level,
+    riskReason: r.risk_reason,
+  }));
+
+  const ecosystemBreakdown: Record<string, number> = {};
+  for (const r of ecoRows.rows) {
+    if (r.dependency_ecosystem) ecosystemBreakdown[r.dependency_ecosystem] = r.dep_count;
+  }
+
+  return { ...base, topVulnerabilities, licenceRisks, ecosystemBreakdown };
+}
+
+export interface RiskAssessmentResult {
+  fields: {
+    methodology: string;
+    threat_model: string;
+    risk_register: string;
+  };
+  annexIRequirements: {
+    ref: string;
+    title: string;
+    applicable: boolean;
+    justification: string;
+    evidence: string;
+  }[];
+  inputTokens: number;
+  outputTokens: number;
+  model: string;
+}
+
+const RISK_ASSESSMENT_SYSTEM_PROMPT = `You are a CRA (EU Cyber Resilience Act) cybersecurity risk assessment expert. Your task is to generate a comprehensive cybersecurity risk assessment for a software product based on its actual data.
+
+You will produce:
+1. A methodology section describing the risk assessment approach used (2-4 paragraphs)
+2. A threat model identifying threats, attack surfaces, and mitigations based on actual vulnerabilities and dependencies (2-4 paragraphs)
+3. A risk register as a Markdown table with columns: #, Threat, Likelihood (Low/Medium/High), Impact (Low/Medium/High), Risk Level (Low/Medium/High/Critical), Mitigation, Status
+4. For each of the 13 Annex I Part I essential cybersecurity requirements, an assessment of applicability, justification, and evidence
+
+The 13 Annex I Part I requirements are:
+- I(a): No known exploitable vulnerabilities
+- I(b): Secure-by-default configuration
+- I(c): Security update mechanism
+- I(d): Access control & authentication
+- I(e): Data confidentiality & encryption
+- I(f): Data & command integrity
+- I(g): Data minimisation
+- I(h): Availability & resilience
+- I(i): Minimise impact on other services
+- I(j): Attack surface limitation
+- I(k): Exploitation mitigation
+- I(l): Security monitoring & logging
+- I(m): Secure data erasure & transfer
+
+Rules:
+1. Ground ALL content in the product's actual data. Reference real CVE IDs, dependency names, and statistics.
+2. Never invent vulnerabilities, dependencies, or data not provided in the context.
+3. For the risk register, derive risks from actual vulnerability findings and licence issues provided.
+4. If data is insufficient for a complete assessment, clearly note what information the user should add manually.
+5. Use British English spelling throughout.
+6. Write in a professional, factual tone suitable for regulatory auditors.
+7. The risk register must be a valid Markdown table.
+8. For Annex I requirements: if the product data supports a positive assessment, provide evidence. If data is missing, note what evidence is needed.
+
+Return ONLY a JSON object (no markdown fences, no additional text) with this exact structure:
+{
+  "fields": {
+    "methodology": "...",
+    "threat_model": "...",
+    "risk_register": "| # | Threat | Likelihood | Impact | Risk Level | Mitigation | Status |\\n|---|--------|-----------|--------|-----------|------------|--------|\\n| 1 | ... |"
+  },
+  "annexIRequirements": [
+    { "ref": "I(a)", "title": "No known exploitable vulnerabilities", "applicable": true, "justification": "...", "evidence": "..." },
+    ... (all 13 requirements, in order from I(a) to I(m))
+  ]
+}`;
+
+export async function generateRiskAssessment(context: EnrichedRiskContext): Promise<RiskAssessmentResult> {
+  const anthropic = getClient();
+
+  const ecoSummary = Object.entries(context.ecosystemBreakdown)
+    .map(([eco, count]) => `${eco}: ${count} deps`)
+    .join(', ') || 'no ecosystem data';
+
+  const vulnDetails = context.topVulnerabilities.length > 0
+    ? context.topVulnerabilities.map(v =>
+        `- ${v.sourceId}: ${v.title} (${v.severity}, CVSS ${v.cvssScore ?? 'N/A'}) — ${v.dependencyName}@${v.dependencyVersion} [${v.dependencyEcosystem}]${v.fixedVersion ? ` → fix: ${v.fixedVersion}` : ''}`
+      ).join('\n')
+    : 'No open vulnerability findings.';
+
+  const licenceDetails = context.licenceRisks.length > 0
+    ? context.licenceRisks.map(l =>
+        `- ${l.dependencyName}: ${l.licenseDeclared} (${l.riskLevel}) — ${l.riskReason}`
+      ).join('\n')
+    : 'No licence risk findings.';
+
+  const userPrompt = `Generate a comprehensive cybersecurity risk assessment for this product.
+
+Product context:
+- Name: ${context.productName}
+- Version: ${context.productVersion || 'not set'}
+- CRA Category: ${context.craCategory || 'default'}
+- Repository: ${context.repoUrl || 'not connected'}
+- SBOM: ${context.sbom ? `${context.sbom.packageCount} packages${context.sbom.isStale ? ' (stale)' : ''}, top deps: ${context.sbom.topDeps.join(', ') || 'none parsed'}` : 'not available'}
+- Vulnerability summary: ${context.vulns ? `${context.vulns.critical} critical, ${context.vulns.high} high, ${context.vulns.medium} medium, ${context.vulns.low} low (${context.vulns.open} open)` : 'no scans yet'}
+- Ecosystems: ${ecoSummary}
+- Obligations: ${context.obligations.map(o => `${o.article}: ${o.status}`).join(', ')}
+- Tech file progress: ${context.techFileSections.map(s => `${s.key}: ${s.status}`).join(', ')}
+
+Top vulnerability findings (open/acknowledged):
+${vulnDetails}
+
+Licence risk findings:
+${licenceDetails}`;
+
+  const response = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 6000,
+    system: RISK_ASSESSMENT_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userPrompt }],
+  });
+
+  const text = response.content
+    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+    .map(block => block.text)
+    .join('\n');
+
+  // Strip markdown fences if present
+  const cleaned = text.replace(/^```(?:json)?\s*\n?/m, '').replace(/\n?```\s*$/m, '').trim();
+  const parsed = JSON.parse(cleaned);
+
+  return {
+    fields: {
+      methodology: parsed.fields?.methodology || '',
+      threat_model: parsed.fields?.threat_model || '',
+      risk_register: parsed.fields?.risk_register || '',
+    },
+    annexIRequirements: (parsed.annexIRequirements || []).map((r: any) => ({
+      ref: r.ref || '',
+      title: r.title || '',
+      applicable: typeof r.applicable === 'boolean' ? r.applicable : true,
+      justification: r.justification || '',
+      evidence: r.evidence || '',
+    })),
+    inputTokens: response.usage?.input_tokens || 0,
+    outputTokens: response.usage?.output_tokens || 0,
+    model: MODEL,
+  };
+}
+
 // ─── Generation ────────────────────────────────────────────
 
 export interface SuggestionParams {

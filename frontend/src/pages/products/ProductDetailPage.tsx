@@ -1679,6 +1679,8 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
   const [aiSuggesting, setAiSuggesting] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
+  const [generatingRiskAssessment, setGeneratingRiskAssessment] = useState(false);
+  const [downloadingRiskPdf, setDownloadingRiskPdf] = useState(false);
 
   const statusConfig = {
     completed: { icon: CheckCircle2, color: 'var(--green)', text: 'Complete' },
@@ -1911,6 +1913,87 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
     }
   }
 
+  async function handleGenerateRiskAssessment() {
+    setGeneratingRiskAssessment(true);
+    setAiError(null);
+    setShowUpgradeBanner(false);
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch('/api/copilot/generate-risk-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ productId }),
+      });
+      if (res.status === 403) {
+        const data = await res.json();
+        if (data.error === 'feature_requires_plan') {
+          setShowUpgradeBanner(true);
+          return;
+        }
+      }
+      if (!res.ok) throw new Error('Failed to generate risk assessment');
+
+      const data = await res.json();
+
+      setEditContent(prev => {
+        const current = prev['risk_assessment'] || {};
+        const currentFields = current.fields || {};
+        const mergedFields = { ...currentFields };
+
+        // Only populate empty fields (non-destructive)
+        if (!mergedFields.methodology) mergedFields.methodology = data.fields.methodology;
+        if (!mergedFields.threat_model) mergedFields.threat_model = data.fields.threat_model;
+        if (!mergedFields.risk_register) mergedFields.risk_register = data.fields.risk_register;
+
+        // Populate Annex I requirements
+        let annexReqs = current.annex_i_requirements || [];
+        if (data.annexIRequirements && Array.isArray(data.annexIRequirements) && annexReqs.length > 0) {
+          annexReqs = annexReqs.map((existing: any) => {
+            const generated = data.annexIRequirements.find((g: any) => g.ref === existing.ref);
+            if (!generated) return existing;
+            return {
+              ...existing,
+              applicable: generated.applicable,
+              justification: existing.justification || generated.justification,
+              evidence: existing.evidence || generated.evidence,
+            };
+          });
+        }
+
+        return {
+          ...prev,
+          risk_assessment: { ...current, fields: mergedFields, annex_i_requirements: annexReqs },
+        };
+      });
+    } catch (err: any) {
+      setAiError(err.message || 'Risk assessment generation failed');
+    } finally {
+      setGeneratingRiskAssessment(false);
+    }
+  }
+
+  async function handleDownloadRiskPdf() {
+    setDownloadingRiskPdf(true);
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/products/${productId}/reports/risk-assessment?format=pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || 'risk-assessment.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to generate Risk Assessment PDF. Please ensure the risk assessment section has content.');
+    } finally {
+      setDownloadingRiskPdf(false);
+    }
+  }
+
   function renderFieldEditor(sectionKey: string, fields: Record<string, string>, fieldLabels?: Record<string, string>) {
     const labels: Record<string, string> = fieldLabels || {
       intended_purpose: 'Intended Purpose',
@@ -2113,6 +2196,14 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
                     </div>
                   )}
 
+                  {/* Risk assessment generation overlay */}
+                  {generatingRiskAssessment && section.sectionKey === 'risk_assessment' && (
+                    <div className="ai-suggesting-banner">
+                      <Loader2 size={14} className="spin" />
+                      <span>Generating comprehensive risk assessment with AI — this may take 15-30 seconds…</span>
+                    </div>
+                  )}
+
                   {/* Upgrade banner */}
                   {showUpgradeBanner && expandedSection === section.sectionKey && (
                     <div className="ai-upgrade-banner">
@@ -2199,6 +2290,30 @@ function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
                         : <Sparkles size={14} />}
                       {aiSuggesting === section.sectionKey ? 'Generating…' : 'AI Suggest'}
                     </button>
+                    {section.sectionKey === 'risk_assessment' && (
+                      <button
+                        className="btn ai-suggest-btn"
+                        onClick={handleGenerateRiskAssessment}
+                        disabled={generatingRiskAssessment}
+                        title="Generate a full AI-drafted risk assessment from your product data (Pro plan)"
+                      >
+                        {generatingRiskAssessment
+                          ? <Loader2 size={14} className="spin" />
+                          : <Sparkles size={14} />}
+                        {generatingRiskAssessment ? 'Generating…' : 'Generate Full Assessment'}
+                      </button>
+                    )}
+                    {section.sectionKey === 'risk_assessment' && (
+                      <button
+                        className="btn tf-doc-download-btn"
+                        onClick={handleDownloadRiskPdf}
+                        disabled={downloadingRiskPdf}
+                        title="Download Risk Assessment as PDF"
+                      >
+                        {downloadingRiskPdf ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+                        {downloadingRiskPdf ? 'Generating…' : 'Download PDF'}
+                      </button>
+                    )}
                     {section.sectionKey === 'declaration_of_conformity' && (
                       <button
                         className="btn tf-doc-download-btn"

@@ -3,7 +3,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { requirePlan } from '../middleware/requirePlan.js';
-import { isCopilotConfigured, gatherProductContext, generateSuggestion, generateTriageSuggestions, TriageFinding } from '../services/copilot.js';
+import { isCopilotConfigured, gatherProductContext, generateSuggestion, generateTriageSuggestions, TriageFinding, gatherEnrichedRiskContext, generateRiskAssessment } from '../services/copilot.js';
 
 const router = Router();
 
@@ -383,6 +383,65 @@ router.post('/triage', requireAuth, requirePlan('pro'), async (req: Request, res
   } catch (err: any) {
     console.error('[COPILOT] Failed to triage findings:', err);
     res.status(500).json({ error: 'Failed to triage findings' });
+  }
+});
+
+// POST /api/copilot/generate-risk-assessment — AI-generated risk assessment
+router.post('/generate-risk-assessment', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+
+  if (!isCopilotConfigured()) {
+    res.status(503).json({ error: 'AI copilot is not configured. Please set ANTHROPIC_API_KEY.' });
+    return;
+  }
+
+  const { productId } = req.body;
+
+  if (!productId) {
+    res.status(400).json({ error: 'Missing required field: productId' });
+    return;
+  }
+
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    // Verify product belongs to org
+    const neo4jSession = getDriver().session();
+    try {
+      const result = await neo4jSession.run(
+        `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
+         RETURN p.id AS id`,
+        { orgId, productId }
+      );
+      if (result.records.length === 0) {
+        res.status(404).json({ error: 'Product not found' });
+        return;
+      }
+    } finally {
+      await neo4jSession.close();
+    }
+
+    // Gather enriched context and generate
+    const context = await gatherEnrichedRiskContext(productId, orgId);
+    const result = await generateRiskAssessment(context);
+
+    // Log usage
+    pool.query(
+      `INSERT INTO copilot_usage (org_id, user_id, product_id, section_key, type, input_tokens, output_tokens, model)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [orgId, userId, productId, 'risk_assessment', 'risk_assessment',
+       result.inputTokens, result.outputTokens, result.model]
+    ).catch(err => console.error('[COPILOT] Failed to log risk assessment usage:', err));
+
+    res.json({
+      fields: result.fields,
+      annexIRequirements: result.annexIRequirements,
+      tokensUsed: result.inputTokens + result.outputTokens,
+    });
+  } catch (err: any) {
+    console.error('[COPILOT] Failed to generate risk assessment:', err);
+    res.status(500).json({ error: 'Failed to generate risk assessment' });
   }
 });
 

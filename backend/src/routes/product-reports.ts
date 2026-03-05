@@ -550,4 +550,145 @@ router.get('/:productId/reports/obligations', requireAuth, async (req: Request, 
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// REPORT 4 — RISK ASSESSMENT (Annex VII §3)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get('/:productId/reports/risk-assessment', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const email = (req as any).email;
+  const productId = req.params.productId as string;
+  const format = (req.query.format as string) || 'pdf';
+
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    const productInfo = await getProductInfo(orgId, productId);
+    if (!productInfo) { res.status(404).json({ error: 'Product not found' }); return; }
+
+    // Fetch risk assessment section
+    const tfResult = await pool.query(
+      `SELECT content, notes, status FROM technical_file_sections
+       WHERE product_id = $1 AND section_key = 'risk_assessment'`,
+      [productId]
+    );
+
+    const section = tfResult.rows[0];
+    const content = section?.content || {};
+    const fields = content.fields || {};
+    const annexReqs = content.annex_i_requirements || [];
+    const status = section?.status || 'not_started';
+
+    const filename = `risk-assessment_${sanitiseName(productInfo.name)}_${isoDate()}`;
+
+    if (format === 'csv') {
+      // CSV — Annex I requirements table
+      const headers = ['Ref', 'Title', 'Applicable', 'Justification', 'Evidence'];
+      const rows = annexReqs.map((r: any) => [
+        r.ref || '',
+        r.title || '',
+        r.applicable ? 'Yes' : 'No',
+        r.justification || '',
+        r.evidence || '',
+      ]);
+      const csv = rowsToCsv(headers, rows);
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
+      res.send(csv);
+    } else {
+      // PDF
+      const pdf = buildProductPdf(
+        'Cybersecurity Risk Assessment',
+        'CRA Annex VII §3 / Article 13(2)',
+        productInfo.name
+      );
+
+      // Section 1: Methodology
+      pdf.sectionTitle('1. Risk Assessment Methodology');
+      if (fields.methodology) {
+        pdf.bodyText(fields.methodology);
+      } else {
+        pdf.bodyText('[Not yet documented — complete the risk assessment section in the Technical File.]');
+      }
+
+      // Section 2: Threat Model
+      pdf.sectionTitle('2. Threat Model / Attack Surface Analysis');
+      if (fields.threat_model) {
+        pdf.bodyText(fields.threat_model);
+      } else {
+        pdf.bodyText('[Not yet documented.]');
+      }
+
+      // Section 3: Risk Register
+      pdf.sectionTitle('3. Risk Register');
+      if (fields.risk_register) {
+        // Parse Markdown table and render
+        const lines = fields.risk_register.split('\n').filter((l: string) => l.trim());
+        const dataLines = lines.filter((l: string) => !l.match(/^\|[\s-|]+$/));
+
+        if (dataLines.length > 0) {
+          for (const line of dataLines) {
+            const cells = line.split('|').map((c: string) => c.trim()).filter(Boolean);
+            if (cells.length > 0) {
+              const isHeader = dataLines.indexOf(line) === 0;
+              pdf.checkPageBreak(14);
+              const y = pdf.doc.y;
+              const colWidth = pdf.pageWidth / Math.min(cells.length, 7);
+              const widths = cells.map(() => colWidth);
+              pdf.tableRow(cells.slice(0, 7), widths.slice(0, 7), y, isHeader, isHeader ? PDF_ACCENT : PDF_BODY);
+              pdf.doc.moveDown(0.6);
+            }
+          }
+        }
+      } else {
+        pdf.bodyText('[Not yet documented.]');
+      }
+
+      // Section 4: Annex I Part I Requirements
+      pdf.sectionTitle('4. Annex I Part I — Essential Requirements');
+      if (annexReqs.length > 0) {
+        for (const req of annexReqs) {
+          pdf.checkPageBreak(60);
+          pdf.subHeading(`${req.ref}: ${req.title}`);
+          pdf.statLine('Applicable', req.applicable ? 'Yes' : 'No', req.applicable ? '#16a34a' : '#dc2626');
+          if (req.applicable && req.evidence) {
+            pdf.statLine('Evidence', '');
+            pdf.bodyText(req.evidence);
+          }
+          if (!req.applicable && req.justification) {
+            pdf.statLine('Justification', '');
+            pdf.bodyText(req.justification);
+          }
+          if (req.applicable && !req.evidence) {
+            pdf.bodyText('[Evidence not yet provided.]');
+          }
+          pdf.doc.moveDown(0.3);
+        }
+      } else {
+        pdf.bodyText('[Annex I requirements not yet assessed.]');
+      }
+
+      const buffer = await finalisePdf(pdf.doc, pdf.stream, pdf.chunks);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.pdf"`);
+      res.send(buffer);
+    }
+
+    // Telemetry
+    const reqData = extractRequestData(req);
+    recordEvent({
+      userId, email,
+      eventType: 'product_report_exported',
+      ipAddress: reqData.ipAddress,
+      userAgent: reqData.userAgent,
+      metadata: { productId, reportType: 'risk-assessment', format, status, annexReqCount: annexReqs.length },
+    }).catch(() => {});
+
+  } catch (err) {
+    console.error('Failed to export risk assessment report:', err);
+    res.status(500).json({ error: 'Failed to generate risk assessment report' });
+  }
+});
+
 export default router;
