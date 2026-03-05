@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
-import { Package, Users, ScrollText, ShieldAlert, Circle, ChevronRight, ClipboardCheck } from 'lucide-react';
+import { Package, Users, ScrollText, ShieldAlert, Circle, ChevronRight, ClipboardCheck, Grid3X3, AlertTriangle, FileText, Shield, Clock } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './DashboardPage.css';
 
@@ -342,6 +342,129 @@ export default function DashboardPage() {
           </table>
         )}
       </div>
+
+      {/* ── Compliance Heat Map ─────────────────────────────────── */}
+      {products.length >= 2 && (
+        <div className="section">
+          <h3><Grid3X3 size={18} /> Compliance Heat Map</h3>
+          {(() => {
+            const sorted = [...products].sort((a, b) => (a.craReadiness?.readiness ?? 0) - (b.craReadiness?.readiness ?? 0));
+
+            function cellColour(pct: number): string {
+              if (pct >= 67) return 'hm-green';
+              if (pct >= 34) return 'hm-amber';
+              return 'hm-red';
+            }
+
+            function vulnColour(p: DashboardProduct): string {
+              const severe = (p.riskFindings?.critical ?? 0) + (p.riskFindings?.high ?? 0);
+              if (severe === 0) return 'hm-green';
+              if (severe <= 3) return 'hm-amber';
+              return 'hm-red';
+            }
+
+            function sbomColour(p: DashboardProduct): string {
+              if (!p.sbomPackageCount || p.sbomPackageCount === 0) return 'hm-red';
+              if (p.sbomIsStale) return 'hm-amber';
+              return 'hm-green';
+            }
+
+            function supportColour(p: DashboardProduct): string {
+              const s = p.supportStatus?.status;
+              if (s === 'active') return 'hm-green';
+              if (s === 'ending_soon') return 'hm-amber';
+              if (s === 'ended') return 'hm-red';
+              return 'hm-red';
+            }
+
+            function sbomLabel(p: DashboardProduct): string {
+              if (!p.sbomPackageCount || p.sbomPackageCount === 0) return 'Missing';
+              if (p.sbomIsStale) return 'Stale';
+              return 'Fresh';
+            }
+
+            function supportLabel(p: DashboardProduct): string {
+              const s = p.supportStatus?.status;
+              if (s === 'active') return 'Active';
+              if (s === 'ending_soon') return 'Ending';
+              if (s === 'ended') return 'Ended';
+              return 'Not Set';
+            }
+
+            // Top blockers
+            const blockers: { icon: typeof AlertTriangle; colour: string; text: string; products: DashboardProduct[] }[] = [];
+
+            const criticalGaps = sorted.filter(p => (p.craReadiness?.readiness ?? 0) < 34);
+            if (criticalGaps.length > 0) blockers.push({ icon: Shield, colour: 'red', text: `${criticalGaps.length} product${criticalGaps.length > 1 ? 's' : ''} with critical compliance gaps (<34%)`, products: criticalGaps });
+
+            const critVulns = sorted.filter(p => (p.riskFindings?.critical ?? 0) > 0);
+            if (critVulns.length > 0) blockers.push({ icon: AlertTriangle, colour: 'red', text: `${critVulns.length} product${critVulns.length > 1 ? 's' : ''} with critical vulnerabilities`, products: critVulns });
+
+            const expiredSupport = sorted.filter(p => p.supportStatus?.status === 'ended');
+            if (expiredSupport.length > 0) blockers.push({ icon: Clock, colour: 'amber', text: `${expiredSupport.length} product${expiredSupport.length > 1 ? 's' : ''} with expired support periods`, products: expiredSupport });
+
+            const staleSboms = sorted.filter(p => p.sbomIsStale || !p.sbomPackageCount || p.sbomPackageCount === 0);
+            if (staleSboms.length > 0) blockers.push({ icon: ScrollText, colour: 'amber', text: `${staleSboms.length} product${staleSboms.length > 1 ? 's' : ''} with missing or stale SBOMs`, products: staleSboms });
+
+            const lowTechFile = sorted.filter(p => p.techFileProgress < 34);
+            if (lowTechFile.length > 0) blockers.push({ icon: FileText, colour: 'amber', text: `${lowTechFile.length} product${lowTechFile.length > 1 ? 's' : ''} need technical file attention (<34%)`, products: lowTechFile });
+
+            return (
+              <>
+                <div className="hm-grid" role="table">
+                  <div className="hm-header-row" role="row">
+                    <div className="hm-corner" role="columnheader">Product</div>
+                    <div className="hm-col-header" role="columnheader">CRA Readiness</div>
+                    <div className="hm-col-header" role="columnheader">Technical File</div>
+                    <div className="hm-col-header" role="columnheader">Vulnerabilities</div>
+                    <div className="hm-col-header" role="columnheader">SBOM Health</div>
+                    <div className="hm-col-header" role="columnheader">Support Period</div>
+                  </div>
+                  {sorted.map(p => {
+                    const readiness = p.craReadiness?.readiness ?? 0;
+                    const severe = (p.riskFindings?.critical ?? 0) + (p.riskFindings?.high ?? 0);
+                    const cat = formatCategory(p.category);
+                    return (
+                      <div key={p.id} className="hm-row" role="row">
+                        <div className="hm-product" role="rowheader">
+                          <Link to={`/products/${p.id}`}>{p.name}</Link>
+                          <span className={`badge ${cat.color} hm-cat-badge`}>{cat.label}</span>
+                        </div>
+                        <div className={`hm-cell ${cellColour(readiness)}`} role="cell">{readiness}%</div>
+                        <div className={`hm-cell ${cellColour(p.techFileProgress)}`} role="cell">{p.techFileProgress}%</div>
+                        <div className={`hm-cell ${vulnColour(p)}`} role="cell">{severe === 0 ? 'None' : severe}</div>
+                        <div className={`hm-cell ${sbomColour(p)}`} role="cell">{sbomLabel(p)}</div>
+                        <div className={`hm-cell ${supportColour(p)}`} role="cell">{supportLabel(p)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {blockers.length > 0 && (
+                  <div className="hm-blockers">
+                    <h4>Top Blockers</h4>
+                    {blockers.map((b, i) => (
+                      <div key={i} className={`hm-blocker hm-blocker-${b.colour}`}>
+                        <b.icon size={14} />
+                        <span className="hm-blocker-text">{b.text}</span>
+                        <span className="hm-blocker-products">
+                          {b.products.slice(0, 3).map((p, j) => (
+                            <span key={p.id}>
+                              {j > 0 && ', '}
+                              <Link to={`/products/${p.id}`}>{p.name}</Link>
+                            </span>
+                          ))}
+                          {b.products.length > 3 && ` +${b.products.length - 3} more`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      )}
 
       <div className="section">
         <h3><ShieldAlert size={18} /> Dependency Risk Findings</h3>
