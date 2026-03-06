@@ -6,8 +6,8 @@
 
 import { useState } from 'react';
 import { Sparkles, Check, X, AlertCircle } from 'lucide-react';
-import type { CategoryRecommendationResponse } from '../../types/category-recommendation';
-import '../styles/category-recommender.css';
+import type { CategoryRecommendationResponse } from '../types/category-recommendation';
+import './styles/category-recommender.css';
 
 interface CategoryRecommenderModalProps {
   productId: string;
@@ -20,7 +20,7 @@ interface CategoryRecommenderModalProps {
 export default function CategoryRecommenderModal({
   productId,
   productName,
-  currentCategory,
+  currentCategory: _currentCategory,
   onClose,
   onAccept,
 }: CategoryRecommenderModalProps) {
@@ -61,8 +61,8 @@ export default function CategoryRecommenderModal({
 
     setSubmitting(true);
     try {
-      const recId = (recommendation as any).recommendation?.id || '';
-      const response = await fetch(`/api/products/${productId}/category-recommendation/${recId}/action`, {
+      const actionUrl = recommendation.actionUrl;
+      const response = await fetch(actionUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -103,6 +103,7 @@ export default function CategoryRecommenderModal({
           <h2>
             <Sparkles size={20} /> CRA Category Recommender
           </h2>
+          <p className="cr-modal-subtitle">{productName}</p>
           <button className="cr-close-btn" onClick={onClose}>
             <X size={20} />
           </button>
@@ -154,7 +155,7 @@ export default function CategoryRecommenderModal({
                 </div>
 
                 <div className="cr-attributes">
-                  {recommendation.recommendation.attributeScores.map((attr) => (
+                  {recommendation.recommendation.attributeScores.map((attr: any) => (
                     <div key={attr.attributeKey} className="cr-attribute">
                       <div className="cr-attr-header">
                         <strong>{attr.attributeName}</strong>

@@ -5,8 +5,8 @@
 
 import { useState, useEffect } from 'react';
 import { AlertCircle, Lock, Edit2, Save, X } from 'lucide-react';
-import PageHeader from '../PageHeader';
-import '../styles/admin-category-rules.css';
+import PageHeader from '../../components/PageHeader';
+import '../../components/styles/admin-category-rules.css';
 
 interface RuleAttribute {
   id: string;
@@ -53,7 +53,13 @@ export default function AdminCategoryRulesPage() {
   const [editingAttrId, setEditingAttrId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Record<string, any>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [overrideConfirm, setOverrideConfirm] = useState<{ show: boolean; attrId?: string; assessment?: any }>({
+  const [overrideConfirm, setOverrideConfirm] = useState<{
+    show: boolean;
+    attrId?: string;
+    assessment?: any;
+    overrideConfirmed?: boolean;
+    overrideReason?: string;
+  }>({
     show: false,
   });
 
@@ -144,7 +150,7 @@ export default function AdminCategoryRulesPage() {
   if (loading) {
     return (
       <div>
-        <PageHeader title="Category Rules" subtitle="Manage CRA category scoring system" />
+        <PageHeader title="Category Rules (CRA)" />
         <div className="acr-loading">Loading...</div>
       </div>
     );
@@ -152,7 +158,7 @@ export default function AdminCategoryRulesPage() {
 
   return (
     <div className="acr-container">
-      <PageHeader title="Category Rules" subtitle="Manage CRA category scoring attributes and thresholds" />
+      <PageHeader title="Category Rules (CRA)" />
 
       <div className="acr-grid">
         {/* Attributes Section */}
