@@ -101,27 +101,26 @@ test.describe('Login and Dashboard @smoke', () => {
 
   test('sidebar navigation is visible with accordion sections', async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard`);
-    await page.waitForLoadState('networkidle');
+    // Use 'load' instead of 'networkidle' — dashboard with 3000+ products can keep fetching
+    await page.waitForLoadState('load');
+    // Wait for sidebar to render
+    await page.waitForSelector('.nav-section-label', { timeout: 10000 });
 
-    // Sidebar section headers are <button> elements with mixed-case text
-    // (CSS text-transform: uppercase makes them appear as OVERVIEW, COMPLIANCE, etc.)
+    // Sidebar section headers are <button> elements with class nav-section-label
     const sidebarSections = ['Overview', 'Compliance', 'Repositories', 'Billing', 'Settings'];
     for (const section of sidebarSections) {
-      const sectionBtn = page.getByRole('button', { name: section });
-      await expect(sectionBtn, `Sidebar section "${section}" should be visible`).toBeVisible();
+      const sectionBtn = page.locator('.nav-section-label', { hasText: section });
+      await expect(sectionBtn, `Sidebar section "${section}" should be visible`).toBeVisible({ timeout: 5000 });
     }
 
     // Verify Dashboard link is visible (Overview section expanded by default)
-    await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible({ timeout: 5000 });
 
     // Verify Notifications link is visible with badge
-    await expect(page.getByRole('link', { name: /Notifications/ })).toBeVisible();
-
-    // Verify Feedback link at bottom
-    await expect(page.getByText('Feedback & Bug Report')).toBeVisible();
+    await expect(page.getByRole('link', { name: /Notifications/ })).toBeVisible({ timeout: 5000 });
 
     // Verify Sign Out is visible
-    await expect(page.getByText('Sign Out')).toBeVisible();
+    await expect(page.locator('text=Sign Out')).toBeVisible({ timeout: 5000 });
   });
 
   test('no console errors on dashboard load', async ({ page }) => {

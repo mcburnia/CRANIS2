@@ -24,38 +24,28 @@ test.describe('Form Validation — All Pages @break', () => {
 
   test('empty product creation form should show validation or prevent submission', async ({ page }) => {
     await page.goto(`${BASE_URL}/products`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Click the add product button to open the form/modal
     const addButton = page.getByRole('button', { name: /add|create|new/i }).first();
     await expect(addButton, 'Add product button should be visible').toBeVisible();
     await addButton.click();
-    await page.waitForTimeout(500);
+    await page.waitForSelector('.modal-actions', { timeout: 5000 });
 
     // The submit button should be disabled when the form is empty
-    const submitBtn = page.getByRole('button', { name: /create|save|add|submit/i }).last();
-    const isDisabled = await submitBtn.isDisabled();
+    const submitBtn = page.locator('.modal-actions button[type="submit"]');
+    const isDisabled = await submitBtn.evaluate((btn: HTMLButtonElement) => btn.disabled);
 
-    // Either the button is disabled or a validation message is shown
-    const body = await page.textContent('body');
-    const hasValidation =
-      body?.toLowerCase().includes('required') ||
-      body?.toLowerCase().includes('cannot be empty') ||
-      body?.toLowerCase().includes('enter a name');
-
-    expect(
-      isDisabled || hasValidation,
-      'Empty form should disable submit button or show validation error'
-    ).toBeTruthy();
+    expect(isDisabled, 'Empty form should disable submit button').toBeTruthy();
   });
 
   test('product creation with only whitespace should reject', async ({ page }) => {
     await page.goto(`${BASE_URL}/products`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const addButton = page.getByRole('button', { name: /add|create|new/i }).first();
     await addButton.click();
-    await page.waitForTimeout(500);
+    await page.waitForSelector('.modal-actions', { timeout: 5000 });
 
     // Fill name with only whitespace
     const nameInput = page.locator('input[placeholder*="name" i], input[name*="name" i]').first();
@@ -66,27 +56,11 @@ test.describe('Form Validation — All Pages @break', () => {
       await visibleInput.fill('   ');
     }
 
-    // The submit button should remain disabled with whitespace-only input,
-    // or if it allows click, the form should not create a product
-    const submitBtn = page.getByRole('button', { name: /create|save|add|submit/i }).last();
-    const isDisabled = await submitBtn.isDisabled();
+    // The submit button should remain disabled with whitespace-only input
+    const submitBtn = page.locator('.modal-actions button[type="submit"]');
+    const isDisabled = await submitBtn.evaluate((btn: HTMLButtonElement) => btn.disabled);
 
-    if (!isDisabled) {
-      // If button is enabled, click it — submission should be rejected
-      await submitBtn.click();
-      await page.waitForTimeout(1000);
-    }
-
-    // Verify no whitespace-only product was created
-    const { apiGet } = await import('../helpers/api-client.js');
-    const products = await apiGet('/api/products', token);
-    const whitespaceProduct = products.products?.find(
-      (p: any) => p.name && p.name.trim() === ''
-    );
-    expect(
-      isDisabled || !whitespaceProduct,
-      'Whitespace-only name should be blocked by disabled button or server rejection'
-    ).toBeTruthy();
+    expect(isDisabled, 'Whitespace-only name should keep submit button disabled').toBeTruthy();
   });
 
   // ── API-level product creation validation ───────────────────────────

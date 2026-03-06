@@ -238,7 +238,8 @@ test.describe('Technical Files @acceptance', () => {
 
     test('clicking a product on overview navigates to sections (if applicable)', async ({ page }) => {
       await page.goto(`${BASE_URL}/technical-files`);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
+      await page.waitForSelector('.nav-section-label', { timeout: 10000 });
 
       // Try to click on a product name or row to drill into sections
       // Look for clickable product elements

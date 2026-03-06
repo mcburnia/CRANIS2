@@ -284,9 +284,7 @@ test.describe('SBOM Generation and Export @acceptance', () => {
     await page.waitForLoadState('networkidle');
 
     // Navigate to the Dependencies tab where SBOM info is shown
-    const depsTab = page.getByRole('button', { name: /dependencies/i }).or(
-      page.locator('[role="tab"]').filter({ hasText: /dependencies/i })
-    );
+    const depsTab = page.getByRole('button', { name: 'Dependencies', exact: true }).first();
     if (await depsTab.isVisible()) {
       await depsTab.click();
       await page.waitForTimeout(1000);
