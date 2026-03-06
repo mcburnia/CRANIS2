@@ -34,6 +34,7 @@ import complianceChecklistRoutes from "./routes/compliance-checklist.js";
 import productReportsRoutes from "./routes/product-reports.js";
 import productActivityRoutes from "./routes/product-activity.js";
 import copilotRoutes from "./routes/copilot.js";
+import categoryRecommendationRoutes from "./routes/category-recommendation.js";
 import { startScheduler } from './services/scheduler.js';
 import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
@@ -98,6 +99,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/products', complianceChecklistRoutes);
 app.use('/api/products', productReportsRoutes);
 app.use('/api/products', productActivityRoutes);
+app.use('/api/products', categoryRecommendationRoutes);
 app.use('/api/copilot', copilotRoutes);
 
 // Health check
