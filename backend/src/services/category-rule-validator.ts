@@ -151,9 +151,11 @@ class CategoryRuleValidator {
       entityType: row.entity_type,
       entityId: row.entity_id,
       changedBy: row.changed_by,
-      oldValues: JSON.parse(row.old_values || '{}'),
-      newValues: JSON.parse(row.new_values || '{}'),
-      aiAssessment: row.ai_assessment ? JSON.parse(row.ai_assessment) : undefined,
+      oldValues: typeof row.old_values === 'string' ? JSON.parse(row.old_values) : (row.old_values || {}),
+      newValues: typeof row.new_values === 'string' ? JSON.parse(row.new_values) : (row.new_values || {}),
+      aiAssessment: row.ai_assessment
+        ? (typeof row.ai_assessment === 'string' ? JSON.parse(row.ai_assessment) : row.ai_assessment)
+        : undefined,
       regulatoryAlignment: row.regulatory_alignment,
       isOverride: row.is_override,
       overrideReason: row.override_reason,

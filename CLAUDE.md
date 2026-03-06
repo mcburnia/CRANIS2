@@ -31,12 +31,12 @@ Use the `main` branch for all work unless the user explicitly requests a feature
 ### 5. Run tests per task
 At the end of every task, run unit and integration tests and report the outcome before declaring the task done.
 
-### 6. Full morning regression at session start
-At the start of each new session (before any new work), run the full test cycle:
+### 6. Full regression at end of session
+At the end of each development session (after all work is committed), run the full test cycle:
 - Backend: `cd backend/tests && TEST_BASE_URL=http://localhost:3002 npx vitest run --config vitest.config.ts`
 - E2E: `cd e2e && E2E_BASE_URL=http://localhost:3002 npm test`
 
-Report pass/fail totals. Only proceed with new work once the baseline is confirmed clean (or known failures are documented).
+Report pass/fail totals. Fix any failures while the context is still fresh rather than leaving them for the next session.
 
 ### 7. Explicit approval for higher-risk operations
 Before executing any of the following, stop and get explicit user approval:

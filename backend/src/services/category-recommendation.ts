@@ -243,10 +243,14 @@ class CategoryRecommendationService {
       userId: row.user_id,
       createdAt: row.created_at,
       deterministicScore: parseFloat(row.deterministic_score),
-      deterministicReasoning: JSON.parse(row.deterministic_reasoning),
+      deterministicReasoning: typeof row.deterministic_reasoning === 'string'
+        ? JSON.parse(row.deterministic_reasoning)
+        : row.deterministic_reasoning,
       recommendedCategory: row.recommended_category,
       confidenceScore: row.confidence_score ? parseFloat(row.confidence_score) : undefined,
-      aiAugmentation: row.ai_augmentation ? JSON.parse(row.ai_augmentation) : undefined,
+      aiAugmentation: row.ai_augmentation
+        ? (typeof row.ai_augmentation === 'string' ? JSON.parse(row.ai_augmentation) : row.ai_augmentation)
+        : undefined,
       userAction: row.user_action,
       finalCategory: row.final_category,
       finalizedAt: row.finalized_at,

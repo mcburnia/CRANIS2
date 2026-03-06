@@ -26,7 +26,7 @@ P3 — AI Automation (Pro plan) — IN PROGRESS
 27	Copilot usage dashboard	Medium	DONE
 16	Risk assessment generator	Medium	DONE
 17	Incident report drafter	Medium	DONE
-18	CRA category recommender	Low	IN PROGRESS (Phases 1-3 DONE)
+18	CRA category recommender	Low	IN PROGRESS (Phases 1-4 DONE, Phase 5 tests remaining)
 19	Supplier due diligence questionnaire	Medium	TODO
 20	Compliance gap narrator	Low	TODO
 
@@ -48,58 +48,27 @@ P5 - Buggs
 
 ---
 
-## Session 24 Progress — P3 #18 CRA Category Recommender
-
-**Today's Work (3 commits, ~12 hours):**
+## P3 #18 CRA Category Recommender — Progress
 
 ✅ **Phase 1: Database Schema** (commit 0107308)
-- 6 new tables: category_rule_attributes, category_rule_attribute_values,
-  category_thresholds, category_recommendations, category_rule_changes,
-  recommendation_access_log
-- Seed data: 4 core risk attributes, 4 scoring options each, 4 CRA thresholds
-- All locked to regulatory baseline for ISO 42001 compliance
-
 ✅ **Phase 2: Backend Services** (commit dc68da0)
-- CategoryRecommendationService: Deterministic scoring, storage, history
-- CategoryAIAugmentationService: Claude API integration for probabilistic assessment
-- CategoryRuleValidator: Admin rule modifications with AI regulatory alignment check
-- Full TypeScript types with structured audit logging
-
-✅ **Phase 3: Backend Routes** (commit 17e32c7)  
-- User endpoints: Get recommendation, view history, accept/override/dismiss
-- Admin endpoints: View/edit rules, audit trail
-- All with organisation scoping, auth guards, error handling
+✅ **Phase 3: Backend Routes** (commit 17e32c7)
+✅ **Phase 4: Frontend UI** (commits d6f7897, ad9d69c)
+⬜ **Phase 5: Tests** (unit + integration + E2E)
 
 **Architecture:**
-- **Deterministic:** 4 risk attributes (distribution, data sensitivity, connectivity,
-  criticality) scored 0.0–1.0, normalised to 0–1, mapped to CRA class
-- **Probabilistic:** Claude assesses product description vs deterministic score,
-  suggests ±0.0–0.2 adjustment
-- **Governance:** All admin rule changes assessed for regulatory alignment;
-  misaligned changes require explicit override confirmation
-- **Audit Trail:** Full transparency — every recommendation, access, and rule change logged
-
-**Remaining:**
-- Phase 4: Frontend UI (product detail modal, admin rules editor)
-- Phase 5: Comprehensive tests (unit + integration + E2E)
+- **Deterministic:** 4 risk attributes scored 0.0–1.0, normalised, mapped to CRA class
+- **Probabilistic:** Claude API augmentation with ±0.0–0.2 adjustment
+- **Governance:** Admin rule changes assessed for regulatory alignment
+- **Audit Trail:** Every recommendation, access, and rule change logged
 
 ---
 
 ## Current Status & Next Steps
 
 **P0–P2:** ✅ ALL COMPLETE (42/42 features done)
-**P3:** 5/8 DONE — Remaining: CRA category recommender, Supplier due diligence questionnaire, Compliance gap narrator
-**P4:** 0/7 DONE (MCP Interface — external integrations, low priority for MVP)
-**P5:** 2/3 DONE — PENDING: Products & Compliance "Not Stated?" issue
+**P3:** 5/8 DONE — Remaining: #18 tests, #19 supplier due diligence, #20 compliance gap narrator
+**P4:** 0/7 TODO (MCP Interface — external integrations)
+**P5:** 2/3 DONE — PENDING: #29 Products & Compliance "Not Stated?" issue
 
-**Phase 3: Compliance Framework (NEW)** — Not yet in priority list, but critical for CRA compliance:
-1. Obligations auto-intelligence (CRITICAL) — Auto-advance obligation statuses based on platform data
-2. Expand obligations list — Add 8 new CRA articles (auto-trackable and policy declaration)
-3. EU Declaration of Conformity generator — Generate legal DoC documents
-4. Technical file auto-population — Pre-fill sections with platform data
-5. Getting-started compliance checklist — Per-product CRA readiness checklist
-6. CVD policy template generator — Generate Coordinated Vulnerability Disclosure policies
-7. End-of-support tracking — Add support window fields for Art. 13(6)
-8. Webhook integration E2E test — Verify webhook registration end-to-end
-
-**Immediate next:** Choose between finishing P3 remaining items OR starting Phase 3 compliance framework.
+**Immediate next:** Finish #18 Phase 5 (tests), then #19 or #20.

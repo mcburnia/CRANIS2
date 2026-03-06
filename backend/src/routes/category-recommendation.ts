@@ -12,9 +12,9 @@
  */
 
 import express from 'express';
-import requireAuth from '../middleware/requireAuth.js';
-import requirePlatformAdmin from '../middleware/requirePlatformAdmin.js';
 import pool from '../db/pool.js';
+import { getDriver } from '../db/neo4j.js';
+import { verifySessionToken } from '../utils/token.js';
 import categoryRecommendationService from '../services/category-recommendation.js';
 import categoryAIAugmentationService from '../services/category-ai-augmentation.js';
 import categoryRuleValidator from '../services/category-rule-validator.js';
@@ -26,6 +26,26 @@ import type {
 } from '../types/category-recommendation.js';
 
 const router = express.Router();
+
+async function requireAuth(req: Request, res: Response, next: Function) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) { res.status(401).json({ error: 'No token provided' }); return; }
+  const token = authHeader.split(' ')[1];
+  try {
+    const payload = verifySessionToken(token);
+    if (!payload) { res.status(401).json({ error: 'Invalid token' }); return; }
+    (req as any).userId = payload.userId;
+    (req as any).email = payload.email;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+async function getUserOrgId(userId: string): Promise<string | null> {
+  const result = await pool.query('SELECT org_id FROM users WHERE id = $1', [userId]);
+  return result.rows[0]?.org_id || null;
+}
 
 /**
  * POST /:productId/category-recommendation
@@ -39,29 +59,28 @@ router.post(
       const { productId } = req.params as { productId: string };
       const { attributeValues } = req.body as CategoryRecommendationRequest;
 
-      const userId = (req as any).user?.id;
-      const orgId = (req as any).user?.orgId;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
 
       if (!orgId) {
         return res.status(400).json({ error: 'No organisation context' });
       }
 
-      // Verify product belongs to org
-      const client = await pool.connect();
+      // Verify product belongs to org (products live in Neo4j)
+      const session = getDriver().session();
       let product: any;
       try {
-        const productCheck = await client.query(
-          `SELECT id, name, description FROM products WHERE id = $1 AND org_id = $2`,
-          [productId, orgId]
+        const result = await session.run(
+          `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId}) RETURN p`,
+          { orgId, productId }
         );
-
-        if (productCheck.rows.length === 0) {
+        if (result.records.length === 0) {
           return res.status(404).json({ error: 'Product not found' });
         }
-
-        product = productCheck.rows[0];
+        const p = result.records[0].get('p').properties;
+        product = { id: p.id, name: p.name, description: p.description || '' };
       } finally {
-        client.release();
+        await session.close();
       }
 
       // Compute deterministic recommendation
@@ -119,25 +138,25 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { productId } = req.params as { productId: string };
-      const orgId = (req as any).user?.orgId;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
 
       if (!orgId) {
         return res.status(400).json({ error: 'No organisation context' });
       }
 
-      // Verify product belongs to org
-      const client = await pool.connect();
+      // Verify product belongs to org (products live in Neo4j)
+      const session = getDriver().session();
       try {
-        const productCheck = await client.query(
-          `SELECT id FROM products WHERE id = $1 AND org_id = $2`,
-          [productId, orgId]
+        const result = await session.run(
+          `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId}) RETURN p.id`,
+          { orgId, productId }
         );
-
-        if (productCheck.rows.length === 0) {
+        if (result.records.length === 0) {
           return res.status(404).json({ error: 'Product not found' });
         }
       } finally {
-        client.release();
+        await session.close();
       }
 
       const limit = parseInt(req.query.limit as string) || 10;
@@ -166,8 +185,8 @@ router.post(
         finalCategory?: string;
       };
 
-      const userId = (req as any).user?.id;
-      const orgId = (req as any).user?.orgId;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
 
       if (!orgId || !userId) {
         return res.status(400).json({ error: 'Invalid user context' });
@@ -200,9 +219,17 @@ router.post(
         finalCategory
       );
 
-      // If accepted, also update the product's CRA category
+      // If accepted, also update the product's CRA category in Neo4j
       if (action === 'accepted' && finalCategory) {
-        await pool.query(`UPDATE products SET cra_category = $1 WHERE id = $2`, [finalCategory, productId]);
+        const neo4jSession = getDriver().session();
+        try {
+          await neo4jSession.run(
+            `MATCH (p:Product {id: $productId}) SET p.craCategory = $category`,
+            { productId, category: finalCategory }
+          );
+        } finally {
+          await neo4jSession.close();
+        }
       }
 
       res.json(updated);
@@ -261,7 +288,7 @@ export async function updateCategoryAttribute(req: Request, res: Response) {
   try {
     const { attributeId } = req.params as { attributeId: string };
     const { name, description, regulatoryBasis } = req.body;
-    const changedBy = (req as any).user?.email;
+    const changedBy = (req as any).email;
 
     if (!changedBy) {
       return res.status(400).json({ error: 'No user context' });
