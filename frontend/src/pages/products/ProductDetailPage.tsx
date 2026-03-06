@@ -887,7 +887,7 @@ export default function ProductDetailPage() {
 
       {/* Tab content */}
       <div className="pd-tab-content">
-        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} syncHistory={syncHistory} syncStats={syncStats} pushEvents={pushEvents} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} repoProvider={currentProvider} isProviderConnected={isProviderConnected} providerConnection={providerConnection} />}
+        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} syncHistory={syncHistory} syncStats={syncStats} pushEvents={pushEvents} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} repoProvider={currentProvider} isProviderConnected={isProviderConnected} providerConnection={providerConnection} onSwitchTab={(tab) => { setActiveTab(tab as TabKey); window.history.replaceState({}, '', `?tab=${tab}`); }} onNavigate={(path) => navigate(path)} />}
         {activeTab === 'obligations' && <ObligationsTab product={product} />}
         {activeTab === 'technical-file' && <TechnicalFileTab productId={productId!} techFileData={techFileData} loading={techFileLoading} onUpdate={fetchTechFileData} />}
         {activeTab === 'activity' && <ActivityTab productId={product.id} />}
@@ -990,7 +990,7 @@ interface ProductChecklistPD {
   steps: ChecklistStepPD[];
 }
 
-function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, techFileProgress: _techFileProgress, versionHistory, syncHistory, syncStats, pushEvents, onConnect, onSync, syncing, onDisconnect, repoProvider, isProviderConnected, providerConnection }: {
+function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, techFileProgress: _techFileProgress, versionHistory, syncHistory, syncStats, pushEvents, onConnect, onSync, syncing, onDisconnect, repoProvider, isProviderConnected, providerConnection, onSwitchTab, onNavigate }: {
   product: Product; catInfo: { label: string; color: string; desc: string };
   ghStatus: GitHubStatus; ghData: GitHubData; sbomData: SBOMData;
   techFileProgress: { total: number; completed: number; inProgress: number; notStarted: number };
@@ -1002,6 +1002,8 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
   repoProvider: string;
   isProviderConnected: boolean;
   providerConnection?: RepoConnection;
+  onSwitchTab: (tab: string) => void;
+  onNavigate: (path: string) => void;
 }) {
   const pLabel = providerLabel(repoProvider);
   const [checklist, setChecklist] = useState<ProductChecklistPD | null>(null);
@@ -1351,7 +1353,6 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
         {/* Steps */}
         <div className="pd-cl-steps">
           {checklist ? checklist.steps.map(step => {
-            const navigate = (path: string) => window.location.assign(path);
             return (
               <div key={step.id} className={`pd-cl-step ${step.complete ? 'done' : 'todo'}`}>
                 <div className="pd-cl-step-icon">
@@ -1371,10 +1372,9 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
                     className="pd-cl-step-action"
                     onClick={() => {
                       if (step.actionPath) {
-                        navigate(step.actionPath);
+                        onNavigate(step.actionPath);
                       } else if (step.actionTab) {
-                        window.history.pushState({}, '', `?tab=${step.actionTab}`);
-                        window.dispatchEvent(new PopStateEvent('popstate'));
+                        onSwitchTab(step.actionTab);
                       }
                     }}
                   >
@@ -1449,10 +1449,9 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
                     className="pd-gap-go"
                     onClick={() => {
                       if (gap.actionPath) {
-                        window.location.assign(gap.actionPath);
+                        onNavigate(gap.actionPath);
                       } else if (gap.actionTab) {
-                        window.history.pushState({}, '', `?tab=${gap.actionTab}`);
-                        window.dispatchEvent(new PopStateEvent('popstate'));
+                        onSwitchTab(gap.actionTab);
                       }
                     }}
                   >
