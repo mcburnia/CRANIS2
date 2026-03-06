@@ -1006,6 +1006,7 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
   const pLabel = providerLabel(repoProvider);
   const [checklist, setChecklist] = useState<ProductChecklistPD | null>(null);
   const [copilotUsage, setCopilotUsage] = useState<any>(null);
+  const [complianceGaps, setComplianceGaps] = useState<any>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('session_token');
@@ -1024,6 +1025,13 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
           if (productUsage) setCopilotUsage(productUsage);
         }
       })
+      .catch(() => {});
+    // Fetch compliance gaps
+    fetch(`/api/products/${product.id}/compliance-gaps`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setComplianceGaps(d); })
       .catch(() => {});
   }, [product.id]);
   return (
@@ -1383,6 +1391,97 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
           )}
         </div>
       </div>
+
+      {/* Compliance Gap Narrator — Next Steps */}
+      {complianceGaps && complianceGaps.gaps.length > 0 && (
+        <div className="pd-card pd-card-gaps">
+          <div className="pd-card-header">
+            <AlertTriangle size={18} />
+            <h3>Next Steps</h3>
+            <span className="pd-gaps-count">
+              {complianceGaps.summary.total} action{complianceGaps.summary.total !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {/* Progress bar */}
+          <div className="pd-gaps-progress">
+            <div className="pd-gaps-progress-bar">
+              <div
+                className="pd-gaps-progress-fill"
+                style={{ width: `${Math.round((complianceGaps.progress.obligationsMet / Math.max(complianceGaps.progress.obligationsTotal, 1)) * 100)}%` }}
+              />
+            </div>
+            <span className="pd-gaps-progress-label">
+              {complianceGaps.progress.obligationsMet}/{complianceGaps.progress.obligationsTotal} obligations met
+            </span>
+          </div>
+
+          {/* Priority summary badges */}
+          <div className="pd-gaps-badges">
+            {complianceGaps.summary.critical > 0 && (
+              <span className="pd-gaps-badge critical">{complianceGaps.summary.critical} critical</span>
+            )}
+            {complianceGaps.summary.high > 0 && (
+              <span className="pd-gaps-badge high">{complianceGaps.summary.high} high</span>
+            )}
+            {complianceGaps.summary.medium > 0 && (
+              <span className="pd-gaps-badge medium">{complianceGaps.summary.medium} medium</span>
+            )}
+            {complianceGaps.summary.low > 0 && (
+              <span className="pd-gaps-badge low">{complianceGaps.summary.low} low</span>
+            )}
+          </div>
+
+          {/* Gap items — show top 8, collapse the rest */}
+          <div className="pd-gaps-list">
+            {complianceGaps.gaps.slice(0, 8).map((gap: any) => (
+              <div key={gap.id} className={`pd-gap-item pd-gap-${gap.priority}`}>
+                <div className="pd-gap-indicator" />
+                <div className="pd-gap-body">
+                  <div className="pd-gap-title">{gap.title}</div>
+                  <div className="pd-gap-action">{gap.action}</div>
+                  <div className="pd-gap-meta">
+                    <span className="pd-gap-ref">{gap.craReference}</span>
+                  </div>
+                </div>
+                {(gap.actionTab || gap.actionPath) && (
+                  <button
+                    className="pd-gap-go"
+                    onClick={() => {
+                      if (gap.actionPath) {
+                        window.location.assign(gap.actionPath);
+                      } else if (gap.actionTab) {
+                        window.history.pushState({}, '', `?tab=${gap.actionTab}`);
+                        window.dispatchEvent(new PopStateEvent('popstate'));
+                      }
+                    }}
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                )}
+              </div>
+            ))}
+            {complianceGaps.gaps.length > 8 && (
+              <div className="pd-gaps-more">
+                + {complianceGaps.gaps.length - 8} more action{complianceGaps.gaps.length - 8 !== 1 ? 's' : ''} — view the Obligations tab for the full list
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {complianceGaps && complianceGaps.gaps.length === 0 && (
+        <div className="pd-card pd-card-gaps pd-card-gaps-clear">
+          <div className="pd-card-header">
+            <CheckCircle2 size={18} style={{ color: 'var(--green)' }} />
+            <h3>All Clear</h3>
+          </div>
+          <p className="pd-gaps-clear-text">
+            No compliance gaps detected. All obligations are met, the technical file is complete,
+            and no open vulnerability findings remain. This product is CRA-ready.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

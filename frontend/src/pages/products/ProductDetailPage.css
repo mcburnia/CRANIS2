@@ -1034,6 +1034,75 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
   font-size: 0.8rem; color: var(--muted); padding: 0.5rem;
 }
 
+/* ── Compliance Gap Narrator ── */
+.pd-card-gaps { grid-column: 1 / -1; }
+.pd-gaps-count {
+  margin-left: auto; font-size: 0.78rem; color: var(--muted);
+  background: var(--border); border-radius: 10px; padding: 0.15rem 0.5rem;
+}
+.pd-gaps-progress { margin-bottom: 0.6rem; }
+.pd-gaps-progress-bar {
+  height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.pd-gaps-progress-fill {
+  height: 100%; background: var(--green); border-radius: 3px;
+  transition: width 0.4s ease;
+}
+.pd-gaps-progress-label {
+  display: block; font-size: 0.72rem; color: var(--muted); margin-top: 0.25rem;
+}
+.pd-gaps-badges {
+  display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.6rem;
+}
+.pd-gaps-badge {
+  font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem;
+  border-radius: 10px; text-transform: uppercase; letter-spacing: 0.02em;
+}
+.pd-gaps-badge.critical { background: rgba(239,68,68,0.15); color: #f87171; }
+.pd-gaps-badge.high { background: rgba(249,115,22,0.15); color: #fb923c; }
+.pd-gaps-badge.medium { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.pd-gaps-badge.low { background: rgba(59,130,246,0.12); color: #60a5fa; }
+.pd-gaps-list { display: flex; flex-direction: column; gap: 0.3rem; }
+.pd-gap-item {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  padding: 0.5rem 0.6rem; border-radius: 6px;
+  border: 1px solid var(--border); transition: background 0.1s;
+}
+.pd-gap-item:hover { background: rgba(255,255,255,0.02); }
+.pd-gap-indicator {
+  width: 4px; min-height: 28px; border-radius: 2px; flex-shrink: 0; margin-top: 2px;
+}
+.pd-gap-critical .pd-gap-indicator { background: #ef4444; }
+.pd-gap-high .pd-gap-indicator { background: #f97316; }
+.pd-gap-medium .pd-gap-indicator { background: #eab308; }
+.pd-gap-low .pd-gap-indicator { background: #3b82f6; }
+.pd-gap-body { flex: 1; min-width: 0; }
+.pd-gap-title { font-size: 0.82rem; font-weight: 500; line-height: 1.35; }
+.pd-gap-action {
+  font-size: 0.74rem; color: var(--muted); margin-top: 0.1rem; line-height: 1.4;
+}
+.pd-gap-meta { display: flex; gap: 0.4rem; margin-top: 0.2rem; }
+.pd-gap-ref {
+  font-size: 0.68rem; color: var(--accent); opacity: 0.7;
+  background: rgba(59,130,246,0.08); padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+}
+.pd-gap-go {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; flex-shrink: 0; border: 1px solid var(--border);
+  border-radius: 5px; background: none; color: var(--muted); cursor: pointer;
+  transition: all 0.15s; margin-top: 2px;
+}
+.pd-gap-go:hover { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.05); }
+.pd-gaps-more {
+  font-size: 0.75rem; color: var(--muted); text-align: center;
+  padding: 0.5rem; border-top: 1px solid var(--border); margin-top: 0.2rem;
+}
+.pd-card-gaps-clear { }
+.pd-gaps-clear-text {
+  font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin: 0;
+}
+
 /* Codeberg SBOM info note */
 .pd-codeberg-sbom-note {
   display: flex;
