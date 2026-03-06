@@ -27,7 +27,7 @@ P3 — AI Automation (Pro plan) — IN PROGRESS
 16	Risk assessment generator	Medium	DONE
 17	Incident report drafter	Medium	DONE
 18	CRA category recommender	Low	DONE
-19	Supplier due diligence questionnaire	Medium	TODO
+19	Supplier due diligence questionnaire	Medium	DONE
 20	Compliance gap narrator	Low	TODO
 
 P4 — MCP Interface (external integration)
@@ -51,8 +51,8 @@ P5 - Bugs
 ## Current Status & Next Steps
 
 **P0–P2:** ALL COMPLETE (42/42 features done)
-**P3:** 6/8 DONE — Remaining: #19 supplier due diligence, #20 compliance gap narrator
+**P3:** 7/8 DONE — Remaining: #20 compliance gap narrator
 **P4:** 0/7 TODO (MCP Interface — external integrations)
 **P5:** 2/3 DONE — PENDING: #29 Products & Compliance "Not Stated?" issue
 
-**Immediate next:** #19 or #20, then P4 MCP work.
+**Immediate next:** #20 compliance gap narrator, then P4 MCP work.

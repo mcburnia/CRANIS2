@@ -5,6 +5,7 @@ import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import PageHeader from '../../components/PageHeader';
 import HelpTip from '../../components/HelpTip';
 import CategoryRecommenderModal from '../../components/CategoryRecommenderModal';
+import SupplyChainTab from '../../components/SupplyChainTab';
 import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
@@ -284,7 +285,7 @@ function timeAgo(iso: string): string {
   return formatDate(iso);
 }
 
-type TabKey = 'overview' | 'obligations' | 'technical-file' | 'activity' | 'risk-findings' | 'dependencies';
+type TabKey = 'overview' | 'obligations' | 'technical-file' | 'activity' | 'risk-findings' | 'dependencies' | 'supply-chain';
 
 const TABS: { key: TabKey; label: string; icon: typeof Package }[] = [
   { key: 'overview', label: 'Overview', icon: Package },
@@ -293,6 +294,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Package }[] = [
   { key: 'activity', label: 'Activity', icon: History },
   { key: 'risk-findings', label: 'Risk Findings', icon: AlertTriangle },
   { key: 'dependencies', label: 'Dependencies', icon: GitBranch },
+  { key: 'supply-chain', label: 'Supply Chain', icon: Box },
 ];
 
 export default function ProductDetailPage() {
@@ -891,6 +893,7 @@ export default function ProductDetailPage() {
         {activeTab === 'activity' && <ActivityTab productId={product.id} />}
         {activeTab === 'risk-findings' && <RiskFindingsTab productId={product.id} />}
         {activeTab === 'dependencies' && <DependenciesTab ghData={ghData} sbomData={sbomData} sbomLoading={sbomLoading} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onRefreshSBOM={handleRefreshSBOM} repoProvider={currentProvider} isProviderConnected={isProviderConnected} />}
+        {activeTab === 'supply-chain' && <SupplyChainTab productId={product.id} />}
       </div>
 
       {/* Delete Product Modal */}

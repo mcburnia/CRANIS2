@@ -144,6 +144,7 @@ export const api = {
   get: (path: string, opts?: RequestOptions) => apiRequest('GET', path, opts),
   post: (path: string, opts?: RequestOptions) => apiRequest('POST', path, opts),
   put: (path: string, opts?: RequestOptions) => apiRequest('PUT', path, opts),
+  patch: (path: string, opts?: RequestOptions) => apiRequest('PATCH', path, opts),
   delete: (path: string, opts?: RequestOptions) => apiRequest('DELETE', path, opts),
 };
 

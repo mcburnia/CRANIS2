@@ -49,6 +49,18 @@ export async function apiPut(path: string, token: string, body: any): Promise<{ 
   return { status: res.status, body: await res.json() };
 }
 
+export async function apiPatch(path: string, token: string, body: any): Promise<{ status: number; body: any }> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  return { status: res.status, body: await res.json() };
+}
+
 export async function apiDelete(path: string, token: string): Promise<{ status: number }> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'DELETE',

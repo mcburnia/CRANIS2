@@ -1005,6 +1005,30 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_rec_access_rec ON recommendation_access_log(recommendation_id, accessed_at DESC)`);
 
+    // ── Supplier Due Diligence Questionnaires ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS supplier_questionnaires (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        dependency_name VARCHAR(500) NOT NULL,
+        dependency_version VARCHAR(100),
+        dependency_purl VARCHAR(1000),
+        dependency_ecosystem VARCHAR(100),
+        dependency_license VARCHAR(255),
+        dependency_supplier VARCHAR(500),
+        risk_flags JSONB NOT NULL DEFAULT '[]',
+        questionnaire_content JSONB NOT NULL DEFAULT '{}',
+        status VARCHAR(20) NOT NULL DEFAULT 'generated',
+        created_by UUID REFERENCES users(id),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_supplier_q_product ON supplier_questionnaires(product_id, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_supplier_q_org ON supplier_questionnaires(org_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_supplier_q_dep ON supplier_questionnaires(dependency_name, dependency_version)`);
+
     // Seed default CRA category rules (regulatory baseline)
     const attrCount = await client.query('SELECT COUNT(*) FROM category_rule_attributes');
     if (parseInt(attrCount.rows[0].count) === 0) {
