@@ -899,6 +899,200 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
       ON CONFLICT (key) DO NOTHING
     `, [JSON.stringify(PRICE_ID)]);
 
+    // ── CRA Category Recommendation System ──
+    // Risk attribute definitions (regulatory baseline with optional admin overrides)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS category_rule_attributes (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        attribute_key VARCHAR(100) NOT NULL UNIQUE,
+        name VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        regulatory_basis VARCHAR(500) NOT NULL,
+        min_score DECIMAL(3,2) NOT NULL DEFAULT 0.0,
+        max_score DECIMAL(3,2) NOT NULL DEFAULT 1.0,
+        is_locked BOOLEAN NOT NULL DEFAULT true,
+        last_modified_by VARCHAR(255),
+        last_modified_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_category_attributes_key ON category_rule_attributes(attribute_key)`);
+
+    // Risk attribute scoring values
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS category_rule_attribute_values (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        attribute_id UUID NOT NULL REFERENCES category_rule_attributes(id) ON DELETE CASCADE,
+        label VARCHAR(255) NOT NULL,
+        description TEXT,
+        score DECIMAL(3,2) NOT NULL,
+        reasoning VARCHAR(500),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_attribute_values_attr ON category_rule_attribute_values(attribute_id)`);
+
+    // Category thresholds (score ranges that determine CRA class)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS category_thresholds (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        category_key VARCHAR(50) NOT NULL UNIQUE,
+        category_name VARCHAR(100) NOT NULL,
+        min_score DECIMAL(3,2) NOT NULL,
+        max_score DECIMAL(3,2) NOT NULL,
+        reasoning TEXT NOT NULL,
+        is_locked BOOLEAN NOT NULL DEFAULT true,
+        last_modified_by VARCHAR(255),
+        last_modified_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_category_thresholds_key ON category_thresholds(category_key)`);
+
+    // Category recommendations (audit trail)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS category_recommendations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        user_id UUID REFERENCES users(id),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        deterministic_score DECIMAL(3,2) NOT NULL,
+        deterministic_reasoning JSONB NOT NULL DEFAULT '{}',
+        recommended_category VARCHAR(50) NOT NULL,
+        confidence_score DECIMAL(3,2),
+        ai_augmentation JSONB,
+        user_action VARCHAR(20) DEFAULT 'pending',
+        final_category VARCHAR(50),
+        finalized_at TIMESTAMPTZ,
+        UNIQUE(product_id, created_at)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_category_recs_product ON category_recommendations(product_id, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_category_recs_org ON category_recommendations(org_id, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_category_recs_user ON category_recommendations(user_id, created_at DESC)`);
+
+    // Category rule changes (audit trail for admin modifications)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS category_rule_changes (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        change_type VARCHAR(50) NOT NULL,
+        entity_type VARCHAR(50) NOT NULL,
+        entity_id VARCHAR(255) NOT NULL,
+        changed_by VARCHAR(255) NOT NULL,
+        old_values JSONB,
+        new_values JSONB,
+        ai_assessment JSONB,
+        regulatory_alignment VARCHAR(20),
+        is_override BOOLEAN DEFAULT false,
+        override_reason TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_rule_changes_entity ON category_rule_changes(entity_type, entity_id, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_rule_changes_alignment ON category_rule_changes(regulatory_alignment)`);
+
+    // Recommendation access log (audit trail for regulatory compliance)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS recommendation_access_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        recommendation_id UUID REFERENCES category_recommendations(id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users(id),
+        user_email VARCHAR(255) NOT NULL,
+        action VARCHAR(50) NOT NULL,
+        accessed_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_rec_access_rec ON recommendation_access_log(recommendation_id, accessed_at DESC)`);
+
+    // Seed default CRA category rules (regulatory baseline)
+    const attrCount = await client.query('SELECT COUNT(*) FROM category_rule_attributes');
+    if (parseInt(attrCount.rows[0].count) === 0) {
+      // Distribution Scope
+      await client.query(`
+        INSERT INTO category_rule_attributes 
+        (attribute_key, name, description, regulatory_basis, is_locked)
+        VALUES 
+        ('dist_scope', 'Distribution Scope', 'How widely is the product distributed', 'CRA Art. 4(1) — wider distribution increases risk', true)
+      `);
+      const distAttr = await client.query(`SELECT id FROM category_rule_attributes WHERE attribute_key = 'dist_scope'`);
+      const distAttrId = distAttr.rows[0].id;
+      await client.query(`
+        INSERT INTO category_rule_attribute_values (attribute_id, label, score, reasoning)
+        VALUES 
+        ($1, 'Internal/Limited use (< 5 orgs)', 0.0, 'Restricted distribution'),
+        ($1, 'Moderate distribution (5-100 orgs)', 0.33, 'Medium reach'),
+        ($1, 'Wide distribution (100+ orgs or public)', 0.67, 'Widespread use'),
+        ($1, 'Mass market / internet-facing', 1.0, 'Unrestricted public distribution')
+      `, [distAttrId]);
+
+      // Data Sensitivity
+      await client.query(`
+        INSERT INTO category_rule_attributes 
+        (attribute_key, name, description, regulatory_basis, is_locked)
+        VALUES 
+        ('data_sensitivity', 'Data Sensitivity', 'Does the product handle sensitive data', 'CRA Art. 4 — sensitive data = higher risk', true)
+      `);
+      const dataAttr = await client.query(`SELECT id FROM category_rule_attributes WHERE attribute_key = 'data_sensitivity'`);
+      const dataAttrId = dataAttr.rows[0].id;
+      await client.query(`
+        INSERT INTO category_rule_attribute_values (attribute_id, label, score, reasoning)
+        VALUES 
+        ($1, 'Non-sensitive data only', 0.0, 'Public/operational data'),
+        ($1, 'Limited PII or business secrets', 0.33, 'Some personal or confidential data'),
+        ($1, 'Health, financial or critical PII', 0.67, 'High-value personal data'),
+        ($1, 'Government secrets or critical infrastructure data', 1.0, 'Most sensitive classification')
+      `, [dataAttrId]);
+
+      // Network Connectivity
+      await client.query(`
+        INSERT INTO category_rule_attributes 
+        (attribute_key, name, description, regulatory_basis, is_locked)
+        VALUES 
+        ('network_connectivity', 'Network Connectivity', 'Is the product connected to networks', 'CRA Art. 4 — network access = higher risk', true)
+      `);
+      const netAttr = await client.query(`SELECT id FROM category_rule_attributes WHERE attribute_key = 'network_connectivity'`);
+      const netAttrId = netAttr.rows[0].id;
+      await client.query(`
+        INSERT INTO category_rule_attribute_values (attribute_id, label, score, reasoning)
+        VALUES 
+        ($1, 'Offline-only / air-gapped', 0.0, 'No network exposure'),
+        ($1, 'Local network / VPN only', 0.33, 'Limited network scope'),
+        ($1, 'Internet-connected with firewalls', 0.67, 'Internet-facing but protected'),
+        ($1, 'Internet-facing public service', 1.0, 'Full internet exposure')
+      `, [netAttrId]);
+
+      // User Criticality
+      await client.query(`
+        INSERT INTO category_rule_attributes 
+        (attribute_key, name, description, regulatory_basis, is_locked)
+        VALUES 
+        ('user_criticality', 'User Criticality', 'Is the product used for critical functions', 'CRA Art. 3 — criticality determines class', true)
+      `);
+      const critAttr = await client.query(`SELECT id FROM category_rule_attributes WHERE attribute_key = 'user_criticality'`);
+      const critAttrId = critAttr.rows[0].id;
+      await client.query(`
+        INSERT INTO category_rule_attribute_values (attribute_id, label, score, reasoning)
+        VALUES 
+        ($1, 'Utility / convenience product', 0.0, 'Non-critical function'),
+        ($1, 'Business process / productivity tool', 0.33, 'Moderate importance'),
+        ($1, 'Healthcare, finance or communications', 0.67, 'Critical sector'),
+        ($1, 'Critical infrastructure / government systems', 1.0, 'Essential for society')
+      `, [critAttrId]);
+
+      // Category Thresholds
+      await client.query(`
+        INSERT INTO category_thresholds (category_key, category_name, min_score, max_score, reasoning, is_locked)
+        VALUES 
+        ('default', 'Default Class (No CRA obligations)', 0.00, 0.25, 'Low-risk products with minimal security requirements'),
+        ('important_i', 'Important Class I', 0.25, 0.50, 'Moderate-risk products with enhanced security obligations'),
+        ('important_ii', 'Important Class II', 0.50, 0.75, 'High-risk products requiring conformity assessment'),
+        ('critical', 'Critical Class', 0.75, 1.00, 'Highest-risk products requiring notified body certification')
+      `);
+
+      console.log('[DB] Seeded default CRA category rules');
+    }
+
   } finally {
     client.release();
   }
