@@ -17,7 +17,6 @@ import { PassThrough } from 'stream';
 import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
-import { requirePlan } from '../middleware/requirePlan.js';
 import {
   identifyRiskyDependencies,
   generateQuestionnaire,
@@ -67,12 +66,11 @@ async function verifyProductAccess(orgId: string, productId: string): Promise<{ 
 
 /**
  * POST /:productId/supplier-questionnaires/generate
- * Identify risky dependencies and generate AI questionnaires
+ * Identify risky dependencies and generate due diligence questionnaires
  */
 router.post(
   '/:productId/supplier-questionnaires/generate',
   requireAuth,
-  requirePlan('pro'),
   async (req: Request, res: Response) => {
     try {
       const { productId } = req.params as { productId: string };
@@ -84,8 +82,8 @@ router.post(
       const product = await verifyProductAccess(orgId, productId);
       if (!product) return res.status(404).json({ error: 'Product not found' });
 
-      // Identify risky dependencies
-      const riskyDeps = await identifyRiskyDependencies(productId, orgId);
+      // Identify risky dependencies (includes supplier enrichment)
+      const { dependencies: riskyDeps, enrichmentStats } = await identifyRiskyDependencies(productId, orgId);
 
       if (riskyDeps.length === 0) {
         return res.json({
@@ -93,6 +91,7 @@ router.post(
           skipped: 0,
           questionnaires: [],
           riskyDependencies: [],
+          enrichment: enrichmentStats,
         });
       }
 
@@ -110,23 +109,12 @@ router.post(
           continue;
         }
 
-        // Generate AI questionnaire
-        const { content, inputTokens, outputTokens } = await generateQuestionnaire(
-          dep,
-          product.name,
-          product.craCategory
-        );
+        // Generate template-based questionnaire (deterministic, no AI)
+        const { content } = generateQuestionnaire(dep, product.name, product.craCategory);
 
         // Store in DB
         const stored = await storeQuestionnaire(orgId, productId, userId, dep, content);
         questionnaires.push(stored);
-
-        // Log AI usage
-        pool.query(
-          `INSERT INTO copilot_usage (org_id, user_id, product_id, section_key, type, input_tokens, output_tokens, model)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [orgId, userId, productId, `supplier_dd_${dep.name}`, 'supplier_due_diligence', inputTokens, outputTokens, 'claude-sonnet-4-20250514']
-        ).catch(err => console.error('[SUPPLIER-DD] Failed to log usage:', err));
       }
 
       res.json({
@@ -134,6 +122,7 @@ router.post(
         skipped,
         questionnaires,
         riskyDependencies: riskyDeps,
+        enrichment: enrichmentStats,
       });
     } catch (error) {
       console.error('[SUPPLIER-DD] Error:', error);

@@ -1029,6 +1029,18 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     await client.query(`CREATE INDEX IF NOT EXISTS idx_supplier_q_org ON supplier_questionnaires(org_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_supplier_q_dep ON supplier_questionnaires(dependency_name, dependency_version)`);
 
+    // Registry supplier cache — shared across all orgs/products
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS registry_supplier_cache (
+        ecosystem VARCHAR(50) NOT NULL,
+        package_name VARCHAR(500) NOT NULL,
+        supplier TEXT,
+        registry_url TEXT,
+        fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (ecosystem, package_name)
+      );
+    `);
+
     // Seed default CRA category rules (regulatory baseline)
     const attrCount = await client.query('SELECT COUNT(*) FROM category_rule_attributes');
     if (parseInt(attrCount.rows[0].count) === 0) {
