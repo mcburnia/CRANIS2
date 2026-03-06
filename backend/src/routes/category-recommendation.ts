@@ -36,11 +36,11 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { productId } = req.params;
+      const { productId } = req.params as { productId: string };
       const { attributeValues } = req.body as CategoryRecommendationRequest;
 
-      const userId = req.user?.id;
-      const orgId = req.user?.orgId;
+      const userId = (req as any).user?.id;
+      const orgId = (req as any).user?.orgId;
 
       if (!orgId) {
         return res.status(400).json({ error: 'No organisation context' });
@@ -118,8 +118,8 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { productId } = req.params;
-      const orgId = req.user?.orgId;
+      const { productId } = req.params as { productId: string };
+      const orgId = (req as any).user?.orgId;
 
       if (!orgId) {
         return res.status(400).json({ error: 'No organisation context' });
@@ -160,14 +160,14 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { productId, recId } = req.params;
+      const { productId, recId } = req.params as { productId: string; recId: string };
       const { action, finalCategory } = req.body as {
         action: 'accepted' | 'overridden' | 'dismissed';
         finalCategory?: string;
       };
 
-      const userId = req.user?.id;
-      const orgId = req.user?.orgId;
+      const userId = (req as any).user?.id;
+      const orgId = (req as any).user?.orgId;
 
       if (!orgId || !userId) {
         return res.status(400).json({ error: 'Invalid user context' });
@@ -259,9 +259,9 @@ export async function getCategoryRules(req: Request, res: Response) {
  */
 export async function updateCategoryAttribute(req: Request, res: Response) {
   try {
-    const { attributeId } = req.params;
+    const { attributeId } = req.params as { attributeId: string };
     const { name, description, regulatoryBasis } = req.body;
-    const changedBy = req.user?.email;
+    const changedBy = (req as any).user?.email;
 
     if (!changedBy) {
       return res.status(400).json({ error: 'No user context' });

@@ -100,7 +100,13 @@ class CategoryRecommendationService {
           : 'default';
 
       // Build reasoning object
-      const reasoning: { [key: string]: AttributeScore['reasoning'] } = {};
+      const reasoning: {
+        [key: string]: {
+          selectedValue: string;
+          score: number;
+          reasoning: string;
+        };
+      } = {};
       for (const score of attributeScores) {
         reasoning[score.attributeKey] = {
           selectedValue: score.selectedLabel,
