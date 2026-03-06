@@ -37,6 +37,7 @@ import copilotRoutes from "./routes/copilot.js";
 import categoryRecommendationRoutes from "./routes/category-recommendation.js";
 import supplierDueDiligenceRoutes from "./routes/supplier-due-diligence.js";
 import complianceGapsRoutes from "./routes/compliance-gaps.js";
+import trelloRoutes from "./routes/trello.js";
 import { startScheduler } from './services/scheduler.js';
 import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
@@ -105,6 +106,7 @@ app.use('/api/products', categoryRecommendationRoutes);
 app.use('/api/products', supplierDueDiligenceRoutes);
 app.use('/api/products', complianceGapsRoutes);
 app.use('/api/copilot', copilotRoutes);
+app.use('/api/integrations/trello', trelloRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

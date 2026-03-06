@@ -7,6 +7,8 @@ import {
   ensureObligations, computeDerivedStatuses, enrichObligation,
 } from '../services/obligation-engine.js';
 import { logProductActivity } from '../services/activity-log.js';
+import { OBLIGATIONS } from '../services/obligation-engine.js';
+import { createObligationCard } from '../services/trello.js';
 
 const router = Router();
 
@@ -253,6 +255,11 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
         newValues: { status },
         metadata: { obligationKey: obKey },
       }).catch(() => {});
+      // Trello card for obligation work started
+      const obDef = OBLIGATIONS.find(o => o.key === obKey);
+      if (obDef) {
+        createObligationCard(orgId, productId, '', obKey, obDef.title, status, obDef.article).catch(() => {});
+      }
     }
     if (notes !== undefined && notes !== check.rows[0].old_notes) {
       logProductActivity({

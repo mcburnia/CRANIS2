@@ -22,6 +22,7 @@ import { sendComplianceGapNotification } from './notifications.js';
 import { sendScanFailedEmail, sendComplianceGapEmail, sendDeadlineAlertEmail, sendSupportEndAlertEmail, sendCraMilestoneAlertEmail, sendComplianceStallAlertEmail } from './alert-emails.js';
 import { scanProductLicenses } from './license-scanner.js';
 import { createSnapshot } from './ip-proof.js';
+import { createDeadlineCard, createComplianceStallCard } from './trello.js';
 import { extractPackageInfo } from '../routes/github.js';
 import { checkTrialExpiry, checkPaymentGrace } from './billing.js';
 import { ensureWebhook } from './webhook.js';
@@ -964,6 +965,7 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
             });
 
             sendCraMilestoneAlertEmail(orgId, deadline.label, daysRemaining, deadline.id).catch(() => {});
+            createDeadlineCard(orgId, deadline.label, daysRemaining, deadline.id).catch(() => {});
             milestoneAlertsSent++;
           }
 
@@ -1076,6 +1078,7 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
           });
 
           sendComplianceStallAlertEmail(p.orgId, p.name, daysSinceUpdate, readiness, p.id).catch(() => {});
+          createComplianceStallCard(p.orgId, p.id, p.name, daysSinceUpdate, readiness).catch(() => {});
           stallAlertsSent++;
         }
       }

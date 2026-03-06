@@ -1041,6 +1041,51 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
       );
     `);
 
+    // ── Trello Integration ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS trello_integrations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL UNIQUE,
+        api_key VARCHAR(255) NOT NULL,
+        api_token TEXT NOT NULL,
+        enabled BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS trello_product_boards (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        board_id VARCHAR(100) NOT NULL,
+        board_name VARCHAR(255),
+        list_vuln VARCHAR(100),
+        list_obligations VARCHAR(100),
+        list_deadlines VARCHAR(100),
+        list_gaps VARCHAR(100),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(org_id, product_id)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_trello_boards_org ON trello_product_boards(org_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_trello_boards_product ON trello_product_boards(product_id)`);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS trello_card_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        event_key VARCHAR(500) NOT NULL UNIQUE,
+        card_id VARCHAR(100) NOT NULL,
+        card_url TEXT,
+        event_type VARCHAR(50) NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_trello_card_log_event ON trello_card_log(event_key)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_trello_card_log_product ON trello_card_log(product_id)`);
+
     // Seed default CRA category rules (regulatory baseline)
     const attrCount = await client.query('SELECT COUNT(*) FROM category_rule_attributes');
     if (parseInt(attrCount.rows[0].count) === 0) {
