@@ -36,8 +36,11 @@ export default function CategoryRecommenderModal({
     try {
       const response = await fetch(`/api/products/${productId}/category-recommendation`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('session_token')}`,
+        },
+        body: JSON.stringify({ attributeValues: {} }),
       });
 
       if (!response.ok) {
@@ -64,7 +67,10 @@ export default function CategoryRecommenderModal({
       const actionUrl = recommendation.actionUrl;
       const response = await fetch(actionUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('session_token')}`,
+        },
         body: JSON.stringify({
           action,
           finalCategory: action === 'overridden' ? selectedCategory : recommendation.recommendation.recommendedCategory,
@@ -90,7 +96,7 @@ export default function CategoryRecommenderModal({
   };
 
   const categoryLabels: { [key: string]: { name: string; description: string } } = {
-    default: { name: 'Default Class', description: 'No specific CRA obligations' },
+    default: { name: 'Default Class', description: 'No additional CRA obligations' },
     important_i: { name: 'Important Class I', description: 'Enhanced security requirements' },
     important_ii: { name: 'Important Class II', description: 'High risk, conformity assessment required' },
     critical: { name: 'Critical Class', description: 'Highest risk, notified body certification' },
@@ -176,13 +182,6 @@ export default function CategoryRecommenderModal({
                   </h3>
                   <div className="cr-ai-card">
                     <p className="cr-ai-reason">{recommendation.aiAugmentation.explainedReason}</p>
-                    <div className="cr-ai-confidence">
-                      <span>Adjustment:</span>
-                      <strong>
-                        {recommendation.aiAugmentation.appliedAdjustment > 0 ? '+' : ''}
-                        {(recommendation.aiAugmentation.appliedAdjustment * 100).toFixed(1)}%
-                      </strong>
-                    </div>
                     <div className="cr-ai-confidence">
                       <span>Confidence:</span>
                       <strong>{(recommendation.aiAugmentation.finalConfidence * 100).toFixed(0)}%</strong>

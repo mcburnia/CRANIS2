@@ -1018,7 +1018,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-05 (session 24)
+**Last updated:** 2026-03-06 (session 25)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -1176,8 +1176,9 @@ sudo systemctl restart cloudflared
 - **Org-level CSIRT country setting** — New `csirt_country` column on `org_billing`. "ENISA Reporting Settings" card on Billing page with country dropdown. Report creation auto-populates CSIRT from org default (per-report override preserved). `GET/PUT /api/billing/csirt-country` endpoints.
 - **Select All EU member states** — One-click "Select All EU" / "Deselect All" toggle in the create report modal member states grid.
 
+- **CRA category recommender (P3 #18)** — Deterministic + AI-augmented CRA category classification. 4 risk attributes (distribution scope, data sensitivity, network connectivity, user criticality) each scored 0.0–1.0, normalised average mapped to CRA thresholds (default/important_i/important_ii/critical). Claude API augmentation provides contextual adjustment and confidence score. Admin rule editing with AI-assessed regulatory alignment validation. Full audit trail for recommendations, user actions (accept/override/dismiss), and rule changes. Backend: `category-recommendation.ts` service (deterministic scoring), `category-ai-augmentation.ts` (Claude augmentation), `category-rule-validator.ts` (rule change validation). Routes: `POST /:productId/category-recommendation`, `GET /:productId/category-recommendation-history`, `POST /:productId/category-recommendation/:recId/action`, admin rule CRUD. Frontend: `CategoryRecommenderModal` on product detail page with risk breakdown gauge, AI assessment card, category selector, accept/override/dismiss actions. DB: `category_rule_attributes`, `category_rule_attribute_values`, `category_thresholds`, `category_recommendations`, `recommendation_access_log`, `category_rule_changes` tables seeded on startup. 26 backend integration tests + 16 E2E acceptance tests. **Total: 1107 backend tests passing (64 files).**
+
 **Next Steps:**
-- P3 #18 — CRA category recommender
 - P3 #19 — Supplier due diligence questionnaire
 - P3 #20 — Compliance gap narrator
 - P4 #14 — MCP API (Model Context Protocol server for external AI tools)

@@ -26,7 +26,7 @@ P3 — AI Automation (Pro plan) — IN PROGRESS
 27	Copilot usage dashboard	Medium	DONE
 16	Risk assessment generator	Medium	DONE
 17	Incident report drafter	Medium	DONE
-18	CRA category recommender	Low	IN PROGRESS (Phases 1-4 DONE, Phase 5 tests remaining)
+18	CRA category recommender	Low	DONE
 19	Supplier due diligence questionnaire	Medium	TODO
 20	Compliance gap narrator	Low	TODO
 
@@ -40,7 +40,7 @@ P4 — MCP Interface (external integration)
 25	Slack notifications	Medium	TODO
 26	Trello task creation	Medium	TODO
 
-P5 - Buggs
+P5 - Bugs
 #	Description | Status
 27  All Organisations -> Actions button does nothing DONE
 28  ENISA Reporting -> Cancel button does nothing DONE
@@ -48,27 +48,11 @@ P5 - Buggs
 
 ---
 
-## P3 #18 CRA Category Recommender — Progress
-
-✅ **Phase 1: Database Schema** (commit 0107308)
-✅ **Phase 2: Backend Services** (commit dc68da0)
-✅ **Phase 3: Backend Routes** (commit 17e32c7)
-✅ **Phase 4: Frontend UI** (commits d6f7897, ad9d69c)
-⬜ **Phase 5: Tests** (unit + integration + E2E)
-
-**Architecture:**
-- **Deterministic:** 4 risk attributes scored 0.0–1.0, normalised, mapped to CRA class
-- **Probabilistic:** Claude API augmentation with ±0.0–0.2 adjustment
-- **Governance:** Admin rule changes assessed for regulatory alignment
-- **Audit Trail:** Every recommendation, access, and rule change logged
-
----
-
 ## Current Status & Next Steps
 
-**P0–P2:** ✅ ALL COMPLETE (42/42 features done)
-**P3:** 5/8 DONE — Remaining: #18 tests, #19 supplier due diligence, #20 compliance gap narrator
+**P0–P2:** ALL COMPLETE (42/42 features done)
+**P3:** 6/8 DONE — Remaining: #19 supplier due diligence, #20 compliance gap narrator
 **P4:** 0/7 TODO (MCP Interface — external integrations)
 **P5:** 2/3 DONE — PENDING: #29 Products & Compliance "Not Stated?" issue
 
-**Immediate next:** Finish #18 Phase 5 (tests), then #19 or #20.
+**Immediate next:** #19 or #20, then P4 MCP work.
