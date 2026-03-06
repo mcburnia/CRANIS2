@@ -4,6 +4,7 @@ import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 
 import PageHeader from '../../components/PageHeader';
 import HelpTip from '../../components/HelpTip';
+import CategoryRecommenderModal from '../../components/CategoryRecommenderModal';
 import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
@@ -328,6 +329,7 @@ export default function ProductDetailPage() {
   const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([]);
   const [syncStats, setSyncStats] = useState<SyncStats | null>(null);
   const [pushEvents, setPushEvents] = useState<PushEvent[]>([]);
+  const [showCategoryRecommender, setShowCategoryRecommender] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -728,6 +730,9 @@ export default function ProductDetailPage() {
             <Link to={`/products/${product.id}/escrow`} className="pd-edit-btn" style={{ textDecoration: "none" }}>
                 <Archive size={14} /> Escrow
               </Link>
+            <button className="pd-edit-btn" onClick={() => setShowCategoryRecommender(true)}>
+              <Sparkles size={14} /> AI Category
+            </button>
             <button className="pd-delete-btn" onClick={() => { setShowDeleteModal(true); setDeleteConfirmed(false); }} title="Delete product">
               <Trash2 size={14} /> Delete
             </button>
@@ -944,6 +949,19 @@ export default function ProductDetailPage() {
           </div>
         </div>,
         document.body
+      )}
+      {showCategoryRecommender && (
+        <CategoryRecommenderModal
+          productId={product.id}
+          productName={product.name}
+          currentCategory={product.craCategory}
+          onClose={() => setShowCategoryRecommender(false)}
+          onAccept={(category) => {
+            setShowCategoryRecommender(false);
+            // Update the product category locally
+            setProduct((prev) => prev ? { ...prev, craCategory: category } : null);
+          }}
+        />
       )}
     </>
   );

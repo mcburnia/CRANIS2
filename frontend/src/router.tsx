@@ -56,6 +56,7 @@ import AdminBillingPage from './pages/admin/AdminBillingPage';
 import AdminTestResultsPage from "./pages/admin/AdminTestResultsPage";
 import AdminDocsPage from "./pages/admin/AdminDocsPage";
 import AdminStrategyPage from "./pages/admin/AdminStrategyPage";
+import AdminCategoryRulesPage from "./pages/admin/AdminCategoryRulesPage";
 
 const router = createBrowserRouter([
   {
@@ -133,6 +134,7 @@ const router = createBrowserRouter([
           { path: '/admin/test-results', element: <AdminTestResultsPage /> },
           { path: '/admin/docs', element: <AdminDocsPage /> },
           { path: '/admin/strategy', element: <AdminStrategyPage /> },
+          { path: '/admin/category-rules', element: <AdminCategoryRulesPage /> },
         ],
       },
 
