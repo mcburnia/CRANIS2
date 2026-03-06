@@ -1178,8 +1178,16 @@ sudo systemctl restart cloudflared
 
 - **CRA category recommender (P3 #18)** — Deterministic + AI-augmented CRA category classification. 4 risk attributes (distribution scope, data sensitivity, network connectivity, user criticality) each scored 0.0–1.0, normalised average mapped to CRA thresholds (default/important_i/important_ii/critical). Claude API augmentation provides contextual adjustment and confidence score. Admin rule editing with AI-assessed regulatory alignment validation. Full audit trail for recommendations, user actions (accept/override/dismiss), and rule changes. Backend: `category-recommendation.ts` service (deterministic scoring), `category-ai-augmentation.ts` (Claude augmentation), `category-rule-validator.ts` (rule change validation). Routes: `POST /:productId/category-recommendation`, `GET /:productId/category-recommendation-history`, `POST /:productId/category-recommendation/:recId/action`, admin rule CRUD. Frontend: `CategoryRecommenderModal` on product detail page with risk breakdown gauge, AI assessment card, category selector, accept/override/dismiss actions. DB: `category_rule_attributes`, `category_rule_attribute_values`, `category_thresholds`, `category_recommendations`, `recommendation_access_log`, `category_rule_changes` tables seeded on startup. 26 backend integration tests + 16 E2E acceptance tests. **Total: 1107 backend tests passing (64 files).**
 
+**Session 25 (2026-03-06):**
+- **Supplier due diligence (P3 #19)** — Deterministic template-based questionnaires for supply chain due diligence. Risk flags (copyleft licence, known vulnerability, high severity vuln, no supplier info) map to pre-written CRA-grounded questions — no AI dependency. Supplier enrichment from npm/PyPI/crates.io registries with shared 30-day Postgres cache (`supplier_enrichment_cache` table). PDF/CSV export. Supply Chain tab on product detail page. Available to all plans (removed Pro gate). `supplier-due-diligence.ts` service + route. `SupplyChainTab.tsx` frontend component.
+- **Supplier Marketplace backlog (P4 #28–34)** — Captured viral growth loop concept: manufacturers invite suppliers via questionnaires, suppliers join and publish compliance profiles, due diligence auto-resolves. 7 items with detailed subtasks for initial implementation (#28 invitation flow, #29 supplier profiles, #30 auto-resolution).
+- **AI design principle established** — Only use LLMs within the app when they add value that cannot be gained deterministically. Template/rule-based approaches preferred for predictable logic.
+
+**Session 26 (2026-03-06):**
+- **Compliance gap narrator (P3 #20)** — Deterministic gap analysis service. Gathers obligations, tech file sections, vulnerability findings, SBOM status, stakeholder contacts, and support period for a product, then generates a prioritised action list. Each gap includes CRA article reference, action description, and navigation target. "Next Steps" card on product OverviewTab with progress bar, priority badges (critical/high/medium/low), and navigable gap items. `compliance-gaps.ts` service + route. `GET /api/products/:productId/compliance-gaps`. No AI dependency. **P3 tier now fully complete (all 8 items shipped).**
+- **Navigation fix** — Fixed gap narrator and checklist "Go" buttons not switching tabs. Added `onSwitchTab`/`onNavigate` callback props from parent component. **Total: 1126 backend tests passing (65 files).**
+
 **Next Steps:**
-- P3 #19 — Supplier due diligence questionnaire
-- P3 #20 — Compliance gap narrator
-- P4 #14 — MCP API (Model Context Protocol server for external AI tools)
+- P4 #28 — Supplier invitation flow (viral growth loop)
+- P5 #14 — MCP API (Model Context Protocol server for external AI tools)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
