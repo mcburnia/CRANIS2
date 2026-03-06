@@ -14,9 +14,33 @@ All five MVP features are built, tested, and shipped. See git history for full d
 
 ---
 
-## Phase 2: Compliance Intelligence
+## Phase 2: AI Intelligence & Billing (Complete)
 
-The platform collects excellent data but leaves compliance *interpretation* almost entirely to the user. Phase 2 closes that gap — connecting what the platform knows to what the regulations require, and guiding product developers from "connected repo" to "audit-ready".
+Focus shifted from pure compliance framework to AI-augmented security workflows and billing infrastructure.
+
+**Completed features:**
+- [x] **AI Copilot** — Contextual AI Suggest buttons across the platform (P3 #13)
+- [x] **AI auto-triage** — Automatically categorise and suggest mitigations for vulnerability findings (P3 #15)
+  - Includes CLI mitigation commands in triage suggestions
+- [x] **AI risk assessment** — Generate risk assessments for products and components
+- [x] **AI incident report drafter** — AI assistance with ENISA incident report generation
+- [x] **Copilot usage dashboard** — Track AI Copilot usage across org, product, and admin views (P3 #27)
+- [x] **Multi-product compliance heat map** — Visual dashboard showing compliance status across all products (P2 #11)
+- [x] **Pro plan + admin configuration** — Admin-configurable pricing tiers with Stripe automatic tax + tax ID collection
+- [x] **Admin org management** — Change plan, extend trial, delete organisations (P5 #27)
+- [x] **CSIRT country tracking** — Organisation-level CSIRT country selection + EU Select All button
+
+**Additional fixes:**
+- [x] Remove Risk Findings PDF export button
+- [x] Reduce Pro product seed price to €3/month
+- [x] Add tests for 7 previously untested routes (54 new tests)
+- [x] ENISA report stage Cancel button now toggles correctly (P5 #28)
+
+---
+
+## Phase 3: Compliance Framework (Not Started)
+
+The platform has rich data but leaves compliance *interpretation* and documentation largely to the user. Phase 3 builds the compliance guidance and documentation layer — connecting what the platform knows to what the regulations require.
 
 ---
 
@@ -198,7 +222,7 @@ Sub-tasks:
 
 ---
 
-## Phase 3: Pre-Production Housekeeping
+## Phase 4: Pre-Production Housekeeping
 
 These are not new features but must be completed before production launch.
 
@@ -212,4 +236,7 @@ These are not new features but must be completed before production launch.
 ## Notes
 - Tackle one feature at a time — plan, build, test, commit before moving on
 - Each feature should be planned and approved before implementation begins
-- Phase 2 items are ordered by impact on the product developer's compliance journey
+- Phase 3 items are ordered by impact on the product developer's compliance journey
+- Current session baseline: HEAD 1 commit ahead of origin/main (`d4b39f3` — P5 #28 fix, pushed)
+- All Phase 2 AI/billing work is shipped and tested
+- Next priority: Phase 3.1 (Obligations auto-intelligence) or Phase 3.2 (Expand obligations list)
