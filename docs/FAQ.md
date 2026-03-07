@@ -1,7 +1,7 @@
 # CRANIS2 Frequently Asked Questions
 
-**Document Version:** 1.0
-**Last Updated:** 2026-03-02
+**Document Version:** 2.0
+**Last Updated:** 2026-03-07
 
 ---
 
@@ -25,6 +25,9 @@
 16. [Marketplace](#marketplace)
 17. [Notifications and Audit](#notifications-and-audit)
 18. [Troubleshooting](#troubleshooting)
+19. [AI Intelligence (Pro Plan)](#ai-intelligence-pro-plan)
+20. [Public API and Integrations](#public-api-and-integrations)
+21. [Plans and Pricing](#plans-and-pricing)
 
 ---
 
@@ -859,6 +862,116 @@ See the User Guide, Section 4: Navigating the Platform.
 **Platform Administration** is a separate role from organisation admin. Organisation admins manage their own company's account, products, and team members. Platform admins manage the entire CRANIS2 platform, including all organisations, system health, vulnerability database administration, and test results. Platform admin access is granted at the system level and is not available to regular organisation admins, regardless of their admin status within their own organisation.
 
 See the User Guide, Section 24: Platform Administration.
+
+---
+
+## AI Intelligence (Pro Plan)
+
+### Q: What is the AI Copilot?
+
+The AI Copilot is a set of AI-powered features available on the Pro plan that help you write compliance documentation faster. It uses Claude (Anthropic) to generate contextual suggestions for technical file sections, obligation evidence notes, vulnerability triage decisions, risk assessments, and incident report drafts. The AI only sees compliance metadata (product details, dependencies, scan results) -- it never has access to your source code.
+
+See the User Guide, Section 26: AI Copilot.
+
+### Q: Does the AI Copilot have access to my source code?
+
+No. The AI Copilot receives structured metadata only: product name, CRA category, dependency names and versions, vulnerability findings, and existing compliance documentation. Your source code is never sent to the AI provider.
+
+### Q: What is AI auto-triage?
+
+AI auto-triage analyses individual vulnerability findings and recommends whether to dismiss, acknowledge, or escalate them. It provides a confidence score and reasoning for each recommendation. For findings with available fixes, it also generates ecosystem-specific CLI commands (e.g. `npm install package@version`). Findings recommended for dismissal with confidence above 90% can be auto-dismissed.
+
+See the User Guide, Section 27: AI Auto-Triage.
+
+### Q: What does the AI risk assessment generator produce?
+
+It generates a four-part risk assessment document: methodology, threat model, risk register, and Annex I requirement mappings. The assessment is grounded in your actual product data (dependencies, scan results, CRA category) and can be exported as a PDF for inclusion in your CRA technical file.
+
+See the User Guide, Section 28: AI Risk Assessment.
+
+### Q: What is the AI incident report drafter?
+
+When filing an ENISA Article 14 report, the AI can draft content for each of the three stages (early warning, notification, final report). It uses your product's vulnerability data, linked findings, and any previously submitted stages to generate contextually appropriate content. The draft is merged non-destructively -- existing content is never overwritten.
+
+See the User Guide, Section 29: AI Incident Report Drafter.
+
+### Q: How does the CRA category recommender work?
+
+The recommender uses a deterministic four-attribute scoring system (network connectivity, data sensitivity, privileged access, safety/infrastructure impact) to suggest whether your product is Default, Important Class I, Important Class II, or Critical. On the Pro plan, an AI second opinion is also provided. Platform admins can define override rules for specific attribute combinations.
+
+See the User Guide, Section 30: CRA Category Recommender.
+
+### Q: Is there a usage limit on AI features?
+
+Yes. Each organisation has a monthly token budget (default: 500,000 tokens). Individual AI endpoints also have rate limits (e.g. 20 suggestions per product per hour, 3 risk assessments per product per day). AI responses are cached for 24 hours to avoid consuming tokens on repeated identical requests. Usage is tracked on the Billing page and the product Overview tab.
+
+See the User Guide, Section 36: Copilot Usage & Cost Protection.
+
+### Q: What is supplier due diligence?
+
+Supplier due diligence generates template-based questionnaires for your product's dependencies, assessing their security practices, licence compliance, and maintenance cadence. It does not use AI -- the questionnaires are derived from CRA requirements using deterministic templates. Dependencies from npm, PyPI, and crates.io are automatically enriched with maintainer and registry metadata. Results can be exported as PDF or CSV.
+
+See the User Guide, Section 31: Supplier Due Diligence.
+
+### Q: What is the compliance gap narrator?
+
+The compliance gap narrator is the "Next Steps" card on each product's Overview tab. It provides a prioritised list of compliance actions based on a deterministic analysis of your obligations, technical file progress, scan coverage, SBOM freshness, and stakeholder completeness. It does not use AI.
+
+See the User Guide, Section 32: Compliance Gap Narrator.
+
+---
+
+## Public API and Integrations
+
+### Q: Does CRANIS2 have an API?
+
+Yes. The public API (Pro plan) provides read-only access to your products, vulnerability findings, obligation statuses, and compliance status. Authentication is via API keys (created at Settings > Integrations). All endpoints are under `/api/v1/`.
+
+See the User Guide, Section 33: Public API & API Keys.
+
+### Q: What is the CI/CD compliance gate?
+
+The CI/CD gate is a pipeline step that queries the CRANIS2 API and fails the build if open critical or high-severity findings are detected. Ready-made snippets are provided for GitHub Actions, GitLab CI, and generic bash scripts. It requires a Pro plan and an API key.
+
+See the User Guide, Section 34: CI/CD Compliance Gate.
+
+### Q: Can CRANIS2 create Trello cards?
+
+Yes. The Trello integration (Pro plan) automatically creates cards on mapped Trello boards when compliance events occur: new vulnerability findings, obligation status changes, stale SBOMs, and compliance gaps. Cards are deduplicated, and resolution comments are added when events are cleared. Configure it at Settings > Integrations.
+
+See the User Guide, Section 35: Integrations.
+
+### Q: What is the MCP server?
+
+The MCP (Model Context Protocol) server allows IDE AI assistants -- Claude Desktop, VS Code with GitHub Copilot, Cursor, and Claude Code -- to query your CRANIS2 compliance data directly from the editor. It provides five tools: list products, get vulnerabilities, get mitigation commands, verify fixes, and check compliance status.
+
+See the User Guide, Section 35: Integrations.
+
+### Q: How do I set up the IDE compliance assistant?
+
+Navigate to Settings > Integrations and scroll to the IDE Compliance Assistant card. Select your IDE, choose an API key, and copy the auto-generated JSON configuration snippet into your IDE's MCP configuration file. The wizard provides the correct format and file path for each supported IDE.
+
+See the User Guide, Section 35: Integrations.
+
+---
+
+## Plans and Pricing
+
+### Q: What is the difference between Standard and Pro?
+
+**Standard** (EUR 6/contributor/month) includes all core compliance features: SBOMs, vulnerability monitoring, licence compliance, IP proof, technical files, ENISA reporting, escrow, obligations tracking, and the marketplace.
+
+**Pro** (EUR 9/product/month + EUR 6/contributor/month) adds AI intelligence features (Copilot, auto-triage, risk assessment, incident drafter, category recommender), the public API with API keys, the CI/CD compliance gate, Trello integration, and the IDE compliance assistant via MCP.
+
+See the User Guide, Section 18: Billing.
+
+### Q: Can I upgrade or downgrade my plan?
+
+Yes. Navigate to the Billing page and click the appropriate button. Upgrades take effect immediately with prorated billing. Downgrades take effect at the end of the current billing period. Access to Pro-only features is removed on downgrade.
+
+### Q: Are supplier due diligence and the compliance gap narrator available on Standard?
+
+Yes. Both features are available on all paid plans (and during the free trial). They are deterministic, template-based features that do not use AI.
 
 ---
 

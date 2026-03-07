@@ -152,7 +152,7 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 
 **Run this every morning before starting any new work.** This ensures the environment is healthy and no regressions have been introduced.
 
-### Vitest Backend Tests (868 tests — runs on server)
+### Vitest Backend Tests (1126+ tests — runs on server)
 
 ```bash
 ssh -p 2222 mcburnia@localhost "cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && node_modules/.bin/vitest run --config vitest.config.ts"
@@ -160,9 +160,9 @@ ssh -p 2222 mcburnia@localhost "cd ~/cranis2/backend/tests && source ~/.nvm/nvm.
 
 - Auto-seeds test data on every run (global-setup.ts calls `seedAllTestData()`)
 - Tests run against https://dev.cranis2.dev (live dev stack)
-- Expected result: **868 passed, 0 failed**
+- Expected result: **1126+ passed, 0 failed** (65 test files)
 
-### Playwright E2E Tests (250 tests — runs locally on Mac)
+### Playwright E2E Tests (~280 tests — runs locally on Mac)
 
 ```bash
 cd ~/CRANIS2/e2e && npm test
@@ -170,7 +170,7 @@ cd ~/CRANIS2/e2e && npm test
 
 - Requires SSH tunnel running (for Postgres push if using `npm run test:push`)
 - Tests run against https://dev.cranis2.dev via Chromium
-- Expected result: **245 passed, 5 pre-existing failures** (ANSABASE port conflict on `browser.newContext()` login tests — unrelated to CRANIS2 code)
+- Expected result: **~280 passed**
 
 ### Push Results to Admin Dashboard (optional)
 
@@ -448,6 +448,33 @@ marketplace.ts     ← Compliance badge computation for marketplace profiles
 | GET | /api/docs | Public: List all doc pages (slug, title, updated_at) |
 | GET | /api/docs/:slug | Public: Get doc page content (markdown) |
 | PUT | /api/docs/:slug | Admin: Update doc page title + content |
+| POST | /api/copilot/suggest | AI Copilot: tech file + obligation suggestions (Pro plan) |
+| POST | /api/copilot/triage | AI auto-triage: dismiss/acknowledge/escalate with confidence (Pro plan) |
+| POST | /api/copilot/generate-risk-assessment | AI risk assessment generator (Pro plan) |
+| POST | /api/copilot/draft-incident-report | AI incident report drafter (Pro plan) |
+| GET | /api/copilot/status | AI Copilot token budget status |
+| GET | /api/category-recommendation/:productId | CRA category recommender (deterministic + AI) |
+| POST | /api/category-recommendation/:productId | Submit category recommendation |
+| GET | /api/supplier-due-diligence/:productId | Supplier DD questionnaires and enrichment |
+| POST | /api/supplier-due-diligence/:productId | Generate supplier questionnaire |
+| GET | /api/compliance-gaps/:productId | Compliance gap analysis |
+| GET | /api/compliance-checklist/:productId | 7-step compliance checklist |
+| GET | /api/settings/api-keys | List API keys for org (Pro plan) |
+| POST | /api/settings/api-keys | Create new API key |
+| DELETE | /api/settings/api-keys/:keyId | Revoke API key |
+| GET | /api/v1/products | Public API: List products (API key auth) |
+| GET | /api/v1/products/:id | Public API: Product details |
+| GET | /api/v1/products/:id/vulnerabilities | Public API: Vulnerability findings |
+| GET | /api/v1/products/:id/obligations | Public API: Obligation statuses |
+| GET | /api/v1/compliance-status | Public API: Compliance pass/fail |
+| POST | /api/trello/connect | Trello: Connect with API key + token (Pro plan) |
+| GET | /api/trello/status | Trello: Connection status |
+| POST | /api/trello/boards | Trello: Map product to board |
+| DELETE | /api/trello/boards/:mappingId | Trello: Remove board mapping |
+| POST | /api/trello/test | Trello: Test connection with card creation |
+| DELETE | /api/trello/disconnect | Trello: Disconnect integration |
+| GET | /api/billing/admin/pricing | Admin: Get platform pricing config |
+| PUT | /api/billing/admin/pricing | Admin: Update pricing (creates new Stripe prices) |
 
 ## Database Schema
 

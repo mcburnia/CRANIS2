@@ -28,6 +28,14 @@ CRANIS2 takes the dependency and component information present in your repositor
 
 - **Compliance Checklist** — A 7-step getting-started guide for each product that breaks CRA conformity into concrete, actionable steps. Progress is tracked in real time so you always know what to do next and how far along you are.
 
+- **AI Copilot (Pro Plan)** — AI-powered compliance assistance across the platform. Contextual suggestions for technical file sections and obligation evidence notes, AI auto-triage of vulnerability findings with ecosystem-specific fix commands, risk assessment generation with Annex I mappings (exportable as PDF), incident report drafting for ENISA Article 14 stages, and CRA category recommendation with deterministic scoring plus AI augmentation. Powered by Claude (Anthropic). Source code is never sent to the AI — only compliance metadata.
+
+- **Supplier Due Diligence** — Template-based questionnaires for third-party dependency risk management, with automatic enrichment from npm, PyPI, and crates.io registries. PDF and CSV export. Available on all plans (no AI).
+
+- **Compliance Gap Narrator** — A deterministic "Next Steps" card on each product's overview showing prioritised compliance actions, derived from obligations, technical file progress, scan coverage, and SBOM freshness. Available on all plans (no AI).
+
+- **Public API & Integrations (Pro Plan)** — REST API with API key authentication for programmatic access. CI/CD compliance gate for blocking non-compliant deployments (GitHub Actions, GitLab CI, generic bash). Trello integration for automated card creation on compliance events. MCP server for IDE AI assistants (VS Code, Cursor, Claude Desktop, Claude Code) to query vulnerabilities, get fix commands, and verify fixes — all from the editor.
+
 - **Source Code Escrow** — Protects your clients against business continuity risk. When setting up a product in CRANIS2, you can configure escrow coverage so that if your company ceases to operate, your clients are not left without the software they depend on. Source code is deposited to a self-hosted Forgejo instance within the CRANIS2 infrastructure, hosted in Switzerland (European data sovereignty). You choose the release model: either the source code is published as open source, or specific clients you designate receive private copies. Daily automated deposits ensure the escrow is always current.
 
 ## Why Now?
@@ -108,7 +116,7 @@ Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerab
 | | |
 |---|---|
 | **Problem** | EU legislation (CRA + NIS2) requires software companies to demonstrate cybersecurity compliance — most have no tooling for this |
-| **Solution** | CRANIS2 automates SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, regulatory reporting, and source code escrow |
+| **Solution** | CRANIS2 automates SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, regulatory reporting, source code escrow, AI-powered compliance intelligence, supplier due diligence, and external integrations (API, CI/CD, Trello, IDE) |
 | **Timing** | CRA reporting obligations begin Sept 2026; full compliance required Dec 2027 |
 | **Audience** | Software product companies selling into the EU, especially SMEs without dedicated compliance teams |
 | **Source code** | Import statements are read but source code is never stored, analysed or modified |

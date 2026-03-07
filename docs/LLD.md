@@ -1,7 +1,7 @@
 # CRANIS2 — Low-Level Design (LLD)
 
-**Document Version:** 2.0
-**Last Updated:** 2026-02-28
+**Document Version:** 3.0
+**Last Updated:** 2026-03-07
 **Author:** Andi McBurnie, Loman Cavendish Ltd
 **CRA Reference:** Annex VII Par. 2(a) — System Architecture & Component Design
 
@@ -114,28 +114,45 @@ All routes are in `backend/src/routes/`. Each file is self-contained with its ow
 
 | File | Base Path | Methods | Description |
 |------|-----------|---------|-------------|
-| `admin.ts` | `/api/admin` | GET, POST | Platform admin: dashboard stats, org/user management, vuln scanning, feedback triage |
+| `admin.ts` | `/api/admin` | GET, POST, PUT, DELETE | Platform admin: dashboard stats, org/user management, vuln scanning, feedback triage, pricing config |
+| `api-keys.ts` | `/api/settings/api-keys` | GET, POST, DELETE | API key management (Pro plan): create, list, revoke |
 | `auth.ts` | `/api/auth` | POST, GET | Login, signup, email verification, password reset, session validation |
-| `billing.ts` | `/api/billing` | GET, POST | Stripe plans, checkout, portal, webhook receiver |
+| `billing.ts` | `/api/billing` | GET, POST | Stripe plans, checkout, portal, webhook receiver, admin pricing |
+| `category-recommendation.ts` | `/api/category-recommendation` | GET, POST | CRA category recommender: deterministic scoring + AI augmentation (Pro plan) |
+| `compliance-checklist.ts` | `/api/compliance-checklist` | GET | Per-product 7-step compliance checklist with progress |
+| `compliance-gaps.ts` | `/api/compliance-gaps` | GET | Deterministic compliance gap analysis + prioritised action list |
+| `compliance-timeline.ts` | `/api/compliance-timeline` | GET | Historical compliance event timeline per product |
+| `contributors-overview.ts` | `/api/contributors` | GET | Cross-product contributor overview |
+| `copilot.ts` | `/api/copilot` | POST | AI Copilot: suggest (tech file + obligations), triage, risk assessment, incident draft (Pro plan) |
 | `cra-reports.ts` | `/api/cra-reports` | GET, POST, PUT, DELETE | ENISA Article 14 reporting: 3-stage workflow (early warning → notification → final report) |
+| `dependencies-overview.ts` | `/api/dependencies` | GET | Cross-product dependency + licence overview |
 | `due-diligence.ts` | `/api/due-diligence` | GET | Preview + ZIP export (PDF, SBOM, CSV, metadata) |
+| `escrow.ts` | `/api/escrow` | GET, POST, PUT | Source code escrow configuration and deposit management |
 | `feedback.ts` | `/api/feedback` | GET, POST | User bug reports, feature requests, feedback |
 | `github.ts` | `/api/github` + `/api/repo` | GET, POST, DELETE | OAuth flow, PAT connect, repo sync, webhook receiver |
+| `ip-proof.ts` | `/api/ip-proof` | GET, POST | RFC 3161 IP proof snapshots |
+| `license-scan.ts` | `/api/license-scan` | GET, POST | Licence compatibility scanning and recheck |
+| `marketplace.ts` | `/api/marketplace` | GET, POST, PUT | Public marketplace listings, profile, contact (rate-limited) |
 | `notifications.ts` | `/api/notifications` | GET, PUT | User notification inbox, mark read/dismissed |
 | `obligations.ts` | `/api/obligations` | GET, PUT | CRA obligation tracking per product |
 | `org.ts` | `/api/org` | GET, POST, PUT | Organisation CRUD, member listing |
+| `product-activity.ts` | `/api/product-activity` | GET | Per-product activity log |
+| `product-reports.ts` | `/api/product-reports` | GET | Per-product compliance reports |
 | `products.ts` | `/api/products` | GET, POST, PUT, DELETE | Product CRUD (Neo4j), includes data exit ZIP on delete |
+| `public-api-v1.ts` | `/api/v1` | GET | Public API: products, vulnerabilities, obligations, compliance-status (API key auth) |
 | `repos-overview.ts` | `/api/repos` | GET | Repository dashboard: connected count, sync status, provider breakdown |
-| `risk-findings.ts` | `/api/risk-findings` | GET, POST | Vulnerability findings per product, trigger product scan |
+| `reports.ts` | `/api/reports` | GET | PDF/CSV report generation (3 report types) |
+| `risk-findings.ts` | `/api/risk-findings` | GET, POST, PUT | Vulnerability findings per product, trigger scan, triage findings |
 | `sbom-export.ts` | `/api/sbom` | GET | CycloneDX 1.6 + SPDX 2.3 export with SHA-512 hash enrichment |
 | `stakeholders.ts` | `/api/stakeholders` | GET, PUT | CRA stakeholder roles (org-level + product-level) |
+| `supplier-due-diligence.ts` | `/api/supplier-due-diligence` | GET, POST | Supplier questionnaires, enrichment, PDF/CSV export |
 | `technical-file.ts` | `/api/technical-file` | GET, PUT | CRA Annex VII section editing (8 sections per product) |
 | `technical-files-overview.ts` | `/api/technical-files` | GET | Cross-product technical file progress summary |
-| `timeline.ts` | `/api/timeline` | GET | Historical compliance event timeline per product |
+| `trello.ts` | `/api/trello` | GET, POST, PUT, DELETE | Trello integration: connect, board mapping, test, disconnect (Pro plan) |
 
 ### 4.3 Authentication & Authorisation
 
-**Three layers of access control:**
+**Six layers of access control:**
 
 ```
 Layer 1: requireAuth (per-route)
@@ -152,6 +169,21 @@ Layer 3: Billing Gate (global, index.ts)
   ├── Peeks JWT from Authorization header (non-blocking)
   ├── Queries org_billing for user's org
   └── Blocks POST/PUT/DELETE if status in (read_only, suspended, cancelled)
+
+Layer 4: requireApiKey (middleware/)
+  ├── Extracts Bearer token from Authorization header
+  ├── SHA-256 hashes token, looks up in api_keys table
+  ├── Validates scopes against required scope for endpoint
+  └── Sets req.orgId, req.apiKeyId — used by /api/v1/* routes
+
+Layer 5: requirePlan (middleware/)
+  ├── Checks org_billing.plan against required tier (e.g. 'pro')
+  ├── Tier hierarchy: standard < pro < enterprise
+  └── Returns 403 with upgrade prompt if plan insufficient
+
+Layer 6: AI Copilot middleware chain (copilotLimits.ts)
+  ├── requireTokenBudget() — checks org monthly token usage against limit (429 if exceeded)
+  └── requireCopilotRateLimit() — per-endpoint rate limiting via copilot_usage table
 ```
 
 ### 4.4 Services
@@ -165,9 +197,30 @@ Layer 3: Billing Gate (global, index.ts)
 | `due-diligence.ts` | Export package builder | `gatherReportData()`, `generatePDF()`, `generateFindingsCSV()`, `generateDueDiligenceZIP()` |
 | `vulnerability-scanner.ts` | Platform vuln scanning | Matches SBOM packages against vuln DB, writes findings |
 | `vuln-db-sync.ts` | Vulnerability feed sync | OSV + NVD database synchronisation |
-| `escrow.ts` | Source code escrow | Forgejo repository deposits via internal Docker network |
+| `escrow-service.ts` | Source code escrow | Forgejo repository deposits via internal Docker network |
 | `telemetry.ts` | Event recording | `recordEvent()`, `extractRequestData()` — writes to user_events |
 | `email.ts` | Transactional email | Resend API integration, from `info@poste.cranis2.com` |
+| `alert-emails.ts` | Compliance alert emails | 6 alert types (vuln found, scan failed, SBOM stale, compliance gaps, CRA deadline, support expiry) |
+| `billing-emails.ts` | Billing lifecycle emails | Trial expiry, payment failure, subscription change notifications |
+| `obligation-engine.ts` | Auto-intelligence | `computeDerivedStatuses()`, `ensureObligations()` — 19 CRA obligations with derived statuses |
+| `copilot.ts` | AI Copilot service | Claude API integration for suggest, triage, risk assessment, incident draft |
+| `copilot-cache.ts` | AI response caching | SHA-256 context hashing, 24h TTL, `copilot_cache` table |
+| `category-recommendation.ts` | CRA category scoring | Deterministic 4-attribute risk scoring for product classification |
+| `category-ai-augmentation.ts` | AI category analysis | Claude API second opinion on CRA category classification |
+| `category-rule-validator.ts` | Admin category rules | Validates admin-defined category override rules |
+| `supplier-due-diligence.ts` | Supplier DD service | Questionnaire generation, npm/PyPI/crates.io enrichment, PDF/CSV export |
+| `compliance-gaps.ts` | Gap analysis | Deterministic compliance gap computation and prioritised action list |
+| `trello.ts` | Trello integration | Card creation, deduplication, resolution comments, board list management |
+| `webhook.ts` | Webhook management | `ensureWebhook()`, `removeWebhooksForUser()` — auto-register push webhooks |
+| `license-compatibility.ts` | Licence rules engine | 14 cross-licence incompatibilities, distribution model analysis |
+| `license-scanner.ts` | Licence scanning | SPDX classification, copyleft detection, waiver tracking |
+| `license-enrichment.ts` | Licence metadata | Registry lookups for licence details |
+| `ip-proof.ts` | IP proof service | RFC 3161 timestamping, SHA-256 hash generation |
+| `activity-log.ts` | Activity tracking | Per-product compliance activity recording |
+| `notifications.ts` | Notification service | Create and manage user notifications |
+| `marketplace.ts` | Marketplace service | Compliance badge computation for marketplace profiles |
+| `api-keys.ts` | API key service | Key generation, SHA-256 hashing, scope validation |
+| `billing.ts` | Billing service | Stripe integration, plan management, `ensureStripePrices()` |
 
 ### 4.5 SBOM Generation — Three-Tier Fallback
 
@@ -283,7 +336,7 @@ Only one section expanded at a time (`expandedSection` state):
 | **Compliance** | Products, Obligations, Technical Files, Vulnerability Reports, License Compliance, IP Proof, Due Diligence |
 | **Source Code** | Repos, Contributors, Dependencies, Risk Findings |
 | **Billing** | Plans & Usage, Reports |
-| **Settings** | Organisation, Stakeholders, Audit Log, Marketplace |
+| **Settings** | Organisation, Stakeholders, Integrations, Audit Log, Marketplace |
 | **Feedback** | Feedback & Bug Report button (bottom, outside accordion) |
 
 ### 5.4 Shared Components
@@ -332,7 +385,8 @@ Only one section expanded at a time (`expandedSection` state):
 |-------|---------|-------------|
 | `users` | User accounts | id (UUID), email, password_hash, org_id (UUID), role, is_platform_admin, language |
 | `user_events` | Telemetry | id, user_id, email, event_type, ip_address, user_agent, metadata (JSONB) |
-| `org_billing` | Billing state | org_id (VARCHAR), stripe_customer_id, plan, status, trial_ends_at |
+| `org_billing` | Billing state | org_id (VARCHAR), stripe_customer_id, plan (standard/pro), status, trial_ends_at, copilot_token_limit |
+| `platform_settings` | Admin config | key (VARCHAR PK), value (TEXT) — pricing, token budgets, Stripe price IDs |
 | `feedback` | User feedback | id, user_id, category (bug/feature/feedback), subject, body, status, page_url |
 
 **SBOM & Vulnerability tables:**
@@ -366,6 +420,25 @@ Only one section expanded at a time (`expandedSection` state):
 | `audit_log` | Compliance audit | id, user_id, action, resource_type, resource_id, metadata (JSONB) |
 | `escrow_users` | Escrow config | user_id, forgejo_username, agent_reference |
 | `escrow_deposits` | Deposit records | id, product_id, forgejo_repo, commit_sha, deposited_at, status |
+| `api_keys` | Public API auth | id, org_id, name, key_hash (SHA-256), key_prefix, scopes (JSONB), last_used_at |
+| `trello_board_mappings` | Trello config | id, org_id, product_id, board_id, board_name, list_mappings (JSONB) |
+| `trello_card_log` | Trello dedup | id, org_id, product_id, event_type, event_key, card_id, created_at |
+
+**AI Copilot tables:**
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `copilot_usage` | Token tracking | id, org_id, product_id, endpoint, tokens_used, created_at |
+| `copilot_cache` | Response cache | id, context_hash (SHA-256), response (JSONB), tokens_used, created_at, expires_at |
+| `category_recommendation_audit` | Category audit | id, product_id, org_id, attributes (JSONB), deterministic_result, ai_result, admin_rule_applied, created_at |
+
+**Supplier Due Diligence tables:**
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `supplier_questionnaires` | DD questionnaires | id, product_id, org_id, dependency_purl, template_key, status, created_at |
+| `supplier_responses` | Questionnaire answers | id, questionnaire_id, question_key, response (TEXT), updated_at |
+| `supplier_enrichment_cache` | Registry metadata | id, purl, ecosystem, metadata (JSONB), fetched_at — 30-day TTL |
 
 **Key constraints:**
 - `org_billing.org_id` is VARCHAR(255), `users.org_id` is UUID — require `::text` cast in JOINs
@@ -593,13 +666,13 @@ POST /close → status: closed (post-close addenda still accepted)
 
 | Category | Framework | Count | Description |
 |----------|-----------|-------|-------------|
-| Route tests | Vitest | 350 | API endpoint validation (21 test files) |
-| Security tests | Vitest | 150 | XSS, SQL injection, auth bypass, CSRF (6 files) |
-| Adversarial/break tests | Vitest | 188 | Oversized inputs, double-submit, edge cases (9 files) |
+| Route tests | Vitest | 450+ | API endpoint validation (33 test files) |
+| Security tests | Vitest | 150+ | XSS, SQL injection, auth bypass, CSRF (6 files) |
+| Adversarial/break tests | Vitest | 188+ | Oversized inputs, double-submit, edge cases (9 files) |
 | Webhook tests | Vitest | 39 | GitHub/Codeberg/Forgejo webhook processing (3 files) |
-| Integration tests | Vitest | 102 | E2E flows including PAT auth and Tier 3 scanning (7 files) |
+| Integration tests | Vitest | 120+ | E2E flows including PAT auth, Tier 3 scanning, MCP server (8 files) |
 | SBOM parser unit tests | Vitest | 713 | Lockfile parsers (236), language plugins (416), mocks (61) |
-| CoWork UI scripts | Browser agent | 23 | Smoke (4), acceptance (12), break (7) — markdown prompts |
+| CoWork UI scripts | Browser agent | ~280 | E2E tests via Playwright |
 
 **Test infrastructure:**
 - Tests run against live dev server (`https://dev.cranis2.dev`)
@@ -607,6 +680,7 @@ POST /close → status: closed (post-close addenda still accepted)
 - Seed data: 6 orgs, 15 users, 13 products with deterministic UUIDs
 - Config: `backend/tests/vitest.config.ts`
 - Run: `cd backend/tests && npx vitest run --config vitest.config.ts`
+- **Total: 1126+ backend tests (65 files), ~280 E2E tests**
 
 ---
 

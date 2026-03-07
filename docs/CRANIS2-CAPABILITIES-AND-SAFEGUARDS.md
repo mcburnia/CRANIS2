@@ -25,7 +25,7 @@ Most software companies — especially SMEs — have no tooling for this. They f
 
 ## 2. What CRANIS2 Actually Does
 
-CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, Gitea, Forgejo, or GitLab (including self-hosted instances) — and automatically builds compliance evidence from dependency metadata. It reads import statements but never stores, analyses or modifies source code in any way. It automates eight core compliance functions:
+CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, Gitea, Forgejo, or GitLab (including self-hosted instances) — and automatically builds compliance evidence from dependency metadata. It reads import statements but never stores, analyses or modifies source code in any way. It automates core compliance functions across three capability tiers:
 
 ### 2.1 Software Bill of Materials (SBOM)
 
@@ -154,7 +154,40 @@ CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, G
 - Escrow deposits are preserved even after product deletion (legal retention)
 - Entirely under the manufacturer's control
 
-### 2.9 Additional Capabilities
+### 2.9 AI Intelligence (Pro Plan)
+
+CRANIS2 includes an AI intelligence layer powered by Claude (Anthropic), available on the Pro plan. The AI only receives compliance metadata — it never has access to source code.
+
+| Capability | Purpose |
+|---|---|
+| **AI Copilot** | Contextual suggestions for technical file sections and obligation evidence notes. Analyses product data (dependencies, scans, CRA category) to generate draft content. Supports refinement and 24-hour response caching. |
+| **AI Auto-Triage** | Analyses vulnerability findings and recommends dismiss/acknowledge/escalate with confidence scores. Generates ecosystem-specific CLI fix commands (npm, pip, cargo, go, maven, nuget, etc.). Auto-dismiss for high-confidence false positives. |
+| **AI Risk Assessment** | Generates a four-part risk assessment: methodology, threat model, risk register, and 13 Annex I requirement mappings. Grounded in actual product data. Exportable as PDF for inclusion in the CRA technical file. |
+| **AI Incident Report Drafter** | Pre-populates ENISA Article 14 report stages (early warning, notification, final report) with contextually appropriate content. Non-destructive merge preserves existing text. Uses linked findings and prior stages for continuity. |
+| **CRA Category Recommender** | Deterministic 4-attribute risk scoring (network, data sensitivity, privileges, safety) plus AI augmentation for a second opinion. Admin-configurable override rules with audit trail. |
+
+**Cost protection:** Three-layer system — per-organisation monthly token budget (default 500K, admin-configurable), per-endpoint rate limits, and 24-hour response caching. Usage is tracked on the Billing page.
+
+### 2.10 Supplier Due Diligence (All Plans)
+
+| Capability | Purpose |
+|---|---|
+| **Supplier Questionnaires** | Template-based questionnaires for dependency suppliers, derived from CRA requirements. Deterministic — no AI involved. |
+| **Supplier Enrichment** | Automatic metadata enrichment from npm, PyPI, and crates.io registries (maintainer details, licence, download counts, last publish date). Shared 30-day Postgres cache. |
+| **Compliance Gap Narrator** | "Next Steps" card on each product's Overview tab. Prioritised action list derived from obligations, technical file progress, scan coverage, SBOM freshness, and stakeholder completeness. Deterministic — no AI. |
+| **Export** | PDF and CSV export of supplier due diligence data for audit and procurement review. |
+
+### 2.11 Public API & External Integrations (Pro Plan)
+
+| Capability | Purpose |
+|---|---|
+| **Public API** | REST API at `/api/v1/` with API key authentication (SHA-256 hashed, `cranis2_` prefix). Four read-only scopes: `read:products`, `read:vulnerabilities`, `read:compliance`, `write:findings`. |
+| **CI/CD Compliance Gate** | Pipeline step that queries the API and fails the build if open critical/high findings exist. Ready-made snippets for GitHub Actions, GitLab CI, and generic bash. |
+| **Trello Integration** | Automatic card creation on mapped Trello boards for 4 event types (new findings, obligation changes, stale SBOMs, compliance gaps). Deduplication and resolution comments. |
+| **MCP Server** | Model Context Protocol server for IDE AI assistants (VS Code, Cursor, Claude Desktop, Claude Code). 5 tools: list products, get vulnerabilities, get mitigation commands, verify fixes, check compliance status. |
+| **IDE Compliance Assistant** | In-app setup wizard on the Integrations page with auto-generated JSON config snippets for each supported IDE. |
+
+### 2.12 Additional Capabilities
 
 | Capability | Purpose |
 |---|---|
@@ -284,10 +317,13 @@ This is a legitimate concern. Here is how CRANIS2 addresses it:
 
 Transparency on commercial incentives:
 
-- **Contributor-based pricing:** EUR 6/month per active contributor to connected repositories
-- **90-day free trial** with no payment details required upfront
+- **Two paid tiers:**
+  - **Standard:** EUR 6/month per active contributor — all core compliance features
+  - **Pro:** EUR 9/month per product + EUR 6/month per contributor — adds AI intelligence (Copilot, auto-triage, risk assessment, incident drafter, category recommender), public API, CI/CD gate, Trello integration, and IDE assistant
+- **90-day free trial** with no payment details required upfront (includes all features)
 - **No vendor lock-in on data:** Due diligence export provides all your compliance data in open formats (PDF, CycloneDX, SPDX, CSV, JSON) at any time
 - **Billing is managed through Stripe** — CRANIS2 does not handle payment card data
+- **AI cost protection:** Per-organisation token budgets, per-endpoint rate limits, and response caching prevent runaway costs
 
 The pricing model aligns incentives: we succeed when you use the platform actively, not when we lock you into contracts or upsell unnecessary features.
 
@@ -365,7 +401,7 @@ Dec 2027 ──── CRA: Full compliance required
 
 ## 9. Summary
 
-CRANIS2 automates the mechanical burden of EU cybersecurity compliance — SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, EU Declaration of Conformity, regulatory reporting, and source code escrow — so that software companies can meet CRA and NIS2 requirements without building a dedicated compliance department.
+CRANIS2 automates the mechanical burden of EU cybersecurity compliance — SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, EU Declaration of Conformity, regulatory reporting, source code escrow, AI-powered compliance intelligence, supplier due diligence, and external integrations — so that software companies can meet CRA and NIS2 requirements without building a dedicated compliance department.
 
 It does this while reading import statements but never storing, analysing or modifying source code in any way, with strict multi-tenant isolation, with billing accountability tied to real development activity, and with all compliance data exportable in open formats at any time.
 

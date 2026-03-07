@@ -1,8 +1,8 @@
 # CRANIS2 User Guide
 
-**Document Version:** 1.0
-**Last Updated:** 2026-03-02
-**Covers:** Sections 1--25 plus Appendices A--E
+**Document Version:** 2.0
+**Last Updated:** 2026-03-07
+**Covers:** Sections 1--36 plus Appendices A--E
 
 ---
 
@@ -33,6 +33,17 @@
 23. [Feedback System](#23-feedback-system)
 24. [Platform Administration](#24-platform-administration)
 25. [Automated Background Processes](#25-automated-background-processes)
+26. [AI Copilot](#26-ai-copilot)
+27. [AI Auto-Triage](#27-ai-auto-triage)
+28. [AI Risk Assessment](#28-ai-risk-assessment)
+29. [AI Incident Report Drafter](#29-ai-incident-report-drafter)
+30. [CRA Category Recommender](#30-cra-category-recommender)
+31. [Supplier Due Diligence](#31-supplier-due-diligence)
+32. [Compliance Gap Narrator](#32-compliance-gap-narrator)
+33. [Public API & API Keys](#33-public-api--api-keys)
+34. [CI/CD Compliance Gate](#34-cicd-compliance-gate)
+35. [Integrations (Trello, MCP, IDE)](#35-integrations-trello-mcp-ide)
+36. [Copilot Usage & Cost Protection](#36-copilot-usage--cost-protection)
 - [Appendix A: CRA Product Categories](#appendix-a-cra-product-categories)
 - [Appendix B: Supported Repository Providers](#appendix-b-supported-repository-providers)
 - [Appendix C: Supported Lockfile Formats](#appendix-c-supported-lockfile-formats)
@@ -967,10 +978,14 @@ The platform scheduler runs a comprehensive vulnerability scan at 3 AM UTC. This
 
 ### Pricing Model
 
-CRANIS2 uses a simple, contributor-based pricing model:
+CRANIS2 offers two paid tiers:
 
-- **EUR 6 per month** per active contributor across your organisation
-- An active contributor is anyone who has made at least one contribution to a connected repository
+| Plan | Price | Includes |
+|------|-------|----------|
+| **Standard** | EUR 6 per contributor per month | All core compliance features -- SBOMs, vulnerability monitoring, licence compliance, IP proof, technical files, ENISA reporting, escrow, obligations tracking, marketplace |
+| **Pro** | EUR 9 per product per month + EUR 6 per contributor per month | Everything in Standard, plus: AI Copilot, AI auto-triage, AI risk assessment, AI incident report drafter, CRA category recommender, public API & API keys, CI/CD compliance gate, IDE assistant (MCP), Trello integration |
+
+An active contributor is anyone who has made at least one contribution to a connected repository within the last 90 days. Bot accounts are automatically excluded from billing.
 
 ### Free Trial
 
@@ -1294,6 +1309,374 @@ CRANIS2 receives webhooks from external services to maintain real-time awareness
 ### No User Action Required
 
 All background processes run automatically. Users benefit from up-to-date vulnerability data, fresh SBOMs, enforced billing rules, and current escrow deposits without needing to trigger any of these manually.
+
+---
+
+## 26. AI Copilot
+
+**Requires:** Pro plan
+
+The AI Copilot provides contextual AI-generated suggestions for compliance documentation. It is powered by Claude (Anthropic) and is available on two areas of the platform:
+
+### Technical File Suggestions
+
+Each of the eight technical file sections has an **AI Suggest** button. When clicked, the Copilot analyses your product's data -- its dependencies, vulnerability scan results, CRA category, repository metadata, and existing documentation -- and generates a draft for that section.
+
+- Suggestions are presented in a review panel alongside your current content
+- You can accept, edit, or discard the suggestion
+- Refinement is supported: after receiving a suggestion, you can provide additional instructions and the Copilot will revise its output
+- Suggestions are cached for 24 hours (same product context produces the same result without consuming additional tokens)
+
+### Obligation Evidence Suggestions
+
+On the Obligations tab of a product, each obligation has an **AI Suggest** button for its evidence/notes field. The Copilot generates suggested evidence text based on the obligation requirements and your product's compliance data.
+
+### How It Works
+
+The Copilot sends a structured context payload (product metadata, dependencies, scan results, existing content) to the Claude API. Your source code is never included -- only compliance metadata. Responses are streamed back to the UI.
+
+---
+
+## 27. AI Auto-Triage
+
+**Requires:** Pro plan
+
+AI auto-triage analyses vulnerability findings and recommends an appropriate triage action for each one:
+
+- **Dismiss** -- the finding is a false positive or not applicable to your usage
+- **Acknowledge** -- the finding is real but does not require immediate action
+- **Escalate** -- the finding requires urgent attention
+
+### How It Works
+
+When you click **AI Triage** on a vulnerability finding, the Copilot examines the CVE details, the affected package, its version, and your product's context. It returns:
+
+- A recommended action (dismiss / acknowledge / escalate)
+- A confidence score (0--100%)
+- A reasoning explanation
+- For findings with available fixes, a **CLI mitigation command** specific to the package ecosystem (e.g. `npm install lodash@4.17.21`, `pip install requests>=2.31.0`, `cargo update -p serde`)
+
+### Auto-Dismiss
+
+Findings where the AI recommends dismissal with a confidence score above 90% can be automatically dismissed. This reduces noise from false positives while preserving an audit trail of the AI's reasoning.
+
+### Supported Ecosystems for Mitigation Commands
+
+npm, pip, Cargo (Rust), Go modules, Maven, NuGet, Composer (PHP), RubyGems, CocoaPods, Pub (Dart), Hex (Elixir), and Swift Package Manager.
+
+---
+
+## 28. AI Risk Assessment
+
+**Requires:** Pro plan
+
+The AI risk assessment generator creates a comprehensive risk assessment document for a product, grounded in its actual platform data. Navigate to a product's detail page and click **Generate Risk Assessment**.
+
+### What It Produces
+
+1. **Risk Assessment Methodology** -- describes the approach, data sources, and severity classification used
+2. **Threat Model** -- identifies threats relevant to the product based on its CRA category, dependency profile, and distribution model
+3. **Risk Register** -- a structured table of identified risks with likelihood, impact, severity, and recommended mitigations
+4. **Annex I Mappings** -- maps 13 CRA Annex I essential requirements to the product's current compliance state, with evidence references
+
+### Output
+
+The risk assessment is stored against the product and can be exported as a **PDF** for inclusion in the CRA technical file. It is regenerated on demand -- each generation reflects the product's current state.
+
+---
+
+## 29. AI Incident Report Drafter
+
+**Requires:** Pro plan
+
+When creating an ENISA Article 14 report (see Section 10), the AI incident report drafter can pre-populate each of the three reporting stages with content grounded in your product's data.
+
+### How It Works
+
+On any CRA report, click **AI Draft** for a stage (early warning, notification, or final report). The Copilot analyses:
+
+- The product's vulnerability findings and scan history
+- Any linked findings associated with the report
+- Content from previously submitted stages (for continuity)
+- The product's CRA category and metadata
+
+It generates stage-appropriate content following ENISA Article 14 requirements. The draft is presented for review before merging into the report form.
+
+### Non-Destructive Merge
+
+AI-generated content is merged with any existing content in the stage form. Existing text is never overwritten -- the AI draft is appended or offered as a suggestion alongside current content.
+
+---
+
+## 30. CRA Category Recommender
+
+**Requires:** Pro plan (AI augmentation); deterministic scoring available on all plans
+
+The CRA category recommender helps determine whether a product falls under the Default, Important Class I, Important Class II, or Critical CRA category.
+
+### Deterministic Scoring
+
+The recommender uses four attributes to compute a risk score:
+
+1. **Network connectivity** -- does the product connect to the internet or operate on a network?
+2. **Data sensitivity** -- does the product handle personal data, financial data, or credentials?
+3. **Privileged access** -- does the product run with elevated privileges or manage access control?
+4. **Safety / infrastructure impact** -- could a failure affect critical infrastructure or physical safety?
+
+Each attribute is scored, and the total determines the recommended category. This scoring is deterministic and available on all plans.
+
+### AI Augmentation (Pro Plan)
+
+On Pro plans, the recommender also sends the product's metadata and attribute answers to the Claude API for a second opinion. The AI may confirm the deterministic result or suggest adjustments with reasoning. Both scores are shown side by side.
+
+### Admin Rules
+
+Platform admins can define override rules that map specific attribute combinations to fixed categories (e.g. "any product with safety impact must be Class II"). These rules take precedence over both the deterministic score and the AI suggestion. All rule changes are recorded in the audit trail.
+
+### Accessing the Recommender
+
+Click the **CRA Category** badge on a product's detail page to open the Category Recommender modal.
+
+---
+
+## 31. Supplier Due Diligence
+
+**Available on:** All plans
+
+The Supply Chain tab on each product provides supplier due diligence capabilities for managing third-party dependency risk.
+
+### Questionnaires
+
+CRANIS2 generates deterministic, template-based questionnaires for your product's dependencies. These questionnaires assess:
+
+- Security practices of the dependency maintainer
+- Licence compliance and compatibility
+- Vulnerability handling and disclosure processes
+- Update and maintenance cadence
+
+Questionnaires are generated from templates -- no AI is involved. The questions are derived from CRA requirements and industry best practices.
+
+### Supplier Enrichment
+
+For dependencies from supported registries, CRANIS2 automatically enriches supplier information:
+
+- **npm** -- maintainer details, repository URL, licence, download counts, last publish date
+- **PyPI** -- author details, project URL, licence, Python version support
+- **crates.io** -- owner details, repository URL, licence, download counts
+
+Enrichment data is cached in a shared 30-day Postgres cache to minimise external API calls.
+
+### Export
+
+Supplier due diligence data can be exported as:
+
+- **PDF** -- formatted report suitable for audit or procurement review
+- **CSV** -- raw data for further analysis
+
+---
+
+## 32. Compliance Gap Narrator
+
+**Available on:** All plans
+
+The compliance gap narrator provides a deterministic analysis of each product's compliance gaps. It appears as a **Next Steps** card on the product Overview tab.
+
+### What It Shows
+
+- A prioritised list of compliance actions, ordered by impact
+- Each action includes the relevant CRA article, what is needed, and why it matters
+- A completion percentage based on obligations, technical file progress, scan coverage, and SBOM freshness
+
+### How It Works
+
+The gap analysis is computed deterministically from platform data -- it does not use AI. It examines:
+
+- Obligation statuses (not started, in progress, complete)
+- Technical file section completion
+- Vulnerability scan recency and open finding counts
+- SBOM freshness and dependency coverage
+- Stakeholder contact completeness
+- ENISA reporting readiness
+
+The Next Steps card updates in real time as you make progress.
+
+---
+
+## 33. Public API & API Keys
+
+**Requires:** Pro plan
+
+CRANIS2 provides a public REST API for programmatic access to your compliance data. The API is authenticated using API keys.
+
+### Managing API Keys
+
+Navigate to **Settings > Integrations** to manage API keys. You can:
+
+- Create new keys with a descriptive name
+- View active keys (the full key is shown only once at creation)
+- Revoke keys instantly
+
+API keys use the prefix `cranis2_` followed by 40 hexadecimal characters. Keys are stored as SHA-256 hashes -- the plaintext is never retained after creation.
+
+### API Scopes
+
+Each key has four read-only scopes:
+
+| Scope | Access |
+|-------|--------|
+| `read:products` | List products in your organisation |
+| `read:vulnerabilities` | Read vulnerability findings and scan status |
+| `read:compliance` | Read obligation and compliance status |
+| `write:findings` | Trigger syncs and resolve findings |
+
+New keys include all scopes by default.
+
+### Available Endpoints
+
+All public API endpoints are under `/api/v1/`:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/products` | List all products |
+| GET | `/api/v1/products/:id` | Get product details |
+| GET | `/api/v1/products/:id/vulnerabilities` | Get vulnerability findings |
+| GET | `/api/v1/products/:id/obligations` | Get obligation statuses |
+| GET | `/api/v1/compliance-status` | Get overall compliance pass/fail |
+
+### Authentication
+
+Include your API key in the `Authorization` header:
+
+```
+Authorization: Bearer cranis2_your_key_here
+```
+
+---
+
+## 34. CI/CD Compliance Gate
+
+**Requires:** Pro plan + API key
+
+The CI/CD compliance gate lets you block deployments that do not meet your organisation's compliance threshold. It queries the CRANIS2 public API and exits with a non-zero code if the compliance check fails.
+
+### How It Works
+
+The gate calls the `/api/v1/compliance-status` endpoint, which returns a pass/fail result based on whether any open critical or high-severity findings exist. You configure the gate as a step in your CI/CD pipeline.
+
+### Setup
+
+Navigate to **Settings > Integrations > CI/CD Gate** for ready-made configuration snippets for:
+
+- **GitHub Actions** -- a workflow step using `curl` and `jq`
+- **GitLab CI** -- a pipeline job with the gate script
+- **Generic** -- a bash script that works with any CI system
+
+Each snippet uses your API key and the CRANIS2 API URL. Copy the snippet into your pipeline configuration.
+
+### Configurable Threshold
+
+The compliance gate checks for zero open critical and high-severity findings by default. The threshold is configurable via the API.
+
+---
+
+## 35. Integrations (Trello, MCP, IDE)
+
+**Requires:** Pro plan
+
+The Integrations page (**Settings > Integrations**) provides configuration for external tool connections.
+
+### Trello Integration
+
+Connect CRANIS2 to Trello to automatically create cards when compliance events occur. Configuration:
+
+1. Enter your Trello API key and token
+2. Map each product to a Trello board
+3. Select which event types should create cards:
+   - **New vulnerability finding** -- creates a card when a new critical or high finding is discovered
+   - **Obligation status change** -- creates a card when an obligation moves to a new status
+   - **SBOM stale** -- creates a card when a product's SBOM becomes stale
+   - **Compliance gap** -- creates a card for new compliance gaps
+
+Cards are deduplicated -- the same event will not create duplicate cards. When an event is resolved (e.g. a vulnerability is fixed), a resolution comment is added to the existing card.
+
+Default lists are auto-created on empty boards: To Do, In Progress, Done, and Resolved.
+
+### MCP Server (IDE AI Assistants)
+
+CRANIS2 provides a Model Context Protocol (MCP) server that enables IDE AI assistants (Claude Desktop, VS Code Copilot, Cursor, Claude Code) to query your compliance data directly from the editor.
+
+The MCP server provides five tools:
+
+| Tool | Description |
+|------|-------------|
+| `list_products` | List all products in your organisation |
+| `get_vulnerabilities` | Get vulnerability findings for a product (filterable by severity and status) |
+| `get_mitigation` | Get an ecosystem-aware bash command to fix a specific vulnerability |
+| `get_compliance_status` | Check pass/fail compliance status against a severity threshold |
+| `verify_fix` | Trigger an SBOM rescan to confirm a vulnerability fix has been applied |
+
+### IDE Compliance Assistant Setup
+
+The Integrations page includes a setup wizard for configuring the MCP server in your IDE:
+
+1. Select your IDE (VS Code, Cursor, Claude Desktop, or Claude Code)
+2. Select an existing API key or create a new one
+3. Copy the auto-generated JSON configuration snippet
+4. Paste it into your IDE's MCP configuration file
+
+The wizard provides the correct configuration format for each IDE and includes instructions for where to place the configuration file.
+
+### Example Workflow
+
+```
+You: "What vulnerabilities does my project have?"
+AI:  [calls list_products, then get_vulnerabilities]
+     "Found 3 critical vulnerabilities. The most urgent is CVE-2024-1234
+      in lodash@4.17.11. Run: npm install lodash@4.17.21"
+
+You: *runs the command in terminal*
+
+You: "Verify my fix"
+AI:  [calls verify_fix]
+     "Verification passed -- lodash@4.17.11 is no longer flagged.
+      The finding has been marked as resolved in CRANIS2."
+```
+
+---
+
+## 36. Copilot Usage & Cost Protection
+
+**Requires:** Pro plan
+
+CRANIS2 includes a three-layer cost protection system for AI Copilot features to prevent runaway costs.
+
+### Token Budget
+
+Each organisation has a monthly token budget (default: 500,000 tokens). When the budget is exhausted, AI features return a 429 error until the next billing cycle. Platform admins can configure the default budget and set per-organisation overrides.
+
+### Rate Limits
+
+Individual AI endpoints have rate limits to prevent abuse:
+
+| Endpoint | Limit |
+|----------|-------|
+| AI Suggest (tech file / obligations) | 20 requests per product per hour |
+| AI Triage | 5 requests per product per hour |
+| AI Risk Assessment | 3 requests per product per day |
+| AI Incident Report Draft | 5 requests per report per day |
+| CRA Category Recommendation | 5 requests per product per day |
+
+### Response Caching
+
+AI responses are cached for 24 hours using a SHA-256 hash of the input context. If the same request is made with identical context (e.g. re-clicking AI Suggest without changing any product data), the cached response is returned instantly without consuming tokens.
+
+### Usage Dashboard
+
+AI usage is tracked on the Billing page:
+
+- **Organisation-level**: total tokens used, remaining budget, cost estimate (USD)
+- **Product-level**: a Copilot Usage widget on the product Overview tab shows per-product token consumption
+- **Admin-level**: platform admins see cross-organisation usage on the Admin Billing page
 
 ---
 

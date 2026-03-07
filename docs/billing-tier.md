@@ -1,7 +1,7 @@
 # CRANIS2 Billing & Pricing Model
 
 > Decision log for billing implementation. All pricing decisions recorded here before coding begins.
-> Last updated: 2026-02-25
+> Last updated: 2026-03-07
 
 ---
 
@@ -79,7 +79,48 @@
 
 ---
 
-### 3. Enterprise (Co-located Instance)
+### 3. Pro (AI Intelligence + Integrations)
+
+| Attribute | Detail |
+|-----------|--------|
+| **Price** | €9 per product per month + €6 per contributor per month |
+| **Currency** | EUR only (v1) |
+| **Billing cycle** | Anniversary (bills on the date they subscribed) |
+| **Contributors** | Unlimited |
+| **Products** | Unlimited |
+| **Billing units** | Two line items: product price + contributor price |
+
+**What Pro adds over Standard:**
+- AI Copilot — contextual suggestions for technical file sections and obligation evidence
+- AI auto-triage — dismiss/acknowledge/escalate recommendations with confidence scores and CLI fix commands
+- AI risk assessment generator — methodology, threat model, risk register, Annex I mappings, PDF export
+- AI incident report drafter — ENISA Article 14 stage content from product data
+- CRA category recommender — deterministic scoring + AI augmentation
+- Public API with API key authentication
+- CI/CD compliance gate
+- Trello integration
+- IDE compliance assistant (MCP server)
+
+**Upgrade/downgrade:**
+- Upgrade: takes effect immediately with prorated billing. Stripe `subscriptionItems.create()` adds the product line item.
+- Downgrade: takes effect at end of current billing period. Stripe `subscriptionItems.del()` removes the product line item.
+- Pro-only features are gated by `requirePlan('pro')` middleware — returns 403 with upgrade prompt on Standard.
+
+**AI cost protection (three layers):**
+1. **Token budget:** Per-organisation monthly token limit (default 500K, stored in `platform_settings`). Per-org override via `org_billing.copilot_token_limit`. `requireTokenBudget()` middleware returns 429 when exceeded.
+2. **Rate limits:** Per-endpoint limits stored in Postgres (`copilot_usage` table). Varies by endpoint (e.g. suggest 20/product/hr, triage 5/product/hr, risk_assessment 3/product/day).
+3. **Response cache:** SHA-256 of context → cached response in `copilot_cache` table. 24-hour TTL. Returns `cached: true, tokensUsed: 0`.
+
+**Stripe implementation:**
+- `ensureStripePrices()` at startup auto-creates Stripe products/prices if missing
+- Product price ID and contributor price ID stored in `platform_settings`
+- Multi-line-item checkout: Standard = 1 item, Pro = 2 items
+- Plan detection: `session.metadata.plan` on checkout, line item count on subscription update
+- Admin-configurable pricing via GET/PUT `/api/billing/admin/pricing` — creates new Stripe prices if amounts change
+
+---
+
+### 4. Enterprise (Co-located Instance)
 
 | Attribute | Detail |
 |-----------|--------|

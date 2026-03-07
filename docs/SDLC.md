@@ -1,7 +1,7 @@
 # CRANIS2 — Software Development Lifecycle (SDLC)
 
-**Document Version:** 1.0
-**Last Updated:** 2026-02-28
+**Document Version:** 1.1
+**Last Updated:** 2026-03-07
 **Author:** Andi McBurnie, Loman Cavendish Ltd
 **CRA Reference:** Annex VII Par. 2(a) — Design & Development Process
 
@@ -79,7 +79,7 @@ The development lifecycle prioritises:
 
 3. TESTING
    └─> Automated tests written alongside feature code
-   └─> Full test suite run (788 tests must pass)
+   └─> Full test suite run (1126+ tests must pass)
    └─> Browser-based testing via CoWork for UI changes
 
 4. BUILD
@@ -184,16 +184,16 @@ All services communicate via the `cranis2_net` Docker bridge network. Backend wa
 
 | Category | Files | Tests | Coverage |
 |----------|-------|-------|----------|
-| Route Tests | 21 | 350 | All API endpoints — CRUD, auth, validation, error handling |
-| Security Tests | 6 | 150 | XSS injection, SQL injection, CSRF, auth bypass, rate limiting, session expiry |
-| Break/Adversarial Tests | 9 | 188 | Oversized inputs, rapid double-submit, browser state, empty states, edge cases |
+| Route Tests | 33 | 450+ | All API endpoints — CRUD, auth, validation, error handling (including AI Copilot, public API, integrations) |
+| Security Tests | 6 | 150+ | XSS injection, SQL injection, CSRF, auth bypass, rate limiting, session expiry |
+| Break/Adversarial Tests | 9 | 188+ | Oversized inputs, rapid double-submit, browser state, empty states, edge cases |
 | Webhook Tests | 3 | 39 | GitHub, Codeberg/Forgejo, Stripe webhook signature verification and processing |
-| Integration Tests | 7 | 102 | E2E Tier 3 import scanning, PAT auth flows, cross-service workflows |
-| **Total** | **46** | **829** | |
+| Integration Tests | 8 | 120+ | E2E Tier 3 import scanning, PAT auth flows, cross-service workflows, MCP server |
+| **Total** | **65** | **1126+** | |
 
 Additionally:
 - **SBOM Parser Unit Tests:** 713 tests (236 lockfile + 416 language + 61 SBOM mock)
-- **CoWork UI Tests:** 23 manual scripts (4 smoke, 12 acceptance, 7 break)
+- **E2E Tests (Playwright):** ~280 tests — browser-based UI testing
 
 ### 5.3 Test Execution
 
@@ -435,7 +435,7 @@ The SDLC is designed to produce the evidence required by the CRA:
 | Annex VII Par. 2(a) — Design & development | This document, HLD.md, architecture in technical files |
 | Annex VII Par. 2(b) — Vulnerability handling | Daily vuln scanning, ENISA reporting workflow, security update policy |
 | Annex VII Par. 3 — Risk assessment | Threat model, 13 Annex I requirements addressed in technical file |
-| Annex VII Par. 6 — Test reports | 788+ automated tests, 713 parser tests, 23 UI tests |
+| Annex VII Par. 6 — Test reports | 1126+ automated tests, 713 parser tests, ~280 E2E tests |
 | Article 13(6) — Vulnerability handling | Automated scanning, security update within 24 hours |
 | Article 13(11) — SBOM | Auto-generated from source repository |
 | Article 13(12) — Technical documentation | Technical file maintained within CRANIS2 platform |
