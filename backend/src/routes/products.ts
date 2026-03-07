@@ -373,7 +373,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   }
 
   const validTypes = ['firmware', 'saas', 'library', 'desktop_app', 'mobile_app', 'iot_device', 'embedded', 'other'];
-  const validCategories = ['default', 'class_i', 'class_ii'];
+  const validCategories = ['default', 'important_i', 'important_ii', 'critical'];
 
   const productId = uuidv4();
   const session = getDriver().session();

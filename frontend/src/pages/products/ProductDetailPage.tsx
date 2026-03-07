@@ -244,8 +244,9 @@ const PRODUCT_TYPES = [
 const TYPE_LABELS: Record<string, string> = Object.fromEntries(PRODUCT_TYPES.map(t => [t.value, t.label]));
 const CATEGORY_INFO: Record<string, { label: string; color: string; desc: string }> = {
   default: { label: 'Default', color: 'var(--accent)', desc: 'Standard CRA obligations apply. Self-assessment is sufficient.' },
-  class_i: { label: 'Class I (Important)', color: 'var(--amber)', desc: 'Important product with digital elements. Self-assessment possible under certain conditions.' },
-  class_ii: { label: 'Class II (Critical)', color: 'var(--red)', desc: 'Critical product. Third-party conformity assessment required.' },
+  important_i: { label: 'Important I', color: 'var(--amber)', desc: 'Important product with digital elements. Self-assessment possible under certain conditions.' },
+  important_ii: { label: 'Important II', color: 'var(--orange, var(--amber))', desc: 'Important product with higher risk. Third-party assessment may be required.' },
+  critical: { label: 'Critical', color: 'var(--red)', desc: 'Critical product. Third-party conformity assessment required.' },
 };
 
 const LANGUAGE_COLORS: Record<string, string> = {
@@ -848,8 +849,9 @@ export default function ProductDetailPage() {
                 <label className="form-label">CRA Category <HelpTip text={CRA_CATEGORY_HELP} /></label>
                 <select className="form-input" value={editForm.craCategory} onChange={e => setEditForm({ ...editForm, craCategory: e.target.value })}>
                   <option value="default">Default</option>
-                  <option value="class_i">Class I (Important)</option>
-                  <option value="class_ii">Class II (Critical)</option>
+                  <option value="important_i">Important I</option>
+                  <option value="important_ii">Important II</option>
+                  <option value="critical">Critical</option>
                 </select>
               </div>
               <div className="form-group" style={{ flex: 1 }}>
@@ -1142,8 +1144,9 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
           <div className="pd-detail-row">
             <span className="pd-detail-label">Conformity Assessment</span>
             <span className="pd-detail-value">
-              {product.craCategory === 'class_ii' ? 'Third-party required' :
-               product.craCategory === 'class_i' ? 'Self-assessment possible' : 'Self-assessment'}
+              {product.craCategory === 'critical' ? 'Third-party required' :
+               product.craCategory === 'important_ii' ? 'Third-party may be required' :
+               product.craCategory === 'important_i' ? 'Self-assessment possible' : 'Self-assessment'}
             </span>
           </div>
           <div className="pd-detail-row">

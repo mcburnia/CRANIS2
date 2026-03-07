@@ -34,15 +34,17 @@ const PRODUCT_TYPES = [
 
 const CRA_CATEGORIES = [
   { value: 'default', label: 'Default', desc: 'Standard CRA obligations' },
-  { value: 'class_i', label: 'Class I (Important)', desc: 'Important product with digital elements — self-assessment possible' },
-  { value: 'class_ii', label: 'Class II (Critical)', desc: 'Critical product — third-party conformity assessment required' },
+  { value: 'important_i', label: 'Important I', desc: 'Important product — self-assessment possible' },
+  { value: 'important_ii', label: 'Important II', desc: 'Important product — third-party assessment may be required' },
+  { value: 'critical', label: 'Critical', desc: 'Critical product — third-party conformity assessment required' },
 ];
 
 const TYPE_LABELS: Record<string, string> = Object.fromEntries(PRODUCT_TYPES.map(t => [t.value, t.label]));
 const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
   default: { label: 'Default', color: 'var(--accent)' },
-  class_i: { label: 'Class I', color: 'var(--amber)' },
-  class_ii: { label: 'Class II', color: 'var(--red)' },
+  important_i: { label: 'Important I', color: 'var(--amber)' },
+  important_ii: { label: 'Important II', color: 'var(--orange, var(--amber))' },
+  critical: { label: 'Critical', color: 'var(--red)' },
 };
 
 function getTypeIcon(type: string) {

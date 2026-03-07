@@ -64,8 +64,9 @@ const CRA_ROLE_LABELS: Record<string, string> = {
 
 const CATEGORY_LABELS: Record<string, string> = {
   default: 'Default',
-  class_i: 'Class I',
-  class_ii: 'Class II',
+  important_i: 'Important I',
+  important_ii: 'Important II',
+  critical: 'Critical',
 };
 
 function timeAgo(dateStr: string | null): string {

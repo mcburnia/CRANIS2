@@ -231,8 +231,9 @@
 }
 
 .ao-cat-default { background: var(--border); color: var(--muted); }
-.ao-cat-class_i { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
-.ao-cat-class_ii { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+.ao-cat-important_i { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+.ao-cat-important_ii { background: rgba(245, 158, 11, 0.25); color: var(--amber); }
+.ao-cat-critical { background: rgba(239, 68, 68, 0.15); color: var(--red); }
 
 .ao-product-stats {
   display: flex;
