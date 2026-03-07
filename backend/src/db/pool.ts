@@ -1088,6 +1088,24 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     await client.query(`CREATE INDEX IF NOT EXISTS idx_trello_card_log_product ON trello_card_log(product_id)`);
     await client.query(`ALTER TABLE trello_card_log ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ`);
 
+    // ── API Keys (public API authentication) ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS api_keys (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        key_hash VARCHAR(64) NOT NULL UNIQUE,
+        key_prefix VARCHAR(12) NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        scopes JSONB NOT NULL DEFAULT '["read:products","read:vulnerabilities","read:obligations","read:compliance"]',
+        created_by UUID REFERENCES users(id),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        last_used_at TIMESTAMPTZ,
+        revoked_at TIMESTAMPTZ
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_api_keys_org ON api_keys(org_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash)`);
+
     // Seed default CRA category rules (regulatory baseline)
     const attrCount = await client.query('SELECT COUNT(*) FROM category_rule_attributes');
     if (parseInt(attrCount.rows[0].count) === 0) {

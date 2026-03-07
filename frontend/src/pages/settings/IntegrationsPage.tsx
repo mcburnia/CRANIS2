@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import PageHeader from '../../components/PageHeader';
-import { Plug, Trash2, Check, AlertTriangle, Plus, X, Send, Loader2 } from 'lucide-react';
+import { Plug, Trash2, Check, AlertTriangle, Plus, X, Send, Loader2, Key, Copy } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './IntegrationsPage.css';
 
@@ -17,6 +17,16 @@ interface ProductBoard {
   listGaps: string | null;
 }
 interface Product { id: string; name: string; }
+interface ApiKeyRow {
+  id: string;
+  key_prefix: string;
+  name: string;
+  scopes: string[];
+  created_at: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
+  created_by_email: string | null;
+}
 
 function authHeaders() {
   const token = localStorage.getItem('session_token');
@@ -62,6 +72,13 @@ export default function IntegrationsPage() {
   // Test card
   const [testListId, setTestListId] = useState('');
   const [testing, setTesting] = useState(false);
+
+  // API Keys
+  const [apiKeys, setApiKeys] = useState<ApiKeyRow[]>([]);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const [showAddKey, setShowAddKey] = useState(false);
 
   /** Fetch lists for a specific board — deduped via ref */
   async function loadBoardLists(boardId: string) {
@@ -269,6 +286,50 @@ export default function IntegrationsPage() {
     finally { setTesting(false); }
   };
 
+  // ── API Key management ──
+  const fetchApiKeys = useCallback(async () => {
+    try {
+      const r = await fetch('/api/settings/api-keys', { headers: authHeaders() });
+      if (r.ok) setApiKeys(await r.json());
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => { fetchApiKeys(); }, []);
+
+  const handleCreateApiKey = async () => {
+    if (!newKeyName.trim()) { setError('Enter a name for the API key'); return; }
+    setCreatingKey(true);
+    setError('');
+    try {
+      const r = await fetch('/api/settings/api-keys', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ name: newKeyName.trim() }),
+      });
+      const data = await r.json();
+      if (!r.ok) { setError(data.error || 'Failed to create API key'); return; }
+      setRevealedKey(data.key);
+      setNewKeyName('');
+      setShowAddKey(false);
+      fetchApiKeys();
+      setSuccess('API key created. Copy it now — it will not be shown again.');
+    } catch { setError('Failed to create API key'); }
+    finally { setCreatingKey(false); }
+  };
+
+  const handleRevokeApiKey = async (keyId: string) => {
+    if (!confirm('Revoke this API key? Any services using it will lose access immediately.')) return;
+    try {
+      const r = await fetch(`/api/settings/api-keys/${keyId}`, { method: 'DELETE', headers: authHeaders() });
+      if (r.ok) { fetchApiKeys(); setSuccess('API key revoked'); }
+      else setError('Failed to revoke API key');
+    } catch { setError('Failed to revoke API key'); }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setSuccess('Copied to clipboard');
+  };
+
   const productName = (id: string) => products.find(p => p.id === id)?.name || id.slice(0, 8);
 
   if (loading) return <div className="page-container"><PageHeader title="Integrations" /><div style={{ padding: '2rem', color: 'var(--muted)' }}>Loading...</div></div>;
@@ -281,6 +342,73 @@ export default function IntegrationsPage() {
 
       {error && <div className="int-banner int-banner-error"><AlertTriangle size={14} /> {error} <button onClick={() => setError('')}><X size={14} /></button></div>}
       {success && <div className="int-banner int-banner-success"><Check size={14} /> {success} <button onClick={() => setSuccess('')}><X size={14} /></button></div>}
+
+      {/* API Keys Card */}
+      <div className="int-card">
+        <div className="int-card-header">
+          <div className="int-card-title">
+            <Key size={18} />
+            <span>API Keys</span>
+            <span className="int-badge int-badge-muted">{apiKeys.filter(k => !k.revoked_at).length} active</span>
+          </div>
+          {!showAddKey && (
+            <button className="int-btn-ghost" onClick={() => setShowAddKey(true)}>
+              <Plus size={14} /> New Key
+            </button>
+          )}
+        </div>
+
+        <p className="int-desc">
+          API keys authenticate external services against the CRANIS2 public API (v1). Use them for CI/CD gates, MCP servers, and custom integrations.
+        </p>
+
+        {revealedKey && (
+          <div className="int-banner int-banner-success" style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+            <span>{revealedKey}</span>
+            <button onClick={() => copyToClipboard(revealedKey)} title="Copy"><Copy size={14} /></button>
+            <button onClick={() => setRevealedKey(null)} title="Dismiss"><X size={14} /></button>
+          </div>
+        )}
+
+        {showAddKey && (
+          <div className="int-add-form" style={{ marginBottom: '1rem' }}>
+            <div className="int-field">
+              <label>Key Name</label>
+              <input type="text" value={newKeyName} onChange={e => setNewKeyName(e.target.value)} placeholder="e.g. CI/CD Pipeline, MCP Server" />
+            </div>
+            <div className="int-add-form-actions">
+              <button className="int-btn-ghost" onClick={() => { setShowAddKey(false); setNewKeyName(''); }}>Cancel</button>
+              <button className="int-btn-primary" onClick={handleCreateApiKey} disabled={creatingKey || !newKeyName.trim()}>
+                {creatingKey ? <><Loader2 size={14} className="spin" /> Creating...</> : 'Create Key'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {apiKeys.length === 0 && !showAddKey && (
+          <p className="int-empty">No API keys yet. Create one to start using the public API.</p>
+        )}
+
+        {apiKeys.map(k => (
+          <div key={k.id} className="int-product-board" style={{ opacity: k.revoked_at ? 0.5 : 1 }}>
+            <div className="int-product-board-header">
+              <span className="int-product-name">{k.name}</span>
+              <code style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{k.key_prefix}...</code>
+              <span className={`int-badge ${k.revoked_at ? 'int-badge-muted' : 'int-badge-green'}`} style={{ marginLeft: '0.5rem' }}>
+                {k.revoked_at ? 'Revoked' : 'Active'}
+              </span>
+              <span className="int-board-name" style={{ flex: 1, textAlign: 'right' }}>
+                {k.last_used_at ? `Last used ${new Date(k.last_used_at).toLocaleDateString()}` : 'Never used'}
+              </span>
+              {!k.revoked_at && (
+                <button className="int-btn-icon" onClick={() => handleRevokeApiKey(k.id)} title="Revoke">
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* Trello Card */}
       <div className="int-card">

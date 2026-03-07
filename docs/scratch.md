@@ -19,7 +19,7 @@ P2 — Polish for production — ALL DONE
 11	Compliance heat map	DONE
 12	Webhook E2E tests	DONE
 
-P3 — AI Automation (Pro plan) — IN PROGRESS
+P3 — AI Automation (Pro plan) — DONE
 #	Feature	Effort	Status
 13	AI Copilot	High	DONE
 15	Auto-triage vulns	High	DONE
@@ -28,17 +28,18 @@ P3 — AI Automation (Pro plan) — IN PROGRESS
 17	Incident report drafter	Medium	DONE
 18	CRA category recommender	Low	DONE
 19	Supplier due diligence questionnaire	Medium	DONE
-20	Compliance gap narrator	Low	TODO
+20	Compliance gap narrator	Low	DONE
 
-P4 — MCP Interface (external integration)
-#	Feature	Effort	Status
-14	MCP API server	High	TODO
-21	IDE compliance assistant	Medium	TODO
-22	CI/CD compliance gate	Medium	TODO
-23	GRC/audit tool bridge	Medium	TODO
-24	Chat ops integration	Low	TODO
-25	Slack notifications	Medium	TODO
-26	Trello task creation	Medium	TODO
+P4 — Public API & External Integrations
+#	Feature	Effort	Status	Notes
+28	Public API with API key auth	High	TODO	HIGHEST PRIORITY — prerequisite for #22, #14, #21
+22	CI/CD compliance gate	Medium	PARKED_HIGH_PRIORITY	Depends on #28
+14	MCP API server	High	TODO	Depends on #28
+21	IDE compliance assistant	Medium	TODO	Depends on #28
+23	GRC/audit tool bridge	Medium	PARKED
+24	Chat ops integration	Low	PARKED
+25	Slack notifications	Medium	PARKED
+26	Trello task creation	Medium	DONE
 
 P5 - Bugs
 #	Description | Status
@@ -55,4 +56,4 @@ P5 - Bugs
 **P4:** 0/7 TODO (MCP Interface — external integrations)
 **P5:** 2/3 DONE — PENDING: #29 Products & Compliance "Not Stated?" issue
 
-**Immediate next:** #20 compliance gap narrator, then P4 MCP work.
+**Immediate next:** #28 Public API with API key auth (unlocks CI/CD gate, MCP server, IDE assistant).

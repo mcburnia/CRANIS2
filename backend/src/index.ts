@@ -38,6 +38,8 @@ import categoryRecommendationRoutes from "./routes/category-recommendation.js";
 import supplierDueDiligenceRoutes from "./routes/supplier-due-diligence.js";
 import complianceGapsRoutes from "./routes/compliance-gaps.js";
 import trelloRoutes from "./routes/trello.js";
+import apiKeysRoutes from "./routes/api-keys.js";
+import publicApiV1Routes from "./routes/public-api-v1.js";
 import { startScheduler } from './services/scheduler.js';
 import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
@@ -54,7 +56,7 @@ app.use(express.json({
 
 // Global billing gate — blocks write operations for restricted accounts
 // Skips: auth, billing, admin, health, webhooks, and all GET/OPTIONS requests
-const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs'];
+const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs', '/api/v1'];
 app.use('/api', (req, res, next) => {
   // Only gate write operations
   if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
@@ -107,6 +109,8 @@ app.use('/api/products', supplierDueDiligenceRoutes);
 app.use('/api/products', complianceGapsRoutes);
 app.use('/api/copilot', copilotRoutes);
 app.use('/api/integrations/trello', trelloRoutes);
+app.use('/api/settings/api-keys', apiKeysRoutes);
+app.use('/api/v1', publicApiV1Routes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
