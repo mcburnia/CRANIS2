@@ -821,7 +821,7 @@ If the API SBOM is unavailable or insufficient, CRANIS2 scans your repository fo
 
 **Tier 3: Source Import Scanning**
 
-If no lockfiles are found, CRANIS2 falls back to scanning source code import statements. The import scanner supports 26 programming languages (see [Appendix D](#appendix-d-supported-languages-for-import-scanning)) and identifies dependencies by analysing `import`, `require`, `use`, `include`, and equivalent statements. This tier produces a best-effort SBOM based on observed imports, though it cannot determine exact versions.
+If no lockfiles are found, CRANIS2 falls back to scanning source code import statements. The import scanner supports 28 programming languages (see [Appendix D](#appendix-d-supported-languages-for-import-scanning)) and identifies dependencies by analysing `import`, `require`, `use`, `include`, and equivalent statements. This tier produces a best-effort SBOM based on observed imports, though it cannot determine exact versions.
 
 ### Source Code Privacy
 
