@@ -32,7 +32,7 @@ Focus shifted from pure compliance framework to AI-augmented security workflows 
 
 **Additional fixes:**
 - [x] Remove Risk Findings PDF export button
-- [x] Reduce Pro product seed price to €3/month
+- [x] Reduce Pro product seed price to €3/month (later increased to €9/month)
 - [x] Add tests for 7 previously untested routes (54 new tests)
 - [x] ENISA report stage Cancel button now toggles correctly (P5 #28)
 

@@ -893,7 +893,7 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     await client.query(`
       INSERT INTO platform_settings (key, value) VALUES
         ('billing.contributor_price_cents', '600'::jsonb),
-        ('billing.pro_product_price_cents', '300'::jsonb),
+        ('billing.pro_product_price_cents', '900'::jsonb),
         ('billing.stripe_contributor_price_id', $1::jsonb),
         ('billing.stripe_pro_product_price_id', 'null'::jsonb),
         ('copilot.monthly_token_limit', '500000'::jsonb)

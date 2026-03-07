@@ -304,7 +304,7 @@
 
   /* ── Pricing ───────────────────────────────────────────────────────── */
   .pricing-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.25rem 0;
+    display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin: 1.25rem 0; max-width: 640px;
   }
   .pricing-card {
     background: #1a1a22; border: 1px solid #2a2a35; border-radius: 10px;
@@ -339,7 +339,6 @@
     .columns { grid-template-columns: 1fr; }
     .cap-grid { grid-template-columns: 1fr; }
     .audience-grid { grid-template-columns: 1fr; }
-    .pricing-grid { grid-template-columns: 1fr; }
     .flow { grid-template-columns: 1fr 1fr; }
     .flow-step::after { display: none; }
     .section { scroll-margin-top: 4rem; }
@@ -846,36 +845,38 @@
             <h3>Standard</h3>
             <div class="price">&euro;6 <small>/ contributor / month</small></div>
             <ul>
-              <li>Dependency discovery &amp; SBOM generation</li>
-              <li>Vulnerability scanning &amp; monitoring</li>
-              <li>Licence compliance analysis</li>
-              <li>CRA obligation tracking</li>
-              <li>Technical file &amp; EU DoC generation</li>
-              <li>ENISA incident reporting</li>
-              <li>Compliance scorecard &amp; gap analysis</li>
-              <li>Email &amp; in-app alerts</li>
+              <li>Daily automated dependency discovery &amp; SBOM generation</li>
+              <li>Continuous vulnerability scanning &amp; real-time monitoring</li>
+              <li>Licence compliance analysis on every SBOM sync</li>
+              <li>CRA obligation tracking with automated derived statuses</li>
+              <li>Technical file &amp; EU Declaration of Conformity generation</li>
+              <li>ENISA Article 14 incident reporting with deadline tracking</li>
+              <li>Real-time compliance scorecard &amp; prioritised gap analysis</li>
+              <li>Supplier due diligence questionnaires &amp; registry enrichment</li>
+              <li>Email &amp; in-app alerts (vulnerabilities, deadlines, stale SBOMs)</li>
+              <li>Trello integration for compliance task tracking</li>
             </ul>
           </div>
           <div class="pricing-card featured">
             <h3>Pro</h3>
-            <div class="price">&euro;3 <small>/ product / month + &euro;6 / contributor / month</small></div>
+            <div class="price">&euro;9 <small>/ product / month + &euro;6 / contributor / month</small></div>
             <ul>
               <li>Everything in Standard, plus:</li>
-              <li>Public API &amp; CI/CD gate</li>
-              <li>Marketplace listings</li>
-              <li>AI Copilot (tech file &amp; obligation suggestions)</li>
-              <li>AI risk assessment generator</li>
-              <li>AI incident report drafter</li>
-              <li>AI CRA category recommender</li>
-              <li>AI vulnerability auto-triage</li>
+              <li>Public API &amp; CI/CD compliance gate</li>
+              <li>Marketplace compliance profile listings</li>
+              <li>AI Copilot — tech file &amp; obligation draft suggestions</li>
+              <li>AI risk assessment generator (Annex I mapped)</li>
+              <li>AI ENISA incident report drafter (3-stage)</li>
+              <li>AI CRA category recommender with audit trail</li>
+              <li>AI vulnerability auto-triage with confidence scoring</li>
               <li>Priority support</li>
             </ul>
           </div>
         </div>
 
         <p>
-          Both plans include unlimited products, repositories, and compliance exports.
           Contributor pricing is based on active contributors detected in your linked repositories.
+          Both plans include unlimited compliance exports and repository connections.
         </p>
       </section>
 

@@ -1164,7 +1164,7 @@ sudo systemctl restart cloudflared
 - **Pro plan + admin-configurable pricing** — Two-tier billing system enabling AI Copilot gating. Backend: `platform_settings` key-value table for admin-configurable pricing (seeded: contributor €6, pro product €20), `ensureStripePrices()` auto-creates Stripe products/prices at startup via API, `createCheckoutSession()` accepts plan param with multi-line-item checkout for Pro (product × count + contributor × count), webhook handlers updated for multi-plan (metadata + line item count detection), `upgradeToProPlan()` / `downgradeToStandardPlan()` modify existing Stripe subscriptions with proration, new routes POST `/upgrade`, POST `/downgrade`, GET/PUT `/admin/pricing`. Frontend billing page: two-column plan selection grid (Standard + Pro with "Recommended" badge) for trial/cancelled users, dynamic pricing from API, active subscribers see current plan with Upgrade/Downgrade buttons. Admin billing page: Pricing Configuration card with editable contributor and pro product prices, save creates new Stripe prices if amounts changed. **Total: 997 backend tests passing (55 files).**
 
 **Session 23 (2026-03-05):**
-- **Stripe checkout fix** — Added `customer_update: { address: 'auto', name: 'auto' }` to Stripe checkout session for automatic tax + tax ID collection. Pro product price reduced from €20 to €3/month.
+- **Stripe checkout fix** — Added `customer_update: { address: 'auto', name: 'auto' }` to Stripe checkout session for automatic tax + tax ID collection. Pro product price reduced from €20 to €3/month (later increased to €9/month in session 27).
 - **Full route test coverage** — Test coverage audit identified 7 untested routes. Created 7 new test files (54 tests): `copilot.test.ts` (9 — auth, status shape, Pro plan gating, validation, cross-org), `product-activity.test.ts` (9 — auth, shape, pagination, filters, cross-org), `dependencies-overview.test.ts` (6 — auth, shape, totals, cross-org, empty org), `repos-overview.test.ts` (6), `contributors-overview.test.ts` (6), `technical-files-overview.test.ts` (7 — sections, progress), `docs.test.ts` (11 — public GET, admin PUT, validation). Route test coverage: 33/33 (100%). **Total: 1051 backend tests passing (62 files).**
 
 **Session 24 (2026-03-05):**
@@ -1207,6 +1207,10 @@ sudo systemctl restart cloudflared
   3. **Response caching** — `copilot_cache` table with SHA-256 hash of product context data. 24-hour TTL. On cache hit: returns cached response with `tokensUsed: 0, cached: true`. Applied to suggest (non-refinement), risk assessment. Automatically invalidated when product data changes (context hash changes).
   - Category recommendation route now logs AI usage to `copilot_usage` (previously missing). `AIAugmentation` type extended with `inputTokens`/`outputTokens`.
   - New files: `middleware/copilotLimits.ts`, `services/copilot-cache.ts`. New table: `copilot_cache`. New column: `org_billing.copilot_token_limit`.
+
+**Session 31 (2026-03-07):**
+- **Welcome page pricing overhaul** — Enhanced feature descriptions for both Standard and Pro plans with frequency/timeliness qualifiers (e.g. "Daily automated dependency discovery", "Continuous vulnerability scanning", "Real-time alert emails"). Added missing features (supplier due diligence, Trello integration). Stacked pricing cards vertically (single column, max-width 640px) for cleaner layout. Removed incorrect "unlimited products" footer claim, replaced with "unlimited compliance exports and repository connections".
+- **Pro plan price increase** — Changed Pro plan price from €3 to €9/product/month across welcome page, platform_settings seed (`billing.pro_product_price_cents` 300→900), and live database. Reflects expanded feature set and value proposition. Stripe will auto-create a new price object on next checkout.
 
 **Next Steps:**
 - P4 #14 — MCP API server (depends on #28 now done)
