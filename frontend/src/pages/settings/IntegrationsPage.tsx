@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import PageHeader from '../../components/PageHeader';
-import { Plug, Trash2, Check, AlertTriangle, Plus, X, Send, Loader2, Key, Copy, Terminal, ChevronDown, ChevronUp, Info, Sparkles } from 'lucide-react';
+import { Plug, Trash2, Check, AlertTriangle, Plus, X, Send, Loader2, Key, Copy, Terminal, ChevronDown, ChevronUp, Info, Sparkles, Monitor } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { useAuth } from '../../context/AuthContext';
 import './IntegrationsPage.css';
@@ -34,10 +34,259 @@ function authHeaders() {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
+function getIdeSnippet(
+  ide: 'vscode' | 'cursor' | 'claude-desktop' | 'claude-code',
+  apiKeyValue: string,
+  apiUrl: string
+): { snippet: string; filename: string; instructions: string } {
+  const keyPlaceholder = apiKeyValue || 'cranis2_your_key_here';
+
+  if (ide === 'vscode') {
+    return {
+      filename: '.vscode/mcp.json',
+      snippet: JSON.stringify({
+        servers: {
+          cranis2: {
+            command: 'npx',
+            args: ['-y', '@cranis2/mcp-server'],
+            env: {
+              CRANIS2_API_KEY: keyPlaceholder,
+              CRANIS2_API_URL: apiUrl,
+            },
+          },
+        },
+      }, null, 2),
+      instructions: 'Create this file in your project root. VS Code will detect the MCP server automatically when using GitHub Copilot agent mode.',
+    };
+  }
+
+  if (ide === 'cursor') {
+    return {
+      filename: '.cursor/mcp.json',
+      snippet: JSON.stringify({
+        mcpServers: {
+          cranis2: {
+            command: 'npx',
+            args: ['-y', '@cranis2/mcp-server'],
+            env: {
+              CRANIS2_API_KEY: keyPlaceholder,
+              CRANIS2_API_URL: apiUrl,
+            },
+          },
+        },
+      }, null, 2),
+      instructions: 'Create this file in your project root, or add the server via Settings > MCP > Add Server.',
+    };
+  }
+
+  if (ide === 'claude-desktop') {
+    const configPath = navigator.platform?.toLowerCase().includes('mac')
+      ? '~/Library/Application Support/Claude/claude_desktop_config.json'
+      : '~/.config/Claude/claude_desktop_config.json';
+    return {
+      filename: configPath,
+      snippet: JSON.stringify({
+        mcpServers: {
+          cranis2: {
+            command: 'npx',
+            args: ['-y', '@cranis2/mcp-server'],
+            env: {
+              CRANIS2_API_KEY: keyPlaceholder,
+              CRANIS2_API_URL: apiUrl,
+            },
+          },
+        },
+      }, null, 2),
+      instructions: 'Add to your Claude Desktop config file. Restart Claude Desktop after saving.',
+    };
+  }
+
+  // claude-code
+  return {
+    filename: '.mcp.json',
+    snippet: JSON.stringify({
+      mcpServers: {
+        cranis2: {
+          command: 'npx',
+          args: ['-y', '@cranis2/mcp-server'],
+          env: {
+            CRANIS2_API_KEY: keyPlaceholder,
+            CRANIS2_API_URL: apiUrl,
+          },
+        },
+      },
+    }, null, 2),
+    instructions: 'Create this file in your project root. Claude Code will detect the MCP server on next launch.',
+  };
+}
+
+interface IdeAssistantCardProps {
+  isPro: boolean;
+  ideTab: 'vscode' | 'cursor' | 'claude-desktop' | 'claude-code';
+  setIdeTab: (tab: 'vscode' | 'cursor' | 'claude-desktop' | 'claude-code') => void;
+  ideExpanded: boolean;
+  setIdeExpanded: (v: boolean) => void;
+  ideKeyId: string;
+  setIdeKeyId: (v: string) => void;
+  apiKeys: ApiKeyRow[];
+  copyToClipboard: (text: string) => void;
+}
+
+function IdeAssistantCard({
+  isPro, ideTab, setIdeTab, ideExpanded, setIdeExpanded,
+  ideKeyId, setIdeKeyId, apiKeys, copyToClipboard,
+}: IdeAssistantCardProps) {
+  const activeKeys = apiKeys.filter(k => !k.revoked_at);
+  const selectedKey = activeKeys.find(k => k.id === ideKeyId);
+  const apiUrl = window.location.origin;
+  const { snippet, filename, instructions } = getIdeSnippet(
+    ideTab,
+    selectedKey ? `${selectedKey.key_prefix}...` : '',
+    apiUrl,
+  );
+
+  return (
+    <div className="int-card">
+      <div className="int-card-header">
+        <div className="int-card-title">
+          <Monitor size={18} />
+          <span>IDE Compliance Assistant</span>
+          {!isPro && <span className="int-badge int-badge-muted">Pro</span>}
+        </div>
+        {isPro && (
+          <button className="int-btn-ghost" onClick={() => setIdeExpanded(!ideExpanded)}>
+            {ideExpanded ? <><ChevronUp size={14} /> Collapse</> : <><ChevronDown size={14} /> Setup Guide</>}
+          </button>
+        )}
+      </div>
+
+      <p className="int-desc">
+        Connect your IDE's AI assistant to CRANIS2 via the MCP protocol. Query vulnerabilities, get fix commands, verify remediation, and check compliance — all without leaving your editor.
+      </p>
+
+      {!isPro && (
+        <div className="ai-upgrade-banner">
+          <Info size={14} />
+          <span>IDE compliance assistant requires the <strong>Pro</strong> plan. <a href="/billing"><Sparkles size={12} style={{ verticalAlign: 'middle' }} /> Upgrade now</a></span>
+        </div>
+      )}
+
+      {isPro && ideExpanded && (
+        <div className="int-connected">
+          <div className="int-section">
+            <h3>Prerequisites</h3>
+            <ol className="int-cicd-prereqs">
+              <li>Create an <strong>API key</strong> above (if you haven't already)</li>
+              <li>Ensure <strong>Node.js 18+</strong> is installed on your machine (<code>node --version</code>)</li>
+              <li>Choose your IDE below and copy the configuration</li>
+            </ol>
+          </div>
+
+          {activeKeys.length > 0 && (
+            <div className="int-section">
+              <h3>Select API Key</h3>
+              <p className="int-hint">Choose which API key to embed in the configuration. The snippet will show the key prefix — paste the full key value when you configure your IDE.</p>
+              <div className="int-field" style={{ maxWidth: 400 }}>
+                <select value={ideKeyId} onChange={e => setIdeKeyId(e.target.value)}>
+                  <option value="">Select an API key...</option>
+                  {activeKeys.map(k => (
+                    <option key={k.id} value={k.id}>{k.name} ({k.key_prefix}...)</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {activeKeys.length === 0 && (
+            <div className="ai-upgrade-banner" style={{ marginTop: '1rem' }}>
+              <Info size={14} />
+              <span>No active API keys found. Create one in the <strong>API Keys</strong> section above to get started.</span>
+            </div>
+          )}
+
+          <div className="int-section">
+            <h3>Configuration</h3>
+            <div className="int-cicd-tabs">
+              <button className={`int-cicd-tab ${ideTab === 'vscode' ? 'active' : ''}`} onClick={() => setIdeTab('vscode')}>VS Code</button>
+              <button className={`int-cicd-tab ${ideTab === 'cursor' ? 'active' : ''}`} onClick={() => setIdeTab('cursor')}>Cursor</button>
+              <button className={`int-cicd-tab ${ideTab === 'claude-desktop' ? 'active' : ''}`} onClick={() => setIdeTab('claude-desktop')}>Claude Desktop</button>
+              <button className={`int-cicd-tab ${ideTab === 'claude-code' ? 'active' : ''}`} onClick={() => setIdeTab('claude-code')}>Claude Code</button>
+            </div>
+
+            <div className="int-cicd-snippet">
+              <div className="int-cicd-snippet-header">
+                <span>Add to <code>{filename}</code></span>
+                <button className="int-btn-ghost" onClick={() => copyToClipboard(snippet)} title="Copy to clipboard"><Copy size={14} /> Copy</button>
+              </div>
+              <pre className="int-cicd-code">{snippet}</pre>
+              <p className="int-hint">{instructions}</p>
+              {selectedKey && (
+                <p className="int-hint">
+                  Replace <code>{selectedKey.key_prefix}...</code> with your full API key value. If you've lost it, revoke and create a new one.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="int-section">
+            <h3>Available Tools</h3>
+            <table className="int-cicd-table">
+              <thead>
+                <tr><th>Tool</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>list_products</code></td><td>List all products in your organisation</td></tr>
+                <tr><td><code>get_vulnerabilities</code></td><td>Get vulnerability findings (filterable by severity/status)</td></tr>
+                <tr><td><code>get_mitigation</code></td><td>Get ecosystem-aware fix command (npm, pip, cargo, etc.)</td></tr>
+                <tr><td><code>verify_fix</code></td><td>Trigger SBOM rescan and confirm fix applied</td></tr>
+                <tr><td><code>get_compliance_status</code></td><td>Pass/fail compliance check against threshold</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="int-section">
+            <h3>Example Workflow</h3>
+            <div className="int-ide-workflow">
+              <div className="int-ide-workflow-step">
+                <span className="int-ide-workflow-num">1</span>
+                <div>
+                  <strong>Ask your AI assistant:</strong>
+                  <p>"What vulnerabilities does my project have?"</p>
+                </div>
+              </div>
+              <div className="int-ide-workflow-step">
+                <span className="int-ide-workflow-num">2</span>
+                <div>
+                  <strong>AI calls <code>list_products</code> then <code>get_vulnerabilities</code>:</strong>
+                  <p>"Found 3 critical vulnerabilities. The most urgent is CVE-2024-1234 in lodash@4.17.11."</p>
+                </div>
+              </div>
+              <div className="int-ide-workflow-step">
+                <span className="int-ide-workflow-num">3</span>
+                <div>
+                  <strong>AI calls <code>get_mitigation</code> and suggests:</strong>
+                  <p><code>npm install lodash@4.17.21</code></p>
+                </div>
+              </div>
+              <div className="int-ide-workflow-step">
+                <span className="int-ide-workflow-num">4</span>
+                <div>
+                  <strong>After you run the fix, ask "Verify my fix":</strong>
+                  <p>AI calls <code>verify_fix</code> — triggers SBOM rescan and confirms the vulnerability is resolved.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function IntegrationsPage() {
   usePageMeta({ title: 'Integrations', description: 'Manage external integrations' });
   const { user } = useAuth();
-  const isPro = user?.orgPlan === 'pro' || user?.orgPlan === 'enterprise' || user?.isPlatformAdmin;
+  const isPro = !!(user?.orgPlan === 'pro' || user?.orgPlan === 'enterprise' || user?.isPlatformAdmin);
 
   // Trello state
   const [connected, setConnected] = useState(false);
@@ -86,6 +335,11 @@ export default function IntegrationsPage() {
   // CI/CD Gate
   const [cicdTab, setCicdTab] = useState<'github' | 'gitlab' | 'bash'>('github');
   const [cicdExpanded, setCicdExpanded] = useState(false);
+
+  // IDE Assistant
+  const [ideTab, setIdeTab] = useState<'vscode' | 'cursor' | 'claude-desktop' | 'claude-code'>('vscode');
+  const [ideExpanded, setIdeExpanded] = useState(false);
+  const [ideKeyId, setIdeKeyId] = useState('');
 
   /** Fetch lists for a specific board — deduped via ref */
   async function loadBoardLists(boardId: string) {
@@ -603,6 +857,19 @@ fi`;
           </div>
         )}
       </div>
+
+      {/* IDE Compliance Assistant Card */}
+      <IdeAssistantCard
+        isPro={isPro}
+        ideTab={ideTab}
+        setIdeTab={setIdeTab}
+        ideExpanded={ideExpanded}
+        setIdeExpanded={setIdeExpanded}
+        ideKeyId={ideKeyId}
+        setIdeKeyId={setIdeKeyId}
+        apiKeys={apiKeys}
+        copyToClipboard={copyToClipboard}
+      />
 
       {/* Trello Card */}
       <div className="int-card">
