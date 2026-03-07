@@ -30,13 +30,13 @@ P3 — AI Automation (Pro plan) — ALL DONE
 19	Supplier due diligence questionnaire	Medium	DONE
 20	Compliance gap narrator	Low	DONE
 
-P4 — Public API & External Integrations — 3/7 DONE
+P4 — Public API & External Integrations — 5/7 DONE
 #	Feature	Effort	Status	Notes
 28	Public API with API key auth	High	DONE	Prerequisite for #14, #21
 22	CI/CD compliance gate	Medium	DONE	Gate script + CI examples
 26	Trello task creation	Medium	DONE	4 event types, dedup, resolution
-14	MCP API server	High	TODO	Depends on #28 (done)
-21	IDE compliance assistant	Medium	TODO	Depends on #28 (done)
+14	MCP API server	High	DONE	5 tools, 12+ mitigation commands, SBOM rescan verification
+21	IDE compliance assistant	Medium	DONE	Setup wizard on Integrations page, 4 IDE tabs, auto-generated config
 23	GRC/audit tool bridge	Medium	PARKED
 24	Chat ops integration	Low	PARKED
 25	Slack notifications	Medium	PARKED
@@ -68,11 +68,10 @@ Cross-cutting (done)
 ## Current Status & Next Steps
 
 **P0–P3:** ALL COMPLETE (50/50 features done)
-**P4:** 3/7 DONE (#28 Public API, #22 CI/CD gate, #26 Trello) — Remaining: #14 MCP server, #21 IDE assistant, #23/#24/#25 parked
+**P4:** 5/7 DONE (#28 Public API, #22 CI/CD gate, #26 Trello, #14 MCP server, #21 IDE assistant) — #23/#24/#25 parked for post-launch
 **P5:** 0/7 — Supplier marketplace not started (post-launch)
 **Bugs:** 3/3 DONE
 
 **Immediate next:**
-- P4 #14 — MCP API server
-- P4 #21 — IDE compliance assistant
 - Production deployment planning (Infomaniak hosting, cranis2.com)
+- P5 — Supplier marketplace (post-launch)
