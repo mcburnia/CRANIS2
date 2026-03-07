@@ -71,7 +71,7 @@ Viral growth loop — manufacturers invite suppliers, suppliers publish verified
 
 - [x] All Organisations → Actions button does nothing (#27)
 - [x] ENISA Reporting → Cancel button does nothing (#28)
-- [ ] Products & Compliance → CRANIS2 → "Not Stated?" display issue (#29)
+- [x] Products & Compliance → CRA category mismatch (class_i/class_ii vs important_i/important_ii/critical) (#29)
 
 ---
 

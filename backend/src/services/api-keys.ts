@@ -19,7 +19,7 @@ export async function createApiKey(
   orgId: string,
   name: string,
   createdBy: string,
-  scopes: string[] = ['read:products', 'read:vulnerabilities', 'read:obligations', 'read:compliance'],
+  scopes: string[] = ['read:products', 'read:vulnerabilities', 'read:obligations', 'read:compliance', 'write:findings'],
 ): Promise<{ key: string; id: string; keyPrefix: string; name: string; scopes: string[]; createdAt: string }> {
   const random = crypto.randomBytes(20).toString('hex'); // 40 hex chars
   const fullKey = `${KEY_PREFIX}${random}`;

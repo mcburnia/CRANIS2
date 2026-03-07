@@ -1,11 +1,14 @@
 /**
  * Public API v1 Routes (API-key authenticated)
  *
- * GET /api/v1/products                          — List products
- * GET /api/v1/products/:id                      — Product detail
- * GET /api/v1/products/:id/vulnerabilities      — Vulnerability findings
- * GET /api/v1/products/:id/obligations          — Obligation statuses
- * GET /api/v1/products/:id/compliance-status    — Pass/fail compliance summary
+ * GET  /api/v1/products                              — List products
+ * GET  /api/v1/products/:id                          — Product detail
+ * GET  /api/v1/products/:id/vulnerabilities          — Vulnerability findings
+ * GET  /api/v1/products/:id/obligations              — Obligation statuses
+ * GET  /api/v1/products/:id/compliance-status        — Pass/fail compliance summary
+ * POST /api/v1/products/:id/sync                     — Trigger SBOM sync + vulnerability rescan
+ * PUT  /api/v1/products/:id/findings/:fid/resolve    — Mark finding as resolved with evidence
+ * GET  /api/v1/products/:id/scans/:scanId            — Poll scan status
  */
 
 import { Router, Request, Response } from 'express';
@@ -19,6 +22,7 @@ import {
   getApplicableObligations,
 } from '../services/obligation-engine.js';
 import { analyseComplianceGaps } from '../services/compliance-gaps.js';
+import { runProductScan } from '../services/vulnerability-scanner.js';
 
 const router = Router();
 
@@ -265,6 +269,128 @@ router.get('/products/:id/compliance-status', requireApiKey('read:compliance'), 
     });
   } catch (error) {
     console.error('[API-V1] GET /products/:id/compliance-status error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── POST /api/v1/products/:id/sync — Trigger SBOM sync + vulnerability rescan ──
+router.post('/products/:id/sync', requireApiKey('write:findings'), async (req: Request, res: Response) => {
+  try {
+    const orgId = (req as any).orgId;
+    const productId = req.params.id as string;
+    const product = await verifyProductOrg(orgId, productId);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    // Check for already-running scan
+    const running = await pool.query(
+      "SELECT id FROM vulnerability_scans WHERE product_id = $1 AND status = 'running' LIMIT 1",
+      [productId],
+    );
+    if (running.rows.length > 0) {
+      return res.status(409).json({
+        error: 'A scan is already running for this product',
+        scanId: running.rows[0].id,
+      });
+    }
+
+    // Fire-and-forget: run scan in background so the API responds immediately.
+    // The MCP client polls GET /scans/:scanId for status.
+    runProductScan(productId, orgId, 'api-key').catch(err => {
+      console.error('[API-V1] Background scan failed:', err);
+    });
+
+    // Brief pause to let the scan record be created
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Fetch the newly created scan record
+    const newScan = await pool.query(
+      "SELECT id FROM vulnerability_scans WHERE product_id = $1 AND org_id = $2 ORDER BY started_at DESC LIMIT 1",
+      [productId, orgId],
+    );
+
+    res.json({ scanId: newScan.rows[0]?.id || null, status: 'running' });
+  } catch (error) {
+    console.error('[API-V1] POST /products/:id/sync error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── GET /api/v1/products/:id/scans/:scanId — Poll scan status ──
+router.get('/products/:id/scans/:scanId', requireApiKey('read:vulnerabilities'), async (req: Request, res: Response) => {
+  try {
+    const orgId = (req as any).orgId;
+    const productId = req.params.id as string;
+    const scanId = req.params.scanId as string;
+
+    const product = await verifyProductOrg(orgId, productId);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    const result = await pool.query(
+      `SELECT id, status, started_at, completed_at, findings_count,
+              critical_count, high_count, medium_count, low_count
+       FROM vulnerability_scans
+       WHERE id = $1 AND product_id = $2 AND org_id = $3`,
+      [scanId, productId, orgId],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Scan not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('[API-V1] GET /products/:id/scans/:scanId error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── PUT /api/v1/products/:id/findings/:findingId/resolve — Mark finding as resolved ──
+router.put('/products/:id/findings/:findingId/resolve', requireApiKey('write:findings'), async (req: Request, res: Response) => {
+  try {
+    const orgId = (req as any).orgId;
+    const productId = req.params.id as string;
+    const findingId = req.params.findingId as string;
+
+    const product = await verifyProductOrg(orgId, productId);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    // Verify finding belongs to this product and org
+    const finding = await pool.query(
+      'SELECT id, status, dependency_name, dependency_version FROM vulnerability_findings WHERE id = $1 AND product_id = $2 AND org_id = $3',
+      [findingId, productId, orgId],
+    );
+    if (finding.rows.length === 0) {
+      return res.status(404).json({ error: 'Finding not found' });
+    }
+
+    if (finding.rows[0].status === 'resolved') {
+      return res.json({ message: 'Finding is already resolved', finding: finding.rows[0] });
+    }
+
+    const evidence = req.body.evidence || {};
+
+    await pool.query(
+      `UPDATE vulnerability_findings
+       SET status = 'resolved',
+           mitigation = $1,
+           updated_at = NOW()
+       WHERE id = $2`,
+      [
+        JSON.stringify({
+          resolvedVia: 'mcp-ide-assistant',
+          ...evidence,
+        }),
+        findingId,
+      ],
+    );
+
+    res.json({
+      message: 'Finding marked as resolved',
+      findingId,
+      previousStatus: finding.rows[0].status,
+    });
+  } catch (error) {
+    console.error('[API-V1] PUT /products/:id/findings/:findingId/resolve error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -55,7 +55,7 @@ Bugs
 #	Description	Status
 27	All Organisations -> Actions button does nothing	DONE
 28	ENISA Reporting -> Cancel button does nothing	DONE
-29	Products & Compliance -> CRANIS2 -> Not Stated?	PENDING
+29	Products & Compliance -> CRANIS2 -> Not Stated?	DONE
 
 Cross-cutting (done)
 -	Pro plan billing (Standard €6/contributor, Pro €9/product + €6/contributor)	DONE
@@ -70,10 +70,9 @@ Cross-cutting (done)
 **P0–P3:** ALL COMPLETE (50/50 features done)
 **P4:** 3/7 DONE (#28 Public API, #22 CI/CD gate, #26 Trello) — Remaining: #14 MCP server, #21 IDE assistant, #23/#24/#25 parked
 **P5:** 0/7 — Supplier marketplace not started (post-launch)
-**Bugs:** 2/3 DONE — PENDING: #29 Products & Compliance "Not Stated?" issue
+**Bugs:** 3/3 DONE
 
 **Immediate next:**
-- Bug #29 — Products & Compliance "Not Stated?" fix
 - P4 #14 — MCP API server
 - P4 #21 — IDE compliance assistant
 - Production deployment planning (Infomaniak hosting, cranis2.com)
