@@ -8,7 +8,7 @@ import {
 } from '../services/obligation-engine.js';
 import { logProductActivity } from '../services/activity-log.js';
 import { OBLIGATIONS } from '../services/obligation-engine.js';
-import { createObligationCard } from '../services/trello.js';
+import { createObligationCard, resolveCard } from '../services/trello.js';
 
 const router = Router();
 
@@ -259,6 +259,11 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       const obDef = OBLIGATIONS.find(o => o.key === obKey);
       if (obDef) {
         createObligationCard(orgId, productId, '', obKey, obDef.title, status, obDef.article).catch(() => {});
+      }
+      // Resolve Trello card when obligation is met
+      if (status === 'met') {
+        const eventKey = `obligation:${productId}:${obKey}:in_progress`;
+        resolveCard(orgId, eventKey, `Obligation ${obKey} marked as met.`).catch(() => {});
       }
     }
     if (notes !== undefined && notes !== check.rows[0].old_notes) {

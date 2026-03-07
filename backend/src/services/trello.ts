@@ -307,6 +307,76 @@ async function ensureCard(
   return card.url;
 }
 
+/**
+ * Add a comment to an existing Trello card.
+ */
+async function addCardComment(
+  apiKey: string,
+  apiToken: string,
+  cardId: string,
+  text: string
+): Promise<void> {
+  await trelloFetch<unknown>(
+    `/cards/${cardId}/actions/comments`,
+    apiKey,
+    apiToken,
+    { method: 'POST', body: { text } }
+  );
+}
+
+/**
+ * Resolve a Trello card by event key: add a comment explaining the resolution
+ * and mark it as resolved in our log. The card stays on the board — the board
+ * admin decides when to archive or remove it.
+ */
+export async function resolveCard(
+  orgId: string,
+  eventKey: string,
+  reason: string
+): Promise<void> {
+  const row = await pool.query(
+    'SELECT card_id, resolved_at FROM trello_card_log WHERE event_key = $1',
+    [eventKey]
+  );
+  if (row.rows.length === 0 || row.rows[0].resolved_at) return; // Not found or already resolved
+
+  const integration = await getIntegration(orgId);
+  if (!integration?.enabled) return;
+
+  const cardId = row.rows[0].card_id;
+  const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+
+  await addCardComment(
+    integration.apiKey,
+    integration.apiToken,
+    cardId,
+    `✅ **Resolved in CRANIS2** (${timestamp})\n\n${reason}`
+  );
+
+  await pool.query(
+    'UPDATE trello_card_log SET resolved_at = NOW() WHERE event_key = $1',
+    [eventKey]
+  );
+}
+
+/**
+ * Resolve all unresolved cards matching a prefix (e.g. all vuln cards for a product).
+ * Non-blocking convenience wrapper.
+ */
+export async function resolveCardsByPrefix(
+  orgId: string,
+  eventKeyPrefix: string,
+  reason: string
+): Promise<void> {
+  const rows = await pool.query(
+    'SELECT event_key FROM trello_card_log WHERE event_key LIKE $1 AND resolved_at IS NULL',
+    [eventKeyPrefix + '%']
+  );
+  for (const r of rows.rows) {
+    await resolveCard(orgId, r.event_key, reason).catch(() => {});
+  }
+}
+
 // ── Event-specific card builders ──
 
 /**

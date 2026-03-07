@@ -1080,11 +1080,13 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
         card_id VARCHAR(100) NOT NULL,
         card_url TEXT,
         event_type VARCHAR(50) NOT NULL,
-        created_at TIMESTAMPTZ DEFAULT NOW()
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        resolved_at TIMESTAMPTZ
       );
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_trello_card_log_event ON trello_card_log(event_key)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_trello_card_log_product ON trello_card_log(product_id)`);
+    await client.query(`ALTER TABLE trello_card_log ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ`);
 
     // Seed default CRA category rules (regulatory baseline)
     const attrCount = await client.query('SELECT COUNT(*) FROM category_rule_attributes');

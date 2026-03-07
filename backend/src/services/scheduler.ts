@@ -22,7 +22,7 @@ import { sendComplianceGapNotification } from './notifications.js';
 import { sendScanFailedEmail, sendComplianceGapEmail, sendDeadlineAlertEmail, sendSupportEndAlertEmail, sendCraMilestoneAlertEmail, sendComplianceStallAlertEmail } from './alert-emails.js';
 import { scanProductLicenses } from './license-scanner.js';
 import { createSnapshot } from './ip-proof.js';
-import { createDeadlineCard, createComplianceStallCard } from './trello.js';
+import { createDeadlineCard, createComplianceStallCard, resolveCardsByPrefix } from './trello.js';
 import { extractPackageInfo } from '../routes/github.js';
 import { checkTrialExpiry, checkPaymentGrace } from './billing.js';
 import { ensureWebhook } from './webhook.js';
@@ -1048,14 +1048,24 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
           const readiness = total > 0 ? Math.round((met / total) * 100) : 0;
 
           // Skip products at 100% readiness or with no obligations
-          if (readiness >= 100 || total === 0) continue;
+          if (readiness >= 100 || total === 0) {
+            // Resolve any existing stall cards — product is now compliant
+            if (readiness >= 100) {
+              resolveCardsByPrefix(p.orgId, `stall:${p.id}:`, `Product reached 100% CRA readiness.`).catch(() => {});
+            }
+            continue;
+          }
 
           // Check for stall (>7 days since last update)
           const lastUpdate = lastUpdateMap[p.id];
           if (!lastUpdate) continue; // No obligations updated yet — don't nag
 
           const daysSinceUpdate = Math.floor((today.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
-          if (daysSinceUpdate <= 7) continue;
+          if (daysSinceUpdate <= 7) {
+            // Stall cleared — obligations were updated recently, resolve any stall cards
+            resolveCardsByPrefix(p.orgId, `stall:${p.id}:`, `Compliance progress resumed — obligations updated ${daysSinceUpdate} day(s) ago.`).catch(() => {});
+            continue;
+          }
 
           // Dedup: check for existing unread notification
           const existing = await pool.query(
