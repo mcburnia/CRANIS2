@@ -1,0 +1,46 @@
+# CRANIS2 CRA Compliance Gate — GitLab CI/CD
+#
+# Add this job to your .gitlab-ci.yml to block pipelines that don't meet
+# CRA compliance requirements. Requires two CI/CD variables:
+#   - CRANIS2_API_KEY:    Your API key (Settings > Integrations)
+#   - CRANIS2_PRODUCT_ID: The product UUID to check
+#
+# Optional variables:
+#   - CRANIS2_THRESHOLD: "critical", "high" (default), "medium", or "any"
+#   - CRANIS2_URL: Custom server URL (default: https://dev.cranis2.dev)
+
+stages:
+  - compliance
+
+cra-compliance-gate:
+  stage: compliance
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl python3
+  script:
+    - |
+      RESPONSE=$(curl -sf \
+        -H "X-API-Key: ${CRANIS2_API_KEY}" \
+        "${CRANIS2_URL:-https://dev.cranis2.dev}/api/v1/products/${CRANIS2_PRODUCT_ID}/compliance-status?threshold=${CRANIS2_THRESHOLD:-high}")
+
+      PASS=$(echo "$RESPONSE" | python3 -c "import sys,json; print(str(json.load(sys.stdin)['pass']).lower())")
+      PRODUCT=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['productName'])")
+      TOTAL=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['summary']['total'])")
+      CRITICAL=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['summary']['critical'])")
+      HIGH=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['summary']['high'])")
+
+      echo "CRA Compliance: ${PRODUCT}"
+      echo "  Critical gaps: ${CRITICAL}"
+      echo "  High gaps:     ${HIGH}"
+      echo "  Total gaps:    ${TOTAL}"
+      echo "  Threshold:     ${CRANIS2_THRESHOLD:-high}"
+
+      if [ "$PASS" != "true" ]; then
+        echo "FAIL — ${TOTAL} compliance gaps found above threshold"
+        exit 1
+      fi
+
+      echo "PASS — No compliance gaps above threshold"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

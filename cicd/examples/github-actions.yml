@@ -1,0 +1,56 @@
+# CRANIS2 CRA Compliance Gate — GitHub Actions
+#
+# Add this as a job in your workflow to block releases that don't meet
+# CRA compliance requirements. Requires two repository secrets:
+#   - CRANIS2_API_KEY:    Your API key (Settings > Integrations)
+#   - CRANIS2_PRODUCT_ID: The product UUID to check
+#
+# Optional variables:
+#   - CRANIS2_THRESHOLD: "critical", "high" (default), "medium", or "any"
+#   - CRANIS2_URL: Custom server URL (default: https://dev.cranis2.dev)
+
+name: CRA Compliance Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  compliance-gate:
+    name: CRA Compliance Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check CRA compliance status
+        env:
+          CRANIS2_API_KEY: ${{ secrets.CRANIS2_API_KEY }}
+          CRANIS2_PRODUCT_ID: ${{ secrets.CRANIS2_PRODUCT_ID }}
+          CRANIS2_THRESHOLD: "high"
+        run: |
+          RESPONSE=$(curl -sf \
+            -H "X-API-Key: ${CRANIS2_API_KEY}" \
+            "${CRANIS2_URL:-https://dev.cranis2.dev}/api/v1/products/${CRANIS2_PRODUCT_ID}/compliance-status?threshold=${CRANIS2_THRESHOLD}")
+
+          PASS=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['pass'])")
+          PRODUCT=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['productName'])")
+          TOTAL=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['summary']['total'])")
+          CRITICAL=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['summary']['critical'])")
+          HIGH=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['summary']['high'])")
+
+          echo "## CRA Compliance: ${PRODUCT}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Critical gaps | ${CRITICAL} |" >> $GITHUB_STEP_SUMMARY
+          echo "| High gaps | ${HIGH} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total gaps | ${TOTAL} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Threshold | ${CRANIS2_THRESHOLD} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Result | $([ "$PASS" = "True" ] && echo 'PASS' || echo 'FAIL') |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$PASS" != "True" ]; then
+            echo "::error::CRA compliance gate failed — ${TOTAL} gaps found (threshold: ${CRANIS2_THRESHOLD})"
+            exit 1
+          fi
+
+          echo "CRA compliance gate passed"

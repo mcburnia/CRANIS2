@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import PageHeader from '../../components/PageHeader';
-import { Plug, Trash2, Check, AlertTriangle, Plus, X, Send, Loader2, Key, Copy } from 'lucide-react';
+import { Plug, Trash2, Check, AlertTriangle, Plus, X, Send, Loader2, Key, Copy, Terminal, ChevronDown, ChevronUp } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './IntegrationsPage.css';
 
@@ -79,6 +79,10 @@ export default function IntegrationsPage() {
   const [creatingKey, setCreatingKey] = useState(false);
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [showAddKey, setShowAddKey] = useState(false);
+
+  // CI/CD Gate
+  const [cicdTab, setCicdTab] = useState<'github' | 'gitlab' | 'bash'>('github');
+  const [cicdExpanded, setCicdExpanded] = useState(false);
 
   /** Fetch lists for a specific board — deduped via ref */
   async function loadBoardLists(boardId: string) {
@@ -336,6 +340,82 @@ export default function IntegrationsPage() {
 
   const currentLists = newBoardId ? (boardLists[newBoardId] || []) : [];
 
+  const githubSnippet = `name: CRA Compliance Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  compliance-gate:
+    name: CRA Compliance Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check CRA compliance status
+        env:
+          CRANIS2_API_KEY: \${{ secrets.CRANIS2_API_KEY }}
+          CRANIS2_PRODUCT_ID: \${{ secrets.CRANIS2_PRODUCT_ID }}
+          CRANIS2_THRESHOLD: "high"
+        run: |
+          RESPONSE=$(curl -sf \\
+            -H "X-API-Key: \${CRANIS2_API_KEY}" \\
+            "\${CRANIS2_URL:-https://dev.cranis2.dev}/api/v1/products/\${CRANIS2_PRODUCT_ID}/compliance-status?threshold=\${CRANIS2_THRESHOLD}")
+
+          PASS=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['pass'])")
+
+          if [ "$PASS" != "True" ]; then
+            echo "::error::CRA compliance gate failed"
+            exit 1
+          fi
+          echo "CRA compliance gate passed"`;
+
+  const gitlabSnippet = `cra-compliance-gate:
+  stage: compliance
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl python3
+  script:
+    - |
+      RESPONSE=$(curl -sf \\
+        -H "X-API-Key: \${CRANIS2_API_KEY}" \\
+        "\${CRANIS2_URL:-https://dev.cranis2.dev}/api/v1/products/\${CRANIS2_PRODUCT_ID}/compliance-status?threshold=\${CRANIS2_THRESHOLD:-high}")
+
+      PASS=$(echo "$RESPONSE" | python3 -c "import sys,json; print(str(json.load(sys.stdin)['pass']).lower())")
+
+      if [ "$PASS" != "true" ]; then
+        echo "FAIL — compliance gaps found above threshold"
+        exit 1
+      fi
+      echo "PASS — CRA compliance gate passed"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH`;
+
+  const bashSnippet = `#!/usr/bin/env bash
+# Set these environment variables:
+#   CRANIS2_API_KEY      — Your API key
+#   CRANIS2_PRODUCT_ID   — Product UUID
+#   CRANIS2_THRESHOLD    — "critical", "high" (default), "medium", or "any"
+
+set -euo pipefail
+BASE_URL="\${CRANIS2_URL:-https://dev.cranis2.dev}"
+
+RESPONSE=$(curl -sf \\
+  -H "X-API-Key: \${CRANIS2_API_KEY}" \\
+  "\${BASE_URL}/api/v1/products/\${CRANIS2_PRODUCT_ID}/compliance-status?threshold=\${CRANIS2_THRESHOLD:-high}")
+
+PASS=$(echo "$RESPONSE" | python3 -c "import sys,json; print(str(json.load(sys.stdin)['pass']).lower())")
+
+if [ "$PASS" = "true" ]; then
+  echo "CRA compliance gate: PASS"
+  exit 0
+else
+  echo "CRA compliance gate: FAIL"
+  exit 1
+fi`;
+
   return (
     <div className="page-container">
       <PageHeader title="Integrations" />
@@ -408,6 +488,99 @@ export default function IntegrationsPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* CI/CD Compliance Gate Card */}
+      <div className="int-card">
+        <div className="int-card-header">
+          <div className="int-card-title">
+            <Terminal size={18} />
+            <span>CI/CD Compliance Gate</span>
+          </div>
+          <button className="int-btn-ghost" onClick={() => setCicdExpanded(!cicdExpanded)}>
+            {cicdExpanded ? <><ChevronUp size={14} /> Collapse</> : <><ChevronDown size={14} /> Setup Guide</>}
+          </button>
+        </div>
+
+        <p className="int-desc">
+          Block releases that don't meet CRA compliance requirements. Add a compliance gate step to your CI/CD pipeline — it calls the CRANIS2 API and fails the build if unresolved gaps exceed your threshold.
+        </p>
+
+        {cicdExpanded && (
+          <div className="int-connected">
+            <div className="int-section">
+              <h3>Prerequisites</h3>
+              <ol className="int-cicd-prereqs">
+                <li>Create an <strong>API key</strong> above (if you haven't already)</li>
+                <li>Find your <strong>Product ID</strong> from the product URL: <code>/products/<strong>{'<product-id>'}</strong></code></li>
+                <li>Add both as secrets/variables in your CI/CD platform</li>
+              </ol>
+            </div>
+
+            <div className="int-section">
+              <h3>Configuration</h3>
+              <div className="int-cicd-tabs">
+                <button className={`int-cicd-tab ${cicdTab === 'github' ? 'active' : ''}`} onClick={() => setCicdTab('github')}>GitHub Actions</button>
+                <button className={`int-cicd-tab ${cicdTab === 'gitlab' ? 'active' : ''}`} onClick={() => setCicdTab('gitlab')}>GitLab CI</button>
+                <button className={`int-cicd-tab ${cicdTab === 'bash' ? 'active' : ''}`} onClick={() => setCicdTab('bash')}>Bash (Any CI)</button>
+              </div>
+
+              {cicdTab === 'github' && (
+                <div className="int-cicd-snippet">
+                  <div className="int-cicd-snippet-header">
+                    <span>Add to <code>.github/workflows/compliance.yml</code></span>
+                    <button className="int-btn-ghost" onClick={() => copyToClipboard(githubSnippet)} title="Copy to clipboard"><Copy size={14} /> Copy</button>
+                  </div>
+                  <pre className="int-cicd-code">{githubSnippet}</pre>
+                  <p className="int-hint">
+                    Add <code>CRANIS2_API_KEY</code> and <code>CRANIS2_PRODUCT_ID</code> as repository secrets in Settings &gt; Secrets and variables &gt; Actions.
+                  </p>
+                </div>
+              )}
+
+              {cicdTab === 'gitlab' && (
+                <div className="int-cicd-snippet">
+                  <div className="int-cicd-snippet-header">
+                    <span>Add to <code>.gitlab-ci.yml</code></span>
+                    <button className="int-btn-ghost" onClick={() => copyToClipboard(gitlabSnippet)} title="Copy to clipboard"><Copy size={14} /> Copy</button>
+                  </div>
+                  <pre className="int-cicd-code">{gitlabSnippet}</pre>
+                  <p className="int-hint">
+                    Add <code>CRANIS2_API_KEY</code> and <code>CRANIS2_PRODUCT_ID</code> as CI/CD variables in Settings &gt; CI/CD &gt; Variables.
+                  </p>
+                </div>
+              )}
+
+              {cicdTab === 'bash' && (
+                <div className="int-cicd-snippet">
+                  <div className="int-cicd-snippet-header">
+                    <span>Add to any CI pipeline</span>
+                    <button className="int-btn-ghost" onClick={() => copyToClipboard(bashSnippet)} title="Copy to clipboard"><Copy size={14} /> Copy</button>
+                  </div>
+                  <pre className="int-cicd-code">{bashSnippet}</pre>
+                  <p className="int-hint">
+                    Works with Jenkins, CircleCI, Bitbucket Pipelines, or any system that runs shell commands. Requires <code>curl</code> and <code>python3</code> (or <code>jq</code>).
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="int-section">
+              <h3>Threshold Options</h3>
+              <table className="int-cicd-table">
+                <thead>
+                  <tr><th>Value</th><th>Blocks on</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>critical</code></td><td>Only critical gaps</td></tr>
+                  <tr><td><code>high</code></td><td>Critical + high gaps (default)</td></tr>
+                  <tr><td><code>medium</code></td><td>Critical + high + medium gaps</td></tr>
+                  <tr><td><code>any</code></td><td>Any gap at any severity</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Trello Card */}

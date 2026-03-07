@@ -135,6 +135,49 @@
   padding: 0.5rem 0.75rem; color: var(--text); font-size: 0.85rem; flex: 1;
 }
 
+/* CI/CD Gate */
+.int-cicd-prereqs {
+  font-size: 0.85rem; line-height: 1.6; padding-left: 1.25rem;
+  color: var(--text); margin: 0;
+}
+.int-cicd-prereqs code { background: var(--bg); padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; }
+
+.int-cicd-tabs {
+  display: flex; gap: 0; margin-bottom: 0; border-bottom: 1px solid var(--border);
+}
+.int-cicd-tab {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--muted);
+  cursor: pointer; font-weight: 500;
+}
+.int-cicd-tab:hover { color: var(--text); }
+.int-cicd-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.int-cicd-snippet { margin-top: 0.75rem; }
+.int-cicd-snippet-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.5rem;
+}
+.int-cicd-snippet-header span { font-size: 0.8rem; color: var(--muted); }
+.int-cicd-snippet-header code { background: var(--bg); padding: 1px 4px; border-radius: 3px; font-size: 0.75rem; }
+
+.int-cicd-code {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 1rem; font-size: 0.75rem; line-height: 1.5;
+  overflow-x: auto; white-space: pre; color: var(--text);
+  margin: 0 0 0.75rem 0; max-height: 400px; overflow-y: auto;
+}
+
+.int-cicd-table {
+  width: 100%; border-collapse: collapse; font-size: 0.85rem;
+}
+.int-cicd-table th {
+  text-align: left; padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border);
+  font-weight: 600; font-size: 0.8rem; color: var(--muted);
+}
+.int-cicd-table td { padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border); }
+.int-cicd-table code { background: var(--bg); padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; }
+
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 

@@ -231,13 +231,33 @@ router.get('/products/:id/compliance-status', requireApiKey('read:compliance'), 
     const gapResult = await analyseComplianceGaps(productId, orgId);
     if (!gapResult) return res.status(404).json({ error: 'Product not found' });
 
-    const pass = gapResult.summary.critical === 0 && gapResult.summary.high === 0;
+    // Threshold: "critical" (default), "high", "medium", "low", "any"
+    const threshold = (req.query.threshold as string || 'high').toLowerCase();
+    let pass: boolean;
+    switch (threshold) {
+      case 'critical':
+        pass = gapResult.summary.critical === 0;
+        break;
+      case 'high':
+        pass = gapResult.summary.critical === 0 && gapResult.summary.high === 0;
+        break;
+      case 'medium':
+        pass = gapResult.summary.critical === 0 && gapResult.summary.high === 0 && gapResult.summary.medium === 0;
+        break;
+      case 'low':
+      case 'any':
+        pass = gapResult.summary.total === 0;
+        break;
+      default:
+        pass = gapResult.summary.critical === 0 && gapResult.summary.high === 0;
+    }
 
     res.json({
       productId,
       productName: gapResult.productName,
       craCategory: gapResult.craCategory,
       pass,
+      threshold,
       generatedAt: gapResult.generatedAt,
       summary: gapResult.summary,
       progress: gapResult.progress,
