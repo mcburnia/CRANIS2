@@ -1741,7 +1741,7 @@ CRANIS2's Tier 2 SBOM generation parses 28 lockfile formats across all major pac
 
 ## Appendix D: Supported Languages for Import Scanning
 
-CRANIS2's Tier 3 import scanner analyses source code import statements in 26 programming languages:
+CRANIS2's Tier 3 import scanner analyses source code import statements in 28 programming languages:
 
 | Language | Language | Language |
 |----------|----------|----------|
@@ -1751,8 +1751,8 @@ CRANIS2's Tier 3 import scanner analyses source code import statements in 26 pro
 | Go | PHP | Shell |
 | Rust | Swift | Zig |
 | Java | Objective-C | Crystal |
-| Scala | C | |
-| Groovy | C++ | |
+| Scala | C | Delphi |
+| Groovy | C++ | Pascal |
 | Dart | Elixir | |
 | Haskell | Erlang | |
 

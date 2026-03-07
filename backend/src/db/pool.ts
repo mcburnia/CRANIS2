@@ -845,18 +845,22 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
       CREATE INDEX IF NOT EXISTS idx_pal_org ON product_activity_log(org_id, created_at DESC);
     `);
 
-    // Seed doc_pages from markdown files on first run
-    const docCount = await client.query('SELECT COUNT(*) FROM doc_pages');
-    if (parseInt(docCount.rows[0].count) === 0) {
-      const ugPath = join(__dirname, '../../docs/USER-GUIDE.md');
-      const faqPath = join(__dirname, '../../docs/FAQ.md');
-      const ugContent = existsSync(ugPath) ? readFileSync(ugPath, 'utf-8') : '';
-      const faqContent = existsSync(faqPath) ? readFileSync(faqPath, 'utf-8') : '';
-      await client.query(
-        `INSERT INTO doc_pages (slug, title, content) VALUES ($1, $2, $3), ($4, $5, $6)`,
-        ['user-guide', 'User Guide', ugContent, 'faq', 'FAQ', faqContent]
-      );
-      console.log('[DB] Seeded doc_pages with USER-GUIDE.md and FAQ.md');
+    // Seed doc_pages from markdown files (insert any missing pages)
+    const existingSlugs = await client.query('SELECT slug FROM doc_pages');
+    const existing = new Set(existingSlugs.rows.map((r: any) => r.slug));
+    const docsToSeed: Array<{ slug: string; title: string; path: string }> = [
+      { slug: 'user-guide', title: 'User Guide', path: join(__dirname, '../../docs/USER-GUIDE.md') },
+      { slug: 'faq', title: 'FAQ', path: join(__dirname, '../../docs/FAQ.md') },
+    ];
+    for (const doc of docsToSeed) {
+      if (!existing.has(doc.slug) && existsSync(doc.path)) {
+        const content = readFileSync(doc.path, 'utf-8');
+        await client.query(
+          `INSERT INTO doc_pages (slug, title, content) VALUES ($1, $2, $3)`,
+          [doc.slug, doc.title, content]
+        );
+        console.log(`[DB] Seeded doc_pages: ${doc.slug}`);
+      }
     }
 
     // ── AI Copilot ──

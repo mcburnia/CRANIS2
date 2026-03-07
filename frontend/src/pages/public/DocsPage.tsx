@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
 import { Book, HelpCircle, ChevronRight, ArrowUp, Menu, X, Loader } from 'lucide-react';
+import GithubSlugger from 'github-slugger';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './DocsPage.css';
 
@@ -17,15 +18,8 @@ interface TocItem {
 
 /* ── Heading parser ── */
 
-/** Match github-slugger algorithm used by rehype-slug */
-function slugify(text: string): string {
-  return text
-    .replace(/[^\p{L}\p{M}\p{N}\p{Pc} -]/gu, '')
-    .toLowerCase()
-    .replace(/ /g, '-');
-}
-
 function parseHeadings(markdown: string): TocItem[] {
+  const slugger = new GithubSlugger();
   const headings: TocItem[] = [];
   const lines = markdown.split('\n');
   let inCodeBlock = false;
@@ -47,7 +41,7 @@ function parseHeadings(markdown: string): TocItem[] {
         .replace(/`(.+?)`/g, '$1')
         .replace(/\[(.+?)\]\(.+?\)/g, '$1')
         .trim();
-      const id = slugify(text);
+      const id = slugger.slug(text);
       headings.push({ level, text, id });
     }
   }
