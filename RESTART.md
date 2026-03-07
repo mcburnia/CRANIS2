@@ -1198,6 +1198,16 @@ sudo systemctl restart cloudflared
 **Session 29 (2026-03-07):**
 - **CI/CD compliance gate (P4 #22)** — Configurable `threshold` query parameter on `GET /api/v1/products/:id/compliance-status` (critical, high [default], medium, low/any). Standalone `cicd/cranis2-gate.sh` bash script with env var validation, formatted output, exit codes 0/1/2. CI provider examples: `cicd/examples/github-actions.yml` (with `$GITHUB_STEP_SUMMARY` table), `cicd/examples/gitlab-ci.yml` (alpine image), `cicd/examples/generic-ci.sh` (Jenkins/CircleCI/Bitbucket). CI/CD Compliance Gate card on IntegrationsPage with expandable setup guide, tabbed code snippets (GitHub Actions / GitLab CI / Bash), copy-to-clipboard, threshold reference table. Verified end-to-end: gate script correctly returns FAIL with exit 1 when critical gaps exist.
 
+**Session 30 (2026-03-07):**
+- **Welcome page contact form** — Replaced "Open the Platform" CTA with name/email/position contact form. Backend `POST /contact` endpoint sends thank-you email to enquirer and lead notification to `info@cranis2.com` via Resend API (`noreply@poste.cranis2.com` verified domain). Node 20 native `fetch`, no extra dependencies.
+- **Pro plan feature gating** — Moved "Public API & CI/CD gate" and "Marketplace listings" from Standard to Pro tier. Backend: `requirePlan('pro')` on API key management routes, belt-and-braces plan check in `requireApiKey` middleware, `requirePlan('pro')` on marketplace profile PUT. Frontend: `orgPlan` field on `/api/auth/me` response, upgrade banners on IntegrationsPage (API Keys + CI/CD cards) and MarketplaceSettingsPage for Standard-plan users. Welcome page pricing updated.
+- **AI Copilot cost protection (three layers):**
+  1. **Per-org monthly token budget** — `copilot.monthly_token_limit` platform setting (default 500K tokens/month, admin-configurable). Per-org override via `org_billing.copilot_token_limit` column. `requireTokenBudget()` middleware checks current month's `copilot_usage` against limit, returns 429 with usage info when exceeded. `/api/copilot/status` now returns `tokenBudget: { used, limit, remaining }`.
+  2. **Per-endpoint rate limiting** — `requireCopilotRateLimit()` middleware using Postgres-based counting against `copilot_usage`. Limits: suggest 20/product/hour, triage 5/product/hour, risk assessment 3/product/day, incident report 5/report/day, category recommendation 5/product/day. Returns 429 with details when exceeded.
+  3. **Response caching** — `copilot_cache` table with SHA-256 hash of product context data. 24-hour TTL. On cache hit: returns cached response with `tokensUsed: 0, cached: true`. Applied to suggest (non-refinement), risk assessment. Automatically invalidated when product data changes (context hash changes).
+  - Category recommendation route now logs AI usage to `copilot_usage` (previously missing). `AIAugmentation` type extended with `inputTokens`/`outputTokens`.
+  - New files: `middleware/copilotLimits.ts`, `services/copilot-cache.ts`. New table: `copilot_cache`. New column: `org_billing.copilot_token_limit`.
+
 **Next Steps:**
 - P4 #14 — MCP API server (depends on #28 now done)
 - P4 #21 — IDE compliance assistant (depends on #28 now done)

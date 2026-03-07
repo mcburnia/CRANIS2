@@ -3,7 +3,9 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { requirePlan } from '../middleware/requirePlan.js';
+import { requireTokenBudget, requireCopilotRateLimit, getTokenBudgetInfo } from '../middleware/copilotLimits.js';
 import { isCopilotConfigured, gatherProductContext, generateSuggestion, generateTriageSuggestions, TriageFinding, gatherEnrichedRiskContext, generateRiskAssessment, gatherIncidentReportContext, generateIncidentReportDraft } from '../services/copilot.js';
+import { checkCopilotCache, storeCopilotCache } from '../services/copilot-cache.js';
 
 const router = Router();
 
@@ -32,6 +34,16 @@ async function getOrgId(userId: string): Promise<string | null> {
   return result.rows[0]?.org_id || null;
 }
 
+// Middleware: resolve orgId and attach to request (needed by budget/rate limit middleware)
+async function attachOrgId(req: Request, res: Response, next: Function) {
+  const userId = (req as any).userId;
+  if (!userId) { res.status(401).json({ error: 'Not authenticated' }); return; }
+  const orgId = await getOrgId(userId);
+  if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+  (req as any).orgId = orgId;
+  next();
+}
+
 // GET /api/copilot/status — check if copilot is available for this org
 router.get('/status', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
@@ -51,15 +63,18 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
     const exempt = row?.exempt || false;
     const hasAccess = exempt || plan === 'pro' || plan === 'enterprise';
 
-    // Usage this month
-    const usageResult = await pool.query(
-      `SELECT COUNT(*)::int AS requests,
-              COALESCE(SUM(input_tokens), 0)::int AS input_tokens,
-              COALESCE(SUM(output_tokens), 0)::int AS output_tokens
-       FROM copilot_usage
-       WHERE org_id = $1 AND created_at >= date_trunc('month', NOW())`,
-      [orgId]
-    );
+    // Usage this month + token budget
+    const [usageResult, tokenBudget] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(*)::int AS requests,
+                COALESCE(SUM(input_tokens), 0)::int AS input_tokens,
+                COALESCE(SUM(output_tokens), 0)::int AS output_tokens
+         FROM copilot_usage
+         WHERE org_id = $1 AND created_at >= date_trunc('month', NOW())`,
+        [orgId]
+      ),
+      getTokenBudgetInfo(orgId),
+    ]);
     const usage = usageResult.rows[0];
 
     res.json({
@@ -72,6 +87,7 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
         inputTokensThisMonth: usage.input_tokens,
         outputTokensThisMonth: usage.output_tokens,
       },
+      tokenBudget,
     });
   } catch (err) {
     console.error('[COPILOT] Failed to check status:', err);
@@ -193,9 +209,9 @@ router.get('/usage', requireAuth, async (req: Request, res: Response) => {
 });
 
 // POST /api/copilot/suggest — generate AI suggestion
-router.post('/suggest', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
+router.post('/suggest', requireAuth, requirePlan('pro'), attachOrgId, requireTokenBudget(), requireCopilotRateLimit('suggest'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;
-  const userEmail = (req as any).email;
+  const orgId = (req as any).orgId;
 
   if (!isCopilotConfigured()) {
     res.status(503).json({ error: 'AI copilot is not configured. Please set ANTHROPIC_API_KEY.' });
@@ -215,9 +231,6 @@ router.post('/suggest', requireAuth, requirePlan('pro'), async (req: Request, re
   }
 
   try {
-    const orgId = await getOrgId(userId);
-    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
-
     // Verify product belongs to org
     const neo4jSession = getDriver().session();
     try {
@@ -237,6 +250,15 @@ router.post('/suggest', requireAuth, requirePlan('pro'), async (req: Request, re
     // Gather context
     const productContext = await gatherProductContext(productId, orgId);
 
+    // Check cache (only for requests without existing content — those are refinements)
+    const cacheKey = existingContent ? null : { productId, sectionKey, type };
+    if (cacheKey) {
+      const cached = await checkCopilotCache(orgId, productId, 'suggest', productContext);
+      if (cached) {
+        return res.json({ suggestion: cached.response.suggestion, tokensUsed: 0, cached: true });
+      }
+    }
+
     // Generate suggestion
     const result = await generateSuggestion({
       sectionKey,
@@ -252,9 +274,16 @@ router.post('/suggest', requireAuth, requirePlan('pro'), async (req: Request, re
       [orgId, userId, productId, sectionKey, type, result.inputTokens, result.outputTokens, result.model]
     ).catch(err => console.error('[COPILOT] Failed to log usage:', err));
 
+    // Store in cache (only if not a refinement)
+    if (cacheKey) {
+      storeCopilotCache(orgId, productId, 'suggest', productContext, { suggestion: result.suggestion }, result.inputTokens, result.outputTokens)
+        .catch(err => console.error('[COPILOT] Failed to store cache:', err));
+    }
+
     res.json({
       suggestion: result.suggestion,
       tokensUsed: result.inputTokens + result.outputTokens,
+      cached: false,
     });
   } catch (err: any) {
     console.error('[COPILOT] Failed to generate suggestion:', err);
@@ -263,8 +292,9 @@ router.post('/suggest', requireAuth, requirePlan('pro'), async (req: Request, re
 });
 
 // POST /api/copilot/triage — AI triage vulnerability findings
-router.post('/triage', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
+router.post('/triage', requireAuth, requirePlan('pro'), attachOrgId, requireTokenBudget(), requireCopilotRateLimit('vulnerability_triage'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;
+  const orgId = (req as any).orgId;
 
   if (!isCopilotConfigured()) {
     res.status(503).json({ error: 'AI copilot is not configured. Please set ANTHROPIC_API_KEY.' });
@@ -279,9 +309,6 @@ router.post('/triage', requireAuth, requirePlan('pro'), async (req: Request, res
   }
 
   try {
-    const orgId = await getOrgId(userId);
-    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
-
     // Verify product belongs to org
     const neo4jSession = getDriver().session();
     try {
@@ -387,8 +414,9 @@ router.post('/triage', requireAuth, requirePlan('pro'), async (req: Request, res
 });
 
 // POST /api/copilot/generate-risk-assessment — AI-generated risk assessment
-router.post('/generate-risk-assessment', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
+router.post('/generate-risk-assessment', requireAuth, requirePlan('pro'), attachOrgId, requireTokenBudget(), requireCopilotRateLimit('risk_assessment'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;
+  const orgId = (req as any).orgId;
 
   if (!isCopilotConfigured()) {
     res.status(503).json({ error: 'AI copilot is not configured. Please set ANTHROPIC_API_KEY.' });
@@ -403,9 +431,6 @@ router.post('/generate-risk-assessment', requireAuth, requirePlan('pro'), async 
   }
 
   try {
-    const orgId = await getOrgId(userId);
-    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
-
     // Verify product belongs to org
     const neo4jSession = getDriver().session();
     try {
@@ -424,6 +449,13 @@ router.post('/generate-risk-assessment', requireAuth, requirePlan('pro'), async 
 
     // Gather enriched context and generate
     const context = await gatherEnrichedRiskContext(productId, orgId);
+
+    // Check cache
+    const cached = await checkCopilotCache(orgId, productId, 'risk_assessment', context);
+    if (cached) {
+      return res.json({ ...cached.response, tokensUsed: 0, cached: true });
+    }
+
     const result = await generateRiskAssessment(context);
 
     // Log usage
@@ -434,10 +466,15 @@ router.post('/generate-risk-assessment', requireAuth, requirePlan('pro'), async 
        result.inputTokens, result.outputTokens, result.model]
     ).catch(err => console.error('[COPILOT] Failed to log risk assessment usage:', err));
 
+    // Store in cache
+    storeCopilotCache(orgId, productId, 'risk_assessment', context, { fields: result.fields, annexIRequirements: result.annexIRequirements }, result.inputTokens, result.outputTokens)
+      .catch(err => console.error('[COPILOT] Failed to store cache:', err));
+
     res.json({
       fields: result.fields,
       annexIRequirements: result.annexIRequirements,
       tokensUsed: result.inputTokens + result.outputTokens,
+      cached: false,
     });
   } catch (err: any) {
     console.error('[COPILOT] Failed to generate risk assessment:', err);
@@ -446,8 +483,9 @@ router.post('/generate-risk-assessment', requireAuth, requirePlan('pro'), async 
 });
 
 // POST /api/copilot/draft-incident-report — AI-drafted ENISA report stage
-router.post('/draft-incident-report', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
+router.post('/draft-incident-report', requireAuth, requirePlan('pro'), attachOrgId, requireTokenBudget(), requireCopilotRateLimit('incident_report_draft', 'reportId'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;
+  const orgId = (req as any).orgId;
 
   if (!isCopilotConfigured()) {
     res.status(503).json({ error: 'AI copilot is not configured. Please set ANTHROPIC_API_KEY.' });
@@ -466,9 +504,6 @@ router.post('/draft-incident-report', requireAuth, requirePlan('pro'), async (re
   }
 
   try {
-    const orgId = await getOrgId(userId);
-    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
-
     // Gather context (also verifies report belongs to org)
     const context = await gatherIncidentReportContext(reportId, orgId);
 

@@ -18,6 +18,7 @@ import { verifySessionToken } from '../utils/token.js';
 import categoryRecommendationService from '../services/category-recommendation.js';
 import categoryAIAugmentationService from '../services/category-ai-augmentation.js';
 import categoryRuleValidator from '../services/category-rule-validator.js';
+import { requireTokenBudget, requireCopilotRateLimit } from '../middleware/copilotLimits.js';
 import type { Request, Response } from 'express';
 import type {
   CategoryRecommendationRequest,
@@ -47,6 +48,15 @@ async function getUserOrgId(userId: string): Promise<string | null> {
   return result.rows[0]?.org_id || null;
 }
 
+async function attachOrgId(req: Request, res: Response, next: Function) {
+  const userId = (req as any).userId;
+  if (!userId) { res.status(401).json({ error: 'Not authenticated' }); return; }
+  const orgId = await getUserOrgId(userId);
+  if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+  (req as any).orgId = orgId;
+  next();
+}
+
 /**
  * POST /:productId/category-recommendation
  * Get a new category recommendation for a product (deterministic + AI augmented)
@@ -54,17 +64,16 @@ async function getUserOrgId(userId: string): Promise<string | null> {
 router.post(
   '/:productId/category-recommendation',
   requireAuth,
+  attachOrgId,
+  requireTokenBudget(),
+  requireCopilotRateLimit('category_recommendation', 'productId'),
   async (req: Request, res: Response) => {
     try {
       const { productId } = req.params as { productId: string };
       const { attributeValues } = req.body as CategoryRecommendationRequest;
 
       const userId = (req as any).userId;
-      const orgId = await getUserOrgId(userId);
-
-      if (!orgId) {
-        return res.status(400).json({ error: 'No organisation context' });
-      }
+      const orgId = (req as any).orgId;
 
       // Verify product belongs to org (products live in Neo4j)
       const session = getDriver().session();
@@ -95,6 +104,16 @@ router.post(
         product.description || '',
         deterministic
       );
+
+      // Log AI usage to copilot_usage (category AI uses Opus — more expensive)
+      if (aiAugmentation) {
+        pool.query(
+          `INSERT INTO copilot_usage (org_id, user_id, product_id, section_key, type, input_tokens, output_tokens, model)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [orgId, userId, productId, 'category_assessment', 'category_recommendation',
+           aiAugmentation.inputTokens || 0, aiAugmentation.outputTokens || 0, 'claude-opus-4-1']
+        ).catch(err => console.error('[CategoryRec] Failed to log usage:', err));
+      }
 
       const finalConfidence = aiAugmentation ? aiAugmentation.confidence : undefined;
 

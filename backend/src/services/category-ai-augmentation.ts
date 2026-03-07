@@ -82,6 +82,8 @@ Respond in JSON format:
         adjustmentApplied: assessment.adjustmentApplied || 0,
         explainedReason: assessment.explainedReason || '',
         confidence: assessment.confidence || 0,
+        inputTokens: response.usage?.input_tokens || 0,
+        outputTokens: response.usage?.output_tokens || 0,
       };
     } catch (error) {
       console.error('[CategoryAI] Error augmenting recommendation:', error);

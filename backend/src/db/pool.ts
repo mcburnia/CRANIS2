@@ -895,7 +895,8 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
         ('billing.contributor_price_cents', '600'::jsonb),
         ('billing.pro_product_price_cents', '300'::jsonb),
         ('billing.stripe_contributor_price_id', $1::jsonb),
-        ('billing.stripe_pro_product_price_id', 'null'::jsonb)
+        ('billing.stripe_pro_product_price_id', 'null'::jsonb),
+        ('copilot.monthly_token_limit', '500000'::jsonb)
       ON CONFLICT (key) DO NOTHING
     `, [JSON.stringify(PRICE_ID)]);
 
@@ -1105,6 +1106,24 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_api_keys_org ON api_keys(org_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash)`);
+
+    // ── Copilot cost protection ──
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS copilot_token_limit INTEGER`);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS copilot_cache (
+        id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id       VARCHAR(255) NOT NULL,
+        product_id   VARCHAR(255),
+        endpoint     VARCHAR(100) NOT NULL,
+        context_hash VARCHAR(64) NOT NULL,
+        response     JSONB NOT NULL,
+        input_tokens INT NOT NULL DEFAULT 0,
+        output_tokens INT NOT NULL DEFAULT 0,
+        created_at   TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(org_id, product_id, endpoint, context_hash)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_copilot_cache_lookup ON copilot_cache(org_id, product_id, endpoint, context_hash)`);
 
     // Seed default CRA category rules (regulatory baseline)
     const attrCount = await client.query('SELECT COUNT(*) FROM category_rule_attributes');

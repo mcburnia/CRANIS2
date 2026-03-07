@@ -77,6 +77,8 @@ export interface AIAugmentation {
   adjustmentApplied: number; // ±0.1–0.2
   explainedReason: string;
   confidence: number; // 0.0–1.0
+  inputTokens?: number;
+  outputTokens?: number;
 }
 
 /**
