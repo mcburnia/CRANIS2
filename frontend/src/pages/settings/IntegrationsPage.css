@@ -178,6 +178,15 @@
 .int-cicd-table td { padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border); }
 .int-cicd-table code { background: var(--bg); padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; }
 
+/* Upgrade banner */
+.ai-upgrade-banner {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 0.75rem; margin-bottom: 0.75rem;
+  background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.25);
+  border-radius: 6px; font-size: 0.78rem; color: #fbbf24;
+}
+.ai-upgrade-banner a { color: #60a5fa; text-decoration: underline; }
+
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 

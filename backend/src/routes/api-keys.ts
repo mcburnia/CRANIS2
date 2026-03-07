@@ -10,6 +10,7 @@ import { Router, Request, Response } from 'express';
 import pool from '../db/pool.js';
 import { verifySessionToken } from '../utils/token.js';
 import { createApiKey, listApiKeys, revokeApiKey } from '../services/api-keys.js';
+import { requirePlan } from '../middleware/requirePlan.js';
 
 const router = Router();
 
@@ -33,7 +34,7 @@ async function getUserOrgId(userId: string): Promise<string | null> {
 }
 
 // POST /api/settings/api-keys
-router.post('/', requireAuth, async (req: Request, res: Response) => {
+router.post('/', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
   try {
     const orgId = await getUserOrgId((req as any).userId);
     if (!orgId) return res.status(400).json({ error: 'No organisation context' });
@@ -52,7 +53,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
 });
 
 // GET /api/settings/api-keys
-router.get('/', requireAuth, async (req: Request, res: Response) => {
+router.get('/', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
   try {
     const orgId = await getUserOrgId((req as any).userId);
     if (!orgId) return res.status(400).json({ error: 'No organisation context' });
@@ -66,7 +67,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 });
 
 // DELETE /api/settings/api-keys/:id
-router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
+router.delete('/:id', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
   try {
     const orgId = await getUserOrgId((req as any).userId);
     if (!orgId) return res.status(400).json({ error: 'No organisation context' });

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import PageHeader from '../../components/PageHeader';
-import { Plug, Trash2, Check, AlertTriangle, Plus, X, Send, Loader2, Key, Copy, Terminal, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plug, Trash2, Check, AlertTriangle, Plus, X, Send, Loader2, Key, Copy, Terminal, ChevronDown, ChevronUp, Info, Sparkles } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { useAuth } from '../../context/AuthContext';
 import './IntegrationsPage.css';
 
 interface TrelloBoard { id: string; name: string; }
@@ -35,6 +36,8 @@ function authHeaders() {
 
 export default function IntegrationsPage() {
   usePageMeta({ title: 'Integrations', description: 'Manage external integrations' });
+  const { user } = useAuth();
+  const isPro = user?.orgPlan === 'pro' || user?.orgPlan === 'enterprise' || user?.isPlatformAdmin;
 
   // Trello state
   const [connected, setConnected] = useState(false);
@@ -429,9 +432,10 @@ fi`;
           <div className="int-card-title">
             <Key size={18} />
             <span>API Keys</span>
-            <span className="int-badge int-badge-muted">{apiKeys.filter(k => !k.revoked_at).length} active</span>
+            {isPro && <span className="int-badge int-badge-muted">{apiKeys.filter(k => !k.revoked_at).length} active</span>}
+            {!isPro && <span className="int-badge int-badge-muted">Pro</span>}
           </div>
-          {!showAddKey && (
+          {isPro && !showAddKey && (
             <button className="int-btn-ghost" onClick={() => setShowAddKey(true)}>
               <Plus size={14} /> New Key
             </button>
@@ -442,7 +446,14 @@ fi`;
           API keys authenticate external services against the CRANIS2 public API (v1). Use them for CI/CD gates, MCP servers, and custom integrations.
         </p>
 
-        {revealedKey && (
+        {!isPro && (
+          <div className="ai-upgrade-banner">
+            <Info size={14} />
+            <span>Public API &amp; API keys require the <strong>Pro</strong> plan. <a href="/billing"><Sparkles size={12} style={{ verticalAlign: 'middle' }} /> Upgrade now</a></span>
+          </div>
+        )}
+
+        {isPro && revealedKey && (
           <div className="int-banner int-banner-success" style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
             <span>{revealedKey}</span>
             <button onClick={() => copyToClipboard(revealedKey)} title="Copy"><Copy size={14} /></button>
@@ -450,7 +461,7 @@ fi`;
           </div>
         )}
 
-        {showAddKey && (
+        {isPro && showAddKey && (
           <div className="int-add-form" style={{ marginBottom: '1rem' }}>
             <div className="int-field">
               <label>Key Name</label>
@@ -465,11 +476,11 @@ fi`;
           </div>
         )}
 
-        {apiKeys.length === 0 && !showAddKey && (
+        {isPro && apiKeys.length === 0 && !showAddKey && (
           <p className="int-empty">No API keys yet. Create one to start using the public API.</p>
         )}
 
-        {apiKeys.map(k => (
+        {isPro && apiKeys.map(k => (
           <div key={k.id} className="int-product-board" style={{ opacity: k.revoked_at ? 0.5 : 1 }}>
             <div className="int-product-board-header">
               <span className="int-product-name">{k.name}</span>
@@ -496,17 +507,27 @@ fi`;
           <div className="int-card-title">
             <Terminal size={18} />
             <span>CI/CD Compliance Gate</span>
+            {!isPro && <span className="int-badge int-badge-muted">Pro</span>}
           </div>
-          <button className="int-btn-ghost" onClick={() => setCicdExpanded(!cicdExpanded)}>
-            {cicdExpanded ? <><ChevronUp size={14} /> Collapse</> : <><ChevronDown size={14} /> Setup Guide</>}
-          </button>
+          {isPro && (
+            <button className="int-btn-ghost" onClick={() => setCicdExpanded(!cicdExpanded)}>
+              {cicdExpanded ? <><ChevronUp size={14} /> Collapse</> : <><ChevronDown size={14} /> Setup Guide</>}
+            </button>
+          )}
         </div>
 
         <p className="int-desc">
           Block releases that don't meet CRA compliance requirements. Add a compliance gate step to your CI/CD pipeline — it calls the CRANIS2 API and fails the build if unresolved gaps exceed your threshold.
         </p>
 
-        {cicdExpanded && (
+        {!isPro && (
+          <div className="ai-upgrade-banner">
+            <Info size={14} />
+            <span>CI/CD compliance gate requires the <strong>Pro</strong> plan. <a href="/billing"><Sparkles size={12} style={{ verticalAlign: 'middle' }} /> Upgrade now</a></span>
+          </div>
+        )}
+
+        {isPro && cicdExpanded && (
           <div className="int-connected">
             <div className="int-section">
               <h3>Prerequisites</h3>

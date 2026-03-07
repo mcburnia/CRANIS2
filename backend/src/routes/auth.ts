@@ -270,6 +270,22 @@ router.get('/me', async (req: Request, res: Response) => {
     }
 
     const user = result.rows[0];
+
+    // Look up org plan for frontend feature gating
+    let orgPlan = 'standard';
+    if (user.org_id) {
+      const billingResult = await pool.query(
+        'SELECT plan, exempt FROM org_billing WHERE org_id = $1',
+        [user.org_id]
+      );
+      const billing = billingResult.rows[0];
+      if (billing?.exempt) {
+        orgPlan = 'enterprise'; // exempt orgs get full access
+      } else if (billing?.plan) {
+        orgPlan = billing.plan;
+      }
+    }
+
     res.json({
       user: {
         id: user.id,
@@ -278,6 +294,7 @@ router.get('/me', async (req: Request, res: Response) => {
         orgRole: user.org_role || null,
         preferredLanguage: user.preferred_language || null,
         isPlatformAdmin: user.is_platform_admin || false,
+        orgPlan,
       },
     });
   } catch {

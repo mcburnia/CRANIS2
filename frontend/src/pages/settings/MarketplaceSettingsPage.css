@@ -23,6 +23,15 @@
   to { transform: rotate(360deg); }
 }
 
+/* Upgrade banner */
+.ai-upgrade-banner {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 0.75rem; margin-bottom: 0.75rem;
+  background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.25);
+  border-radius: 6px; font-size: 0.78rem; color: #fbbf24;
+}
+.ai-upgrade-banner a { color: #60a5fa; text-decoration: underline; }
+
 /* Messages */
 .ms-error {
   background: rgba(239, 68, 68, 0.1);

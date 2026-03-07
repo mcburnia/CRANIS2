@@ -7,6 +7,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { validateApiKey } from '../services/api-keys.js';
+import pool from '../db/pool.js';
 
 export function requireApiKey(requiredScope?: string) {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -22,6 +23,29 @@ export function requireApiKey(requiredScope?: string) {
 
     if (requiredScope && !result.scopes.includes(requiredScope)) {
       return res.status(403).json({ error: `Insufficient scope — requires ${requiredScope}` });
+    }
+
+    // Belt-and-braces: verify the org still has a Pro plan
+    try {
+      const billing = await pool.query(
+        'SELECT plan, exempt FROM org_billing WHERE org_id = $1',
+        [result.orgId]
+      );
+      const row = billing.rows[0];
+      if (row && !row.exempt) {
+        const plan = row.plan || 'standard';
+        if (plan === 'standard') {
+          return res.status(403).json({
+            error: 'feature_requires_plan',
+            requiredPlan: 'pro',
+            currentPlan: plan,
+            message: 'The Public API requires the Pro plan or higher.',
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[REQUIRE-API-KEY] Plan check error:', err);
+      // Fail open — key is valid, don't block on billing query failure
     }
 
     (req as any).orgId = result.orgId;

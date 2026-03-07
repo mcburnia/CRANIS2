@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import {
-  Store, ExternalLink, Save, Eye, ShieldCheck, Package, Loader2
+  Store, ExternalLink, Save, Eye, ShieldCheck, Package, Loader2, Info, Sparkles
 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { useAuth } from '../../context/AuthContext';
 import './MarketplaceSettingsPage.css';
 
 interface Category { value: string; label: string; }
@@ -43,6 +44,8 @@ function badgeColor(s: string) {
 
 export default function MarketplaceSettingsPage() {
   usePageMeta();
+  const { user } = useAuth();
+  const isPro = user?.orgPlan === 'pro' || user?.orgPlan === 'enterprise' || user?.isPlatformAdmin;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,7 +139,14 @@ export default function MarketplaceSettingsPage() {
         {success && <div className="ms-success">{success}</div>}
         {error && <div className="ms-error">{error}</div>}
 
-        <div className="ms-section">
+        {!isPro && (
+          <div className="ai-upgrade-banner" style={{ marginBottom: '1rem' }}>
+            <Info size={14} />
+            <span>Marketplace listings require the <strong>Pro</strong> plan. <a href="/billing"><Sparkles size={12} style={{ verticalAlign: 'middle' }} /> Upgrade now</a></span>
+          </div>
+        )}
+
+        <div className="ms-section" style={!isPro ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
           <div className="ms-toggle-row">
             <div className="ms-toggle-info">
               <Store size={18} />
@@ -203,7 +213,7 @@ export default function MarketplaceSettingsPage() {
           </div>
         )}
 
-        <div className="ms-section">
+        <div className="ms-section" style={!isPro ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
           <div className="ms-section-header"><ShieldCheck size={18} /><h3>Compliance Badges</h3></div>
           <p className="ms-section-desc">Auto-computed from your compliance data. Displayed on your marketplace listing.</p>
           <div className="ms-badges">
@@ -217,7 +227,7 @@ export default function MarketplaceSettingsPage() {
         </div>
 
         <div className="ms-actions">
-          <button className="ms-save-btn" onClick={handleSave} disabled={saving}>
+          <button className="ms-save-btn" onClick={handleSave} disabled={saving || !isPro}>
             {saving ? <Loader2 size={16} className="ms-spin" /> : <Save size={16} />}
             {saving ? 'Saving...' : 'Save Settings'}
           </button>

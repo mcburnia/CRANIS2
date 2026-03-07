@@ -5,6 +5,7 @@ import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { computeComplianceBadges } from '../services/marketplace.js';
 import { requirePlatformAdmin } from '../middleware/requirePlatformAdmin.js';
+import { requirePlan } from '../middleware/requirePlan.js';
 
 const router = Router();
 
@@ -350,7 +351,7 @@ router.get('/profile', requireAuth, async (req: Request, res: Response) => {
 });
 
 // PUT /api/marketplace/profile — Upsert listing (org admin only)
-router.put('/profile', requireAuth, async (req: Request, res: Response) => {
+router.put('/profile', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
     const orgId = await getOrgId(userId);
