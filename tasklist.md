@@ -96,4 +96,4 @@ Viral growth loop — manufacturers invite suppliers, suppliers publish verified
 
 - 1126+ backend tests (65 files), ~280 E2E tests
 - All P0–P3 work shipped and tested
-- Immediate next: Bug #29 fix, then P4 #14 MCP server or P4 #21 IDE assistant
+- Immediate next: P4 #21 IDE compliance assistant, then production deployment
