@@ -33,7 +33,7 @@ P3 — AI Automation (Pro plan) — DONE
 P4 — Public API & External Integrations
 #	Feature	Effort	Status	Notes
 28	Public API with API key auth	High	DONE	Prerequisite for #22, #14, #21
-22	CI/CD compliance gate	Medium	PARKED_HIGH_PRIORITY	Depends on #28
+22	CI/CD compliance gate	Medium	DONE	Depends on #28
 14	MCP API server	High	TODO	Depends on #28
 21	IDE compliance assistant	Medium	TODO	Depends on #28
 23	GRC/audit tool bridge	Medium	PARKED
@@ -52,8 +52,8 @@ P5 - Bugs
 ## Current Status & Next Steps
 
 **P0–P2:** ALL COMPLETE (42/42 features done)
-**P3:** 7/8 DONE — Remaining: #20 compliance gap narrator
-**P4:** 0/7 TODO (MCP Interface — external integrations)
+**P3:** ALL COMPLETE (8/8 done)
+**P4:** 3/7 DONE (#28 Public API, #22 CI/CD gate, #26 Trello) — Remaining: #14 MCP server, #21 IDE assistant, #23/#24/#25 parked
 **P5:** 2/3 DONE — PENDING: #29 Products & Compliance "Not Stated?" issue
 
-**Immediate next:** #28 Public API with API key auth (unlocks CI/CD gate, MCP server, IDE assistant).
+**Immediate next:** #14 MCP API server or #21 IDE compliance assistant.

@@ -1195,8 +1195,11 @@ sudo systemctl restart cloudflared
 - **Public API with API key auth (P4 #28)** — Complete public API for external service integration. `api_keys` table with SHA-256 hashed keys, `cranis2_` prefix + 40 hex chars, 4 read-only scopes (`read:products`, `read:vulnerabilities`, `read:obligations`, `read:compliance`). `requireApiKey` middleware validates `X-API-Key` header, checks scopes, updates `last_used_at`. Management routes at `/api/settings/api-keys` (session-auth: create/list/revoke). Public v1 routes at `/api/v1/` (API-key-auth): `GET /products`, `GET /products/:id`, `GET /products/:id/vulnerabilities` (with severity/status filters), `GET /products/:id/obligations` (with derived statuses), `GET /products/:id/compliance-status` (pass/fail based on zero critical+high gaps — the CI/CD gate endpoint). API Keys card on IntegrationsPage UI (create, copy, revoke). `/api/v1` exempt from billing gate. Neo4j DateTime serialisation to ISO strings. **Prerequisite for CI/CD gate (#22), MCP server (#14), IDE assistant (#21).**
 - **Backlog reprioritised** — P4 renamed "Public API & External Integrations". CI/CD compliance gate marked PARKED_HIGH_PRIORITY (first post-launch integration). Slack, ChatOps, GRC bridge all PARKED.
 
+**Session 29 (2026-03-07):**
+- **CI/CD compliance gate (P4 #22)** — Configurable `threshold` query parameter on `GET /api/v1/products/:id/compliance-status` (critical, high [default], medium, low/any). Standalone `cicd/cranis2-gate.sh` bash script with env var validation, formatted output, exit codes 0/1/2. CI provider examples: `cicd/examples/github-actions.yml` (with `$GITHUB_STEP_SUMMARY` table), `cicd/examples/gitlab-ci.yml` (alpine image), `cicd/examples/generic-ci.sh` (Jenkins/CircleCI/Bitbucket). CI/CD Compliance Gate card on IntegrationsPage with expandable setup guide, tabbed code snippets (GitHub Actions / GitLab CI / Bash), copy-to-clipboard, threshold reference table. Verified end-to-end: gate script correctly returns FAIL with exit 1 when critical gaps exist.
+
 **Next Steps:**
-- P4 #22 — CI/CD compliance gate (PARKED_HIGH_PRIORITY, depends on #28 now done)
 - P4 #14 — MCP API server (depends on #28 now done)
 - P4 #21 — IDE compliance assistant (depends on #28 now done)
+- P5 #29 — Products & Compliance "Not Stated?" bug
 - Production deployment planning (Infomaniak hosting, cranis2.com)
