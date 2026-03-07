@@ -1212,8 +1212,10 @@ sudo systemctl restart cloudflared
 - **Welcome page pricing overhaul** — Enhanced feature descriptions for both Standard and Pro plans with frequency/timeliness qualifiers (e.g. "Daily automated dependency discovery", "Continuous vulnerability scanning", "Real-time alert emails"). Added missing features (supplier due diligence, Trello integration). Stacked pricing cards vertically (single column, max-width 640px) for cleaner layout. Removed incorrect "unlimited products" footer claim, replaced with "unlimited compliance exports and repository connections".
 - **Pro plan price increase** — Changed Pro plan price from €3 to €9/product/month across welcome page, platform_settings seed (`billing.pro_product_price_cents` 300→900), and live database. Reflects expanded feature set and value proposition. Stripe will auto-create a new price object on next checkout.
 
+**Session 32 (2026-03-07):**
+- **Bug #29 fix** — CRA category naming mismatch between frontend and backend. Standardised on `default`, `important_i`, `important_ii`, `critical` (matching obligation engine and category_thresholds table). Updated ProductsPage, ProductDetailPage, AdminOrgsPage, and backend product create/update validation.
+- **MCP Server (P4 #14)** — Complete Model Context Protocol server for IDE AI assistants. 5 tools: `list_products`, `get_vulnerabilities` (with severity/status filters + inline mitigation commands), `get_mitigation` (ecosystem-aware bash commands for 12+ package managers: npm, pip, cargo, go, maven, nuget, gem, composer, hex, pub, cocoapods, swift), `verify_fix` (triggers SBOM rescan, polls for completion, compares before/after findings, auto-resolves if fixed), `get_compliance_status` (pass/fail with gap summary). New backend endpoints: `POST /api/v1/products/:id/sync` (async background scan), `GET /api/v1/products/:id/scans/:scanId` (poll status), `PUT /api/v1/products/:id/findings/:findingId/resolve` (mark resolved with evidence JSON). Added `write:findings` to default API key scopes. 20 new backend tests all passing. README with setup instructions for Claude Desktop, VS Code, Cursor, and Claude Code.
+
 **Next Steps:**
-- P4 #14 — MCP API server (depends on #28 now done)
-- P4 #21 — IDE compliance assistant (depends on #28 now done)
-- P5 #29 — Products & Compliance "Not Stated?" bug
+- P4 #21 — IDE compliance assistant (depends on #14 now done)
 - Production deployment planning (Infomaniak hosting, cranis2.com)

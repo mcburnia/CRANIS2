@@ -40,12 +40,12 @@ All five MVP features are built, tested, and shipped.
 
 ---
 
-## Phase 4: Public API & External Integrations (In Progress — 3/7 done)
+## Phase 4: Public API & External Integrations (In Progress — 4/7 done)
 
 - [x] Public API with API key auth — `api_keys` table, SHA-256 hashed, 4 read-only scopes, v1 routes (P4 #28)
 - [x] CI/CD compliance gate — configurable threshold, bash gate script, GitHub Actions/GitLab CI/generic examples (P4 #22)
 - [x] Trello task creation — per-product board mapping, 4 event types, dedup, card resolution (P5 #26)
-- [ ] MCP API server — Model Context Protocol server for external AI tools (P4 #14)
+- [x] MCP API server — 5 tools (list_products, get_vulnerabilities, get_mitigation, verify_fix, get_compliance_status), 12+ ecosystems, SBOM rescan validation (P4 #14)
 - [ ] IDE compliance assistant — VS Code/Cursor integration via MCP (P4 #21)
 - [ ] GRC/audit tool bridge — Vanta, Drata, OneTrust integration (P4 #23) — PARKED
 - [ ] Chat ops integration — Slack/Teams bot for compliance queries (P4 #24) — PARKED
