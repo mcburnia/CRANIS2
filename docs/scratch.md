@@ -19,7 +19,7 @@ P2 — Polish for production — ALL DONE
 11	Compliance heat map	DONE
 12	Webhook E2E tests	DONE
 
-P3 — AI Automation (Pro plan) — DONE
+P3 — AI Automation (Pro plan) — ALL DONE
 #	Feature	Effort	Status
 13	AI Copilot	High	DONE
 15	Auto-triage vulns	High	DONE
@@ -30,30 +30,50 @@ P3 — AI Automation (Pro plan) — DONE
 19	Supplier due diligence questionnaire	Medium	DONE
 20	Compliance gap narrator	Low	DONE
 
-P4 — Public API & External Integrations
+P4 — Public API & External Integrations — 3/7 DONE
 #	Feature	Effort	Status	Notes
-28	Public API with API key auth	High	DONE	Prerequisite for #22, #14, #21
-22	CI/CD compliance gate	Medium	DONE	Depends on #28
-14	MCP API server	High	TODO	Depends on #28
-21	IDE compliance assistant	Medium	TODO	Depends on #28
+28	Public API with API key auth	High	DONE	Prerequisite for #14, #21
+22	CI/CD compliance gate	Medium	DONE	Gate script + CI examples
+26	Trello task creation	Medium	DONE	4 event types, dedup, resolution
+14	MCP API server	High	TODO	Depends on #28 (done)
+21	IDE compliance assistant	Medium	TODO	Depends on #28 (done)
 23	GRC/audit tool bridge	Medium	PARKED
 24	Chat ops integration	Low	PARKED
 25	Slack notifications	Medium	PARKED
-26	Trello task creation	Medium	DONE
 
-P5 - Bugs
-#	Description | Status
-27  All Organisations -> Actions button does nothing DONE
-28  ENISA Reporting -> Cancel button does nothing DONE
-29  Products & Compliance -> CRANIS2 -> Not Stated? PENDING
+P5 — Supplier Marketplace (viral growth loop) — NOT STARTED
+#	Feature	Effort	Status
+28	Supplier invitation flow	Medium	TODO
+29	Supplier compliance profile	Medium	TODO
+30	Auto-resolution of due diligence	Medium	TODO
+31	Marketplace directory	Medium	TODO
+32	Supplier analytics dashboard	Low	TODO
+33	Supplier tier pricing	Low	TODO
+34	Manufacturer trust signals	Low	TODO
+
+Bugs
+#	Description	Status
+27	All Organisations -> Actions button does nothing	DONE
+28	ENISA Reporting -> Cancel button does nothing	DONE
+29	Products & Compliance -> CRANIS2 -> Not Stated?	PENDING
+
+Cross-cutting (done)
+-	Pro plan billing (Standard €6/contributor, Pro €9/product + €6/contributor)	DONE
+-	Pro plan feature gating (API keys, CI/CD, marketplace behind Pro)	DONE
+-	AI Copilot cost protection (token budget, rate limits, response cache)	DONE
+-	Welcome page pricing overhaul (enhanced features, vertical cards, €9 price)	DONE
 
 ---
 
 ## Current Status & Next Steps
 
-**P0–P2:** ALL COMPLETE (42/42 features done)
-**P3:** ALL COMPLETE (8/8 done)
+**P0–P3:** ALL COMPLETE (50/50 features done)
 **P4:** 3/7 DONE (#28 Public API, #22 CI/CD gate, #26 Trello) — Remaining: #14 MCP server, #21 IDE assistant, #23/#24/#25 parked
-**P5:** 2/3 DONE — PENDING: #29 Products & Compliance "Not Stated?" issue
+**P5:** 0/7 — Supplier marketplace not started (post-launch)
+**Bugs:** 2/3 DONE — PENDING: #29 Products & Compliance "Not Stated?" issue
 
-**Immediate next:** #14 MCP API server or #21 IDE compliance assistant.
+**Immediate next:**
+- Bug #29 — Products & Compliance "Not Stated?" fix
+- P4 #14 — MCP API server
+- P4 #21 — IDE compliance assistant
+- Production deployment planning (Infomaniak hosting, cranis2.com)
