@@ -154,6 +154,7 @@ services:
       WELCOME_USER: ${WELCOME_USER}
       WELCOME_PASS: ${WELCOME_PASS}
       WELCOME_SECRET: ${WELCOME_SECRET}
+      RESEND_API_KEY: ${RESEND_API_KEY}
       PORT: "3004"
     volumes:
       - cranis2_welcome_data:/data

@@ -345,6 +345,34 @@
     .section { scroll-margin-top: 4rem; }
   }
 
+  /* ── Contact form ─────────────────────────────────────────────────── */
+  .contact-form {
+    display: flex; flex-direction: column; gap: 1rem;
+    max-width: 440px; margin-top: 1.25rem;
+  }
+  .contact-field { display: flex; flex-direction: column; gap: 0.3rem; }
+  .contact-field label {
+    font-size: 0.78rem; font-weight: 600; color: #a1a1aa;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .contact-field input {
+    width: 100%; padding: 0.65rem 0.85rem;
+    border: 1px solid #2a2a35; border-radius: 6px;
+    background: #0f0f14; color: #e4e4e7;
+    font-size: 0.9rem; font-family: inherit; outline: none;
+    transition: border-color 0.15s;
+  }
+  .contact-field input:focus { border-color: #a855f7; }
+  .contact-field input::placeholder { color: #52525b; }
+  .contact-submit { border: none; cursor: pointer; margin-top: 0.5rem; align-self: flex-start; }
+  .contact-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .contact-success { margin-top: 1.25rem; }
+  .contact-error-msg {
+    margin-top: 0.75rem; padding: 0.6rem 0.85rem;
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 6px; font-size: 0.82rem; color: #f87171;
+  }
+
   @media (max-width: 600px) {
     .container { padding: 1rem; }
     .site-header { padding: 1rem; }
@@ -375,7 +403,7 @@
       Starting with the EU Cyber Resilience Act and NIS2 Directive &mdash; and designed
       to grow with the regulatory landscape.
     </p>
-    <a href="https://www.cranis2.com" class="hero-cta">Open the Platform &rarr;</a>
+    <a href="#get-started" class="hero-cta">Get in Touch &rarr;</a>
   </div>
 
   <div class="layout">
@@ -412,7 +440,7 @@
           <span class="nav-num">9</span> Pricing
         </a>
         <a href="#get-started" class="nav-link" data-section="get-started">
-          <span class="nav-num">10</span> Get Started
+          <span class="nav-num">10</span> Get in Touch
         </a>
       </div>
     </nav>
@@ -851,33 +879,53 @@
         </p>
       </section>
 
-      <!-- 10. Get Started -->
+      <!-- 10. Get in Touch -->
       <section id="get-started" class="section">
-        <h2>10. Get Started</h2>
+        <h2>10. Get in Touch</h2>
 
         <div class="callout callout-primary">
           <p class="core-statement">
             CRANIS2 helps organisations prove that their software can be trusted.
           </p>
           <p>
-            It turns development activity, dependency data, and security monitoring into structured
-            compliance evidence &mdash; starting with the Cyber Resilience Act, extending to NIS2
-            supply chain requirements, and designed to grow with the regulatory landscape.
+            We are currently onboarding pilot partners &mdash; software companies who want to get
+            ahead of CRA compliance before the September 2026 reporting deadline.
           </p>
         </div>
 
         <p>
-          We are currently onboarding pilot partners &mdash; software companies who want to get
-          ahead of CRA compliance before the September 2026 reporting deadline.
+          Interested in a pilot, or would like a guided walkthrough? Leave your details below
+          and we will be in touch shortly.
         </p>
-        <p>
-          If you are interested in a pilot, or would like a guided walkthrough of the platform,
-          please get in touch:
-        </p>
-        <ul>
-          <li><strong>Platform:</strong> <a href="https://www.cranis2.com">www.cranis2.com</a></li>
-          <li><strong>Contact:</strong> <a href="mailto:info@cranis2.com">info@cranis2.com</a></li>
-        </ul>
+
+        <div id="contact-form-container">
+          <form id="contact-form" class="contact-form">
+            <div class="contact-field">
+              <label for="contact-name">Name</label>
+              <input type="text" id="contact-name" name="name" required placeholder="Your full name">
+            </div>
+            <div class="contact-field">
+              <label for="contact-email">Email</label>
+              <input type="email" id="contact-email" name="email" required placeholder="you@company.com">
+            </div>
+            <div class="contact-field">
+              <label for="contact-position">Position</label>
+              <input type="text" id="contact-position" name="position" required placeholder="e.g. CTO, Head of Engineering">
+            </div>
+            <button type="submit" class="hero-cta contact-submit" id="contact-submit">
+              Send Enquiry &rarr;
+            </button>
+          </form>
+        </div>
+
+        <div id="contact-success" class="contact-success" style="display:none;">
+          <div class="callout callout-green">
+            <p class="core-statement">Thank you for your interest!</p>
+            <p>We have received your details and will be in touch shortly.</p>
+          </div>
+        </div>
+
+        <div id="contact-error" class="contact-error-msg" style="display:none;"></div>
       </section>
 
     </div>
@@ -911,6 +959,51 @@
   }, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
 
   sections.forEach(function(s) { observer.observe(s); });
+})();
+
+// Contact form submission
+(function() {
+  var form = document.getElementById('contact-form');
+  if (!form) return;
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('contact-submit');
+    var errEl = document.getElementById('contact-error');
+    btn.disabled = true;
+    btn.textContent = 'Sending\u2026';
+    errEl.style.display = 'none';
+
+    var data = {
+      name: form.querySelector('[name="name"]').value.trim(),
+      email: form.querySelector('[name="email"]').value.trim(),
+      position: form.querySelector('[name="position"]').value.trim()
+    };
+
+    fetch('/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(function(res) { return res.json().then(function(j) { return { ok: res.ok, body: j }; }); })
+    .then(function(result) {
+      if (result.ok) {
+        document.getElementById('contact-form-container').style.display = 'none';
+        document.getElementById('contact-success').style.display = 'block';
+      } else {
+        errEl.textContent = result.body.error || 'Something went wrong. Please try again.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = 'Send Enquiry &rarr;';
+      }
+    })
+    .catch(function() {
+      errEl.textContent = 'Network error. Please check your connection and try again.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = 'Send Enquiry &rarr;';
+    });
+  });
 })();
 </script>
 </body>

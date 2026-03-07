@@ -11,6 +11,9 @@ const WELCOME_PASS = process.env.WELCOME_PASS || '(LetMeIn)';
 const WELCOME_SECRET = process.env.WELCOME_SECRET || 'dev-secret-change-me';
 const LOG_FILE = process.env.LOG_FILE || '/data/access.log';
 
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+
+app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(WELCOME_SECRET));
 
@@ -65,6 +68,10 @@ function isAuthenticated(req) {
   return verifyToken(req.cookies.welcome_auth) !== null;
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 /* ── Routes ──────────────────────────────────────────────────────────── */
 
 app.get('/login', (req, res) => {
@@ -104,6 +111,66 @@ app.get('/access-log', (req, res) => {
     res.json({ total: entries.length, entries: entries.reverse() });
   } catch {
     res.json({ total: 0, entries: [] });
+  }
+});
+
+app.post('/contact', async (req, res) => {
+  if (!isAuthenticated(req)) return res.status(401).json({ error: 'Unauthorised' });
+
+  const { name, email, position } = req.body || {};
+  if (!name || !email || !position) {
+    return res.status(400).json({ error: 'All fields are required.' });
+  }
+
+  // Basic email format check
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Please enter a valid email address.' });
+  }
+
+  logAccess(req, 'contact_form');
+
+  if (!RESEND_API_KEY) {
+    console.error('RESEND_API_KEY not configured — cannot send contact emails');
+    return res.status(500).json({ error: 'Email service not configured.' });
+  }
+
+  try {
+    // 1. Send thank-you email to the enquirer
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'CRANIS2 <noreply@cranis2.com>',
+        to: [email],
+        subject: 'Thank you for your interest in CRANIS2',
+        html: `<p>Dear ${escapeHtml(name)},</p>
+<p>Thank you for your interest in CRANIS2. We have received your enquiry and will be in touch shortly.</p>
+<p>In the meantime, if you have any questions, feel free to reply to this email or contact us at <a href="mailto:info@cranis2.com">info@cranis2.com</a>.</p>
+<p>Best regards,<br>The CRANIS2 Team</p>`
+      })
+    });
+
+    // 2. Send lead notification to info@cranis2.com
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'CRANIS2 Welcome <noreply@cranis2.com>',
+        to: ['info@cranis2.com'],
+        subject: `New CRANIS2 Enquiry — ${name} (${position})`,
+        html: `<h3>New Enquiry from Welcome Page</h3>
+<table style="border-collapse:collapse;">
+<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Name</td><td>${escapeHtml(name)}</td></tr>
+<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Email</td><td><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
+<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Position</td><td>${escapeHtml(position)}</td></tr>
+</table>`
+      })
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Contact form email error:', err);
+    res.status(500).json({ error: 'Failed to send email. Please try again.' });
   }
 });
 
