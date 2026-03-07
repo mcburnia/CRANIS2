@@ -136,11 +136,11 @@ app.post('/contact', async (req, res) => {
 
   try {
     // 1. Send thank-you email to the enquirer
-    await fetch('https://api.resend.com/emails', {
+    const thankYouRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'CRANIS2 <noreply@cranis2.com>',
+        from: 'CRANIS2 <noreply@poste.cranis2.com>',
         to: [email],
         subject: 'Thank you for your interest in CRANIS2',
         html: `<p>Dear ${escapeHtml(name)},</p>
@@ -149,13 +149,18 @@ app.post('/contact', async (req, res) => {
 <p>Best regards,<br>The CRANIS2 Team</p>`
       })
     });
+    if (!thankYouRes.ok) {
+      const errBody = await thankYouRes.text();
+      console.error('Resend thank-you email failed:', thankYouRes.status, errBody);
+      return res.status(502).json({ error: 'Failed to send confirmation email. Please try again.' });
+    }
 
     // 2. Send lead notification to info@cranis2.com
-    await fetch('https://api.resend.com/emails', {
+    const leadRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'CRANIS2 Welcome <noreply@cranis2.com>',
+        from: 'CRANIS2 Welcome <noreply@poste.cranis2.com>',
         to: ['info@cranis2.com'],
         subject: `New CRANIS2 Enquiry — ${name} (${position})`,
         html: `<h3>New Enquiry from Welcome Page</h3>
@@ -166,6 +171,10 @@ app.post('/contact', async (req, res) => {
 </table>`
       })
     });
+    if (!leadRes.ok) {
+      const errBody = await leadRes.text();
+      console.error('Resend lead notification failed:', leadRes.status, errBody);
+    }
 
     res.json({ ok: true });
   } catch (err) {
