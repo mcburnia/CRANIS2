@@ -22,6 +22,22 @@ import { analyseComplianceGaps } from '../services/compliance-gaps.js';
 
 const router = Router();
 
+/** Convert Neo4j DateTime to ISO string */
+function toISOString(dt: any): string | null {
+  if (!dt) return null;
+  if (typeof dt === 'string') return dt;
+  if (dt.year) {
+    const y = dt.year.low ?? dt.year;
+    const m = String(dt.month.low ?? dt.month).padStart(2, '0');
+    const d = String(dt.day.low ?? dt.day).padStart(2, '0');
+    const h = String(dt.hour.low ?? dt.hour).padStart(2, '0');
+    const min = String(dt.minute.low ?? dt.minute).padStart(2, '0');
+    const s = String(dt.second.low ?? dt.second).padStart(2, '0');
+    return `${y}-${m}-${d}T${h}:${min}:${s}Z`;
+  }
+  return null;
+}
+
 /** Helper: verify product belongs to the API key's org */
 async function verifyProductOrg(orgId: string, productId: string): Promise<any | null> {
   const driver = getDriver();
@@ -61,7 +77,7 @@ router.get('/products', requireApiKey('read:products'), async (req: Request, res
           productType: p.productType || null,
           distributionModel: p.distributionModel || null,
           status: p.status || 'active',
-          createdAt: p.createdAt,
+          createdAt: toISOString(p.createdAt),
         };
       });
       res.json({ products });
@@ -91,7 +107,7 @@ router.get('/products/:id', requireApiKey('read:products'), async (req: Request,
       distributionModel: product.distributionModel || null,
       status: product.status || 'active',
       repoUrl: product.repoUrl || null,
-      createdAt: product.createdAt,
+      createdAt: toISOString(product.createdAt),
     });
   } catch (error) {
     console.error('[API-V1] GET /products/:id error:', error);
@@ -111,8 +127,11 @@ router.get('/products/:id/vulnerabilities', requireApiKey('read:vulnerabilities'
     const severityFilter = req.query.severity as string | undefined;
     const statusFilter = req.query.status as string | undefined;
 
-    let query = `SELECT id, source_id, source, severity, status, package_name, package_version,
-                        advisory_url, title, description, triage_reason, triage_user,
+    let query = `SELECT id, source_id, source, severity, status,
+                        dependency_name, dependency_version, dependency_ecosystem,
+                        references_url, title, description,
+                        dismissed_by, dismissed_reason, dismissed_at,
+                        cvss_score, fixed_version,
                         created_at, updated_at
                  FROM vulnerability_findings
                  WHERE product_id = $1 AND org_id = $2`;
