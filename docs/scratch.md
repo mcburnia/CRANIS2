@@ -32,7 +32,7 @@ P3 — AI Automation (Pro plan) — DONE
 
 P4 — Public API & External Integrations
 #	Feature	Effort	Status	Notes
-28	Public API with API key auth	High	TODO	HIGHEST PRIORITY — prerequisite for #22, #14, #21
+28	Public API with API key auth	High	DONE	Prerequisite for #22, #14, #21
 22	CI/CD compliance gate	Medium	PARKED_HIGH_PRIORITY	Depends on #28
 14	MCP API server	High	TODO	Depends on #28
 21	IDE compliance assistant	Medium	TODO	Depends on #28

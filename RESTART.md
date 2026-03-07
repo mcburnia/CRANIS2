@@ -1188,7 +1188,15 @@ sudo systemctl restart cloudflared
 - **Navigation fix** — Fixed gap narrator and checklist "Go" buttons not switching tabs. Added `onSwitchTab`/`onNavigate` callback props from parent component.
 - **Trello task creation (P5 #26)** — Per-product Trello board mapping with automatic card creation for 4 compliance event types. Backend: 3 new tables (`trello_integrations`, `trello_product_boards`, `trello_card_log`), `trello.ts` service with Trello REST API helpers, CRUD for integrations/product boards, card creation with deduplication via unique event keys. 10 API endpoints in `routes/trello.ts` (config CRUD, board/list proxy, product board mapping, test card). Wired into `vulnerability-scanner.ts` (critical/high findings), `scheduler.ts` (deadline + stall alerts), `obligations.ts` (status changes to in_progress). All card creation non-blocking (`.catch(() => {})`). Frontend: `IntegrationsPage` with connect/disconnect flow, per-product board mapping with 4 list assignments (vulns, obligations, deadlines, gaps/stalls), test card sender. Added to Sidebar and router. **Total: 1126 backend tests passing (65 files).**
 
+**Session 27 (2026-03-07):**
+- **Trello integration fixes** — Auto-create default lists on empty Trello boards (info panel with descriptions, "Create Default Lists" button, auto-selects into dropdowns). Card resolution: when events are cleared in CRANIS2, a comment is added to the Trello card and `resolved_at` timestamp recorded (no move/archive/delete — board admin handles cleanup). `resolveCard`, `resolveCardsByPrefix` functions in `trello.ts`. Wired into vulnerability scanner (finding resolved), obligations (marked met), scheduler (stall cleared/readiness 100%).
+
+**Session 28 (2026-03-07):**
+- **Public API with API key auth (P4 #28)** — Complete public API for external service integration. `api_keys` table with SHA-256 hashed keys, `cranis2_` prefix + 40 hex chars, 4 read-only scopes (`read:products`, `read:vulnerabilities`, `read:obligations`, `read:compliance`). `requireApiKey` middleware validates `X-API-Key` header, checks scopes, updates `last_used_at`. Management routes at `/api/settings/api-keys` (session-auth: create/list/revoke). Public v1 routes at `/api/v1/` (API-key-auth): `GET /products`, `GET /products/:id`, `GET /products/:id/vulnerabilities` (with severity/status filters), `GET /products/:id/obligations` (with derived statuses), `GET /products/:id/compliance-status` (pass/fail based on zero critical+high gaps — the CI/CD gate endpoint). API Keys card on IntegrationsPage UI (create, copy, revoke). `/api/v1` exempt from billing gate. Neo4j DateTime serialisation to ISO strings. **Prerequisite for CI/CD gate (#22), MCP server (#14), IDE assistant (#21).**
+- **Backlog reprioritised** — P4 renamed "Public API & External Integrations". CI/CD compliance gate marked PARKED_HIGH_PRIORITY (first post-launch integration). Slack, ChatOps, GRC bridge all PARKED.
+
 **Next Steps:**
-- P4 #28 — Supplier invitation flow (viral growth loop)
-- P5 #14 — MCP API (Model Context Protocol server for external AI tools)
+- P4 #22 — CI/CD compliance gate (PARKED_HIGH_PRIORITY, depends on #28 now done)
+- P4 #14 — MCP API server (depends on #28 now done)
+- P4 #21 — IDE compliance assistant (depends on #28 now done)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
