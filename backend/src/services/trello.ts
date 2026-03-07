@@ -205,6 +205,47 @@ export async function listBoardLists(
   );
 }
 
+/** Create a list on a board */
+export async function createBoardList(
+  apiKey: string,
+  apiToken: string,
+  boardId: string,
+  name: string
+): Promise<{ id: string; name: string }> {
+  return trelloFetch<{ id: string; name: string }>(
+    '/lists',
+    apiKey,
+    apiToken,
+    { method: 'POST', body: { name, idBoard: boardId } }
+  );
+}
+
+/** Create default CRANIS2 lists on a board (skips any that already exist) */
+export async function createDefaultLists(
+  apiKey: string,
+  apiToken: string,
+  boardId: string
+): Promise<{ id: string; name: string }[]> {
+  const defaults = [
+    'CRA Vulnerabilities',
+    'CRA Obligations',
+    'CRA Deadlines',
+    'CRA Gaps / Stalls',
+  ];
+
+  const existing = await listBoardLists(apiKey, apiToken, boardId);
+  const existingNames = new Set(existing.map(l => l.name));
+
+  const created: { id: string; name: string }[] = [...existing];
+  for (const name of defaults) {
+    if (!existingNames.has(name)) {
+      const list = await createBoardList(apiKey, apiToken, boardId, name);
+      created.push(list);
+    }
+  }
+  return created;
+}
+
 /** List labels on a board */
 export async function listBoardLabels(
   apiKey: string,

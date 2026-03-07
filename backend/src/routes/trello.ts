@@ -7,6 +7,7 @@
  * PUT    /api/integrations/trello/enabled  — Toggle enabled/disabled
  * GET    /api/integrations/trello/boards   — List user's Trello boards
  * GET    /api/integrations/trello/boards/:boardId/lists — List board's lists
+ * POST   /api/integrations/trello/boards/:boardId/create-default-lists — Create default CRANIS2 lists
  * GET    /api/integrations/trello/product-boards       — Get all product board mappings
  * PUT    /api/integrations/trello/product-boards/:productId — Save product board mapping
  * DELETE /api/integrations/trello/product-boards/:productId — Delete product board mapping
@@ -26,6 +27,7 @@ import {
   deleteProductBoard,
   listBoards,
   listBoardLists,
+  createDefaultLists,
   sendTestCard,
 } from '../services/trello.js';
 
@@ -172,6 +174,23 @@ router.get('/boards/:boardId/lists', requireAuth, async (req: Request, res: Resp
   } catch (error) {
     console.error('[TRELLO] GET lists error:', error);
     res.status(500).json({ error: 'Failed to list Trello board lists' });
+  }
+});
+
+// POST /api/integrations/trello/boards/:boardId/create-default-lists
+router.post('/boards/:boardId/create-default-lists', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const orgId = await getUserOrgId((req as any).userId);
+    if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+    const integration = await getIntegration(orgId);
+    if (!integration) return res.status(404).json({ error: 'Trello not connected' });
+
+    const lists = await createDefaultLists(integration.apiKey, integration.apiToken, req.params.boardId as string);
+    res.json(lists);
+  } catch (error) {
+    console.error('[TRELLO] POST create-default-lists error:', error);
+    res.status(500).json({ error: 'Failed to create default lists' });
   }
 });
 

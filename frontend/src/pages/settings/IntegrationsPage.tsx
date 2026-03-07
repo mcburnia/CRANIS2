@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { Plug, Trash2, Check, AlertTriangle, Plus, X, Send, Loader2 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -18,11 +18,13 @@ interface ProductBoard {
 }
 interface Product { id: string; name: string; }
 
+function authHeaders() {
+  const token = localStorage.getItem('session_token');
+  return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+}
+
 export default function IntegrationsPage() {
   usePageMeta({ title: 'Integrations', description: 'Manage external integrations' });
-
-  const token = localStorage.getItem('session_token');
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   // Trello state
   const [connected, setConnected] = useState(false);
@@ -42,6 +44,9 @@ export default function IntegrationsPage() {
   const [boardLists, setBoardLists] = useState<Record<string, TrelloBoardList[]>>({});
   const [products, setProducts] = useState<Product[]>([]);
 
+  // Track which board list fetches are in-flight to avoid duplicates
+  const listFetchesRef = useRef<Set<string>>(new Set());
+
   // New product board form
   const [addingProduct, setAddingProduct] = useState(false);
   const [newProductId, setNewProductId] = useState('');
@@ -51,13 +56,33 @@ export default function IntegrationsPage() {
   const [newListDeadlines, setNewListDeadlines] = useState('');
   const [newListGaps, setNewListGaps] = useState('');
 
+  // Create default lists
+  const [creatingLists, setCreatingLists] = useState(false);
+
   // Test card
   const [testListId, setTestListId] = useState('');
   const [testing, setTesting] = useState(false);
 
+  /** Fetch lists for a specific board — deduped via ref */
+  async function loadBoardLists(boardId: string) {
+    if (listFetchesRef.current.has(boardId)) return;
+    listFetchesRef.current.add(boardId);
+    try {
+      const r = await fetch(`/api/integrations/trello/boards/${boardId}/lists`, { headers: authHeaders() });
+      if (r.ok) {
+        const data = await r.json();
+        setBoardLists(prev => ({ ...prev, [boardId]: Array.isArray(data) ? data : [] }));
+      } else {
+        listFetchesRef.current.delete(boardId);
+      }
+    } catch {
+      listFetchesRef.current.delete(boardId);
+    }
+  }
+
   const fetchStatus = useCallback(async () => {
     try {
-      const r = await fetch('/api/integrations/trello', { headers });
+      const r = await fetch('/api/integrations/trello', { headers: authHeaders() });
       if (!r.ok) return;
       const data = await r.json();
       setConnected(data.connected);
@@ -74,34 +99,24 @@ export default function IntegrationsPage() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const r = await fetch('/api/products', { headers });
+      const r = await fetch('/api/products', { headers: authHeaders() });
       if (r.ok) {
         const data = await r.json();
-        setProducts(data.map((p: any) => ({ id: p.id, name: p.name })));
+        const list = Array.isArray(data) ? data : data.products || [];
+        setProducts(list.map((p: any) => ({ id: p.id, name: p.name })));
       }
     } catch { /* ignore */ }
   }, []);
 
   const fetchBoards = useCallback(async () => {
     try {
-      const r = await fetch('/api/integrations/trello/boards', { headers });
+      const r = await fetch('/api/integrations/trello/boards', { headers: authHeaders() });
       if (r.ok) {
         const data = await r.json();
-        setBoards(data);
+        setBoards(Array.isArray(data) ? data : []);
       }
     } catch { /* ignore */ }
   }, []);
-
-  const fetchBoardLists = useCallback(async (boardId: string) => {
-    if (boardLists[boardId]) return;
-    try {
-      const r = await fetch(`/api/integrations/trello/boards/${boardId}/lists`, { headers });
-      if (r.ok) {
-        const data = await r.json();
-        setBoardLists(prev => ({ ...prev, [boardId]: data }));
-      }
-    } catch { /* ignore */ }
-  }, [boardLists]);
 
   useEffect(() => {
     fetchStatus();
@@ -112,6 +127,18 @@ export default function IntegrationsPage() {
     if (connected) fetchBoards();
   }, [connected]);
 
+  // Load lists when a board is selected in the add form
+  useEffect(() => {
+    if (newBoardId) loadBoardLists(newBoardId);
+  }, [newBoardId]);
+
+  // Eagerly load lists for all mapped product boards (for test connection dropdown)
+  useEffect(() => {
+    productBoards.forEach(pb => {
+      if (pb.boardId) loadBoardLists(pb.boardId);
+    });
+  }, [productBoards]);
+
   const handleConnect = async () => {
     setError('');
     setSuccess('');
@@ -119,7 +146,7 @@ export default function IntegrationsPage() {
     try {
       const r = await fetch('/api/integrations/trello', {
         method: 'PUT',
-        headers,
+        headers: authHeaders(),
         body: JSON.stringify({ apiKey, apiToken }),
       });
       const data = await r.json();
@@ -140,12 +167,14 @@ export default function IntegrationsPage() {
   const handleDisconnect = async () => {
     if (!confirm('Disconnect Trello? Product board mappings will be removed.')) return;
     try {
-      await fetch('/api/integrations/trello', { method: 'DELETE', headers });
+      await fetch('/api/integrations/trello', { method: 'DELETE', headers: authHeaders() });
       setConnected(false);
       setApiKey('');
       setMaskedToken('');
       setProductBoards([]);
       setBoards([]);
+      setBoardLists({});
+      listFetchesRef.current.clear();
       setSuccess('Trello disconnected');
     } catch { setError('Failed to disconnect'); }
   };
@@ -153,7 +182,7 @@ export default function IntegrationsPage() {
   const handleToggleEnabled = async () => {
     try {
       await fetch('/api/integrations/trello/enabled', {
-        method: 'PUT', headers,
+        method: 'PUT', headers: authHeaders(),
         body: JSON.stringify({ enabled: !enabled }),
       });
       setEnabled(!enabled);
@@ -167,7 +196,7 @@ export default function IntegrationsPage() {
     try {
       const boardName = boards.find(b => b.id === newBoardId)?.name || null;
       const r = await fetch(`/api/integrations/trello/product-boards/${newProductId}`, {
-        method: 'PUT', headers,
+        method: 'PUT', headers: authHeaders(),
         body: JSON.stringify({
           boardId: newBoardId, boardName,
           listVuln: newListVuln || undefined,
@@ -192,10 +221,36 @@ export default function IntegrationsPage() {
 
   const handleDeleteProductBoard = async (productId: string) => {
     try {
-      await fetch(`/api/integrations/trello/product-boards/${productId}`, { method: 'DELETE', headers });
+      await fetch(`/api/integrations/trello/product-boards/${productId}`, { method: 'DELETE', headers: authHeaders() });
       setProductBoards(prev => prev.filter(b => b.productId !== productId));
       setSuccess('Board mapping removed');
     } catch { setError('Failed to remove'); }
+  };
+
+  const handleCreateDefaultLists = async () => {
+    if (!newBoardId) return;
+    setCreatingLists(true);
+    setError('');
+    try {
+      const r = await fetch(`/api/integrations/trello/boards/${newBoardId}/create-default-lists`, {
+        method: 'POST', headers: authHeaders(),
+      });
+      if (!r.ok) { setError('Failed to create default lists'); return; }
+      const lists: TrelloBoardList[] = await r.json();
+      setBoardLists(prev => ({ ...prev, [newBoardId]: lists }));
+      listFetchesRef.current.add(newBoardId);
+      // Auto-select the lists into their matching dropdowns
+      const vuln = lists.find(l => l.name === 'CRA Vulnerabilities');
+      const oblig = lists.find(l => l.name === 'CRA Obligations');
+      const dead = lists.find(l => l.name === 'CRA Deadlines');
+      const gaps = lists.find(l => l.name === 'CRA Gaps / Stalls');
+      if (vuln) setNewListVuln(vuln.id);
+      if (oblig) setNewListObligations(oblig.id);
+      if (dead) setNewListDeadlines(dead.id);
+      if (gaps) setNewListGaps(gaps.id);
+      setSuccess('Default lists created on your Trello board');
+    } catch { setError('Failed to create default lists'); }
+    finally { setCreatingLists(false); }
   };
 
   const handleTestCard = async () => {
@@ -204,7 +259,7 @@ export default function IntegrationsPage() {
     setError('');
     try {
       const r = await fetch('/api/integrations/trello/test', {
-        method: 'POST', headers,
+        method: 'POST', headers: authHeaders(),
         body: JSON.stringify({ listId: testListId }),
       });
       const data = await r.json();
@@ -217,6 +272,8 @@ export default function IntegrationsPage() {
   const productName = (id: string) => products.find(p => p.id === id)?.name || id.slice(0, 8);
 
   if (loading) return <div className="page-container"><PageHeader title="Integrations" /><div style={{ padding: '2rem', color: 'var(--muted)' }}>Loading...</div></div>;
+
+  const currentLists = newBoardId ? (boardLists[newBoardId] || []) : [];
 
   return (
     <div className="page-container">
@@ -322,13 +379,13 @@ export default function IntegrationsPage() {
                   </div>
                   <div className="int-field">
                     <label>Trello Board</label>
-                    <select value={newBoardId} onChange={e => { setNewBoardId(e.target.value); if (e.target.value) fetchBoardLists(e.target.value); }}>
+                    <select value={newBoardId} onChange={e => { setNewBoardId(e.target.value); if (e.target.value) loadBoardLists(e.target.value); }}>
                       <option value="">Select board...</option>
                       {boards.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                   </div>
 
-                  {newBoardId && boardLists[newBoardId] && (
+                  {newBoardId && currentLists.length > 0 && (
                     <div className="int-list-mapping">
                       <p className="int-hint">Map each event type to a Trello list. Leave blank to skip that event type.</p>
                       <div className="int-field-row">
@@ -336,14 +393,14 @@ export default function IntegrationsPage() {
                           <label>Vulnerabilities list</label>
                           <select value={newListVuln} onChange={e => setNewListVuln(e.target.value)}>
                             <option value="">None</option>
-                            {boardLists[newBoardId].map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                            {currentLists.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                           </select>
                         </div>
                         <div className="int-field">
                           <label>Obligations list</label>
                           <select value={newListObligations} onChange={e => setNewListObligations(e.target.value)}>
                             <option value="">None</option>
-                            {boardLists[newBoardId].map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                            {currentLists.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                           </select>
                         </div>
                       </div>
@@ -352,18 +409,37 @@ export default function IntegrationsPage() {
                           <label>Deadlines list</label>
                           <select value={newListDeadlines} onChange={e => setNewListDeadlines(e.target.value)}>
                             <option value="">None</option>
-                            {boardLists[newBoardId].map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                            {currentLists.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                           </select>
                         </div>
                         <div className="int-field">
                           <label>Gaps/Stalls list</label>
                           <select value={newListGaps} onChange={e => setNewListGaps(e.target.value)}>
                             <option value="">None</option>
-                            {boardLists[newBoardId].map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                            {currentLists.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                           </select>
                         </div>
                       </div>
                     </div>
+                  )}
+
+                  {newBoardId && currentLists.length === 0 && !creatingLists && (
+                    <div className="int-default-lists-panel">
+                      <p className="int-hint"><strong>This board has no lists yet.</strong> CRANIS2 needs lists (columns) on your Trello board to file compliance cards into. Click below to create four default lists:</p>
+                      <ul className="int-default-lists-desc">
+                        <li><strong>CRA Vulnerabilities</strong> — new CVEs and security issues detected in your dependencies</li>
+                        <li><strong>CRA Obligations</strong> — CRA obligation status changes requiring attention</li>
+                        <li><strong>CRA Deadlines</strong> — approaching CRA compliance deadlines</li>
+                        <li><strong>CRA Gaps / Stalls</strong> — compliance gaps or stalled progress on obligations</li>
+                      </ul>
+                      <button className="int-btn-primary" onClick={handleCreateDefaultLists}>
+                        <Plus size={14} /> Create Default Lists on This Board
+                      </button>
+                    </div>
+                  )}
+
+                  {newBoardId && creatingLists && (
+                    <p className="int-hint" style={{ color: 'var(--muted)' }}><Loader2 size={14} className="spin" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.4rem' }} />Creating lists on your Trello board...</p>
                   )}
 
                   <div className="int-add-form-actions">
@@ -389,11 +465,6 @@ export default function IntegrationsPage() {
                       </option>
                     ))
                   )}
-                  {/* Also load lists for mapped boards */}
-                  {productBoards.map(pb => {
-                    if (!boardLists[pb.boardId]) fetchBoardLists(pb.boardId);
-                    return null;
-                  })}
                 </select>
                 <button className="int-btn-primary" onClick={handleTestCard} disabled={testing || !testListId}>
                   {testing ? <><Loader2 size={14} className="spin" /> Sending...</> : <><Send size={14} /> Send Test Card</>}
