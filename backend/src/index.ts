@@ -39,7 +39,9 @@ import supplierDueDiligenceRoutes from "./routes/supplier-due-diligence.js";
 import complianceGapsRoutes from "./routes/compliance-gaps.js";
 import trelloRoutes from "./routes/trello.js";
 import apiKeysRoutes from "./routes/api-keys.js";
+import grcBridgeRoutes from "./routes/grc-bridge.js";
 import publicApiV1Routes from "./routes/public-api-v1.js";
+import documentTemplatesRoutes from "./routes/document-templates.js";
 import { startScheduler } from './services/scheduler.js';
 import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
@@ -109,8 +111,10 @@ app.use('/api/products', supplierDueDiligenceRoutes);
 app.use('/api/products', complianceGapsRoutes);
 app.use('/api/copilot', copilotRoutes);
 app.use('/api/integrations/trello', trelloRoutes);
+app.use('/api/integrations/grc', grcBridgeRoutes);
 app.use('/api/settings/api-keys', apiKeysRoutes);
 app.use('/api/v1', publicApiV1Routes);
+app.use('/api/document-templates', documentTemplatesRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

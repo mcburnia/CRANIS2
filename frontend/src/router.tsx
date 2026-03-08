@@ -42,6 +42,7 @@ import OrganisationPage from './pages/settings/OrganisationPage';
 import AuditLogPage from './pages/settings/AuditLogPage';
 import MarketplaceSettingsPage from './pages/settings/MarketplaceSettingsPage';
 import IntegrationsPage from './pages/settings/IntegrationsPage';
+import DocumentTemplatesPage from './pages/resources/DocumentTemplatesPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 import AdminLayout from './layouts/AdminLayout';
@@ -110,6 +111,7 @@ const router = createBrowserRouter([
           { path: '/audit-log', element: <AuditLogPage /> },
           { path: '/marketplace/settings', element: <MarketplaceSettingsPage /> },
           { path: '/integrations', element: <IntegrationsPage /> },
+          { path: '/document-templates', element: <DocumentTemplatesPage /> },
 
           /* URL aliases — redirect intuitive paths to actual routes */
           { path: '/cra-reports', element: <Navigate to="/vulnerability-reports" replace /> },

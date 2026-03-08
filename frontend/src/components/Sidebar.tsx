@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
   FolderGit2, Users, Box, AlertTriangle, CreditCard,
   BarChart3, UserCircle, Settings, ScrollText, LogOut, Shield, MessageSquareMore, Scale, Fingerprint, FileBarChart2, Store, Plug,
-  ChevronRight, BookOpen
+  ChevronRight, BookOpen, FileDown
 } from 'lucide-react';
 import FeedbackModal from './FeedbackModal';
 import './Sidebar.css';
@@ -61,6 +61,12 @@ const navSections = [
       { to: '/audit-log', icon: ScrollText, label: 'Audit Log' },
       { to: '/marketplace/settings', icon: Store, label: 'Marketplace' },
       { to: '/integrations', icon: Plug, label: 'Integrations' },
+    ],
+  },
+  {
+    label: 'Resources',
+    items: [
+      { to: '/document-templates', icon: FileDown, label: 'Document Templates' },
     ],
   },
 ];

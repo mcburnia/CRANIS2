@@ -1,0 +1,72 @@
+/* Document Templates Page */
+
+.document-templates-page { max-width: 900px; }
+
+.dt-intro {
+  color: var(--muted); font-size: 0.9rem; line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.dt-loading {
+  display: flex; align-items: center; gap: 0.5rem;
+  color: var(--muted); font-size: 0.85rem; padding: 2rem 0;
+}
+
+.dt-empty {
+  color: var(--muted); font-size: 0.85rem; padding: 2rem 0;
+}
+
+.dt-grid {
+  display: flex; flex-direction: column; gap: 1rem;
+}
+
+.dt-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 1.5rem; display: flex; gap: 1.25rem; align-items: flex-start;
+  transition: border-color 0.15s;
+}
+.dt-card:hover { border-color: var(--accent); }
+
+.dt-card-icon {
+  color: var(--accent); flex-shrink: 0; padding-top: 0.15rem;
+}
+
+.dt-card-body { flex: 1; min-width: 0; }
+
+.dt-card-title {
+  font-size: 1.05rem; font-weight: 600; margin: 0 0 0.5rem 0;
+  color: var(--text);
+}
+
+.dt-card-meta {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem;
+}
+
+.dt-badge {
+  font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 500;
+}
+.dt-badge-article {
+  background: rgba(99,102,241,0.15); color: var(--accent);
+}
+.dt-badge-section {
+  background: rgba(139,141,152,0.12); color: var(--muted);
+}
+
+.dt-card-desc {
+  color: var(--muted); font-size: 0.85rem; line-height: 1.5;
+  margin: 0 0 1rem 0;
+}
+
+.dt-card-footer {
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.dt-card-format {
+  font-size: 0.75rem; color: var(--muted);
+  background: rgba(139,141,152,0.08); padding: 2px 8px; border-radius: 6px;
+}
+
+@media (max-width: 600px) {
+  .dt-card { flex-direction: column; gap: 0.75rem; }
+  .dt-card-footer { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+}
