@@ -6,6 +6,7 @@
   color: var(--muted); font-size: 0.9rem; line-height: 1.6;
   margin-bottom: 1.5rem;
 }
+.dt-intro strong { color: var(--text); }
 
 .dt-loading {
   display: flex; align-items: center; gap: 0.5rem;
@@ -61,12 +62,79 @@
   display: flex; justify-content: space-between; align-items: center;
 }
 
+.dt-card-actions {
+  display: flex; gap: 0.5rem;
+}
+
 .dt-card-format {
   font-size: 0.75rem; color: var(--muted);
   background: rgba(139,141,152,0.08); padding: 2px 8px; border-radius: 6px;
 }
 
+/* ─── Generate Modal ─────────────────────────────────────────────── */
+
+.dt-modal-backdrop {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.5); display: flex;
+  align-items: center; justify-content: center;
+  padding: 1rem;
+}
+
+.dt-modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 520px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.dt-modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.75rem;
+}
+.dt-modal-header h3 {
+  font-size: 1.05rem; font-weight: 600; margin: 0; color: var(--text);
+}
+
+.dt-modal-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); padding: 0.25rem;
+}
+.dt-modal-close:hover { color: var(--text); }
+
+.dt-modal-desc {
+  color: var(--muted); font-size: 0.85rem; line-height: 1.5;
+  margin: 0 0 1.25rem 0;
+}
+
+.dt-modal-field {
+  display: flex; flex-direction: column; gap: 0.3rem;
+  margin-bottom: 1rem;
+}
+.dt-modal-field label {
+  font-size: 0.8rem; color: var(--muted); font-weight: 500;
+}
+.dt-modal-field select,
+.dt-modal-field input {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.5rem 0.75rem; color: var(--text); font-size: 0.85rem;
+}
+.dt-modal-field select:focus,
+.dt-modal-field input:focus {
+  border-color: var(--accent); outline: none;
+}
+
+.dt-optional {
+  font-weight: 400; color: var(--muted); opacity: 0.7;
+}
+
+.dt-modal-actions {
+  display: flex; justify-content: flex-end; gap: 0.5rem;
+  margin-top: 1.25rem; padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
 @media (max-width: 600px) {
   .dt-card { flex-direction: column; gap: 0.75rem; }
   .dt-card-footer { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+  .dt-card-actions { flex-direction: column; width: 100%; }
+  .dt-card-actions .btn { width: 100%; justify-content: center; }
 }
