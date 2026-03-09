@@ -10,10 +10,27 @@ import { api, loginTestUser, TEST_USERS } from '../setup/test-helpers.js';
 describe('/api/docs', () => {
   let regularToken: string;
   let platformAdminToken: string;
+  let originalGuideContent: string;
+  let originalGuideTitle: string;
 
   beforeAll(async () => {
     regularToken = await loginTestUser(TEST_USERS.mfgAdmin);
     platformAdminToken = await loginTestUser(TEST_USERS.platformAdmin);
+
+    // Save original user-guide content so we can restore after destructive PUT tests
+    const res = await api.get('/api/docs/user-guide');
+    originalGuideTitle = res.body.title;
+    originalGuideContent = res.body.content;
+  });
+
+  afterAll(async () => {
+    // Restore user-guide content that PUT tests overwrite
+    if (originalGuideContent && platformAdminToken) {
+      await api.put('/api/docs/user-guide', {
+        auth: platformAdminToken,
+        body: { title: originalGuideTitle, content: originalGuideContent },
+      });
+    }
   });
 
   // ─── GET /api/docs — list all pages (public) ───────────────────────────
