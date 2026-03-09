@@ -349,6 +349,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       provider: p.provider || '',
       instanceUrl: p.instanceUrl || '',
       distributionModel: p.distributionModel || null,
+      lifecycleStatus: p.lifecycleStatus || 'pre_production',
       status: p.status || 'active',
       createdAt: p.createdAt?.toString() || '',
       updatedAt: p.updatedAt?.toString() || '',
@@ -365,7 +366,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId(userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-  const { name, description, version, productType, craCategory, repoUrl, distributionModel, provider, instanceUrl } = req.body;
+  const { name, description, version, productType, craCategory, repoUrl, distributionModel, provider, instanceUrl, lifecycleStatus } = req.body;
 
   if (!name?.trim()) {
     res.status(400).json({ error: 'Product name is required' });
@@ -374,6 +375,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
 
   const validTypes = ['firmware', 'saas', 'library', 'desktop_app', 'mobile_app', 'iot_device', 'embedded', 'other'];
   const validCategories = ['default', 'important_i', 'important_ii', 'critical'];
+  const validLifecycles = ['pre_production', 'on_market', 'end_of_life'];
 
   const productId = uuidv4();
   const session = getDriver().session();
@@ -389,6 +391,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
          craCategory: $craCategory,
          repoUrl: $repoUrl,
          distributionModel: $distributionModel,
+         lifecycleStatus: $lifecycleStatus,
          status: 'active',
          createdAt: datetime(),
          updatedAt: datetime()
@@ -405,6 +408,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         craCategory: validCategories.includes(craCategory) ? craCategory : 'default',
         repoUrl: repoUrl?.trim() || '',
         distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
+        lifecycleStatus: validLifecycles.includes(lifecycleStatus) ? lifecycleStatus : 'pre_production',
         provider: provider?.trim() || '',
         instanceUrl: instanceUrl?.trim() || '',
       }
@@ -482,6 +486,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       craCategory: validCategories.includes(craCategory) ? craCategory : 'default',
       repoUrl: repoUrl?.trim() || '',
       distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
+      lifecycleStatus: validLifecycles.includes(lifecycleStatus) ? lifecycleStatus : 'pre_production',
       provider: provider?.trim() || '',
       instanceUrl: instanceUrl?.trim() || '',
       status: 'active',
@@ -501,9 +506,10 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId(userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-  const { name, description, version, productType, craCategory, repoUrl, distributionModel, provider, instanceUrl } = req.body;
+  const { name, description, version, productType, craCategory, repoUrl, distributionModel, provider, instanceUrl, lifecycleStatus } = req.body;
   if (!name?.trim()) { res.status(400).json({ error: 'Product name is required' }); return; }
 
+  const validLifecycles = ['pre_production', 'on_market', 'end_of_life'];
   const productId = req.params.id as string;
   const session = getDriver().session();
   try {
@@ -511,7 +517,8 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     const oldResult = await session.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
        RETURN p.name AS name, p.craCategory AS craCategory, p.repoUrl AS repoUrl,
-              p.distributionModel AS distributionModel, p.productType AS productType`,
+              p.distributionModel AS distributionModel, p.productType AS productType,
+              p.lifecycleStatus AS lifecycleStatus`,
       { orgId, productId }
     );
     const oldProps = oldResult.records.length > 0 ? {
@@ -520,13 +527,16 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       repoUrl: oldResult.records[0].get('repoUrl'),
       distributionModel: oldResult.records[0].get('distributionModel'),
       productType: oldResult.records[0].get('productType'),
+      lifecycleStatus: oldResult.records[0].get('lifecycleStatus'),
     } : null;
 
     const result = await session.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
        SET p.name = $name, p.description = $description, p.version = $version,
            p.productType = $productType, p.craCategory = $craCategory,
-           p.repoUrl = $repoUrl, p.distributionModel = $distributionModel, p.provider = $provider, p.instanceUrl = $instanceUrl,
+           p.repoUrl = $repoUrl, p.distributionModel = $distributionModel,
+           p.lifecycleStatus = $lifecycleStatus,
+           p.provider = $provider, p.instanceUrl = $instanceUrl,
            p.updatedAt = datetime()
        RETURN p`,
       {
@@ -539,6 +549,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
         craCategory: craCategory || 'default',
         repoUrl: repoUrl?.trim() || '',
         distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
+        lifecycleStatus: validLifecycles.includes(lifecycleStatus) ? lifecycleStatus : null,
         provider: provider?.trim() || '',
         instanceUrl: instanceUrl?.trim() || '',
       }
@@ -564,6 +575,8 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       if ((oldProps.repoUrl || '') !== newRepoUrl) { oldVals.repoUrl = oldProps.repoUrl; changes.repoUrl = newRepoUrl; }
       if (oldProps.distributionModel !== newDistModel) { oldVals.distributionModel = oldProps.distributionModel; changes.distributionModel = newDistModel; }
       if (oldProps.productType !== newProductType) { oldVals.productType = oldProps.productType; changes.productType = newProductType; }
+      const newLifecycle = validLifecycles.includes(lifecycleStatus) ? lifecycleStatus : null;
+      if (oldProps.lifecycleStatus !== newLifecycle) { oldVals.lifecycleStatus = oldProps.lifecycleStatus; changes.lifecycleStatus = newLifecycle; }
 
       if (Object.keys(changes).length > 0) {
         const changedFields = Object.keys(changes).join(', ');
@@ -591,6 +604,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       provider: p.provider || '',
       instanceUrl: p.instanceUrl || '',
       distributionModel: p.distributionModel || null,
+      lifecycleStatus: p.lifecycleStatus || 'pre_production',
     });
   } finally {
     await session.close();

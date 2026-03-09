@@ -178,6 +178,14 @@
   border-color: var(--accent);
 }
 
+.readiness-cta-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  align-items: center;
+}
+
 .readiness-plan-link {
   margin-left: 0.5rem;
   font-size: 0.7rem;

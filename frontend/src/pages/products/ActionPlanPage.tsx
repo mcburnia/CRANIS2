@@ -18,13 +18,30 @@ function getReadinessColour(pct: number): string {
   return 'red';
 }
 
-function getReadinessLabel(pct: number): string {
-  if (pct >= 100) return 'Fully compliant';
-  if (pct >= 90) return 'Nearly compliant';
-  if (pct >= 67) return 'Good progress';
-  if (pct >= 34) return 'In progress';
-  if (pct > 0) return 'Getting started';
+function getReadinessLabel(pct: number, lifecycle?: string): string {
+  const isPreProd = !lifecycle || lifecycle === 'pre_production';
+  if (pct >= 100) return isPreProd ? 'Ready for market placement' : 'Fully compliant';
+  if (pct >= 90) return isPreProd ? 'Nearly ready' : 'Nearly compliant';
+  if (pct >= 67) return isPreProd ? 'Good progress' : 'Good progress';
+  if (pct >= 34) return isPreProd ? 'Preparing' : 'In progress';
+  if (pct > 0) return isPreProd ? 'Getting started' : 'Attention needed';
   return 'Not started';
+}
+
+function getLifecycleLabel(lifecycle: string): string {
+  switch (lifecycle) {
+    case 'on_market': return 'On Market';
+    case 'end_of_life': return 'End of Life';
+    default: return 'Pre-production';
+  }
+}
+
+function getLifecycleColour(lifecycle: string): string {
+  switch (lifecycle) {
+    case 'on_market': return 'green';
+    case 'end_of_life': return 'amber';
+    default: return 'blue';
+  }
 }
 
 export default function ActionPlanPage() {
@@ -34,6 +51,7 @@ export default function ActionPlanPage() {
 
   const [checklist, setChecklist] = useState<ChecklistData | null>(null);
   const [gapData, setGapData] = useState<ComplianceGapData | null>(null);
+  const [lifecycleStatus, setLifecycleStatus] = useState<string>('pre_production');
   const [loading, setLoading] = useState(true);
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [showAllPhase2, setShowAllPhase2] = useState(false);
@@ -44,13 +62,18 @@ export default function ActionPlanPage() {
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
-      const [clRes, gapRes] = await Promise.all([
+      const [clRes, gapRes, prodRes] = await Promise.all([
         fetch(`/api/products/${productId}/compliance-checklist`, { headers }),
         fetch(`/api/products/${productId}/compliance-gaps`, { headers }),
+        fetch(`/api/products/${productId}`, { headers }),
       ]);
 
       if (clRes.ok) setChecklist(await clRes.json());
       if (gapRes.ok) setGapData(await gapRes.json());
+      if (prodRes.ok) {
+        const prodData = await prodRes.json();
+        setLifecycleStatus(prodData.lifecycleStatus || 'pre_production');
+      }
     } catch (err) {
       console.error('Failed to fetch action plan data:', err);
     } finally {
@@ -235,11 +258,20 @@ export default function ActionPlanPage() {
         </div>
         <div className="ap-header-info">
           <h2>CRA Action Plan — {checklist.productName}</h2>
-          <p className="ap-header-sub">{getReadinessLabel(readinessPct)}</p>
+          <p className="ap-header-sub">
+            {getReadinessLabel(readinessPct, lifecycleStatus)}
+            <span className={`badge ${getLifecycleColour(lifecycleStatus)}`} style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem', marginLeft: '0.6rem', verticalAlign: 'middle' }}>
+              {getLifecycleLabel(lifecycleStatus)}
+            </span>
+          </p>
           <p className="ap-header-detail">
             {allComplete
-              ? 'All platform actions complete. Your product is audit-ready.'
-              : `${summary.remaining} action${summary.remaining !== 1 ? 's' : ''} remaining to reach full readiness. ${gapData.progress.obligationsMet}/${gapData.progress.obligationsTotal} obligations met.`
+              ? lifecycleStatus === 'pre_production'
+                ? 'All platform actions complete. Your product is ready for market placement.'
+                : 'All platform actions complete. Your product is audit-ready.'
+              : lifecycleStatus === 'pre_production'
+                ? `${summary.remaining} action${summary.remaining !== 1 ? 's' : ''} to complete before market placement. ${gapData.progress.obligationsMet}/${gapData.progress.obligationsTotal} obligations met.`
+                : `${summary.remaining} action${summary.remaining !== 1 ? 's' : ''} remaining to reach full readiness. ${gapData.progress.obligationsMet}/${gapData.progress.obligationsTotal} obligations met.`
             }
           </p>
         </div>

@@ -68,6 +68,7 @@ export default function ProductsPage() {
   const [formType, setFormType] = useState('saas');
   const [formCategory, setFormCategory] = useState('default');
   const [formRepoUrl, setFormRepoUrl] = useState('');
+  const [formLifecycle, setFormLifecycle] = useState('pre_production');
   const [formAutoContacts, setFormAutoContacts] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -96,7 +97,7 @@ export default function ProductsPage() {
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: formName, description: formDesc, version: formVersion, productType: formType, craCategory: formCategory, repoUrl: formRepoUrl, autoAssignContacts: formAutoContacts }),
+        body: JSON.stringify({ name: formName, description: formDesc, version: formVersion, productType: formType, craCategory: formCategory, repoUrl: formRepoUrl, lifecycleStatus: formLifecycle, autoAssignContacts: formAutoContacts }),
       });
 
       if (!res.ok) {
@@ -107,7 +108,7 @@ export default function ProductsPage() {
       }
 
       setShowAdd(false);
-      setFormName(''); setFormDesc(''); setFormVersion(''); setFormType('saas'); setFormCategory('default'); setFormRepoUrl(''); setFormAutoContacts(true);
+      setFormName(''); setFormDesc(''); setFormVersion(''); setFormType('saas'); setFormCategory('default'); setFormRepoUrl(''); setFormLifecycle('pre_production'); setFormAutoContacts(true);
       await fetchProducts();
     } catch {
       setError('Network error');
@@ -243,6 +244,16 @@ export default function ProductsPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Lifecycle Stage</label>
+                <select className="form-input" value={formLifecycle} onChange={e => setFormLifecycle(e.target.value)}>
+                  <option value="pre_production">Pre-production — not yet on the market</option>
+                  <option value="on_market">On market — placed on the EU market</option>
+                  <option value="end_of_life">End of life — approaching or past end of support</option>
+                </select>
+                <span className="form-hint">Determines how urgently compliance gaps are flagged. Pre-production products are shown as "preparing" rather than "non-compliant".</span>
               </div>
 
               <div className="form-group">

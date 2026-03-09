@@ -68,6 +68,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
          OPTIONAL MATCH (p)-[:HAS_SBOM]->(s:SBOM)
          OPTIONAL MATCH (r)-[:HAS_CONTRIBUTOR]->(c:Contributor)
          RETURN p.id AS id, p.name AS name, p.craCategory AS category,
+                p.lifecycleStatus AS lifecycleStatus,
                 r.fullName AS repoFullName, r IS NOT NULL AS repoConnected,
                 s.packageCount AS sbomPackageCount, s.isStale AS sbomIsStale,
                 count(DISTINCT c) AS contributorCount`,
@@ -78,6 +79,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
         id: record.get('id'),
         name: record.get('name'),
         category: record.get('category') || null,
+        lifecycleStatus: record.get('lifecycleStatus') || 'pre_production',
         repoConnected: record.get('repoConnected'),
         repoFullName: record.get('repoFullName') || null,
         sbomPackageCount: record.get('sbomPackageCount')?.toNumber?.() ?? record.get('sbomPackageCount') ?? 0,

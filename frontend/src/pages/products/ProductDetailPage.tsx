@@ -84,6 +84,7 @@ interface Product {
   provider: string;
   instanceUrl: string;
   distributionModel: string | null;
+  lifecycleStatus: string;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -308,7 +309,7 @@ export default function ProductDetailPage() {
   const initialTab = (searchParams.get('tab') as TabKey) || 'overview';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '', distributionModel: '', provider: '', instanceUrl: '' });
+  const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '', distributionModel: '', lifecycleStatus: '', provider: '', instanceUrl: '' });
   const [availableProviders, setAvailableProviders] = useState<ProviderInfo[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -389,6 +390,7 @@ export default function ProductDetailPage() {
           productType: data.productType || 'other', craCategory: data.craCategory || 'default',
           repoUrl: data.repoUrl || '',
           distributionModel: data.distributionModel || '',
+          lifecycleStatus: data.lifecycleStatus || 'pre_production',
           provider: data.provider || detectProvider(data.repoUrl || ''),
           instanceUrl: data.instanceUrl || '',
         });
@@ -745,7 +747,7 @@ export default function ProductDetailPage() {
               </button>
             ) : (
               <>
-                <button className="pd-cancel-btn" onClick={() => { setEditing(false); setEditForm({ name: product.name, description: product.description, version: product.version, productType: product.productType, craCategory: product.craCategory, repoUrl: product.repoUrl, distributionModel: product.distributionModel || '', provider: product.provider || detectProvider(product.repoUrl), instanceUrl: product.instanceUrl || '' }); }}>
+                <button className="pd-cancel-btn" onClick={() => { setEditing(false); setEditForm({ name: product.name, description: product.description, version: product.version, productType: product.productType, craCategory: product.craCategory, repoUrl: product.repoUrl, distributionModel: product.distributionModel || '', lifecycleStatus: product.lifecycleStatus || 'pre_production', provider: product.provider || detectProvider(product.repoUrl), instanceUrl: product.instanceUrl || '' }); }}>
                   <X size={14} /> Cancel
                 </button>
                 <button className="btn btn-primary pd-save-btn" onClick={handleSave} disabled={saving || !editForm.name.trim()}>
@@ -863,6 +865,14 @@ export default function ProductDetailPage() {
                   <option value="source_available">Source Available</option>
                   <option value="library_component">Library / Component</option>
                   <option value="internal_only">Internal Only</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Lifecycle Stage</label>
+                <select className="form-input" value={editForm.lifecycleStatus} onChange={e => setEditForm({ ...editForm, lifecycleStatus: e.target.value })}>
+                  <option value="pre_production">Pre-production</option>
+                  <option value="on_market">On market</option>
+                  <option value="end_of_life">End of life</option>
                 </select>
               </div>
             </div>

@@ -10,6 +10,7 @@ interface DashboardProduct {
   id: string;
   name: string;
   category: string | null;
+  lifecycleStatus: string;
   repoConnected: boolean;
   repoFullName: string | null;
   sbomPackageCount: number;
@@ -156,12 +157,22 @@ function getReadinessColour(pct: number): string {
   return 'red';
 }
 
-function getReadinessLabel(pct: number): string {
-  if (pct >= 90) return 'Nearly compliant';
-  if (pct >= 67) return 'Good progress';
-  if (pct >= 34) return 'In progress';
-  if (pct > 0) return 'Getting started';
-  return 'Not started';
+function getReadinessLabel(pct: number, lifecycle?: string): string {
+  const isPreProd = !lifecycle || lifecycle === 'pre_production';
+  if (pct >= 100) return isPreProd ? 'Ready for market placement' : 'Fully compliant';
+  if (pct >= 90) return isPreProd ? 'Nearly ready' : 'Nearly compliant';
+  if (pct >= 67) return isPreProd ? 'Good progress' : 'Good progress';
+  if (pct >= 34) return isPreProd ? 'Preparing' : 'In progress';
+  if (pct > 0) return isPreProd ? 'Getting started' : 'Attention needed';
+  return isPreProd ? 'Not started' : 'Not started';
+}
+
+function getLifecycleBadge(lifecycle: string): { label: string; color: string } {
+  switch (lifecycle) {
+    case 'on_market': return { label: 'On Market', color: 'green' };
+    case 'end_of_life': return { label: 'End of Life', color: 'amber' };
+    default: return { label: 'Pre-production', color: 'blue' };
+  }
 }
 
 export default function DashboardPage() {
@@ -275,23 +286,38 @@ export default function DashboardPage() {
           </div>
           <div className="readiness-info">
             <h2>CRA Readiness</h2>
-            <p className="readiness-sub">{getReadinessLabel(data.overallReadiness)}</p>
+            <p className="readiness-sub">{getReadinessLabel(data.overallReadiness, products.some(p => p.lifecycleStatus === 'on_market') ? 'on_market' : undefined)}</p>
             <p className="readiness-detail">{bannerText}</p>
             {data.overallReadiness < 100 && products.length > 0 && (() => {
-              const totalRemaining = checklists.reduce((sum, cl) => sum + (cl.stepsTotal - cl.stepsComplete), 0);
-              const targetProduct = [...products].sort((a, b) => (a.craReadiness?.readiness ?? 0) - (b.craReadiness?.readiness ?? 0))[0];
-              if (!targetProduct || totalRemaining === 0) return null;
+              const incompleteProducts = products.filter(p => (p.craReadiness?.readiness ?? 0) < 100);
+              if (incompleteProducts.length === 0) return null;
+              if (incompleteProducts.length === 1) {
+                const p = incompleteProducts[0];
+                const cl = checklists.find(c => c.productId === p.id);
+                const remaining = cl ? cl.stepsTotal - cl.stepsComplete : 0;
+                return (
+                  <Link to={`/products/${p.id}/action-plan`} className="readiness-cta">
+                    <ArrowRight size={14} />
+                    {remaining > 0 ? `${remaining} action${remaining !== 1 ? 's' : ''} to reach 100%` : 'View action plan'}
+                  </Link>
+                );
+              }
               return (
-                <Link
-                  to={`/products/${targetProduct.id}/action-plan`}
-                  className="readiness-cta"
-                >
-                  <ArrowRight size={14} />
-                  {products.length === 1
-                    ? `${totalRemaining} action${totalRemaining !== 1 ? 's' : ''} to reach 100% readiness`
-                    : `View action plan for ${targetProduct.name}`
-                  }
-                </Link>
+                <div className="readiness-cta-list">
+                  {incompleteProducts.slice(0, 3).map(p => {
+                    const lc = getLifecycleBadge(p.lifecycleStatus);
+                    return (
+                      <Link key={p.id} to={`/products/${p.id}/action-plan`} className="readiness-cta">
+                        <ArrowRight size={14} />
+                        {p.name}
+                        <span className={`badge ${lc.color}`} style={{ fontSize: '0.6rem', padding: '0.05rem 0.3rem', marginLeft: '0.2rem' }}>{lc.label}</span>
+                      </Link>
+                    );
+                  })}
+                  {incompleteProducts.length > 3 && (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>+{incompleteProducts.length - 3} more</span>
+                  )}
+                </div>
               );
             })()}
           </div>
