@@ -7,7 +7,7 @@ import HelpTip from '../../components/HelpTip';
 import CategoryRecommenderModal from '../../components/CategoryRecommenderModal';
 import SupplyChainTab from '../../components/SupplyChainTab';
 import {
-  ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
+  ArrowLeft, ArrowRight, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
   CheckCircle2, Circle, Clock, ChevronRight, ChevronDown, ExternalLink, Github, Star,
   GitFork, Eye, RefreshCw, Users, Unplug, Loader2, Download, Info, Archive, Server, Sparkles, Activity, Copy, Check
@@ -1394,6 +1394,27 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
           )}
         </div>
       </div>
+
+      {/* Action Plan CTA */}
+      {checklist && !checklist.complete && (
+        <div style={{ marginBottom: '0.75rem' }}>
+          <Link
+            to={`/products/${product.id}/action-plan`}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              fontSize: '0.82rem', fontWeight: 500, color: 'var(--accent)',
+              textDecoration: 'none', padding: '0.35rem 0.7rem',
+              border: '1px solid rgba(59,130,246,0.3)', borderRadius: '6px',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { (e.target as HTMLElement).style.background = 'rgba(59,130,246,0.08)'; }}
+            onMouseLeave={e => { (e.target as HTMLElement).style.background = 'none'; }}
+          >
+            <ArrowRight size={14} />
+            View full action plan
+          </Link>
+        </div>
+      )}
 
       {/* Compliance Gap Narrator — Next Steps */}
       {complianceGaps && complianceGaps.gaps.length > 0 && (

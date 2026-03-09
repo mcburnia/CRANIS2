@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
-import { Package, Users, ScrollText, ShieldAlert, Circle, ChevronRight, ClipboardCheck, Grid3X3, AlertTriangle, FileText, Shield, Clock } from 'lucide-react';
+import { Package, Users, ScrollText, ShieldAlert, Circle, ChevronRight, ClipboardCheck, Grid3X3, AlertTriangle, FileText, Shield, Clock, ArrowRight } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './DashboardPage.css';
 
@@ -277,6 +277,23 @@ export default function DashboardPage() {
             <h2>CRA Readiness</h2>
             <p className="readiness-sub">{getReadinessLabel(data.overallReadiness)}</p>
             <p className="readiness-detail">{bannerText}</p>
+            {data.overallReadiness < 100 && products.length > 0 && (() => {
+              const totalRemaining = checklists.reduce((sum, cl) => sum + (cl.stepsTotal - cl.stepsComplete), 0);
+              const targetProduct = [...products].sort((a, b) => (a.craReadiness?.readiness ?? 0) - (b.craReadiness?.readiness ?? 0))[0];
+              if (!targetProduct || totalRemaining === 0) return null;
+              return (
+                <Link
+                  to={`/products/${targetProduct.id}/action-plan`}
+                  className="readiness-cta"
+                >
+                  <ArrowRight size={14} />
+                  {products.length === 1
+                    ? `${totalRemaining} action${totalRemaining !== 1 ? 's' : ''} to reach 100% readiness`
+                    : `View action plan for ${targetProduct.name}`
+                  }
+                </Link>
+              );
+            })()}
           </div>
         </div>
       ) : (
@@ -328,7 +345,12 @@ export default function DashboardPage() {
                     </td>
                     <td>
                       <div className="progress-bar"><div className={`progress-fill ${readinessColour}`} style={{ width: `${Math.max(readinessPct, 2)}%` }} /></div>
-                      <span className="progress-text">{readinessPct}% <span className="readiness-fraction">({p.craReadiness?.met ?? 0}/{p.craReadiness?.total ?? 0})</span></span>
+                      <span className="progress-text">
+                        {readinessPct}% <span className="readiness-fraction">({p.craReadiness?.met ?? 0}/{p.craReadiness?.total ?? 0})</span>
+                        {readinessPct < 100 && (
+                          <Link to={`/products/${p.id}/action-plan`} className="readiness-plan-link">Action Plan</Link>
+                        )}
+                      </span>
                     </td>
                     <td>
                       <span className={`badge ${support.color}`}>{support.label}</span>

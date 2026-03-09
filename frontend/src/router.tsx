@@ -19,6 +19,7 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 import NotificationsPage from './pages/notifications/NotificationsPage';
 import ProductsPage from './pages/products/ProductsPage';
 import ProductDetailPage from './pages/products/ProductDetailPage';
+import ActionPlanPage from './pages/products/ActionPlanPage';
 import ObligationsPage from './pages/compliance/ObligationsPage';
 import TechnicalFilesPage from './pages/compliance/TechnicalFilesPage';
 import VulnerabilityReportsPage from './pages/compliance/VulnerabilityReportsPage';
@@ -88,6 +89,7 @@ const router = createBrowserRouter([
           { path: '/notifications', element: <NotificationsPage /> },
           { path: '/products', element: <ProductsPage /> },
           { path: '/products/:productId', element: <ProductDetailPage /> },
+          { path: '/products/:productId/action-plan', element: <ActionPlanPage /> },
           { path: '/products/:productId/timeline', element: <ComplianceTimelinePage /> },
           { path: '/products/:productId/escrow', element: <EscrowPage /> },
           { path: '/obligations', element: <ObligationsPage /> },
