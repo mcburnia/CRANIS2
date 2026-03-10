@@ -423,7 +423,7 @@ describe('/api/obligations', () => {
     });
 
     it('should NOT include art_20 for a non-critical product', async () => {
-      // github product has craCategory = 'category-1' which resolves to 'default'
+      // github product has craCategory = 'important_i'
       // art_20 only applies to 'critical' — it must not appear here
       const res = await api.get(`/api/obligations/${PRODUCT_ID}`, { auth: mfgToken });
       expect(res.status).toBe(200);

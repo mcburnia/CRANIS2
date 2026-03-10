@@ -193,7 +193,7 @@ describe('/api/products', () => {
       const productName = `test-create-${Date.now()}`;
       const res = await api.post('/api/products', {
         auth: token,
-        body: { name: productName, craCategory: 'category-1' },
+        body: { name: productName, craCategory: 'important_i' },
       });
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('id');

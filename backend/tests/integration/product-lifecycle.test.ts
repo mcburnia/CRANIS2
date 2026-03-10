@@ -25,7 +25,7 @@ describe('Integration: Product Lifecycle', () => {
       auth: token,
       body: {
         name: uniqueName,
-        craCategory: 'category-1',
+        craCategory: 'important_i',
         description: 'Integration test product',
       },
     });
@@ -66,7 +66,7 @@ describe('Integration: Product Lifecycle', () => {
     const res = await api.get(`/api/products/${productId}`, { auth: token });
     expect(res.status).toBe(200);
     expect(res.body.id).toBe(productId);
-    // craCategory may default to 'default' even if 'category-1' was requested
+    // craCategory should be 'important_i' as requested
     expect(res.body.craCategory).toBeTruthy();
   });
 

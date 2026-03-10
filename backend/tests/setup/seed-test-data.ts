@@ -204,21 +204,21 @@ async function seedProducts(): Promise<void> {
 
   const products = [
     // TestOrg-Manufacturer-Active — one per provider
-    { id: TEST_IDS.products.github, name: 'test-product-github', orgId: TEST_IDS.orgs.mfgActive, provider: 'github', craCategory: 'category-1', repoUrl: 'https://github.com/test-org/test-product' },
-    { id: TEST_IDS.products.codeberg, name: 'test-product-codeberg', orgId: TEST_IDS.orgs.mfgActive, provider: 'codeberg', craCategory: 'category-2', repoUrl: 'https://codeberg.org/test-org/test-product' },
+    { id: TEST_IDS.products.github, name: 'test-product-github', orgId: TEST_IDS.orgs.mfgActive, provider: 'github', craCategory: 'important_i', repoUrl: 'https://github.com/test-org/test-product' },
+    { id: TEST_IDS.products.codeberg, name: 'test-product-codeberg', orgId: TEST_IDS.orgs.mfgActive, provider: 'codeberg', craCategory: 'important_ii', repoUrl: 'https://codeberg.org/test-org/test-product' },
     { id: TEST_IDS.products.gitea, name: 'test-product-gitea', orgId: TEST_IDS.orgs.mfgActive, provider: 'gitea', craCategory: 'default', repoUrl: 'https://gitea.example.com/test-org/test-product', instanceUrl: 'https://gitea.example.com' },
-    { id: TEST_IDS.products.forgejo, name: 'test-product-forgejo', orgId: TEST_IDS.orgs.mfgActive, provider: 'forgejo', craCategory: 'category-1', repoUrl: 'https://forgejo.example.com/test-org/test-product', instanceUrl: 'https://forgejo.example.com' },
+    { id: TEST_IDS.products.forgejo, name: 'test-product-forgejo', orgId: TEST_IDS.orgs.mfgActive, provider: 'forgejo', craCategory: 'important_i', repoUrl: 'https://forgejo.example.com/test-org/test-product', instanceUrl: 'https://forgejo.example.com' },
     { id: TEST_IDS.products.gitlab, name: 'test-product-gitlab', orgId: TEST_IDS.orgs.mfgActive, provider: 'gitlab', craCategory: 'default', repoUrl: 'https://gitlab.com/test-org/test-product' },
 
     // Other orgs
     { id: TEST_IDS.products.impGithub, name: 'test-imp-github', orgId: TEST_IDS.orgs.impTrial, provider: 'github', craCategory: 'default', repoUrl: 'https://github.com/imp-org/product1' },
     { id: TEST_IDS.products.impCodeberg, name: 'test-imp-codeberg', orgId: TEST_IDS.orgs.impTrial, provider: 'codeberg', craCategory: 'default', repoUrl: 'https://codeberg.org/imp-org/product1' },
     { id: TEST_IDS.products.distGithub1, name: 'test-dist-github1', orgId: TEST_IDS.orgs.distSuspended, provider: 'github', craCategory: 'default', repoUrl: 'https://github.com/dist-org/product1' },
-    { id: TEST_IDS.products.distGithub2, name: 'test-dist-github2', orgId: TEST_IDS.orgs.distSuspended, provider: 'github', craCategory: 'category-1', repoUrl: 'https://github.com/dist-org/product2' },
+    { id: TEST_IDS.products.distGithub2, name: 'test-dist-github2', orgId: TEST_IDS.orgs.distSuspended, provider: 'github', craCategory: 'important_i', repoUrl: 'https://github.com/dist-org/product2' },
     { id: TEST_IDS.products.ossGithub, name: 'test-oss-github', orgId: TEST_IDS.orgs.ossReadOnly, provider: 'github', craCategory: 'default', repoUrl: 'https://github.com/oss-org/product1' },
     { id: TEST_IDS.products.ossGitea, name: 'test-oss-gitea', orgId: TEST_IDS.orgs.ossReadOnly, provider: 'gitea', craCategory: 'default', repoUrl: 'https://gitea.example.com/oss-org/product1', instanceUrl: 'https://gitea.example.com' },
     { id: TEST_IDS.products.pdGithub, name: 'test-pd-github', orgId: TEST_IDS.orgs.mfgPastDue, provider: 'github', craCategory: 'default', repoUrl: 'https://github.com/pd-org/product1' },
-    { id: TEST_IDS.products.pdForgejo, name: 'test-pd-forgejo', orgId: TEST_IDS.orgs.mfgPastDue, provider: 'forgejo', craCategory: 'category-1', repoUrl: 'https://forgejo.example.com/pd-org/product1', instanceUrl: 'https://forgejo.example.com' },
+    { id: TEST_IDS.products.pdForgejo, name: 'test-pd-forgejo', orgId: TEST_IDS.orgs.mfgPastDue, provider: 'forgejo', craCategory: 'important_i', repoUrl: 'https://forgejo.example.com/pd-org/product1', instanceUrl: 'https://forgejo.example.com' },
   ];
 
   try {
@@ -246,39 +246,36 @@ async function seedProducts(): Promise<void> {
 async function seedVulnerabilityFindings(): Promise<void> {
   const pool = getAppPool();
 
+  // Deterministic IDs — must never change (idempotent upsert)
   const findings = [
-    // test-product-github: 5 vulns
-    { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0001 - Prototype Pollution', severity: 'critical', cvssScore: 9.8, source: 'osv', sourceId: 'GHSA-test-0001', dependencyName: 'lodash', dependencyVersion: '4.17.20', fixedVersion: '4.17.21', status: 'open' },
-    { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0002 - XSS in Template', severity: 'high', cvssScore: 7.5, source: 'osv', sourceId: 'GHSA-test-0002', dependencyName: 'handlebars', dependencyVersion: '4.7.6', fixedVersion: '4.7.8', status: 'open' },
-    { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0003 - ReDoS', severity: 'medium', cvssScore: 5.3, source: 'nvd', sourceId: 'CVE-2024-0003', dependencyName: 'minimatch', dependencyVersion: '3.0.4', fixedVersion: '3.1.2', status: 'mitigated' },
-    { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0004 - Info Leak', severity: 'low', cvssScore: 3.1, source: 'osv', sourceId: 'GHSA-test-0004', dependencyName: 'debug', dependencyVersion: '4.3.1', fixedVersion: '4.3.4', status: 'open' },
-    { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0005 - DoS', severity: 'high', cvssScore: 7.8, source: 'nvd', sourceId: 'CVE-2024-0005', dependencyName: 'express', dependencyVersion: '4.18.0', fixedVersion: '4.19.0', status: 'resolved' },
-    { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0006 - Open Redirect', severity: 'medium', cvssScore: 4.3, source: 'osv', sourceId: 'GHSA-test-0006', dependencyName: 'next', dependencyVersion: '13.4.0', fixedVersion: '13.4.5', status: 'dismissed' },
-    { productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0007 - Race Condition', severity: 'high', cvssScore: 6.8, source: 'nvd', sourceId: 'CVE-2024-0007', dependencyName: 'async', dependencyVersion: '3.2.4', fixedVersion: '3.2.5', status: 'acknowledged' },
+    // test-product-github: 7 vulns (all 5 statuses represented)
+    { id: 'e0000001-0000-0000-0000-000000000001', productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0001 - Prototype Pollution', severity: 'critical', cvssScore: 9.8, source: 'osv', sourceId: 'GHSA-test-0001', dependencyName: 'lodash', dependencyVersion: '4.17.20', fixedVersion: '4.17.21', status: 'open' },
+    { id: 'e0000001-0000-0000-0000-000000000002', productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0002 - XSS in Template', severity: 'high', cvssScore: 7.5, source: 'osv', sourceId: 'GHSA-test-0002', dependencyName: 'handlebars', dependencyVersion: '4.7.6', fixedVersion: '4.7.8', status: 'open' },
+    { id: 'e0000001-0000-0000-0000-000000000003', productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0003 - ReDoS', severity: 'medium', cvssScore: 5.3, source: 'nvd', sourceId: 'CVE-2024-0003', dependencyName: 'minimatch', dependencyVersion: '3.0.4', fixedVersion: '3.1.2', status: 'mitigated' },
+    { id: 'e0000001-0000-0000-0000-000000000004', productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0004 - Info Leak', severity: 'low', cvssScore: 3.1, source: 'osv', sourceId: 'GHSA-test-0004', dependencyName: 'debug', dependencyVersion: '4.3.1', fixedVersion: '4.3.4', status: 'open' },
+    { id: 'e0000001-0000-0000-0000-000000000005', productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0005 - DoS', severity: 'high', cvssScore: 7.8, source: 'nvd', sourceId: 'CVE-2024-0005', dependencyName: 'express', dependencyVersion: '4.18.0', fixedVersion: '4.19.0', status: 'resolved' },
+    { id: 'e0000001-0000-0000-0000-000000000006', productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0006 - Open Redirect', severity: 'medium', cvssScore: 4.3, source: 'osv', sourceId: 'GHSA-test-0006', dependencyName: 'next', dependencyVersion: '13.4.0', fixedVersion: '13.4.5', status: 'dismissed' },
+    { id: 'e0000001-0000-0000-0000-000000000007', productId: TEST_IDS.products.github, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-0007 - Race Condition', severity: 'high', cvssScore: 6.8, source: 'nvd', sourceId: 'CVE-2024-0007', dependencyName: 'async', dependencyVersion: '3.2.4', fixedVersion: '3.2.5', status: 'acknowledged' },
 
     // test-product-codeberg: 3 vulns
-    { productId: TEST_IDS.products.codeberg, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-1001 - SQL Injection', severity: 'critical', cvssScore: 9.1, source: 'osv', sourceId: 'PYSEC-test-1001', dependencyName: 'django', dependencyVersion: '4.1.0', fixedVersion: '4.1.7', status: 'open' },
-    { productId: TEST_IDS.products.codeberg, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-1002 - CSRF', severity: 'medium', cvssScore: 6.1, source: 'osv', sourceId: 'PYSEC-test-1002', dependencyName: 'flask', dependencyVersion: '2.2.0', fixedVersion: '2.3.0', status: 'open' },
-    { productId: TEST_IDS.products.codeberg, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-1003 - Path Traversal', severity: 'high', cvssScore: 7.2, source: 'nvd', sourceId: 'CVE-2024-1003', dependencyName: 'werkzeug', dependencyVersion: '2.2.2', fixedVersion: '2.3.0', status: 'mitigated' },
+    { id: 'e0000001-0000-0000-0000-000000000008', productId: TEST_IDS.products.codeberg, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-1001 - SQL Injection', severity: 'critical', cvssScore: 9.1, source: 'osv', sourceId: 'PYSEC-test-1001', dependencyName: 'django', dependencyVersion: '4.1.0', fixedVersion: '4.1.7', status: 'open' },
+    { id: 'e0000001-0000-0000-0000-000000000009', productId: TEST_IDS.products.codeberg, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-1002 - CSRF', severity: 'medium', cvssScore: 6.1, source: 'osv', sourceId: 'PYSEC-test-1002', dependencyName: 'flask', dependencyVersion: '2.2.0', fixedVersion: '2.3.0', status: 'open' },
+    { id: 'e0000001-0000-0000-0000-00000000000a', productId: TEST_IDS.products.codeberg, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-1003 - Path Traversal', severity: 'high', cvssScore: 7.2, source: 'nvd', sourceId: 'CVE-2024-1003', dependencyName: 'werkzeug', dependencyVersion: '2.2.2', fixedVersion: '2.3.0', status: 'mitigated' },
 
     // test-product-gitlab: 2 vulns
-    { productId: TEST_IDS.products.gitlab, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-2001 - Memory Leak', severity: 'medium', cvssScore: 5.5, source: 'osv', sourceId: 'GO-test-2001', dependencyName: 'golang.org/x/net', dependencyVersion: '0.10.0', fixedVersion: '0.15.0', status: 'open' },
-    { productId: TEST_IDS.products.gitlab, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-2002 - Cert Validation', severity: 'high', cvssScore: 8.0, source: 'nvd', sourceId: 'CVE-2024-2002', dependencyName: 'golang.org/x/crypto', dependencyVersion: '0.11.0', fixedVersion: '0.14.0', status: 'open' },
+    { id: 'e0000001-0000-0000-0000-00000000000b', productId: TEST_IDS.products.gitlab, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-2001 - Memory Leak', severity: 'medium', cvssScore: 5.5, source: 'osv', sourceId: 'GO-test-2001', dependencyName: 'golang.org/x/net', dependencyVersion: '0.10.0', fixedVersion: '0.15.0', status: 'open' },
+    { id: 'e0000001-0000-0000-0000-00000000000c', productId: TEST_IDS.products.gitlab, orgId: TEST_IDS.orgs.mfgActive, title: 'CVE-2024-2002 - Cert Validation', severity: 'high', cvssScore: 8.0, source: 'nvd', sourceId: 'CVE-2024-2002', dependencyName: 'golang.org/x/crypto', dependencyVersion: '0.11.0', fixedVersion: '0.14.0', status: 'open' },
   ];
 
   for (const f of findings) {
-    const id = uuid();
     await pool.query(
       `INSERT INTO vulnerability_findings (id, product_id, org_id, title, severity, cvss_score, source, source_id, dependency_name, dependency_version, fixed_version, status, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
-       ON CONFLICT DO NOTHING`,
-      [id, f.productId, f.orgId, f.title, f.severity, f.cvssScore, f.source, f.sourceId, f.dependencyName, f.dependencyVersion, f.fixedVersion, f.status]
+       ON CONFLICT (id) DO UPDATE SET status = $12, updated_at = NOW()`,
+      [f.id, f.productId, f.orgId, f.title, f.severity, f.cvssScore, f.source, f.sourceId, f.dependencyName, f.dependencyVersion, f.fixedVersion, f.status]
     );
-    await registerTestData('vulnerability_finding', id, 'postgres');
+    await registerTestData('vulnerability_finding', f.id, 'postgres');
   }
-
-  // Fix any stale 'closed' findings from previous seed runs (closed is not a valid triage status)
-  await pool.query("UPDATE vulnerability_findings SET status = 'resolved' WHERE status = 'closed'");
 
   console.log(`  Seeded ${findings.length} vulnerability findings (all 5 statuses represented)`);
 }

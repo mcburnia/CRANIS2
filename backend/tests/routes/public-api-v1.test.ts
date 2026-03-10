@@ -5,7 +5,7 @@
  * MCP-supporting endpoints: sync, scan status, and finding resolve.
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { api, loginTestUser, getAppPool, TEST_USERS } from '../setup/test-helpers.js';
 import { TEST_IDS } from '../setup/seed-test-data.js';
 
@@ -49,6 +49,13 @@ describe('/api/v1 — Public API', () => {
     });
     expect([200, 201]).toContain(impKeyRes.status);
     impApiKey = impKeyRes.body.key;
+  });
+
+  afterAll(async () => {
+    // Restore billing plans to standard so other test files aren't affected
+    const pool = getAppPool();
+    await pool.query("UPDATE org_billing SET plan = 'standard' WHERE org_id = $1", [TEST_IDS.orgs.mfgActive]);
+    await pool.query("UPDATE org_billing SET plan = 'standard' WHERE org_id = $1", [TEST_IDS.orgs.impTrial]);
   });
 
   // ═══════════════════════════════════════════════════

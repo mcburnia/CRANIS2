@@ -29,12 +29,15 @@ interface OverviewData {
 
 function formatCategory(cat: string | null): { label: string; color: string } {
   if (!cat) return { label: 'Unclassified', color: 'muted' };
-  switch (cat) {
+  const normalised = cat === 'category-1' || cat === 'class_i' ? 'important_i'
+    : cat === 'category-2' || cat === 'class_ii' ? 'important_ii'
+    : cat;
+  switch (normalised) {
     case 'default': return { label: 'Default', color: 'green' };
     case 'important_i': return { label: 'Important I', color: 'amber' };
-    case 'important_ii': return { label: 'Important II', color: 'amber' };
+    case 'important_ii': return { label: 'Important II', color: 'orange' };
     case 'critical': return { label: 'Critical', color: 'red' };
-    default: return { label: cat, color: 'muted' };
+    default: return { label: 'Unclassified', color: 'muted' };
   }
 }
 

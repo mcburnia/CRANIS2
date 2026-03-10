@@ -78,7 +78,7 @@ describe('GET /api/products/:productId/compliance-checklist', () => {
   });
 
   it('should mark step 2 (set CRA category) complete for the seeded github product', async () => {
-    // github product has craCategory = 'category-1' (non-null) → step 2 complete
+    // github product has craCategory = 'important_i' (non-null) → step 2 complete
     const res = await api.get(`/api/products/${PRODUCT_ID}/compliance-checklist`, { auth: mfgToken });
     expect(res.status).toBe(200);
     const step2 = res.body.steps.find((s: any) => s.id === 'set_category');
