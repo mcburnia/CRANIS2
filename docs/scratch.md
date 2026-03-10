@@ -55,7 +55,7 @@ Bugs
 #	Description	Status
 27	All Organisations -> Actions button does nothing	DONE
 28	ENISA Reporting -> Cancel button does nothing	DONE
-29	Products & Compliance -> CRANIS2 -> Not Stated?	PENDING
+29	Products & Compliance -> CRANIS2 -> Not Stated?	DONE
 
 P6 — Compliance Document Library — ALL DONE
 #	Feature	Effort	Status
@@ -80,9 +80,9 @@ Cross-cutting (done)
 **P4:** 5/7 DONE (#28 Public API, #22 CI/CD gate, #26 Trello, #14 MCP server, #21 IDE assistant) — #23/#24/#25 parked for post-launch
 **P5:** 0/7 — Supplier marketplace not started (post-launch)
 **P6:** ALL DONE (document template library)
-**Bugs:** 2/3 DONE (#29 "Not Stated?" still pending)
+**Bugs:** 3/3 ALL DONE
 
 **Immediate next:**
-- Bug #29 — "Not Stated?" display issue on Products & Compliance
+- Fix flaky risk-findings status filter test (cross-file state pollution)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
