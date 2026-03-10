@@ -154,12 +154,13 @@ describe('Risk findings regression — status display & open-only counts', () =>
     });
 
     it('should filter findings by status query parameter', async () => {
-      // Filter for resolved only
-      const res = await api.get(`/api/risk-findings/${TEST_IDS.products.github}?status=resolved`, { auth: mfgToken });
+      // Filter for open findings — seed has multiple open findings so this is robust
+      // against concurrent test modifications to other statuses
+      const res = await api.get(`/api/risk-findings/${TEST_IDS.products.github}?status=open`, { auth: mfgToken });
       expect(res.status).toBe(200);
       expect(res.body.findings.length).toBeGreaterThanOrEqual(1);
       for (const f of res.body.findings) {
-        expect(f.status).toBe('resolved');
+        expect(f.status).toBe('open');
       }
     });
 
