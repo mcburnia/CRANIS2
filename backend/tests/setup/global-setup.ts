@@ -1,18 +1,30 @@
-import { beforeAll, afterAll } from 'vitest';
-import { closeAllConnections } from './test-helpers.js';
-import { seedAllTestData } from './seed-test-data.js';
+/**
+ * Vitest globalSetup — runs ONCE before the entire test suite.
+ *
+ * Seeds test data and cleans stale rate-limit rows so tests start
+ * from a known state. This file exports setup/teardown functions
+ * (not beforeAll/afterAll — those only work in setupFiles/workers).
+ */
 
-beforeAll(async () => {
+import { closeAllConnections, BASE_URL } from './test-helpers.js';
+import { seedAllTestData } from './seed-test-data.js';
+import { cleanTestRateLimits } from './clean-rate-limits.js';
+
+export async function setup(): Promise<void> {
   console.log('\n=== CRANIS2 Test Suite Starting ===');
-  console.log(`Target: ${process.env.TEST_BASE_URL || 'https://dev.cranis2.dev'}`);
+  console.log(`Target: ${BASE_URL}`);
   console.log(`Time: ${new Date().toISOString()}\n`);
 
-  // Auto-seed test data (idempotent — safe to run every time)
   console.log('Seeding test data...');
   await seedAllTestData();
-});
 
-afterAll(async () => {
+  console.log('Cleaning stale rate-limit rows for test orgs...');
+  await cleanTestRateLimits();
+
   await closeAllConnections();
+  console.log('');
+}
+
+export async function teardown(): Promise<void> {
   console.log('\n=== CRANIS2 Test Suite Complete ===\n');
-});
+}

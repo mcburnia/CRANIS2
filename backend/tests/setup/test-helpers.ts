@@ -14,7 +14,7 @@ import neo4j, { Driver, Session } from 'neo4j-driver';
 
 // ─── Configuration ───────────────────────────────────────────────────────
 
-export const BASE_URL = process.env.TEST_BASE_URL || 'https://dev.cranis2.dev';
+export const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3001';
 
 const PG_CONFIG = {
   host: process.env.TEST_PG_HOST || 'localhost',

@@ -78,7 +78,7 @@ services:
       TEST_NEO4J_URI: bolt://neo4j:7687
       TEST_NEO4J_USER: ${NEO4J_USER}
       TEST_NEO4J_PASSWORD: ${NEO4J_PASSWORD}
-      TEST_BASE_URL: https://dev.cranis2.dev
+      TEST_BASE_URL: http://backend:3001
     deploy:
       resources:
         limits:

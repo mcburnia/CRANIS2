@@ -178,20 +178,20 @@ async function seedBilling(): Promise<void> {
   const pool = getAppPool();
 
   const billingRecords = [
-    { orgId: TEST_IDS.orgs.mfgActive, status: 'active' },
-    { orgId: TEST_IDS.orgs.impTrial, status: 'trial', trialEnds: new Date(Date.now() + 14 * 86400000) },
-    { orgId: TEST_IDS.orgs.distSuspended, status: 'suspended' },
-    { orgId: TEST_IDS.orgs.ossReadOnly, status: 'read_only' },
-    { orgId: TEST_IDS.orgs.mfgPastDue, status: 'past_due', graceEnds: new Date(Date.now() + 7 * 86400000) },
-    { orgId: TEST_IDS.orgs.empty, status: 'active' },
+    { orgId: TEST_IDS.orgs.mfgActive, status: 'active', plan: 'standard' },
+    { orgId: TEST_IDS.orgs.impTrial, status: 'trial', plan: 'standard', trialEnds: new Date(Date.now() + 14 * 86400000) },
+    { orgId: TEST_IDS.orgs.distSuspended, status: 'suspended', plan: 'standard' },
+    { orgId: TEST_IDS.orgs.ossReadOnly, status: 'read_only', plan: 'standard' },
+    { orgId: TEST_IDS.orgs.mfgPastDue, status: 'past_due', plan: 'standard', graceEnds: new Date(Date.now() + 7 * 86400000) },
+    { orgId: TEST_IDS.orgs.empty, status: 'active', plan: 'standard' },
   ];
 
   for (const b of billingRecords) {
     await pool.query(
-      `INSERT INTO org_billing (org_id, status, trial_ends_at, grace_ends_at, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, NOW(), NOW())
-       ON CONFLICT (org_id) DO UPDATE SET status = $2, trial_ends_at = $3, grace_ends_at = $4`,
-      [b.orgId, b.status, b.trialEnds || null, b.graceEnds || null]
+      `INSERT INTO org_billing (org_id, status, plan, trial_ends_at, grace_ends_at, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+       ON CONFLICT (org_id) DO UPDATE SET status = $2, plan = $3, trial_ends_at = $4, grace_ends_at = $5`,
+      [b.orgId, b.status, b.plan, b.trialEnds || null, b.graceEnds || null]
     );
     await registerTestData('org_billing', b.orgId, 'postgres');
   }

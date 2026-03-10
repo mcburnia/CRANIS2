@@ -11,6 +11,8 @@ export default defineConfig({
     },
     pool: 'forks',
     fileParallelism: false, // Run suites sequentially to avoid test data conflicts
+    globalSetup: ['./setup/global-setup.ts'],   // Runs ONCE: seed + rate-limit cleanup
+    setupFiles: ['./setup/per-file-setup.ts'],   // Runs per-file: connection cleanup
     include: [
       'unit/**/*.test.ts',
       'routes/**/*.test.ts',
@@ -20,6 +22,5 @@ export default defineConfig({
       'break/**/*.test.ts',
       'webhooks/**/*.test.ts',
     ],
-    setupFiles: ['./setup/global-setup.ts'],
   },
 });
