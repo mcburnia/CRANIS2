@@ -163,6 +163,7 @@ tail -20 ~/cranis2/logs/nightly-tests-$(date '+%Y-%m-%d').log
 - Pre-flight health check (aborts if backend is down)
 - Logs to `logs/nightly-tests-YYYY-MM-DD.log` (14-day retention)
 - Summary with pass/fail counts and failed test names
+- Trello notification: posts a card to the "Test Results" board (passed/failed lists) after each run
 
 ### Manual Backend Tests (1147+ tests — runs on server)
 
@@ -1259,6 +1260,25 @@ sudo systemctl restart cloudflared
 - **Bug #29 fix** — CRA category naming mismatch between frontend and backend. Standardised on `default`, `important_i`, `important_ii`, `critical` (matching obligation engine and category_thresholds table). Updated ProductsPage, ProductDetailPage, AdminOrgsPage, and backend product create/update validation.
 - **MCP Server (P4 #14)** — Complete Model Context Protocol server for IDE AI assistants. 5 tools: `list_products`, `get_vulnerabilities` (with severity/status filters + inline mitigation commands), `get_mitigation` (ecosystem-aware bash commands for 12+ package managers: npm, pip, cargo, go, maven, nuget, gem, composer, hex, pub, cocoapods, swift), `verify_fix` (triggers SBOM rescan, polls for completion, compares before/after findings, auto-resolves if fixed), `get_compliance_status` (pass/fail with gap summary). New backend endpoints: `POST /api/v1/products/:id/sync` (async background scan), `GET /api/v1/products/:id/scans/:scanId` (poll status), `PUT /api/v1/products/:id/findings/:findingId/resolve` (mark resolved with evidence JSON). Added `write:findings` to default API key scopes. 20 new backend tests all passing. README with setup instructions for Claude Desktop, VS Code, Cursor, and Claude Code.
 
+**Session 33 (2026-03-08):**
+- **IDE compliance assistant (P4 #21)** — In-app setup wizard on Integrations page. IdeAssistantCard with IDE selector tabs (VS Code, Cursor, Claude Desktop, Claude Code), API key picker, auto-generated JSON config snippets, copy-to-clipboard, tools table, example workflow. Pro plan gated. Frontend-only component.
+- **Compliance document templates (P6 #35–37)** — Template download page with 7 CRA-aligned document templates: Versioning (Art. 13(9)), CVD (Art. 13(6)), Vuln Handling (Art. 13(5)), Security Updates (Art. 13(8)), Incident Response (Art. 14), End-of-Support (Art. 13(15)), Secure Dev Lifecycle (Annex I). Auto-populated from product/org/stakeholder data with product selector modal, version format auto-detection, delivery model mapping, stakeholder role mapping. All templates reference CRANIS2 AI/MCP with HITL.
+
+**Session 34 (2026-03-09):**
+- **CRA Action Plan guided workflow** — Per-product action plan page (`/products/:id/action-plan`). Visual pipeline merging 7-step compliance checklist (Phase 1) + compliance gaps (Phase 2) + advisory steps. Dashboard CTA, per-product links, OverviewTab link. Readiness ring with visibilitychange auto-refresh. Pure frontend: `action-plan-merge.ts`, `ActionPlanPage.tsx/css`.
+- **Product lifecycle stage** — Lifecycle-aware readiness framing (development, pre-market, in-market, end-of-support) with stage-appropriate messaging throughout the platform.
+
+**Session 35 (2026-03-10):**
+- **Test infrastructure fix** — Fixed 4 root causes of flaky tests: (1) stale copilot rate-limit rows causing 429s, (2) billing plan drift from public-api-v1.test.ts upgrading to Pro without cleanup, (3) seed running per-fork instead of once, (4) Cloudflare tunnel hammering. Added `clean-rate-limits.ts` (cleans copilot_usage, duplicate findings, resets billing plans). Added afterAll in public-api-v1 to restore plans. Result: 1147/1147 passing, 483s (was 887s — 37% faster).
+- **Nightly test runner** — `scripts/nightly-tests.sh` with cron at 20:00 UTC (22:00 CEST). Pre-flight health check, verbose vitest output, stdout-based result parsing, 14-day log retention.
+- **Bug #29 fix** — "Not Stated?" CRA category display on Products & Compliance pages. Added legacy value normalisation to `formatCategory()` in 3 frontend pages (`category-1`/`class_i` → `important_i`, `category-2`/`class_ii` → `important_ii`). Updated seed data and Neo4j product nodes from legacy to canonical category values.
+
+**Session 36 (2026-03-10):**
+- **Flaky risk-findings test fix** — Changed status filter test from `?status=resolved` (single fragile finding) to `?status=open` (multiple robust findings), eliminating cross-file state pollution.
+- **Nightly test Trello notification** — Created "Test Results" Trello board with Passed/Failed lists. Updated nightly script to post a card after each run with pass/fail status, test counts, timing, and failed test names. Non-blocking (Trello failure doesn't break the script).
+
 **Next Steps:**
-- P4 #21 — IDE compliance assistant (depends on #14 now done)
+- P7 #38 — AI CoPilot prompt engineering topic focus
+- P7 #39 — Automation wizards
 - Production deployment planning (Infomaniak hosting, cranis2.com)
+- P5 — Supplier marketplace (post-launch)

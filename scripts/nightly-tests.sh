@@ -18,6 +18,13 @@ DATE=$(date '+%Y-%m-%d')
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S %Z')
 LOG_FILE="${LOG_DIR}/nightly-tests-${DATE}.log"
 
+# ── Trello notification config (loaded from .env.nightly) ──
+NIGHTLY_ENV="${PROJECT_DIR}/scripts/.env.nightly"
+if [ -f "${NIGHTLY_ENV}" ]; then
+  # shellcheck source=/dev/null
+  . "${NIGHTLY_ENV}"
+fi
+
 # ── Node.js via nvm ──
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
@@ -101,6 +108,43 @@ fi
   echo ""
   echo "═══════════════════════════════════════════════════════════"
 } >> "${LOG_FILE}"
+
+# ── Trello notification ──
+if [ "${TEST_EXIT}" -eq 0 ]; then
+  TRELLO_LIST="${TRELLO_PASSED_LIST}"
+  CARD_NAME="✅ ${DATE} — ALL TESTS PASSED (${PASSED}/${TOTAL})"
+else
+  TRELLO_LIST="${TRELLO_FAILED_LIST}"
+  CARD_NAME="❌ ${DATE} — ${FAILED} FAILED (${PASSED} passed / ${TOTAL} total)"
+fi
+
+# Build card description with results summary
+CARD_DESC="**CRANIS2 Nightly Test Run — ${DATE}**
+
+Test files: ${FILES_PASSED} passed / ${FILES_FAILED} failed / ${FILES_TOTAL} total
+Tests: ${PASSED} passed / ${FAILED} failed / ${TOTAL} total
+Exit code: ${TEST_EXIT}
+Started: ${TIMESTAMP}
+Finished: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+
+# Append failed test names if any failures
+if [ "${TEST_EXIT}" -ne 0 ]; then
+  FAIL_LIST=$(grep -E '^\s*×|FAIL\s' "${LOG_FILE}" | head -20 | sed 's/^/- /' || echo "- (see log for details)")
+  CARD_DESC="${CARD_DESC}
+
+**Failed tests:**
+${FAIL_LIST}"
+fi
+
+# Post card to Trello (non-blocking — don't fail the script if Trello is down)
+curl -s -X POST "https://api.trello.com/1/cards" \
+  --data-urlencode "key=${TRELLO_KEY}" \
+  --data-urlencode "token=${TRELLO_TOKEN}" \
+  --data-urlencode "idList=${TRELLO_LIST}" \
+  --data-urlencode "name=${CARD_NAME}" \
+  --data-urlencode "desc=${CARD_DESC}" \
+  --data-urlencode "pos=top" \
+  > /dev/null 2>&1 || echo "WARNING: Failed to post Trello notification" >> "${LOG_FILE}"
 
 # ── Cleanup old logs (keep 14 days) ──
 find "${LOG_DIR}" -name 'nightly-tests-*.log' -mtime +14 -delete 2>/dev/null || true

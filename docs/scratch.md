@@ -63,6 +63,11 @@ P6 — Compliance Document Library — ALL DONE
 36	Auto-populated templates	Medium	DONE
 37	Full template library (7 templates)	High	DONE
 
+P7 - Andi's good catches
+#	Feature	Effort	Status
+38 AI CoPilot Prompt Engineering Topic Focus Unknown TODO
+39 Automation wizards Unknown TODO
+
 Cross-cutting (done)
 -	Pro plan billing (Standard €6/contributor, Pro €9/product + €6/contributor)	DONE
 -	Pro plan feature gating (API keys, CI/CD, marketplace behind Pro)	DONE
@@ -71,8 +76,9 @@ Cross-cutting (done)
 -	CRA Action Plan guided workflow (per-product visual pipeline)	DONE
 -	Product lifecycle stage + lifecycle-aware readiness framing	DONE
 -	Test infrastructure fix (reliable, repeatable, 37% faster)	DONE
--	Nightly test runner (cron 22:00 CEST, 14-day log retention)	DONE
+-	Nightly test runner (cron 22:00 CEST, 14-day log retention, Trello notification)	DONE
 -	Bug #29 fix (formatCategory legacy normalisation + Neo4j data)	DONE
+-	Flaky risk-findings status filter test fix (open instead of resolved)	DONE
 
 ---
 
@@ -85,6 +91,7 @@ Cross-cutting (done)
 **Bugs:** 3/3 ALL DONE
 
 **Immediate next:**
-- Fix flaky risk-findings status filter test (cross-file state pollution)
+- P7 #38 — AI CoPilot prompt engineering topic focus
+- P7 #39 — Automation wizards
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
