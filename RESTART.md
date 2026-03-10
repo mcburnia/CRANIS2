@@ -148,19 +148,33 @@ Should return `200` and `{"status":"ok"}`. The app is accessible at:
 
 ---
 
-## Step 6: Morning Test Cycle
+## Step 6: Test Cycle
 
-**Run this every morning before starting any new work.** This ensures the environment is healthy and no regressions have been introduced.
+### Nightly Automated Tests (runs at 22:00 CEST)
 
-### Vitest Backend Tests (1126+ tests — runs on server)
+A cron job runs the full backend test suite every evening:
 
 ```bash
-ssh -p 2222 mcburnia@localhost "cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && node_modules/.bin/vitest run --config vitest.config.ts"
+# Cron: 0 20 * * * /home/mcburnia/cranis2/scripts/nightly-tests.sh
+# Check last night's results:
+tail -20 ~/cranis2/logs/nightly-tests-$(date '+%Y-%m-%d').log
 ```
 
-- Auto-seeds test data on every run (global-setup.ts calls `seedAllTestData()`)
-- Tests run against https://dev.cranis2.dev (live dev stack)
-- Expected result: **1126+ passed, 0 failed** (65 test files)
+- Pre-flight health check (aborts if backend is down)
+- Logs to `logs/nightly-tests-YYYY-MM-DD.log` (14-day retention)
+- Summary with pass/fail counts and failed test names
+
+### Manual Backend Tests (1147+ tests — runs on server)
+
+```bash
+cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://localhost:3001 npx vitest run --config vitest.config.ts
+```
+
+- `globalSetup` seeds data once + cleans stale rate-limit/billing rows
+- Tests target localhost:3001 (not Cloudflare — avoids rate limits)
+- Single Cloudflare smoke test in `integration/cloudflare-tunnel.test.ts`
+- Deterministic test IDs for idempotent seeding
+- Expected result: **1147+ passed, 0 failed** (67 test files, ~480s)
 
 ### Playwright E2E Tests (~280 tests — runs locally on Mac)
 
@@ -184,6 +198,8 @@ cd ~/CRANIS2/e2e && npm run push-results
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | Mass 404 failures in Vitest | Seed data missing from Neo4j | Auto-seeding should prevent this. Manual fix: `cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && npx tsx setup/seed-test-data.ts` |
+| 429 rate-limit errors on copilot tests | Stale copilot_usage rows from previous runs | `clean-rate-limits.ts` in globalSetup handles this automatically |
+| Copilot plan-gating tests fail (expect 403, get 200) | Another test file upgraded billing plan to pro | `public-api-v1.test.ts` afterAll restores plans; globalSetup also resets |
 | SSH connection refused | Tunnel not running | User must start: `ssh -N -L 2222:localhost:22 mcburnia@10.0.0.122` |
 | Docker containers down | Server restarted | `ssh -p 2222 mcburnia@localhost "cd ~/cranis2 && docker compose up -d"` |
 | E2E auth failures | Storage state expired | Delete `e2e/auth/` and re-run (setup tests regenerate it) |

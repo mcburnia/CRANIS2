@@ -71,6 +71,8 @@ Cross-cutting (done)
 -	CRA Action Plan guided workflow (per-product visual pipeline)	DONE
 -	Product lifecycle stage + lifecycle-aware readiness framing	DONE
 -	Test infrastructure fix (reliable, repeatable, 37% faster)	DONE
+-	Nightly test runner (cron 22:00 CEST, 14-day log retention)	DONE
+-	Bug #29 fix (formatCategory legacy normalisation + Neo4j data)	DONE
 
 ---
 
