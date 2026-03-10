@@ -55,13 +55,22 @@ Bugs
 #	Description	Status
 27	All Organisations -> Actions button does nothing	DONE
 28	ENISA Reporting -> Cancel button does nothing	DONE
-29	Products & Compliance -> CRANIS2 -> Not Stated?	DONE
+29	Products & Compliance -> CRANIS2 -> Not Stated?	PENDING
+
+P6 — Compliance Document Library — ALL DONE
+#	Feature	Effort	Status
+35	Template download page	Low	DONE
+36	Auto-populated templates	Medium	DONE
+37	Full template library (7 templates)	High	DONE
 
 Cross-cutting (done)
 -	Pro plan billing (Standard €6/contributor, Pro €9/product + €6/contributor)	DONE
 -	Pro plan feature gating (API keys, CI/CD, marketplace behind Pro)	DONE
 -	AI Copilot cost protection (token budget, rate limits, response cache)	DONE
 -	Welcome page pricing overhaul (enhanced features, vertical cards, €9 price)	DONE
+-	CRA Action Plan guided workflow (per-product visual pipeline)	DONE
+-	Product lifecycle stage + lifecycle-aware readiness framing	DONE
+-	Test infrastructure fix (reliable, repeatable, 37% faster)	DONE
 
 ---
 
@@ -70,8 +79,10 @@ Cross-cutting (done)
 **P0–P3:** ALL COMPLETE (50/50 features done)
 **P4:** 5/7 DONE (#28 Public API, #22 CI/CD gate, #26 Trello, #14 MCP server, #21 IDE assistant) — #23/#24/#25 parked for post-launch
 **P5:** 0/7 — Supplier marketplace not started (post-launch)
-**Bugs:** 3/3 DONE
+**P6:** ALL DONE (document template library)
+**Bugs:** 2/3 DONE (#29 "Not Stated?" still pending)
 
 **Immediate next:**
+- Bug #29 — "Not Stated?" display issue on Products & Compliance
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
