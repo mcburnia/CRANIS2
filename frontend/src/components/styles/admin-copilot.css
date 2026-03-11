@@ -1,0 +1,339 @@
+/**
+ * Admin CoPilot Settings Page Styles
+ */
+
+.acp-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.acp-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+.acp-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  color: #991b1b;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.acp-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 16px;
+  color: #166534;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Foundation section */
+.acp-foundation {
+  background: #f0f4ff;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.acp-foundation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.acp-foundation-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e3a8a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.acp-foundation-badge {
+  background: #667eea;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+}
+
+.acp-foundation-desc {
+  color: #4b5563;
+  font-size: 14px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+/* Capability cards */
+.acp-capabilities {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.acp-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.acp-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.acp-card-header:hover {
+  background: #f9fafb;
+}
+
+.acp-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.acp-card-title h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.acp-card-key {
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 12px;
+  font-family: monospace;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.acp-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.acp-card-model {
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.acp-card-tokens {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.acp-card-chevron {
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.acp-card-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Card body (expanded) */
+.acp-card-body {
+  border-top: 1px solid #e5e7eb;
+  padding: 20px;
+}
+
+.acp-card-desc {
+  color: #4b5563;
+  font-size: 14px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* Prompt context display */
+.acp-context-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.acp-quality-preview {
+  background: #f0f4ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #4338ca;
+  max-height: 120px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  font-family: monospace;
+  line-height: 1.4;
+}
+
+.acp-prompt-textarea {
+  width: 100%;
+  min-height: 300px;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #1f2937;
+  resize: vertical;
+  margin-bottom: 16px;
+  transition: border-color 0.15s;
+}
+
+.acp-prompt-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Config row */
+.acp-config-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.acp-config-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.acp-config-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.acp-config-field input,
+.acp-config-field select {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #1f2937;
+  min-width: 160px;
+}
+
+.acp-config-field input:focus,
+.acp-config-field select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* Actions row */
+.acp-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.acp-version-info {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.acp-btn-save {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.acp-btn-save:hover {
+  background: #5a6fd6;
+}
+
+.acp-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.acp-btn-reset {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: white;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.acp-btn-reset:hover {
+  background: #f9fafb;
+}
+
+.acp-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* Enabled toggle */
+.acp-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.acp-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #667eea;
+}

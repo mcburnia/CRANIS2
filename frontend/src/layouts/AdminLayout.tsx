@@ -3,7 +3,7 @@ import { Outlet, Navigate, NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Building2, Users, ScrollText, Activity, CreditCard,
-  ArrowLeft, Menu, X, Loader, Shield, Database, MessageSquareMore, FlaskConical, FileText, Compass, Settings
+  ArrowLeft, Menu, X, Loader, Shield, Database, MessageSquareMore, FlaskConical, FileText, Compass, Settings, Bot
 } from 'lucide-react';
 import './AdminLayout.css';
 
@@ -54,6 +54,7 @@ const adminNavSections = [
     label: 'Configuration',
     items: [
       { to: '/admin/category-rules', icon: Settings, label: 'Category Rules (CRA)' },
+      { to: '/admin/copilot', icon: Bot, label: 'AI CoPilot' },
     ],
   },
 ];

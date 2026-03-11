@@ -2101,4 +2101,86 @@ router.get('/copilot-usage', requirePlatformAdmin, async (req: Request, res: Res
   }
 });
 
+// ── CoPilot Prompt Management ──
+
+router.get('/copilot-prompts', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, prompt_key, category, title, description, system_prompt,
+              model, max_tokens, temperature, enabled, version, updated_at, updated_by
+       FROM copilot_prompts
+       ORDER BY CASE category WHEN 'foundation' THEN 0 ELSE 1 END, title`
+    );
+    res.json({ prompts: result.rows });
+  } catch (err) {
+    console.error('Admin copilot-prompts list error:', err);
+    res.status(500).json({ error: 'Failed to fetch copilot prompts' });
+  }
+});
+
+router.get('/copilot-prompts/:promptKey', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, prompt_key, category, title, description, system_prompt,
+              model, max_tokens, temperature, enabled, version, updated_at, updated_by
+       FROM copilot_prompts WHERE prompt_key = $1`,
+      [req.params.promptKey]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Admin copilot-prompts get error:', err);
+    res.status(500).json({ error: 'Failed to fetch copilot prompt' });
+  }
+});
+
+router.put('/copilot-prompts/:promptKey', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const { promptKey } = req.params;
+    const { system_prompt, model, max_tokens, temperature, enabled, description } = req.body;
+    const userId = (req as any).user?.id || null;
+
+    // Validate required fields
+    if (!system_prompt || typeof system_prompt !== 'string' || system_prompt.trim().length === 0) {
+      return res.status(400).json({ error: 'system_prompt is required and must be non-empty' });
+    }
+    if (max_tokens && (typeof max_tokens !== 'number' || max_tokens < 100 || max_tokens > 16000)) {
+      return res.status(400).json({ error: 'max_tokens must be between 100 and 16000' });
+    }
+    if (temperature !== undefined && (typeof temperature !== 'number' || temperature < 0 || temperature > 2)) {
+      return res.status(400).json({ error: 'temperature must be between 0 and 2' });
+    }
+
+    const result = await pool.query(
+      `UPDATE copilot_prompts
+       SET system_prompt = $1,
+           model = COALESCE($2, model),
+           max_tokens = COALESCE($3, max_tokens),
+           temperature = COALESCE($4, temperature),
+           enabled = COALESCE($5, enabled),
+           description = COALESCE($6, description),
+           version = version + 1,
+           updated_at = NOW(),
+           updated_by = $7
+       WHERE prompt_key = $8
+       RETURNING id, prompt_key, category, title, description, system_prompt,
+                 model, max_tokens, temperature, enabled, version, updated_at, updated_by`,
+      [system_prompt.trim(), model || null, max_tokens || null, temperature ?? null,
+       enabled ?? null, description || null, userId, promptKey]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
+
+    console.log(`[ADMIN] CoPilot prompt "${promptKey}" updated to v${result.rows[0].version} by ${userId}`);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Admin copilot-prompts update error:', err);
+    res.status(500).json({ error: 'Failed to update copilot prompt' });
+  }
+});
+
 export default router;

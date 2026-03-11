@@ -160,6 +160,78 @@ Rules:
 6. Never invent data that isn't provided in the context. If data is missing, say so clearly.
 7. Keep content concise but thorough — aim for evidence-grade documentation.`;
 
+// ─── DB-backed prompt loading ───────────────────────────────
+
+// In-memory cache: prompt_key → { text, loadedAt }
+const promptCache: Map<string, { text: string; qualityPreamble: string; loadedAt: number }> = new Map();
+const PROMPT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Load a system prompt from the database, prepending the quality standard preamble.
+ * Falls back to the hardcoded constant if the DB entry is missing.
+ */
+async function getSystemPrompt(promptKey: string, hardcodedFallback: string): Promise<string> {
+  const cached = promptCache.get(promptKey);
+  if (cached && Date.now() - cached.loadedAt < PROMPT_CACHE_TTL_MS) {
+    return cached.qualityPreamble + '\n\n---\n\n' + cached.text;
+  }
+
+  try {
+    // Load both the quality standard and the capability prompt in a single round-trip
+    const result = await pool.query(
+      `SELECT prompt_key, system_prompt FROM copilot_prompts WHERE prompt_key IN ($1, 'quality_standard') AND enabled = true`,
+      [promptKey]
+    );
+
+    let qualityPreamble = '';
+    let capabilityPrompt = hardcodedFallback;
+
+    for (const row of result.rows) {
+      if (row.prompt_key === 'quality_standard') {
+        qualityPreamble = row.system_prompt;
+      } else if (row.prompt_key === promptKey) {
+        capabilityPrompt = row.system_prompt;
+      }
+    }
+
+    promptCache.set(promptKey, {
+      text: capabilityPrompt,
+      qualityPreamble,
+      loadedAt: Date.now(),
+    });
+
+    if (qualityPreamble) {
+      return qualityPreamble + '\n\n---\n\n' + capabilityPrompt;
+    }
+    return capabilityPrompt;
+  } catch (err) {
+    console.error(`[COPILOT] Failed to load prompt "${promptKey}" from DB, using fallback:`, err);
+    return hardcodedFallback;
+  }
+}
+
+/**
+ * Load model config (model, max_tokens) from DB for a prompt key.
+ * Falls back to the module-level MODEL constant and provided default.
+ */
+async function getModelConfig(promptKey: string, defaultMaxTokens: number): Promise<{ model: string; maxTokens: number }> {
+  try {
+    const result = await pool.query(
+      `SELECT model, max_tokens FROM copilot_prompts WHERE prompt_key = $1 AND enabled = true`,
+      [promptKey]
+    );
+    if (result.rows.length > 0) {
+      return {
+        model: result.rows[0].model || MODEL,
+        maxTokens: result.rows[0].max_tokens || defaultMaxTokens,
+      };
+    }
+  } catch (err) {
+    // fall through to defaults
+  }
+  return { model: MODEL, maxTokens: defaultMaxTokens };
+}
+
 // ─── Triage ─────────────────────────────────────────────────
 
 export interface TriageFinding {
@@ -235,6 +307,8 @@ export async function generateTriageSuggestions(
   const allSuggestions: TriageSuggestion[] = [];
   let totalInput = 0;
   let totalOutput = 0;
+  const systemPrompt = await getSystemPrompt('vulnerability_triage', TRIAGE_SYSTEM_PROMPT);
+  const config = await getModelConfig('vulnerability_triage', 4000);
 
   // Process in batches of TRIAGE_BATCH_SIZE
   for (let i = 0; i < findings.length; i += TRIAGE_BATCH_SIZE) {
@@ -265,9 +339,9 @@ ${JSON.stringify(batch.map(f => ({
 })), null, 2)}`;
 
     const response = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 4000,
-      system: TRIAGE_SYSTEM_PROMPT,
+      model: config.model,
+      max_tokens: config.maxTokens,
+      system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     });
 
@@ -449,6 +523,8 @@ Return ONLY a JSON object (no markdown fences, no additional text) with this exa
 
 export async function generateRiskAssessment(context: EnrichedRiskContext): Promise<RiskAssessmentResult> {
   const anthropic = getClient();
+  const systemPrompt = await getSystemPrompt('risk_assessment', RISK_ASSESSMENT_SYSTEM_PROMPT);
+  const config = await getModelConfig('risk_assessment', 6000);
 
   const ecoSummary = Object.entries(context.ecosystemBreakdown)
     .map(([eco, count]) => `${eco}: ${count} deps`)
@@ -486,9 +562,9 @@ Licence risk findings:
 ${licenceDetails}`;
 
   const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 6000,
-    system: RISK_ASSESSMENT_SYSTEM_PROMPT,
+    model: config.model,
+    max_tokens: config.maxTokens,
+    system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
   });
 
@@ -677,6 +753,8 @@ export async function generateIncidentReportDraft(
   stage: 'early_warning' | 'notification' | 'final_report'
 ): Promise<IncidentReportDraftResult> {
   const anthropic = getClient();
+  const systemPrompt = await getSystemPrompt('incident_report_draft', REPORT_DRAFT_SYSTEM_PROMPT);
+  const config = await getModelConfig('incident_report_draft', 3000);
   const { productContext: pc, report, linkedFinding, previousStages } = context;
   const reportType = report.reportType;
 
@@ -728,9 +806,9 @@ Return a JSON object with these exact fields: ${JSON.stringify(fields)}
 Each field value must be a string.`;
 
   const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 3000,
-    system: REPORT_DRAFT_SYSTEM_PROMPT,
+    model: config.model,
+    max_tokens: config.maxTokens,
+    system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
   });
 
@@ -838,10 +916,12 @@ Return plain text (not JSON).`;
   }
 
   const anthropic = getClient();
+  const systemPrompt = await getSystemPrompt('suggest', SYSTEM_PROMPT);
+  const config = await getModelConfig('suggest', 2000);
   const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 2000,
-    system: SYSTEM_PROMPT,
+    model: config.model,
+    max_tokens: config.maxTokens,
+    system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
   });
 

@@ -4,7 +4,7 @@
 
 CRANIS2 is a compliance platform that helps software companies meet the requirements of two major pieces of EU legislation: the **Cyber Resilience Act (CRA)** and the **NIS2 Directive**.
 
-It connects to your existing source code repositories — GitHub, Codeberg, Gitea, Forgejo, or GitLab — and automatically builds the compliance evidence that regulators will expect to see. No manual spreadsheets, no expensive consultants, no guesswork.
+It connects to your existing source code repositories — GitHub, Codeberg, Gitea, Forgejo, or GitLab — and automatically builds the compliance evidence that regulators expect to see. No manual spreadsheets, no expensive consultants, no guesswork.
 
 ## What Does It Actually Do?
 
@@ -12,7 +12,7 @@ CRANIS2 takes the dependency and component information present in your repositor
 
 - **Software Bill of Materials (SBOM)** — Automatically captures and maintains an up-to-date inventory of every software component in your products, in the formats regulators expect (CycloneDX, SPDX). Uses a three-tier approach: repository API, lockfile parsing (28 formats), and source import scanning (26 languages).
 
-- **Vulnerability Monitoring** — Continuously scans your dependency tree against a local database of 445,000+ known vulnerabilities (OSV, GitHub Advisory, NVD). Alerts are targeted to the right stakeholders, not dumped into a generic inbox.
+- **Vulnerability Monitoring** — Continuously scans your dependency tree against a local database of 445,000+ known vulnerabilities (OSV, GitHub Advisory, NVD) which is updated daily. Alerts are targeted to the right stakeholders, not dumped into a generic inbox.
 
 - **License Compliance** — Classifies every dependency by licence type, flags copyleft and unknown licences, and tracks waivers. Provides a clear picture of your open-source obligations.
 
