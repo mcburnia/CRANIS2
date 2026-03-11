@@ -251,9 +251,13 @@ router.post('/suggest', requireAuth, requirePlan('pro'), attachOrgId, requireTok
     const productContext = await gatherProductContext(productId, orgId);
 
     // Check cache (only for requests without existing content — those are refinements)
-    const cacheKey = existingContent ? null : { productId, sectionKey, type };
-    if (cacheKey) {
-      const cached = await checkCopilotCache(orgId, productId, 'suggest', productContext);
+    // Include sectionKey and type in the cache context so each obligation/section
+    // gets its own cache entry — without this, all obligations on the same product
+    // would return the same cached response.
+    const cacheContext = { ...productContext, _sectionKey: sectionKey, _type: type };
+    const useCache = !existingContent;
+    if (useCache) {
+      const cached = await checkCopilotCache(orgId, productId, 'suggest', cacheContext);
       if (cached) {
         return res.json({ suggestion: cached.response.suggestion, tokensUsed: 0, cached: true });
       }
@@ -275,8 +279,8 @@ router.post('/suggest', requireAuth, requirePlan('pro'), attachOrgId, requireTok
     ).catch(err => console.error('[COPILOT] Failed to log usage:', err));
 
     // Store in cache (only if not a refinement)
-    if (cacheKey) {
-      storeCopilotCache(orgId, productId, 'suggest', productContext, { suggestion: result.suggestion }, result.inputTokens, result.outputTokens)
+    if (useCache) {
+      storeCopilotCache(orgId, productId, 'suggest', cacheContext, { suggestion: result.suggestion }, result.inputTokens, result.outputTokens)
         .catch(err => console.error('[COPILOT] Failed to store cache:', err));
     }
 
