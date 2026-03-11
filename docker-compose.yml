@@ -242,13 +242,17 @@ services:
       WELCOME_PASS: ${WELCOME_PASS}
       WELCOME_SECRET: ${WELCOME_SECRET}
       RESEND_API_KEY: ${RESEND_API_KEY}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       PORT: "3004"
     volumes:
       - cranis2_welcome_data:/data
     deploy:
       resources:
         limits:
-          memory: 64M
+          memory: 96M
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - cranis2_net
     restart: unless-stopped
