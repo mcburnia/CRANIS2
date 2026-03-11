@@ -167,6 +167,30 @@ const promptCache: Map<string, { text: string; qualityPreamble: string; loadedAt
 const PROMPT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
+ * Load guidance text for a section or obligation from the DB.
+ * Falls back to the hardcoded TECHFILE_GUIDANCE for sections, or empty string for obligations.
+ */
+async function getGuidanceText(promptKey: string): Promise<string> {
+  const cached = promptCache.get(promptKey);
+  if (cached && Date.now() - cached.loadedAt < PROMPT_CACHE_TTL_MS) {
+    return cached.text;
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT system_prompt FROM copilot_prompts WHERE prompt_key = $1 AND enabled = true`,
+      [promptKey]
+    );
+    const text = result.rows[0]?.system_prompt || '';
+    promptCache.set(promptKey, { text, qualityPreamble: '', loadedAt: Date.now() });
+    return text;
+  } catch (err) {
+    console.error(`[COPILOT] Failed to load guidance "${promptKey}" from DB:`, err);
+    return '';
+  }
+}
+
+/**
  * Load a system prompt from the database, prepending the quality standard preamble.
  * Falls back to the hardcoded constant if the DB entry is missing.
  */
@@ -857,12 +881,15 @@ export async function generateSuggestion(params: SuggestionParams): Promise<Sugg
   let userPrompt = '';
 
   if (type === 'technical_file') {
-    const guidance = TECHFILE_GUIDANCE[sectionKey] || '';
+    // Load enriched section guidance from DB, fall back to hardcoded one-liner
+    const dbGuidance = await getGuidanceText(`section:${sectionKey}`);
+    const guidance = dbGuidance || TECHFILE_GUIDANCE[sectionKey] || '';
     const fields = SECTION_FIELDS[sectionKey];
 
     userPrompt = `Generate content for the "${sectionKey}" section of the CRA technical file.
 
-CRA guidance for this section: ${guidance}
+CRA guidance for this section:
+${guidance}
 
 Product context:
 - Name: ${productContext.productName}
@@ -893,11 +920,14 @@ Each field value should be a string of 2-5 sentences of substantive content.`;
       return { suggestion: `Unknown obligation: ${sectionKey}`, inputTokens: 0, outputTokens: 0, model: MODEL };
     }
 
+    // Load enriched obligation guidance from DB
+    const obligationGuidance = await getGuidanceText(`obligation:${sectionKey}`);
+
     userPrompt = `Generate evidence/compliance notes for the following CRA obligation:
 
 Obligation: ${obligation.article} — ${obligation.title}
 Description: ${obligation.description}
-
+${obligationGuidance ? `\nDetailed regulatory guidance:\n${obligationGuidance}\n` : ''}
 Product context:
 - Name: ${productContext.productName}
 - Version: ${productContext.productVersion || 'not set'}

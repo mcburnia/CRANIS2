@@ -1394,6 +1394,502 @@ Rules:
 Return ONLY a JSON object with the requested fields as keys and string values. No markdown fences, no additional text.`
     ]);
 
+    // Seed section-specific guidance (8 tech file sections)
+    await client.query(`
+      INSERT INTO copilot_prompts (prompt_key, category, title, description, system_prompt, model, max_tokens, temperature)
+      VALUES
+      ('section:product_description', 'section_guidance', 'Product Description (Annex VII §1)',
+       'Guidance for the product_description tech file section. Covers intended purpose, software versions, market availability, and user instructions.',
+       'This section satisfies Annex VII §1 of the EU Cyber Resilience Act.
+
+What the regulation requires:
+- Intended purpose and use cases, including foreseeable misuse scenarios
+- Software versions and platforms affecting cybersecurity compliance
+- How the product is made available on the market (SaaS, on-premise, packaged, OEM)
+- Reference to user instructions per Annex II
+
+What auditors look for:
+- Clear scope definition — what the product does and does not do
+- Explicit version identification so the Technical File can be traced to a specific release
+- Distribution model that matches the CRA category classification
+- User documentation reference that is accessible and maintained
+
+Data to reference:
+- Product name, version, and repository URL from CRANIS2
+- CRA category (default/important I/important II/critical) and its implications
+- SBOM package count as evidence of component scope
+- Connected repository as evidence of version control', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('section:design_development', 'section_guidance', 'Design & Development (Annex VII §2a)',
+       'Guidance for the design_development tech file section. Covers system architecture, component integration, SDLC, and production monitoring.',
+       'This section satisfies Annex VII §2(a) of the EU Cyber Resilience Act.
+
+What the regulation requires:
+- System architecture overview showing components, interfaces, and data flows
+- How third-party software components are integrated, assessed, and managed
+- Secure development lifecycle (SDLC) practices including code review, testing, and security gates
+- Production monitoring and incident detection capabilities
+- Supply chain security measures for component sourcing
+
+What auditors look for:
+- Architecture diagram or description showing trust boundaries
+- Evidence of security-aware development practices (not just functional testing)
+- Component management process — how dependencies are selected, vetted, and updated
+- Monitoring that can detect security-relevant events in production
+
+Data to reference:
+- SBOM package count and top dependencies as evidence of component tracking
+- Repository URL as evidence of version-controlled development
+- Vulnerability scan results as evidence of security testing
+- Obligation statuses for related obligations (art_13_3 component currency, annex_i_part_i security by design)', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('section:vulnerability_handling', 'section_guidance', 'Vulnerability Handling (Annex VII §2b)',
+       'Guidance for the vulnerability_handling tech file section. Covers CVD policy, reporting contact, update distribution, and SBOM reference.',
+       'This section satisfies Annex VII §2(b) of the EU Cyber Resilience Act and directly supports Article 13(6).
+
+What the regulation requires:
+- Coordinated Vulnerability Disclosure (CVD) policy that is public or discoverable
+- Security reporting contact (email, web form, or security.txt)
+- Response timeline SLA for vulnerability reports (acknowledgement within 72h, assessment within 14d)
+- Safe harbour language protecting good-faith security researchers from legal action
+- Vulnerability severity assessment methodology (e.g. CVSS-based triage)
+- Security update distribution and testing procedure
+- SBOM reference and update frequency
+- Evidence retention policy for vulnerability reports, patches, and communications
+
+What auditors look for:
+- A published, accessible CVD policy URL
+- Named security contact with defined response timelines
+- Evidence that the severity assessment process is actually followed (triage records)
+- SBOM that is kept current (not stale) throughout the support period
+- Update distribution mechanism that reaches all affected users
+
+Data to reference:
+- Vulnerability finding counts by severity as evidence of active scanning
+- SBOM package count and staleness indicator
+- Open vs resolved findings as evidence of active vulnerability handling
+- CVD policy URL if already configured in product stakeholders', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('section:risk_assessment', 'section_guidance', 'Risk Assessment (Annex VII §3)',
+       'Guidance for the risk_assessment tech file section. Covers methodology, threat model, risk register, and Annex I Part I assessment.',
+       'This section satisfies Annex VII §3 and Article 13(2) of the EU Cyber Resilience Act.
+
+What the regulation requires:
+- Cybersecurity risk assessment considering intended and reasonably foreseeable use
+- Risk assessment methodology (named framework preferred: STRIDE, OWASP, NIST RMF)
+- Threat model identifying attack surfaces, threat actors, and attack vectors
+- Risk register with likelihood, impact, risk level, mitigation, and status per threat
+- Assessment against ALL 13 Annex I Part I essential cybersecurity requirements
+- Residual risk acceptance with justification
+
+What auditors look for:
+- Named, recognised methodology — not ad hoc risk listing
+- Threats derived from actual product architecture and vulnerability data
+- Risk register entries that correspond to real findings, not hypothetical scenarios
+- All 13 Annex I requirements addressed (not skipped) with evidence or gap notes
+- Clear distinction between mitigated risks and accepted residual risks
+
+Data to reference:
+- Vulnerability findings (CVE IDs, severity, affected dependencies) for risk register entries
+- SBOM package count and ecosystem breakdown for attack surface analysis
+- Licence risk findings for supply chain risk entries
+- CRA category — higher categories require stricter risk tolerance
+
+Note: This section is also served by the dedicated Risk Assessment Generator capability which produces methodology, threat model, risk register, and all 13 Annex I assessments.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('section:support_period', 'section_guidance', 'Support Period (Annex VII §4)',
+       'Guidance for the support_period tech file section. Covers support duration, rationale, and user communication plan.',
+       'This section satisfies Annex VII §4 and Article 13(8) of the EU Cyber Resilience Act.
+
+What the regulation requires:
+- Support period start date (market placement) and end date (minimum 5 years)
+- Rationale for the chosen support period duration
+- What is included in support: security patches, minor updates, major version updates
+- User communication plan: how end-of-support is announced, grace periods, migration path
+- Post-support obligations: documentation archival, security update availability window
+- Support delivery model: automatic, manual, managed service
+
+What auditors look for:
+- Explicit 5-year minimum commitment (or longer with justification)
+- Defined end-of-life communication timeline (e.g. 12 months notice, 6 months notice, 30 days)
+- Clear statement that security patches are free of charge during support period (Art. 13(8))
+- Evidence that security updates can be applied separately from feature updates (Art. 13(9))
+
+Data to reference:
+- Product version and lifecycle stage from CRANIS2
+- Support end date if already configured
+- End-of-support alert configuration (90/60/30/7/0 day warnings)
+- Related obligation statuses: art_13_7 (automatic updates), art_13_8 (free patches), art_13_9 (separate updates)', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('section:standards_applied', 'section_guidance', 'Standards Applied (Annex VII §5)',
+       'Guidance for the standards_applied tech file section. Covers harmonised standards, common specifications, and certification schemes.',
+       'This section satisfies Annex VII §5 of the EU Cyber Resilience Act.
+
+What the regulation requires:
+- Identification of all applicable harmonised standards (with EU Official Journal publication reference)
+- For each standard: which parts or sections apply to the product
+- Common specifications per Article 27(2) if harmonised standards are unavailable
+- EU cybersecurity certification scheme references (if applicable)
+- Conformity claim justification: how the product meets each referenced standard
+
+What auditors look for:
+- Standards that are relevant to the product type (not a generic list)
+- Specific section/clause references — not just "ISO 27001" but which controls apply
+- For important (Class I/II) and critical products: harmonised standards are expected, not optional
+- Certificate numbers or third-party attestation references where applicable
+
+Commonly applicable standards for CRA compliance:
+- ISO/IEC 27001 — Information security management
+- ISO 29147 — Vulnerability disclosure
+- ISO 30111 — Vulnerability handling processes
+- IEC 62443 — Industrial automation and control systems security
+- ETSI EN 303 645 — Cyber security for consumer IoT
+- ISO/IEC 27034 — Application security
+- Common Criteria (ISO/IEC 15408) — for critical products
+
+Data to reference:
+- CRA category — determines whether harmonised standards are mandatory
+- Product type and industry context for standard selection
+- Existing conformity assessment module (A, B+C, or H)', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('section:test_reports', 'section_guidance', 'Test Reports (Annex VII §6)',
+       'Guidance for the test_reports tech file section. Covers penetration testing, static/dynamic analysis, vulnerability scans, and audit reports.',
+       'This section satisfies Annex VII §6 of the EU Cyber Resilience Act.
+
+What the regulation requires:
+- Penetration testing report (scope, methodology, findings, remediation status)
+- Static analysis report (code review findings, severity assessment)
+- Dynamic analysis report (runtime security testing, input validation, fuzzing)
+- Vulnerability scanning results (SCA scans showing SBOM analysis and CVE matching)
+- Third-party audit reports (if conformity assessment module B/B+C/H is used)
+- Test coverage metrics and test execution evidence
+
+What auditors look for:
+- Test reports that cover the Annex I Part I requirements (not just functional testing)
+- Evidence that identified issues were remediated — not just found
+- Dates of testing aligned with product release timeline (not stale reports)
+- For critical products: third-party assessment evidence is mandatory
+- Traceability from test findings to risk register entries
+
+Data to reference:
+- Vulnerability scan results from CRANIS2 (counts by severity, open vs resolved)
+- SBOM analysis as evidence of software composition analysis (SCA)
+- CRA category — critical products require notified body assessment
+- Conformity assessment module selection from declaration_of_conformity section', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('section:declaration_of_conformity', 'section_guidance', 'Declaration of Conformity (Annex VII §7)',
+       'Guidance for the declaration_of_conformity tech file section. Covers EU DoC per Annex VI, assessment module, notified body, and CE marking.',
+       'This section satisfies Annex VII §7, Article 28, and Annex VI of the EU Cyber Resilience Act.
+
+What the regulation requires:
+The EU Declaration of Conformity must include:
+1. Manufacturer identification: legal name, registered address, contact details
+2. Product identification: name, model number, version, batch/serial number
+3. Conformity statement: "This product is in conformity with Regulation (EU) 2024/2847"
+4. Applicable standards and specifications: references to Annex I, harmonised standards, common specifications
+5. Assessment module used: A (internal controls), B/B+C (design review + production audit), or H (full QA)
+6. Notified body details (if applicable): name, identification number, scope of involvement
+7. Issue location and date
+8. Authorised signatory: name, function, signature
+
+Assessment module selection:
+- Default products: Module A (internal controls) — self-assessment
+- Important (Class I): Module A or harmonised standard compliance
+- Important (Class II): Module B+C or H — third-party assessment required
+- Critical: Module B+C or H — notified body assessment mandatory
+
+What auditors look for:
+- All 8 mandatory fields completed
+- Assessment module appropriate for the CRA category
+- Notified body reference with valid identification number (for Class II/critical)
+- Date of issue that predates market placement
+- Authorised signatory with appropriate authority level
+
+Data to reference:
+- Organisation name and contact details from CRANIS2
+- Product name, version, and CRA category
+- Standards applied from the standards_applied section
+- Notified body details if already configured', 'claude-sonnet-4-20250514', 2000, 1.0)
+
+      ON CONFLICT (prompt_key) DO NOTHING
+    `);
+
+    console.log('[DB] CoPilot section guidance seeded');
+
+    // Seed obligation-specific guidance (19 obligations)
+    await client.query(`
+      INSERT INTO copilot_prompts (prompt_key, category, title, description, system_prompt, model, max_tokens, temperature)
+      VALUES
+      ('obligation:art_13', 'obligation_guidance', 'Art. 13 — Obligations of Manufacturers',
+       'Overall manufacturer obligation — aggregate compliance across all specific obligations.',
+       'Article 13 is the umbrella obligation requiring manufacturers to ensure products comply with ALL essential cybersecurity requirements throughout the product lifecycle.
+
+Evidence focus: This is an aggregate obligation. Evidence should summarise progress across the specific obligations below (Art. 13(3) through Art. 13(15), Art. 14, Annex I). Reference the overall compliance readiness score and highlight which specific obligations are met vs in progress.
+
+Key data: Overall tech file completion percentage, obligation statuses across all 18 specific obligations, CRA category and its implications.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_13_3', 'obligation_guidance', 'Art. 13(3) — Component Currency',
+       'Keep all software components free of known exploitable vulnerabilities and up to date throughout the support period.',
+       'Article 13(3) requires continuous verification that all dependencies are vulnerability-free and current. Products cannot ship with outdated component versions that have known CVEs.
+
+Evidence must demonstrate:
+- Active SBOM maintenance with current dependency versions
+- Regular vulnerability scanning against known CVE databases
+- Zero critical/high severity open findings (or documented mitigation plan)
+- Process for updating components when new vulnerabilities are disclosed
+
+Key data: SBOM package count and staleness, vulnerability findings by severity, open vs resolved findings count, last scan date.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_13_5', 'obligation_guidance', 'Art. 13(5) — No Known Exploitable Vulnerabilities at Market Placement',
+       'Products must be free of known exploitable vulnerabilities before market placement.',
+       'Article 13(5) is a gate requirement: before placing a product on the EU market, the manufacturer must confirm zero open exploitable vulnerabilities through a pre-launch vulnerability assessment.
+
+Evidence must demonstrate:
+- Pre-launch vulnerability scan was performed (with date)
+- All critical and high severity findings were remediated before launch
+- Remediation records showing closure of each finding
+- SBOM demonstrating all dependency versions are patched at time of market placement
+
+Key data: Vulnerability findings (critical/high counts), remediation timeline, SBOM package versions, last scan date relative to product launch date.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_13_6', 'obligation_guidance', 'Art. 13(6) — Vulnerability Handling',
+       'Identify and document vulnerabilities, provide security updates for at least 5 years.',
+       'Article 13(6) requires a documented vulnerability handling process covering the entire support period (minimum 5 years).
+
+Evidence must demonstrate:
+- Active vulnerability detection process (automated SBOM scanning, CVE monitoring)
+- Documented severity assessment methodology (e.g. CVSS-based triage)
+- Defined response timelines (SLAs for critical, high, medium, low)
+- Coordinated Vulnerability Disclosure (CVD) policy with public contact
+- Security update distribution mechanism
+- Evidence retention for all vulnerability reports and patches
+
+Key data: Vulnerability findings count and triage status, SBOM scan frequency, CVD policy URL, security contact, open vs resolved finding ratio.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_13_7', 'obligation_guidance', 'Art. 13(7) — Automatic Security Updates',
+       'Ensure security updates are automatically available to users where technically feasible.',
+       'Article 13(7) requires manufacturers to provide automatic security update delivery where technically feasible, for the duration of the support period.
+
+Evidence must demonstrate:
+- Automatic update mechanism exists (or documented justification for why infeasible)
+- Update delivery frequency and schedule
+- User interruption minimisation during updates
+- Rollback capability if an update causes issues
+- Success rate tracking for update delivery
+
+If automatic updates are not feasible (e.g. air-gapped systems, embedded firmware): document why, and describe the alternative manual update process with user notification.
+
+Key data: Product distribution model (SaaS vs on-premise vs embedded), update mechanism description, support period end date.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_13_8', 'obligation_guidance', 'Art. 13(8) — Security Patches Free of Charge',
+       'Security patches must be provided at no additional cost for the full support period.',
+       'Article 13(8) requires that all security updates are provided free of charge throughout the support period. This is a non-negotiable requirement — security patches cannot be bundled into paid upgrade tiers.
+
+Evidence must demonstrate:
+- Explicit policy statement that security patches are free
+- Support period commitment with defined duration
+- No paywall between users and security updates
+- Pricing documentation confirming security updates are not a premium feature
+
+Key data: Product pricing model, support period duration, update policy documentation.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_13_9', 'obligation_guidance', 'Art. 13(9) — Security Updates Separate from Feature Updates',
+       'Security patches must be distributable separately from feature updates.',
+       'Article 13(9) requires manufacturers to separate security patches from feature updates, so users can apply critical security fixes without being forced to adopt new functionality.
+
+Evidence must demonstrate:
+- Versioning scheme that distinguishes security releases from feature releases (e.g. semver X.Y.Z where Z = security-only)
+- Release process that can produce security-only patches
+- User communication that clearly labels security vs feature releases
+- CI/CD or branching strategy that supports parallel security and feature tracks
+
+Key data: Product version format, release history (if available), distribution model.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_13_10', 'obligation_guidance', 'Art. 13(10) — Documentation Retention (10 Years)',
+       'Technical documentation and EU DoC must be retained for at least 10 years.',
+       'Article 13(10) requires all technical documentation (Technical File, EU Declaration of Conformity, test reports, risk assessments) to be retained for at least 10 years after market placement, or for the support period if longer.
+
+Evidence must demonstrate:
+- Documented retention policy with 10-year minimum commitment
+- Archive location and storage mechanism (secure, backed up)
+- Backup and disaster recovery plan for compliance documentation
+- Access control ensuring documentation integrity
+- Process for responding to market surveillance authority requests for documentation
+
+Key data: Product market placement date (if known), support period end date, archive location.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_13_11', 'obligation_guidance', 'Art. 13(11) — SBOM (Software Bill of Materials)',
+       'Identify and document all components in machine-readable SBOM format.',
+       'Article 13(11) requires a machine-readable SBOM listing all software components, dependencies, and third-party libraries. The SBOM must be kept current throughout the support period.
+
+Evidence must demonstrate:
+- SBOM generated in machine-readable format (SPDX JSON per Annex VII §2b)
+- Complete component inventory including direct and transitive dependencies
+- Licence declarations for each dependency
+- SBOM update frequency (should align with each release or dependency change)
+- SBOM is not stale — reflects current product composition
+
+CRANIS2 automatically generates SBOMs from connected repositories via lockfile parsing. Reference the actual SBOM data.
+
+Key data: SBOM package count, staleness indicator, top dependencies, connected repository, last SBOM sync date.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_13_12', 'obligation_guidance', 'Art. 13(12) — Technical Documentation',
+       'Draw up complete technical documentation (Technical File) before market placement.',
+       'Article 13(12) requires a complete Technical File per Annex VII covering all 8 sections before the product is placed on the EU market.
+
+Evidence must demonstrate:
+- All 8 Technical File sections are completed (or in progress with timeline)
+- Content is substantive, product-specific, and evidence-grade
+- Documentation is maintained and updated as the product evolves
+
+The 8 sections: Product Description (§1), Design & Development (§2a), Vulnerability Handling (§2b), Risk Assessment (§3), Support Period (§4), Standards Applied (§5), Test Reports (§6), Declaration of Conformity (§7).
+
+Key data: Tech file section completion statuses from CRANIS2, overall completion percentage.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_13_14', 'obligation_guidance', 'Art. 13(14) — Conformity Assessment',
+       'Carry out a conformity assessment appropriate to the product CRA category.',
+       'Article 13(14) requires a formal conformity assessment using the appropriate module for the product CRA category.
+
+Assessment module by category:
+- Default: Module A (internal controls) — self-assessment
+- Important (Class I): Module A or harmonised standard compliance
+- Important (Class II): Module B+C or H — third-party assessment required
+- Critical: Module B+C or H — notified body assessment mandatory
+
+Evidence must demonstrate:
+- Correct assessment module selected for the product CRA category
+- Assessment methodology documented (what was tested, how, by whom)
+- Test reports covering Annex I Part I requirements
+- For Class II/critical: notified body engagement and assessment report
+
+Key data: CRA category, selected assessment module, test report status, notified body details (if applicable).', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_13_15', 'obligation_guidance', 'Art. 13(15) — EU Declaration of Conformity',
+       'Draw up the EU Declaration of Conformity and affix the CE marking.',
+       'Article 13(15) requires a formal EU Declaration of Conformity per Annex VI and the application of CE marking.
+
+Evidence must demonstrate:
+- EU DoC document created with all 8 mandatory fields per Annex VI
+- CE marking applied to the product or its documentation
+- DoC signed by authorised representative with appropriate authority
+- DoC date precedes market placement date
+
+Key data: DoC completion status in Technical File, assessment module, notified body reference, authorised signatory.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_14', 'obligation_guidance', 'Art. 14 — Vulnerability Reporting (ENISA)',
+       'Report actively exploited vulnerabilities and severe incidents to ENISA within 24 hours.',
+       'Article 14 requires mandatory reporting to the designated CSIRT with strict deadlines:
+- Early Warning: within 24 hours of becoming aware
+- Notification: within 72 hours with technical details
+- Final Report: within 14 days (vulnerabilities) or 1 month (incidents)
+
+Evidence must demonstrate:
+- Incident response plan covering the 3-stage ENISA reporting process
+- Designated CSIRT country identification
+- Process for identifying which vulnerabilities/incidents trigger mandatory reporting
+- Internal escalation procedure to meet 24-hour deadline
+- Templates or tools for rapid report generation (CRANIS2 provides this)
+
+Key data: Any CRA reports created in CRANIS2, CSIRT country setting, incident response plan status, linked vulnerability findings.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_16', 'obligation_guidance', 'Art. 16 — EU Declaration of Conformity (Annex IV)',
+       'Draw up an EU DoC meeting Annex IV content requirements.',
+       'Article 16 specifies the content requirements for the EU Declaration of Conformity per Annex IV.
+
+The DoC must include:
+1. Manufacturer name and registered address
+2. Product name, model, and version identification
+3. Statement: "This product conforms to Regulation (EU) 2024/2847"
+4. Harmonised standards or common specifications applied
+5. Notified body identification (if applicable)
+6. Place and date of issue
+7. Authorised signatory name, function, and signature
+
+Evidence: Reference the declaration_of_conformity section of the Technical File. All 7 fields must be completed.
+
+Key data: Organisation details, product identification, standards applied, assessment module, notified body.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_20', 'obligation_guidance', 'Art. 20 — EU Market Surveillance Registration',
+       'Critical products require market surveillance authority notification before EU market placement.',
+       'Article 20 applies ONLY to products classified as "critical". It requires notification to the relevant EU Member State market surveillance authority before the product is placed on the market.
+
+This obligation does not apply to default, important (Class I), or important (Class II) products.
+
+Evidence must demonstrate:
+- Market surveillance registration application submitted (or planned)
+- Manufacturer contact details provided to authority
+- Product risk summary and compliance evidence package prepared
+- Expected sales volume and target markets identified
+
+Key data: CRA category (must be "critical"), market surveillance registration status. If the product is not critical, note that this obligation is not applicable.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_32', 'obligation_guidance', 'Art. 32 — Harmonised Standards',
+       'Reference applicable harmonised standards in conformity assessment.',
+       'Article 32 applies to important (Class I/II) and critical products. Where harmonised standards exist, the conformity assessment must reference them.
+
+Evidence must demonstrate:
+- Applicable harmonised standards identified (EU Official Journal references)
+- For each standard: which parts/sections apply to the product
+- Conformity evidence per standard (test results, certifications)
+- If no harmonised standards exist: common specifications per Article 27(2)
+
+Key data: CRA category, standards_applied section of Technical File, certificate numbers (if third-party certified). This obligation does not apply to default-category products.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:art_32_3', 'obligation_guidance', 'Art. 32(3) — Third-Party Assessment',
+       'Critical and important (Class II) products require third-party conformity assessment.',
+       'Article 32(3) applies to important (Class II) and critical products. These products require independent conformity assessment by a notified body.
+
+Evidence must demonstrate:
+- Notified body identified and engaged (name, identification number)
+- Assessment module selected: B+C (design review + production audit) or H (full quality assurance)
+- Assessment scope covers Annex I Part I requirements
+- Assessment report or certificate obtained (or engagement timeline)
+
+Key data: CRA category (must be important_ii or critical), notified body details from declaration_of_conformity section, assessment module. This obligation does not apply to default or important (Class I) products.', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:annex_i_part_i', 'obligation_guidance', 'Annex I, Part I — Security by Design',
+       'Products must be designed with appropriate cybersecurity based on risks, addressing 13 essential requirements.',
+       'Annex I Part I requires manufacturers to demonstrate security-by-design across 13 essential cybersecurity requirements:
+
+I(a) No known exploitable vulnerabilities — reference vulnerability scan results
+I(b) Secure-by-default configuration — default settings should be restrictive
+I(c) Security update mechanism — automatic updates where feasible
+I(d) Access control & authentication — role-based access, MFA capability
+I(e) Data confidentiality & encryption — encryption at rest and in transit
+I(f) Data & command integrity — input validation, integrity checking
+I(g) Data minimisation — collect only necessary data, justify retention
+I(h) Availability & resilience — redundancy, failover, DDoS protection
+I(i) Minimise impact on other services — network isolation, resource limits
+I(j) Attack surface limitation — disable unused features, minimise ports
+I(k) Exploitation mitigation — memory safety, sandboxing, exploit detection
+I(l) Security monitoring & logging — audit logs, anomaly detection
+I(m) Secure data erasure & transfer — secure deletion, data portability
+
+Evidence should address each requirement with product-specific justification. The dedicated Risk Assessment Generator produces a full 13-point assessment.
+
+Key data: Vulnerability findings for I(a), SBOM for I(a)/I(j), architecture data for I(b)-(I(m).', 'claude-sonnet-4-20250514', 2000, 1.0),
+
+      ('obligation:annex_i_part_ii', 'obligation_guidance', 'Annex I, Part II — Vulnerability Handling Requirements',
+       'Implement vulnerability handling processes including coordinated disclosure.',
+       'Annex I Part II requires a documented vulnerability handling process covering the complete vulnerability lifecycle.
+
+Evidence must demonstrate:
+- Vulnerability identification: automated scanning, researcher reports, dependency monitoring
+- Severity assessment methodology: CVSS-based or equivalent structured approach
+- Coordinated Vulnerability Disclosure (CVD) policy: public, with reporting contact and safe harbour
+- Response SLAs: defined timelines for acknowledgement, assessment, and fix delivery
+- Security update release process: testing, staging, deployment
+- Public communication plan: advisories, changelogs, user notifications
+- Evidence retention: all reports, patches, and communications archived
+
+This obligation is closely linked to Art. 13(6) (Vulnerability Handling) and the vulnerability_handling section of the Technical File.
+
+Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan results, security contact, open vs resolved finding ratio.', 'claude-sonnet-4-20250514', 2000, 1.0)
+
+      ON CONFLICT (prompt_key) DO NOTHING
+    `);
+
+    console.log('[DB] CoPilot obligation guidance seeded');
     console.log('[DB] CoPilot prompts table ready');
 
   } finally {

@@ -63,10 +63,10 @@ P6 — Compliance Document Library — ALL DONE
 36	Auto-populated templates	Medium	DONE
 37	Full template library (7 templates)	High	DONE
 
-P7 - Andi's good catches
+P7 - Andi's good catches — 1/2 DONE
 #	Feature	Effort	Status
-38 AI CoPilot Prompt Engineering Topic Focus Unknown TODO
-39 Automation wizards Unknown TODO
+38	AI CoPilot Prompt Engineering Topic Focus	High	PHASE 2 DONE
+39	Automation wizards	Unknown	TODO
 
 Cross-cutting (done)
 -	Pro plan billing (Standard €6/contributor, Pro €9/product + €6/contributor)	DONE
@@ -79,6 +79,8 @@ Cross-cutting (done)
 -	Nightly test runner (cron 22:00 CEST, 14-day log retention, Trello notification)	DONE
 -	Bug #29 fix (formatCategory legacy normalisation + Neo4j data)	DONE
 -	Flaky risk-findings status filter test fix (open instead of resolved)	DONE
+-	CoPilot quality standard + 3-layer prompt architecture + admin prompt editor	DONE
+-	GRC bridge stub (unblocks Docker build for parked P4 #23)	DONE
 
 ---
 
@@ -91,7 +93,7 @@ Cross-cutting (done)
 **Bugs:** 3/3 ALL DONE
 
 **Immediate next:**
-- P7 #38 — AI CoPilot prompt engineering topic focus
-- P7 #39 — Automation wizards
+- P7 #38 Phase 3 — Industry awareness, structured output options, EPSS/reachability
+- P7 #39 — Automation wizards (batch fill, post-scan triage, onboarding wizard)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
