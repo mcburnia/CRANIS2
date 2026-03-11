@@ -13,25 +13,35 @@ import pg from 'pg';
 import neo4j, { Driver, Session } from 'neo4j-driver';
 
 // ─── Configuration ───────────────────────────────────────────────────────
+//
+// All connections target the ISOLATED test stack (port 3011, cranis2_test DB,
+// neo4j_test instance). This ensures tests can never affect live data.
 
-export const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3001';
+export const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3011';
 
 const PG_CONFIG = {
   host: process.env.TEST_PG_HOST || 'localhost',
   port: parseInt(process.env.TEST_PG_PORT || '5433'),
-  database: 'cranis2',
+  database: 'cranis2_test',
   user: process.env.TEST_PG_USER || 'cranis2',
   password: process.env.TEST_PG_PASSWORD || 'cranis2_dev_2026',
   ssl: false,
 };
 
+// Safety: refuse to run if we're accidentally pointing at the live database
+if (PG_CONFIG.database !== 'cranis2_test') {
+  throw new Error(
+    `SAFETY: Test PG_CONFIG.database is "${PG_CONFIG.database}" — expected "cranis2_test". ` +
+    `Refusing to run tests against a non-test database.`
+  );
+}
+
 const TEST_DB_CONFIG = {
   ...PG_CONFIG,
-  database: 'cranis2_test',
 };
 
 const NEO4J_CONFIG = {
-  uri: process.env.TEST_NEO4J_URI || 'bolt://localhost:7688',
+  uri: process.env.TEST_NEO4J_URI || 'bolt://localhost:7699',
   user: process.env.TEST_NEO4J_USER || 'neo4j',
   password: process.env.TEST_NEO4J_PASSWORD || 'cranis2_dev_2026',
 };

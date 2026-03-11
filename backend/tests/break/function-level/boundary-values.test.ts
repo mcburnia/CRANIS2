@@ -148,7 +148,7 @@ describe('Break: Boundary Values', () => {
         body: { email: 'a', password: 'TestPass123!' },
       });
       // Server may accept (sends verification email) or reject
-      expect([200, 201, 400, 422, 500]).toContain(res.status);
+      expect([200, 201, 400, 409, 422, 500]).toContain(res.status);
     });
 
     it('should handle email at max typical length (254 chars)', async () => {

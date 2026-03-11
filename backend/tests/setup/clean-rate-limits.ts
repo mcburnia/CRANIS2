@@ -20,6 +20,16 @@ const FINDING_IDS = [
 
 export async function cleanTestRateLimits(): Promise<void> {
   const pool = getAppPool();
+
+  // Safety: verify we're operating on the test database, not live
+  const dbResult = await pool.query('SELECT current_database()');
+  const currentDb = dbResult.rows[0].current_database;
+  if (currentDb !== 'cranis2_test') {
+    throw new Error(
+      `SAFETY: cleanTestRateLimits would modify "${currentDb}" — expected "cranis2_test". Aborting.`
+    );
+  }
+
   const testOrgIds = Object.values(TEST_IDS.orgs);
 
   // 1. Clean copilot rate-limit rows

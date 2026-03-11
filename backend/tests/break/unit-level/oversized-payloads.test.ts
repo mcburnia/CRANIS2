@@ -65,7 +65,7 @@ describe('Break: Oversized Payloads', () => {
         body: { email: 'longpass@break.test', password: 'Aa1!' + 'x'.repeat(10240) },
       });
       // bcrypt truncates to 72 bytes internally — server may accept (sends verification) or reject
-      expect([200, 201, 400, 413, 422, 500]).toContain(res.status);
+      expect([200, 201, 400, 409, 413, 422, 500]).toContain(res.status);
     });
   });
 

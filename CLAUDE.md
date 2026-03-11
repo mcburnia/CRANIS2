@@ -33,8 +33,10 @@ At the end of every task, run unit and integration tests and report the outcome 
 
 ### 6. Full regression at end of session
 At the end of each development session (after all work is committed), run the full test cycle:
-- Backend: `cd backend/tests && TEST_BASE_URL=http://localhost:3002 npx vitest run --config vitest.config.ts`
+- Backend: `cd backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://localhost:3011 npx vitest run --config vitest.config.ts`
 - E2E: `cd e2e && E2E_BASE_URL=http://localhost:3002 npm test`
+
+**Important:** Backend tests MUST target the isolated test stack on port 3011 (not the live backend on 3001 or 3002). Start the test stack first with `./scripts/test-stack.sh start` and stop it after with `./scripts/test-stack.sh stop`.
 
 Report pass/fail totals. Fix any failures while the context is still fresh rather than leaving them for the next session.
 
@@ -81,13 +83,54 @@ The `.env` file contains credentials. Never stage or commit it under any circums
 - **ANSABASE** — runs concurrently. Keep both stacks within the memory budgets in `memory.md`. Do not interfere with its containers.
 - **Archoniq** — uses Postgres (port 5432) and Neo4j (ports 7474/7687). Do not touch these containers.
 
+## Test Infrastructure
+
+Tests run against a **fully isolated test stack** — separate backend, separate Neo4j instance, separate Postgres database. This makes it structurally impossible for tests to affect live data.
+
+### Running tests
+```bash
+# Start test stack (neo4j_test + backend_test on port 3011)
+./scripts/test-stack.sh start
+
+# Run tests
+cd backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://localhost:3011 npx vitest run --config vitest.config.ts
+
+# Stop test stack (frees ~900MB memory)
+./scripts/test-stack.sh stop
+
+# Or do all three in one command:
+./scripts/test-stack.sh run
+```
+
+### Safety layers (defence in depth)
+1. **Separate containers:** `neo4j_test` (port 7699) and `backend_test` (port 3011) only start with `--profile test`
+2. **Separate database:** Postgres `cranis2_test` database (not `cranis2`)
+3. **Backend startup guards:** `pool.ts` and `neo4j.ts` verify DB URLs match `CRANIS2_TEST_MODE` flag — process exits if misconfigured
+4. **Test-side guards:** `test-helpers.ts`, `seed-test-data.ts`, and `clean-rate-limits.ts` all verify they connect to `cranis2_test`
+5. **Port separation:** Live on 3001/7688, test on 3011/7699 — no possible overlap
+
+### Writing new tests
+- Tests connect to `cranis2_test` Postgres and `neo4j_test` graph by default via `test-helpers.ts`
+- **NEVER** hardcode live database connection strings in tests
+- **NEVER** run cleanup queries against the live Neo4j or Postgres databases
+- Use `getAppPool()` and `getNeo4jSession()` from test-helpers — they are pre-configured for the test databases
+
+### Expected infrastructure-dependent failures
+These tests require real external services (Forgejo, Anthropic API) and are expected to fail in the isolated test stack:
+- `tier3-import-scanning.test.ts` (13 tests) — needs Forgejo repo access
+- `webhook-e2e.test.ts` B5/B6 (2 tests) — needs Forgejo push round-trip
+- `category-recommendation.test.ts` (1 test) — needs real Anthropic API key
+
 ## Port Map
 
 | Service | Port |
 |---|---|
 | CRANIS2 frontend (nginx) | 3002 |
 | CRANIS2 backend | 3001 |
+| CRANIS2 backend (test) | 3011 |
 | CRANIS2 Postgres | 5433 |
 | CRANIS2 Neo4j HTTP | 7475 |
 | CRANIS2 Neo4j Bolt | 7688 |
+| CRANIS2 Neo4j test HTTP | 7476 |
+| CRANIS2 Neo4j test Bolt | 7699 |
 | CRANIS2 Forgejo | 3003 |

@@ -366,7 +366,16 @@ async function seedNotifications(): Promise<void> {
 // ─── Main Seed Runner ────────────────────────────────────────────────────
 
 export async function seedAllTestData(): Promise<void> {
-  console.log('\n=== Seeding CRANIS2 Test Data ===\n');
+  // Safety: verify we're writing to the test database, not live
+  const pool = getAppPool();
+  const dbResult = await pool.query('SELECT current_database()');
+  const currentDb = dbResult.rows[0].current_database;
+  if (currentDb !== 'cranis2_test') {
+    throw new Error(
+      `SAFETY: seedAllTestData would write to "${currentDb}" — expected "cranis2_test". Aborting.`
+    );
+  }
+  console.log(`\n=== Seeding CRANIS2 Test Data (database: ${currentDb}) ===\n`);
 
   try {
     await seedUsers();

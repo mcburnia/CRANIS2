@@ -6,6 +6,17 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// ── Safety guard: prevent test backend from connecting to live database ──
+if (process.env.CRANIS2_TEST_MODE === 'true') {
+  const dbUrl = process.env.DATABASE_URL || '';
+  if (!dbUrl.includes('cranis2_test')) {
+    console.error('FATAL: CRANIS2_TEST_MODE is true but DATABASE_URL does not point to cranis2_test');
+    console.error(`DATABASE_URL: ${dbUrl}`);
+    console.error('Refusing to start to prevent test data in production database.');
+    process.exit(1);
+  }
+}
+
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
 });
@@ -271,6 +282,16 @@ export async function initDb() {
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_scans_product ON vulnerability_scans(product_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_scans_org ON vulnerability_scans(org_id)`);
+    // Columns added post-creation — ensure they exist
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS duration_seconds NUMERIC(10,2)`);
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS dependency_count INT`);
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS osv_duration_ms INT`);
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS osv_findings INT`);
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS github_duration_ms INT`);
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS github_findings INT`);
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS nvd_duration_ms INT`);
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS nvd_findings INT`);
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS triggered_by VARCHAR(255)`);
 
     // Vulnerability findings — individual CVEs/advisories found per product
     await client.query(`
@@ -1891,6 +1912,42 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
 
     console.log('[DB] CoPilot obligation guidance seeded');
     console.log('[DB] CoPilot prompts table ready');
+
+    // GRC integration tables
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS grc_connections (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        provider VARCHAR(50) NOT NULL,
+        instance_url VARCHAR(500),
+        credentials JSONB NOT NULL DEFAULT '{}',
+        enabled BOOLEAN DEFAULT TRUE,
+        sync_frequency VARCHAR(20) DEFAULT 'manual',
+        field_mapping JSONB NOT NULL DEFAULT '{}',
+        last_sync_at TIMESTAMPTZ,
+        last_sync_status VARCHAR(20),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(org_id, provider)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_grc_connections_org ON grc_connections(org_id)`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS grc_sync_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        connection_id UUID REFERENCES grc_connections(id) ON DELETE CASCADE,
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255),
+        sync_type VARCHAR(30) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'running',
+        records_pushed INT DEFAULT 0,
+        records_failed INT DEFAULT 0,
+        error_log TEXT,
+        started_at TIMESTAMPTZ DEFAULT NOW(),
+        completed_at TIMESTAMPTZ
+      );
+    `);
 
   } finally {
     client.release();

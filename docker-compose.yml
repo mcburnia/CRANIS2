@@ -65,6 +65,88 @@ services:
       - cranis2_net
     restart: unless-stopped
 
+  # ── Test Stack (docker compose --profile test up -d) ──────────────────
+  # Isolated databases + backend for tests. NEVER shares data with live.
+
+  neo4j_test:
+    image: neo4j:5-community
+    container_name: cranis2_neo4j_test
+    environment:
+      NEO4J_AUTH: "${NEO4J_USER}/${NEO4J_PASSWORD}"
+      NEO4J_server_memory_heap_initial__size: 128m
+      NEO4J_server_memory_heap_max__size: 256m
+      NEO4J_server_memory_pagecache_size: 128m
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    ports:
+      - "7476:7474"
+      - "7699:7687"
+    volumes:
+      - cranis2_neo4j_test_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - cranis2_net
+    profiles:
+      - test
+    restart: unless-stopped
+
+  backend_test:
+    build: ./backend
+    container_name: cranis2_backend_test
+    ports:
+      - "3011:3001"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/cranis2_test
+      NEO4J_URI: bolt://neo4j_test:7687
+      NEO4J_USER: ${NEO4J_USER}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: http://localhost:3002
+      DEV_SKIP_EMAIL: "true"
+      LOG_LEVEL: warn
+      CRANIS2_TEST_MODE: "true"
+      # Webhook/encryption secrets must match live backend so tests can
+      # generate valid HMAC signatures and encrypt/decrypt PATs
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
+      CODEBERG_WEBHOOK_SECRET: ${CODEBERG_WEBHOOK_SECRET}
+      GITHUB_ENCRYPTION_KEY: ${GITHUB_ENCRYPTION_KEY}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      CODEBERG_CLIENT_ID: ${CODEBERG_CLIENT_ID}
+      CODEBERG_CLIENT_SECRET: ${CODEBERG_CLIENT_SECRET}
+      FORGEJO_ADMIN_TOKEN: ${FORGEJO_ADMIN_TOKEN}
+      FORGEJO_URL: ${FORGEJO_URL}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRODUCT_ID: ${STRIPE_PRODUCT_ID}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      # Placeholder keys — prevent actual AI calls during tests
+      RESEND_API_KEY: "re_placeholder"
+      ANTHROPIC_API_KEY: "sk-ant-placeholder"
+    volumes:
+      - ./docs:/app/docs:ro
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j_test:
+        condition: service_healthy
+    networks:
+      - cranis2_net
+    profiles:
+      - test
+    restart: unless-stopped
+
   test-runner:
     build:
       context: .
@@ -75,10 +157,10 @@ services:
       TEST_PG_PORT: "5432"
       TEST_PG_USER: ${POSTGRES_USER}
       TEST_PG_PASSWORD: ${POSTGRES_PASSWORD}
-      TEST_NEO4J_URI: bolt://neo4j:7687
+      TEST_NEO4J_URI: bolt://neo4j_test:7687
       TEST_NEO4J_USER: ${NEO4J_USER}
       TEST_NEO4J_PASSWORD: ${NEO4J_PASSWORD}
-      TEST_BASE_URL: http://backend:3001
+      TEST_BASE_URL: http://backend_test:3001
     deploy:
       resources:
         limits:
@@ -86,10 +168,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      neo4j:
+      neo4j_test:
         condition: service_healthy
+      backend_test:
+        condition: service_started
     networks:
       - cranis2_net
+    profiles:
+      - test
     restart: unless-stopped
 
   postgres:
@@ -108,7 +194,8 @@ services:
           memory: 1G
     volumes:
       - cranis2_pg_data:/var/lib/postgresql/data
-      - ./postgres/init-forgejo-db.sh:/docker-entrypoint-initdb.d/init-forgejo-db.sh:ro
+      - ./postgres/init-forgejo-db.sh:/docker-entrypoint-initdb.d/01-init-forgejo-db.sh:ro
+      - ./postgres/init-test-db.sh:/docker-entrypoint-initdb.d/02-init-test-db.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -203,6 +290,7 @@ volumes:
   cranis2_neo4j_data:
     external: true
   cranis2_neo4j_logs:
+  cranis2_neo4j_test_data:
 
 networks:
   cranis2_net:

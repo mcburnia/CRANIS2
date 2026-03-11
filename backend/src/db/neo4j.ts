@@ -1,5 +1,16 @@
 import neo4j, { Driver } from 'neo4j-driver';
 
+// ── Safety guard: prevent test backend from connecting to live Neo4j ──
+if (process.env.CRANIS2_TEST_MODE === 'true') {
+  const uri = process.env.NEO4J_URI || '';
+  if (!uri.includes('neo4j_test')) {
+    console.error('FATAL: CRANIS2_TEST_MODE is true but NEO4J_URI does not point to neo4j_test');
+    console.error(`NEO4J_URI: ${uri}`);
+    console.error('Refusing to start to prevent test data in production graph.');
+    process.exit(1);
+  }
+}
+
 let driver: Driver;
 
 export function getDriver(): Driver {
