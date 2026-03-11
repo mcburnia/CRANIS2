@@ -42,6 +42,7 @@ import apiKeysRoutes from "./routes/api-keys.js";
 import grcBridgeRoutes from "./routes/grc-bridge.js";
 import publicApiV1Routes from "./routes/public-api-v1.js";
 import documentTemplatesRoutes from "./routes/document-templates.js";
+import { publicConformityRouter, productConformityRouter } from "./routes/conformity-assessment.js";
 import { startScheduler } from './services/scheduler.js';
 import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
@@ -58,7 +59,7 @@ app.use(express.json({
 
 // Global billing gate — blocks write operations for restricted accounts
 // Skips: auth, billing, admin, health, webhooks, and all GET/OPTIONS requests
-const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs', '/api/v1'];
+const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs', '/api/v1', '/api/conformity-assessment'];
 app.use('/api', (req, res, next) => {
   // Only gate write operations
   if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
@@ -115,6 +116,8 @@ app.use('/api/integrations/grc', grcBridgeRoutes);
 app.use('/api/settings/api-keys', apiKeysRoutes);
 app.use('/api/v1', publicApiV1Routes);
 app.use('/api/document-templates', documentTemplatesRoutes);
+app.use('/api/conformity-assessment', publicConformityRouter);
+app.use('/api/products', productConformityRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

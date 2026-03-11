@@ -6,6 +6,7 @@ import PageHeader from '../../components/PageHeader';
 import HelpTip from '../../components/HelpTip';
 import CategoryRecommenderModal from '../../components/CategoryRecommenderModal';
 import SupplyChainTab from '../../components/SupplyChainTab';
+import ConformityAssessmentCard from '../../components/ConformityAssessmentCard';
 import {
   ArrowLeft, ArrowRight, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, Cpu, Cloud, BookOpen, Monitor, Smartphone, Radio, Box,
@@ -1425,6 +1426,13 @@ function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, 
           </Link>
         </div>
       )}
+
+      {/* Conformity Assessment Module */}
+      <ConformityAssessmentCard
+        productId={product.id}
+        craCategory={product.craCategory}
+        onSwitchTab={onSwitchTab}
+      />
 
       {/* Compliance Gap Narrator — Next Steps */}
       {complianceGaps && complianceGaps.gaps.length > 0 && (

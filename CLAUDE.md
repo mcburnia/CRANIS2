@@ -33,10 +33,13 @@ At the end of every task, run unit and integration tests and report the outcome 
 
 ### 6. Full regression at end of session
 At the end of each development session (after all work is committed), run the full test cycle:
-- Backend: `cd backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://localhost:3011 npx vitest run --config vitest.config.ts`
+- Backend: `./scripts/test-stack.sh start && cd backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://localhost:3011 TEST_NEO4J_URI=bolt://localhost:7699 npx vitest run --config vitest.config.ts`
 - E2E: `cd e2e && E2E_BASE_URL=http://localhost:3002 npm test`
+- Stop test stack after: `./scripts/test-stack.sh stop`
 
-**Important:** Backend tests MUST target the isolated test stack on port 3011 (not the live backend on 3001 or 3002). Start the test stack first with `./scripts/test-stack.sh start` and stop it after with `./scripts/test-stack.sh stop`.
+**CRITICAL:** NEVER run backend tests against the dev stack (port 3001). ALWAYS use the isolated test stack (port 3011). Running against dev causes ~29 spurious failures from data collisions and wastes time debugging non-issues. The correct sequence is: start test stack → run tests → stop test stack. Use `./scripts/test-stack.sh run` for a one-command workflow.
+
+**Expected failures (16):** 13 tier3-import-scanning (needs Forgejo repo), 2 webhook-e2e (needs Forgejo webhooks), 1 category-recommendation (needs Anthropic API). These require live external services not available in the test stack.
 
 Report pass/fail totals. Fix any failures while the context is still fresh rather than leaving them for the next session.
 
