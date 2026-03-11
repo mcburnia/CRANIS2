@@ -6,7 +6,7 @@
  * - org_billing plan: resets to 'standard' (tests like public-api-v1 upgrade to pro)
  */
 
-import { getAppPool } from './test-helpers.js';
+import { getAppPool, getNeo4jSession } from './test-helpers.js';
 import { TEST_IDS } from './seed-test-data.js';
 
 const FINDING_IDS = [
@@ -45,4 +45,35 @@ export async function cleanTestRateLimits(): Promise<void> {
     [testOrgIds]
   );
   console.log(`  Reset billing plans to standard for test orgs`);
+
+  // 4. Clean orphan test products from Neo4j (created by POST /api/products tests)
+  //    Seeded products use deterministic IDs starting with 'c0000001-'; anything else is an orphan.
+  const seededProductIds = Object.values(TEST_IDS.products);
+  const neo = getNeo4jSession();
+  try {
+    const delResult = await neo.run(
+      `MATCH (o:Organisation)<-[:BELONGS_TO]-(p:Product)
+       WHERE o.id IN $orgIds AND NOT p.id IN $seededIds
+       DETACH DELETE p
+       RETURN count(p) AS deleted`,
+      { orgIds: testOrgIds, seededIds: seededProductIds }
+    );
+    const deleted = delResult.records[0]?.get('deleted')?.toNumber?.() ?? delResult.records[0]?.get('deleted') ?? 0;
+    if (deleted > 0) console.log(`  Cleaned ${deleted} orphan test products from Neo4j`);
+  } finally {
+    await neo.close();
+  }
+
+  // 5. Clean corresponding orphan Postgres rows (obligations, stakeholders)
+  const op = await pool.query(
+    `DELETE FROM obligations WHERE org_id::text = ANY($1::text[]) AND NOT (product_id::text = ANY($2::text[]))`,
+    [testOrgIds, seededProductIds]
+  );
+  const sp = await pool.query(
+    `DELETE FROM stakeholders WHERE org_id::text = ANY($1::text[]) AND product_id IS NOT NULL AND NOT (product_id::text = ANY($2::text[]))`,
+    [testOrgIds, seededProductIds]
+  );
+  if ((op.rowCount ?? 0) > 0 || (sp.rowCount ?? 0) > 0) {
+    console.log(`  Cleaned ${op.rowCount} orphan obligations + ${sp.rowCount} orphan stakeholders from Postgres`);
+  }
 }

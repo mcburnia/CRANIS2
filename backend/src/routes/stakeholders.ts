@@ -40,27 +40,44 @@ const PRODUCT_ROLES = [
   { role_key: 'incident_response_lead', title: 'Incident Response Lead', cra_reference: 'NIS2' },
 ];
 
-// ─── Auto-create missing stakeholder rows ────────────────────
+// ─── Auto-create missing stakeholder rows (batched, chunked) ──
 async function ensureStakeholders(orgId: string, productIds: string[]): Promise<void> {
-  // Org-level roles
-  for (const role of ORG_ROLES) {
+  // Org-level roles first (single small INSERT)
+  if (ORG_ROLES.length > 0) {
+    const params: any[] = [orgId];
+    const clauses = ORG_ROLES.map(role => {
+      const kIdx = params.push(role.role_key);
+      return `($1, NULL, $${kIdx})`;
+    });
     await pool.query(
-      `INSERT INTO stakeholders (org_id, product_id, role_key)
-       VALUES ($1, NULL, $2)
-       ON CONFLICT DO NOTHING`,
-      [orgId, role.role_key]
+      `INSERT INTO stakeholders (org_id, product_id, role_key) VALUES ${clauses.join(', ')} ON CONFLICT DO NOTHING`,
+      params
     );
   }
-  // Product-level roles
+
+  // Product-level roles in chunks of 500 rows
+  if (productIds.length === 0) return;
+  const CHUNK_SIZE = 500;
+  const allRows: [string, string][] = [];
   for (const productId of productIds) {
     for (const role of PRODUCT_ROLES) {
-      await pool.query(
-        `INSERT INTO stakeholders (org_id, product_id, role_key)
-         VALUES ($1, $2, $3)
-         ON CONFLICT DO NOTHING`,
-        [orgId, productId, role.role_key]
-      );
+      allRows.push([productId, role.role_key]);
     }
+  }
+
+  for (let offset = 0; offset < allRows.length; offset += CHUNK_SIZE) {
+    const chunk = allRows.slice(offset, offset + CHUNK_SIZE);
+    const params: any[] = [orgId];
+    const valueClauses: string[] = [];
+    for (const [productId, roleKey] of chunk) {
+      const pIdx = params.push(productId);
+      const kIdx = params.push(roleKey);
+      valueClauses.push(`($1, $${pIdx}, $${kIdx})`);
+    }
+    await pool.query(
+      `INSERT INTO stakeholders (org_id, product_id, role_key) VALUES ${valueClauses.join(', ')} ON CONFLICT DO NOTHING`,
+      params
+    );
   }
 }
 

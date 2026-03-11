@@ -445,20 +445,14 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         );
         const orgName = orgNameResult.records[0]?.get('orgName') || '';
 
-        // Ensure org-level stakeholder rows exist
-        for (const roleKey of ['manufacturer_contact', 'authorised_representative', 'compliance_officer']) {
-          await pool.query(
-            `INSERT INTO stakeholders (org_id, product_id, role_key) VALUES ($1, NULL, $2) ON CONFLICT DO NOTHING`,
-            [orgId, roleKey]
-          );
-        }
-        // Ensure product-level stakeholder rows exist
-        for (const roleKey of ['security_contact', 'technical_file_owner', 'incident_response_lead']) {
-          await pool.query(
-            `INSERT INTO stakeholders (org_id, product_id, role_key) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-            [orgId, productId, roleKey]
-          );
-        }
+        // Ensure org-level + product-level stakeholder rows exist (single batch INSERT)
+        await pool.query(
+          `INSERT INTO stakeholders (org_id, product_id, role_key) VALUES
+           ($1, NULL, 'manufacturer_contact'), ($1, NULL, 'authorised_representative'), ($1, NULL, 'compliance_officer'),
+           ($1, $2, 'security_contact'), ($1, $2, 'technical_file_owner'), ($1, $2, 'incident_response_lead')
+           ON CONFLICT DO NOTHING`,
+          [orgId, productId]
+        );
 
         // Fill org-level roles (only where email is currently empty — never overwrite)
         await pool.query(

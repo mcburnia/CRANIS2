@@ -4,7 +4,7 @@ import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import {
-  ensureObligations, computeDerivedStatuses, enrichObligation,
+  ensureObligations, ensureObligationsBatch, computeDerivedStatuses, enrichObligation,
 } from '../services/obligation-engine.js';
 import { logProductActivity } from '../services/activity-log.js';
 import { OBLIGATIONS } from '../services/obligation-engine.js';
@@ -65,10 +65,8 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    // Auto-create obligations for all products
-    for (const p of products) {
-      await ensureObligations(orgId, p.id, p.craCategory);
-    }
+    // Auto-create obligations for all products (single batch INSERT)
+    await ensureObligationsBatch(orgId, products.map(p => ({ id: p.id, craCategory: p.craCategory })));
 
     // Fetch all obligations and derived statuses in parallel
     const productIds = products.map(p => p.id);

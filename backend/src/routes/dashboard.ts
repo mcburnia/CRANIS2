@@ -3,7 +3,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import {
-  getApplicableObligations, ensureObligations,
+  getApplicableObligations, ensureObligations, ensureObligationsBatch,
   computeDerivedStatuses, higherStatus,
 } from '../services/obligation-engine.js';
 
@@ -228,10 +228,8 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       const categoryMap: Record<string, string | null> = {};
       for (const p of products) categoryMap[p.id] = p.category;
 
-      // Ensure obligations exist for all products
-      for (const p of products) {
-        await ensureObligations(orgId, p.id, p.category);
-      }
+      // Ensure obligations exist for all products (single batch INSERT)
+      await ensureObligationsBatch(orgId, products.map(p => ({ id: p.id, craCategory: p.category })));
 
       // Fetch obligations + derived statuses in parallel
       const [obResult, derivedMap] = await Promise.all([

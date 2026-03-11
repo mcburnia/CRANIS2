@@ -54,6 +54,45 @@ export async function ensureObligations(orgId: string, productId: string, craCat
   );
 }
 
+/**
+ * Batch version: ensure obligations for multiple products in a single INSERT.
+ * Replaces the per-product loop pattern that caused N sequential round-trips.
+ * Chunks into batches of up to 500 rows to stay within Postgres parameter limits.
+ */
+export async function ensureObligationsBatch(
+  orgId: string,
+  products: { id: string; craCategory: string | null }[]
+): Promise<void> {
+  if (products.length === 0) return;
+
+  // Build all (product_id, obligation_key) pairs
+  const allRows: [string, string][] = [];
+  for (const p of products) {
+    const applicable = getApplicableObligations(p.craCategory);
+    for (const ob of applicable) {
+      allRows.push([p.id, ob.key]);
+    }
+  }
+  if (allRows.length === 0) return;
+
+  // Process in chunks of 500 rows (1001 params each, well within Postgres 65535 limit)
+  const CHUNK_SIZE = 500;
+  for (let offset = 0; offset < allRows.length; offset += CHUNK_SIZE) {
+    const chunk = allRows.slice(offset, offset + CHUNK_SIZE);
+    const params: any[] = [orgId];
+    const valueClauses: string[] = [];
+    for (const [productId, key] of chunk) {
+      const pIdx = params.push(productId);
+      const kIdx = params.push(key);
+      valueClauses.push(`($1, $${pIdx}, $${kIdx})`);
+    }
+    await pool.query(
+      `INSERT INTO obligations (org_id, product_id, obligation_key) VALUES ${valueClauses.join(', ')} ON CONFLICT DO NOTHING`,
+      params
+    );
+  }
+}
+
 // Computes obligation statuses inferred from existing platform data.
 // Returns: productId → obligationKey → { status, reason }
 export async function computeDerivedStatuses(
