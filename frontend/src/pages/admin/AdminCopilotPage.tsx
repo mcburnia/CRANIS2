@@ -56,7 +56,10 @@ export default function AdminCopilotPage() {
 
   const loadPrompts = async () => {
     try {
-      const res = await fetch('/api/admin/copilot-prompts');
+      const token = localStorage.getItem('session_token');
+      const res = await fetch('/api/admin/copilot-prompts', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error('Failed to load prompts');
       const data = await res.json();
       setPrompts(data.prompts);
@@ -113,9 +116,10 @@ export default function AdminCopilotPage() {
     setSaving(key);
     setError(null);
     try {
+      const token = localStorage.getItem('session_token');
       const res = await fetch(`/api/admin/copilot-prompts/${key}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(edit),
       });
       if (!res.ok) {
