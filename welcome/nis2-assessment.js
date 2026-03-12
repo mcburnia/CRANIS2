@@ -734,6 +734,7 @@ function assessmentPage() {
 </head>
 <body>
 <div class="page">
+  <a href="/conformity-assessment" style="font-size:13px;color:#6b7280;text-decoration:none;display:inline-block;margin-bottom:16px;">\u2190 All assessments</a>
   <div class="brand">CRANIS2</div>
   <h1>NIS2 Readiness Assessment</h1>
   <p class="subtitle">

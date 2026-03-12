@@ -1439,6 +1439,11 @@ function assessmentLandingPage() {
     <p style="margin-top:12px;">Your progress is saved automatically \u2014 you can pause and return at any time. We will never spam you or share your information.</p>
   </div>
 
+  <div class="info-box" style="margin-top:16px;">
+    <h3>Returning?</h3>
+    <p>If you\u2019ve already started an assessment, just select the same one again and sign in with the same email address. Your progress will be restored automatically and you\u2019ll continue from where you left off.</p>
+  </div>
+
   <div class="footer">
     <a href="/welcome">Learn more about CRANIS2</a> \u2014 EU Cybersecurity Compliance Platform
   </div>
@@ -1570,6 +1575,7 @@ function conformityAssessmentPage() {
 </head>
 <body>
 <div class="page">
+  <a href="/conformity-assessment" style="font-size:13px;color:#6b7280;text-decoration:none;display:inline-block;margin-bottom:16px;">\u2190 All assessments</a>
   <div class="brand">CRANIS2</div>
   <h1>CRA Readiness Assessment</h1>
   <p class="subtitle">
