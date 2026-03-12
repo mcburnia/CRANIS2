@@ -128,6 +128,14 @@ export async function createLedgerEntry(input: CreateLedgerEntryInput): Promise<
       console.error('[RETENTION-LEDGER] Certificate generation failed (ledger entry still valid):', certErr.message);
     }
 
+    // Backfill retention_end_date on the snapshot itself (for lifecycle enforcement)
+    if (retentionEndDate) {
+      await pool.query(
+        `UPDATE compliance_snapshots SET retention_end_date = $1 WHERE id = $2`,
+        [retentionEndDate, input.snapshotId]
+      ).catch(err => console.error('[RETENTION-LEDGER] Failed to set snapshot retention_end_date:', err.message));
+    }
+
     return ledgerId;
   } catch (err: any) {
     console.error('[RETENTION-LEDGER] Failed to create ledger entry (non-blocking):', err.message);

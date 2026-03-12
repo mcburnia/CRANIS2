@@ -177,39 +177,34 @@ Organised into implementation phases. Each phase is independently deployable.
 
 ---
 
-### Phase E — Storage lifecycle and retention controls (steps 15, 20, 23)
+### Phase E — Storage lifecycle and retention controls (steps 15, 20, 23) ✅
 
 **Goal:** Archives move through storage tiers over time. Deletion is blocked until retention expires.
 
-#### E1. Storage tier management — CODE
-- Extend `cold-storage.ts` to support storage class transitions:
-  - First 30 days: `STANDARD` (immediate access for customer downloads)
-  - After 30 days: `GLACIER` (cold storage, retrieval takes minutes-hours)
-- Scheduled task in `scheduler.ts`: daily check for archives older than 30 days, transition to Glacier
-- Add `storage_class` column to `compliance_snapshots`
+**Status:** DONE. Storage tier management simplified (uploads go directly to Glacier class via Scaleway). Retention lock, expiry monitoring, and reserve sufficiency monitoring all implemented.
 
-#### E2. Retention lock — CODE
-- Add `retention_end_date` to `compliance_snapshots` (computed from product data)
-- DELETE endpoint: block deletion if `retention_end_date` is in the future
-  - Return 409 with message explaining the retention obligation
-  - Admin override available with explicit confirmation
-- Add `legal_hold` boolean column — if true, blocks deletion regardless of retention date
+#### E1. Retention columns — DONE
+- Added `retention_end_date DATE` and `legal_hold BOOLEAN` to `compliance_snapshots`
+- `retention_end_date` backfilled automatically by `createLedgerEntry()` after ledger calculation
+- Storage tier management not needed — Scaleway uploads go directly to Glacier class
 
-#### E3. Reserve sufficiency monitoring — CODE
-- Scheduled task (monthly): for each active archive:
-  - Recalculate storage cost with current pricing
-  - Compare against funded amount
-  - If shortfall > threshold (e.g. 20%), create a top-up ledger entry
-  - Admin notification for required top-ups
-- Admin dashboard view: total reserve balance vs total obligations
+#### E2. Retention lock — DONE
+- DELETE endpoint blocks deletion if `retention_end_date` is in the future (409 response)
+- DELETE endpoint blocks deletion if `legal_hold` is true (409 response)
+- Frontend shows "Retention lock" / "Legal hold" badges (amber Lock icon)
+- Frontend delete handler shows meaningful error messages on 409
 
-#### E4. End-of-retention handling — CODE
-- Scheduled task (daily): check for archives past retention end date
-  - Verify no legal hold
-  - Mark as `retention_complete`
-  - Do NOT auto-delete — require admin approval
-  - Send notification to admin: "Archive X is eligible for deletion"
-- Admin action: approve deletion, which removes from Glacier and logs the event
+#### E3. End-of-retention handling — DONE
+- Daily scheduled task at 09:00 UTC (`checkRetentionExpiry`)
+- Finds snapshots past retention end date (not on legal hold), marks as `retention_complete`
+- Does NOT auto-delete — creates admin notification for review
+- Debounced: one notification per admin per day
+
+#### E4. Reserve sufficiency monitoring — DONE
+- Monthly scheduled task on 1st of each month at 10:00 UTC (`checkReserveSufficiency`)
+- Recalculates remaining retention cost for each `allocated` ledger entry
+- Flags shortfalls >20% with `high` severity admin notification
+- Reports total estimated shortfall in EUR
 
 ---
 

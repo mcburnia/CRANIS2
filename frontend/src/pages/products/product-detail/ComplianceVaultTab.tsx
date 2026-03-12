@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Archive, Download, Trash2, Loader2, CheckCircle, XCircle,
-  Clock, FileText, Shield, ShieldCheck, AlertTriangle, Package, CloudOff, Cloud, Stamp, Zap,
+  Clock, FileText, Shield, ShieldCheck, AlertTriangle, Package, CloudOff, Cloud, Stamp, Zap, Lock,
 } from 'lucide-react';
 
 interface Snapshot {
@@ -26,6 +26,9 @@ interface Snapshot {
   cranis2_signed: boolean;
   signature_algorithm: string | null;
   signature_key_id: string | null;
+  retention_end_date: string | null;
+  legal_hold: boolean;
+  retention_active: boolean;
   trigger_type: string | null;
   release_version: string | null;
   created_at: string;
@@ -160,6 +163,9 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
           cranis2_signed: false,
           signature_algorithm: null,
           signature_key_id: null,
+          retention_end_date: null,
+          legal_hold: false,
+          retention_active: false,
           trigger_type: null,
           release_version: null,
           created_at: new Date().toISOString(),
@@ -204,6 +210,9 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
       );
       if (res.ok) {
         setSnapshots(prev => prev.filter(s => s.id !== snapshot.id));
+      } else if (res.status === 409) {
+        const data = await res.json();
+        setError(data.message || 'Cannot delete — retention period active or legal hold in place.');
       }
     } catch {
       /* silent */
@@ -368,6 +377,15 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
                 {snapshot.cranis2_signed && (
                   <span className="cv-cold-badge cv-signed-badge" title={`Signed with ${snapshot.signature_algorithm || 'Ed25519'} (key: ${snapshot.signature_key_id || '—'})`}>
                     <ShieldCheck size={12} /> Signed
+                  </span>
+                )}
+                {(snapshot.retention_active || snapshot.legal_hold) && (
+                  <span className="cv-cold-badge cv-retention-lock-badge" title={
+                    snapshot.legal_hold
+                      ? 'Under legal hold — deletion blocked'
+                      : `Retention until ${snapshot.retention_end_date} — deletion blocked`
+                  }>
+                    <Lock size={12} /> {snapshot.legal_hold ? 'Legal hold' : 'Retention lock'}
                   </span>
                 )}
                 {snapshot.trigger_type === 'lifecycle_on_market' && (

@@ -2034,6 +2034,12 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       ON CONFLICT (key) DO NOTHING
     `);
 
+    // ── Phase E: Storage lifecycle columns on compliance_snapshots ──
+    await client.query(`
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS retention_end_date DATE;
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS legal_hold BOOLEAN DEFAULT FALSE;
+    `);
+
   } finally {
     client.release();
   }

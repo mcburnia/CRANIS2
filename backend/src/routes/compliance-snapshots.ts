@@ -160,6 +160,7 @@ router.get('/:productId/compliance-snapshots', requireAuth, async (req: Request,
               cs.rfc3161_tsa_url, cs.rfc3161_timestamp,
               cs.trigger_type, cs.release_version,
               cs.signature_algorithm, cs.signature_key_id,
+              cs.retention_end_date, cs.legal_hold,
               cs.created_at, u.email AS created_by_email
        FROM compliance_snapshots cs
        LEFT JOIN users u ON u.id = cs.created_by
@@ -172,6 +173,7 @@ router.get('/:productId/compliance-snapshots', requireAuth, async (req: Request,
       ...row,
       rfc3161_timestamped: !!row.rfc3161_timestamp,
       cranis2_signed: !!row.signature_algorithm,
+      retention_active: row.retention_end_date ? new Date(row.retention_end_date) > new Date() : false,
     }));
 
     res.json({ snapshots });
@@ -263,6 +265,7 @@ router.get('/:productId/compliance-snapshots/:snapshotId/status', requireAuth, a
               cold_storage_status, cold_storage_uploaded_at,
               rfc3161_tsa_url, rfc3161_timestamp,
               signature_algorithm, signature_key_id,
+              retention_end_date, legal_hold,
               created_at
        FROM compliance_snapshots
        WHERE id = $1 AND product_id = $2 AND org_id = $3`,
@@ -279,6 +282,7 @@ router.get('/:productId/compliance-snapshots/:snapshotId/status', requireAuth, a
       ...row,
       rfc3161_timestamped: !!row.rfc3161_timestamp,
       cranis2_signed: !!row.signature_algorithm,
+      retention_active: row.retention_end_date ? new Date(row.retention_end_date) > new Date() : false,
     });
   } catch (err: any) {
     console.error('[COMPLIANCE-SNAPSHOT] Status error:', err);
@@ -302,7 +306,7 @@ router.delete('/:productId/compliance-snapshots/:snapshotId', requireAuth, async
     if (!productName) { res.status(404).json({ error: 'Product not found' }); return; }
 
     const result = await pool.query(
-      'SELECT filename, cold_storage_status FROM compliance_snapshots WHERE id = $1 AND product_id = $2 AND org_id = $3',
+      'SELECT filename, cold_storage_status, retention_end_date, legal_hold FROM compliance_snapshots WHERE id = $1 AND product_id = $2 AND org_id = $3',
       [snapshotId, productId, orgId]
     );
 
@@ -311,7 +315,29 @@ router.delete('/:productId/compliance-snapshots/:snapshotId', requireAuth, async
       return;
     }
 
-    const { filename, cold_storage_status } = result.rows[0];
+    const { filename, cold_storage_status, retention_end_date, legal_hold } = result.rows[0];
+
+    // Block deletion if under legal hold
+    if (legal_hold) {
+      res.status(409).json({
+        error: 'Snapshot under legal hold',
+        message: 'This compliance snapshot is under legal hold and cannot be deleted. Contact a platform administrator to release the hold.',
+      });
+      return;
+    }
+
+    // Block deletion if retention period is still active
+    if (retention_end_date) {
+      const endDate = new Date(retention_end_date);
+      if (endDate > new Date()) {
+        res.status(409).json({
+          error: 'Retention period active',
+          message: `This compliance snapshot is protected under CRA Art. 13(10) retention until ${endDate.toISOString().split('T')[0]}. Deletion is not permitted while the retention period is active.`,
+          retentionEndDate: endDate.toISOString().split('T')[0],
+        });
+        return;
+      }
+    }
 
     // Delete local file (best-effort — may already be purged)
     await deleteSnapshotFile(orgId, productId, filename);

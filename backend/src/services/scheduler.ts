@@ -60,6 +60,12 @@ const SUPPORT_CHECK_HOUR = 7;
 // Hour of the day to check CRA milestone + compliance stall alerts (0-23, default: 8 AM)
 const SMART_DEADLINE_HOUR = 8;
 
+// Hour of the day to check retention expiry (0-23, default: 9 AM)
+const RETENTION_EXPIRY_HOUR = 9;
+
+// Hour of the day to run monthly reserve sufficiency check (0-23, default: 10 AM — 1st of month only)
+const RESERVE_SUFFICIENCY_HOUR = 10;
+
 let lastSyncDate = '';
 let lastVulnScanDate = '';
 let lastVulnDbSyncDate = '';
@@ -68,6 +74,8 @@ let lastEscrowDepositDate = '';
 let lastWebhookHealthDate = '';
 let lastSupportCheckDate = '';
 let lastSmartDeadlineDate = '';
+let lastRetentionExpiryDate = '';
+let lastReserveSufficiencyMonth = '';
 
 async function getProductRepoToken(productId: string, forProvider?: RepoProvider): Promise<{ token: string; userId: string; provider: RepoProvider; instanceUrl: string | null } | null> {
   // Find the user who owns this product (via org) and has a repo connection
@@ -1103,6 +1111,168 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
 }
 
 // ── Snapshot local file cleanup (24-hour expiry) ─────────────────────────
+// ── E3: Check for snapshots past retention end date ──────────────
+async function checkRetentionExpiry(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (lastRetentionExpiryDate === todayStr) return;
+
+  const now = new Date();
+  if (now.getUTCHours() < RETENTION_EXPIRY_HOUR) return;
+
+  lastRetentionExpiryDate = todayStr;
+  logger.info('[RETENTION-EXPIRY] Starting daily retention expiry check...');
+
+  try {
+    // Find snapshots where retention period has ended and status is still 'complete'
+    const result = await pool.query(
+      `SELECT cs.id, cs.product_id, cs.org_id, cs.filename, cs.retention_end_date
+       FROM compliance_snapshots cs
+       WHERE cs.retention_end_date IS NOT NULL
+         AND cs.retention_end_date < CURRENT_DATE
+         AND cs.status = 'complete'
+         AND cs.legal_hold = FALSE`
+    );
+
+    if (result.rows.length === 0) {
+      logger.info('[RETENTION-EXPIRY] No snapshots past retention end date');
+      return;
+    }
+
+    // Mark as retention_complete (do NOT auto-delete)
+    const ids = result.rows.map((r: any) => r.id);
+    await pool.query(
+      `UPDATE compliance_snapshots SET status = 'retention_complete' WHERE id = ANY($1)`,
+      [ids]
+    );
+
+    logger.info(`[RETENTION-EXPIRY] Marked ${ids.length} snapshot(s) as retention_complete`);
+
+    // Notify platform admins
+    const admins = await pool.query('SELECT id, org_id FROM users WHERE is_platform_admin = true');
+
+    for (const admin of admins.rows) {
+      // Debounce: one notification per day
+      const existing = await pool.query(
+        `SELECT id FROM notifications
+         WHERE type = 'retention_expiry' AND is_read = false
+           AND user_id = $1
+           AND created_at > NOW() - INTERVAL '24 hours'
+         LIMIT 1`,
+        [admin.id]
+      );
+      if (existing.rows.length > 0) continue;
+
+      await createNotification({
+        orgId: admin.org_id,
+        userId: admin.id,
+        type: 'retention_expiry',
+        severity: 'info',
+        title: `${ids.length} snapshot(s) past retention end date`,
+        body: `${ids.length} compliance snapshot(s) have completed their CRA Art. 13(10) retention period and are now eligible for review. No automatic deletion has been performed.`,
+        link: '/admin/retention-ledger',
+        metadata: { snapshotIds: ids, date: todayStr },
+      });
+    }
+  } catch (err: any) {
+    console.error('[RETENTION-EXPIRY] Error:', err.message);
+  }
+}
+
+// ── E4: Monthly reserve sufficiency monitoring ──────────────────
+async function checkReserveSufficiency(): Promise<void> {
+  const now = new Date();
+
+  // Only run on the 1st of the month
+  if (now.getUTCDate() !== 1) return;
+
+  const monthStr = now.toISOString().slice(0, 7); // YYYY-MM
+  if (lastReserveSufficiencyMonth === monthStr) return;
+  if (now.getUTCHours() < RESERVE_SUFFICIENCY_HOUR) return;
+
+  lastReserveSufficiencyMonth = monthStr;
+  logger.info('[RESERVE-SUFFICIENCY] Starting monthly reserve sufficiency check...');
+
+  try {
+    const { calculateRetentionCost, calculateRetentionMonths } = await import('./retention-costing.js');
+    const driver = getDriver();
+    const session = driver.session();
+
+    try {
+      // Get all active ledger entries with their current archive sizes
+      const entries = await pool.query(
+        `SELECT rl.id, rl.org_id, rl.product_id, rl.archive_size_bytes,
+                rl.funded_amount_eur, rl.retention_start_date, rl.retention_end_date
+         FROM retention_reserve_ledger rl
+         WHERE rl.status = 'allocated'`
+      );
+
+      if (entries.rows.length === 0) {
+        logger.info('[RESERVE-SUFFICIENCY] No allocated entries to check');
+        return;
+      }
+
+      let shortfalls = 0;
+      const shortfallDetails: Array<{ ledgerId: string; orgId: string; productId: string; funded: number; required: number; gap: number }> = [];
+
+      for (const entry of entries.rows) {
+        // Recalculate remaining retention months from now
+        const endDate = entry.retention_end_date;
+        if (!endDate) continue;
+
+        const end = new Date(endDate);
+        const remainingMonths = Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
+        if (remainingMonths === 0) continue;
+
+        const recalculated = calculateRetentionCost(parseInt(entry.archive_size_bytes), remainingMonths);
+        const funded = parseFloat(entry.funded_amount_eur);
+        const gap = recalculated.fundedAmount - funded;
+        const gapPercent = funded > 0 ? (gap / funded) * 100 : 100;
+
+        // Flag shortfalls >20%
+        if (gapPercent > 20) {
+          shortfalls++;
+          shortfallDetails.push({
+            ledgerId: entry.id,
+            orgId: entry.org_id,
+            productId: entry.product_id,
+            funded,
+            required: recalculated.fundedAmount,
+            gap,
+          });
+        }
+      }
+
+      if (shortfalls === 0) {
+        logger.info(`[RESERVE-SUFFICIENCY] All ${entries.rows.length} allocated entries are within 20% tolerance`);
+        return;
+      }
+
+      logger.info(`[RESERVE-SUFFICIENCY] ${shortfalls} entries have reserve shortfalls >20%`);
+
+      // Notify platform admins
+      const admins = await pool.query('SELECT id, org_id FROM users WHERE is_platform_admin = true');
+      const totalGap = shortfallDetails.reduce((sum, d) => sum + d.gap, 0);
+
+      for (const admin of admins.rows) {
+        await createNotification({
+          orgId: admin.org_id,
+          userId: admin.id,
+          type: 'reserve_shortfall',
+          severity: 'high',
+          title: `Reserve shortfall: ${shortfalls} entries underfunded`,
+          body: `Monthly reserve check found ${shortfalls} retention ledger entries where recalculated costs exceed funded amounts by >20%. Total estimated shortfall: €${totalGap.toFixed(2)}. Review in Admin → Retention Ledger.`,
+          link: '/admin/retention-ledger',
+          metadata: { shortfallCount: shortfalls, totalGap: totalGap.toFixed(2), month: monthStr },
+        });
+      }
+    } finally {
+      await session.close();
+    }
+  } catch (err: any) {
+    console.error('[RESERVE-SUFFICIENCY] Error:', err.message);
+  }
+}
+
 async function cleanupExpiredSnapshots(): Promise<void> {
   try {
     // Find snapshots older than 24 hours that are complete and still have a local file
@@ -1140,7 +1310,7 @@ async function cleanupExpiredSnapshots(): Promise<void> {
 }
 
 export function startScheduler(): void {
-  logger.info('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00');
+  logger.info('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00, retention expiry at ' + RETENTION_EXPIRY_HOUR + ':00, reserve sufficiency on 1st at ' + RESERVE_SUFFICIENCY_HOUR + ':00');
 
   // Run check periodically — all three have hour-gating and date-tracking
   setInterval(() => {
@@ -1154,5 +1324,7 @@ export function startScheduler(): void {
     checkSupportPeriodExpiry().catch(err => console.error('[SCHEDULER] Uncaught error in support period check:', err));
     checkSmartDeadlineAlerts().catch(err => console.error('[SCHEDULER] Uncaught error in smart deadline check:', err));
     cleanupExpiredSnapshots().catch(err => console.error('[SCHEDULER] Uncaught error in snapshot cleanup:', err));
+    checkRetentionExpiry().catch(err => console.error('[SCHEDULER] Uncaught error in retention expiry check:', err));
+    checkReserveSufficiency().catch(err => console.error('[SCHEDULER] Uncaught error in reserve sufficiency check:', err));
   }, CHECK_INTERVAL_MS);
 }
