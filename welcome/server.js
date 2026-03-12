@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const pg = require('pg');
+const nis2 = require('./nis2-assessment');
 
 const app = express();
 const PORT = process.env.PORT || 3004;
@@ -69,10 +70,25 @@ async function initDatabase() {
         subscribed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    // NIS2 assessments table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS nis2_assessments (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) NOT NULL,
+        answers JSONB NOT NULL DEFAULT '{}',
+        current_section INT NOT NULL DEFAULT 0,
+        scores JSONB,
+        entity_class VARCHAR(50),
+        completed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
     // Index for lookups
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_assessments_email ON cra_assessments(email)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_verification_codes_email ON cra_verification_codes(email, used)`);
-    console.log('[WELCOME] Assessment tables ready');
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_nis2_assessments_email ON nis2_assessments(email)`);
+    console.log('[WELCOME] Assessment tables ready (CRA + NIS2)');
   } finally {
     client.release();
   }
@@ -1512,7 +1528,8 @@ function conformityAssessmentPage() {
   </div>
 
   <div class="footer">
-    Powered by <a href="https://dev.cranis2.dev">CRANIS2</a> \u2014 EU Cyber Resilience Act Compliance Platform
+    Powered by <a href="https://dev.cranis2.dev/welcome">CRANIS2</a> \u2014 EU Cybersecurity Compliance Platform
+    <br><a href="https://dev.cranis2.dev/nis2-assessment">Also try our NIS2 Readiness Assessment \u2192</a>
   </div>
 </div>
 
@@ -1987,6 +2004,271 @@ function escapeHtmlJS(str) {
 </body>
 </html>`;
 }
+
+/* ── NIS2 Assessment API Endpoints ────────────────────────────────────── */
+
+// NIS2 assessment page
+app.get('/nis2-assessment', (req, res) => {
+  logAccess(req, 'nis2_assessment_tool');
+  res.send(nis2.assessmentPage());
+});
+
+// NIS2: Send verification code (reuses CRA verification codes table)
+app.post('/nis2-assessment/send-code', async (req, res) => {
+  const { email } = req.body || {};
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Please enter a valid email address.' });
+  }
+
+  if (!pool) return res.status(503).json({ error: 'Database not available.' });
+
+  try {
+    const recentCodes = await pool.query(
+      `SELECT COUNT(*) FROM cra_verification_codes
+       WHERE email = $1 AND created_at > NOW() - INTERVAL '1 hour'`,
+      [email.toLowerCase()]
+    );
+    if (parseInt(recentCodes.rows[0].count) >= 3) {
+      return res.status(429).json({ error: 'Too many verification attempts. Please try again later.' });
+    }
+
+    const code = generateCode();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await pool.query(
+      `INSERT INTO cra_verification_codes (email, code, expires_at) VALUES ($1, $2, $3)`,
+      [email.toLowerCase(), code, expiresAt]
+    );
+
+    if (!RESEND_API_KEY) {
+      console.log(`[DEV] NIS2 verification code for ${email}: ${code}`);
+      return res.json({ ok: true, dev_code: code });
+    }
+
+    const emailRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'CRANIS2 <noreply@poste.cranis2.com>',
+        to: [email],
+        subject: `Your CRANIS2 verification code: ${code}`,
+        html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:32px 20px;">
+<div style="font-size:13px;font-weight:700;color:#a855f7;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:16px;">CRANIS2</div>
+<h2 style="font-size:20px;color:#111827;margin-bottom:16px;">Your verification code</h2>
+<p style="font-size:14px;color:#4b5563;margin-bottom:24px;">Enter this code to access or resume your NIS2 Readiness Assessment:</p>
+<div style="background:#f3f4f6;border-radius:8px;padding:16px;text-align:center;font-size:32px;font-weight:700;letter-spacing:8px;color:#111827;margin-bottom:24px;">${code}</div>
+<p style="font-size:12px;color:#9ca3af;">This code expires in 10 minutes. If you didn\u2019t request this, you can safely ignore this email.</p>
+</div>`
+      })
+    });
+
+    if (!emailRes.ok) {
+      const errBody = await emailRes.text();
+      console.error('NIS2 verification email failed:', emailRes.status, errBody);
+      return res.status(502).json({ error: 'Failed to send verification email.' });
+    }
+
+    logAccess(req, 'nis2_code_sent');
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('NIS2 send code error:', err);
+    res.status(500).json({ error: 'Failed to send verification code.' });
+  }
+});
+
+// NIS2: Verify code and return/create session
+app.post('/nis2-assessment/verify', async (req, res) => {
+  const { email, code } = req.body || {};
+  if (!email || !code) {
+    return res.status(400).json({ error: 'Email and code are required.' });
+  }
+
+  if (!pool) return res.status(503).json({ error: 'Database not available.' });
+
+  try {
+    const result = await pool.query(
+      `SELECT id FROM cra_verification_codes
+       WHERE email = $1 AND code = $2 AND used = FALSE AND expires_at > NOW()
+       ORDER BY created_at DESC LIMIT 1`,
+      [email.toLowerCase(), code]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid or expired code. Please request a new one.' });
+    }
+
+    await pool.query(`UPDATE cra_verification_codes SET used = TRUE WHERE id = $1`, [result.rows[0].id]);
+
+    const existing = await pool.query(
+      `SELECT id, answers, current_section, completed_at FROM nis2_assessments
+       WHERE email = $1 ORDER BY updated_at DESC LIMIT 1`,
+      [email.toLowerCase()]
+    );
+
+    let assessment;
+    let isNewAssessment = false;
+    if (existing.rows.length > 0 && !existing.rows[0].completed_at) {
+      assessment = existing.rows[0];
+    } else {
+      const newAssessment = await pool.query(
+        `INSERT INTO nis2_assessments (email) VALUES ($1) RETURNING id, answers, current_section`,
+        [email.toLowerCase()]
+      );
+      assessment = newAssessment.rows[0];
+      isNewAssessment = true;
+    }
+
+    if (isNewAssessment && RESEND_API_KEY) {
+      fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'CRANIS2 Assessment <noreply@poste.cranis2.com>',
+          to: ['info@cranis2.com'],
+          subject: `New NIS2 assessment started \u2014 ${email.toLowerCase()}`,
+          html: `<p>A new user has started the NIS2 Readiness Assessment:</p><p><strong>${escapeHtml(email)}</strong></p><p>Assessment ID: ${assessment.id}</p><p>Time: ${new Date().toISOString()}</p>`
+        })
+      }).catch(err => console.error('NIS2 assessment notification failed:', err));
+    }
+
+    logAccess(req, 'nis2_verified');
+    res.json({
+      ok: true,
+      assessmentId: assessment.id,
+      answers: assessment.answers,
+      currentSection: assessment.current_section,
+    });
+  } catch (err) {
+    console.error('NIS2 verify code error:', err);
+    res.status(500).json({ error: 'Verification failed.' });
+  }
+});
+
+// NIS2: Save progress
+app.post('/nis2-assessment/save-progress', async (req, res) => {
+  const { assessmentId, answers, currentSection } = req.body || {};
+  if (!assessmentId) {
+    return res.status(400).json({ error: 'Assessment ID is required.' });
+  }
+
+  if (!pool) return res.status(503).json({ error: 'Database not available.' });
+
+  try {
+    await pool.query(
+      `UPDATE nis2_assessments SET answers = $1, current_section = $2, updated_at = NOW()
+       WHERE id = $3 AND completed_at IS NULL`,
+      [JSON.stringify(answers || {}), currentSection || 0, assessmentId]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('NIS2 save progress error:', err);
+    res.status(500).json({ error: 'Failed to save progress.' });
+  }
+});
+
+// NIS2: Complete assessment
+app.post('/nis2-assessment/complete', async (req, res) => {
+  const { assessmentId, answers } = req.body || {};
+  if (!assessmentId) {
+    return res.status(400).json({ error: 'Assessment ID is required.' });
+  }
+
+  if (!pool) return res.status(503).json({ error: 'Database not available.' });
+
+  try {
+    const scores = nis2.computeScores(answers || {});
+    const entityClass = nis2.determineEntityClass(answers || {});
+
+    await pool.query(
+      `UPDATE nis2_assessments
+       SET answers = $1, scores = $2, entity_class = $3, completed_at = NOW(), updated_at = NOW(),
+           current_section = $4
+       WHERE id = $5`,
+      [JSON.stringify(answers || {}), JSON.stringify(scores), entityClass, nis2.SECTIONS.length, assessmentId]
+    );
+
+    logAccess(req, 'nis2_completed');
+    res.json({ ok: true, scores, entityClass });
+  } catch (err) {
+    console.error('NIS2 complete assessment error:', err);
+    res.status(500).json({ error: 'Failed to complete assessment.' });
+  }
+});
+
+// NIS2: Send report email
+app.post('/nis2-assessment/send-report', async (req, res) => {
+  const { assessmentId, email: reportEmail } = req.body || {};
+  if (!assessmentId) {
+    return res.status(400).json({ error: 'Assessment ID is required.' });
+  }
+  if (!reportEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reportEmail)) {
+    return res.status(400).json({ error: 'Valid email address is required.' });
+  }
+
+  if (!pool) return res.status(503).json({ error: 'Database not available.' });
+  if (!RESEND_API_KEY) return res.status(503).json({ error: 'Email service not configured.' });
+
+  try {
+    const result = await pool.query(
+      `SELECT answers, scores, entity_class, email FROM nis2_assessments WHERE id = $1`,
+      [assessmentId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Assessment not found.' });
+    }
+
+    const { answers, scores, entity_class } = result.rows[0];
+    const entityDetails = nis2.getEntityDetails(entity_class);
+    const recommendations = nis2.getTopRecommendations(scores, answers);
+
+    const reportHtml = nis2.buildReportEmail(answers, scores, entity_class, entityDetails, recommendations, escapeHtml, getUnsubscribeUrl);
+
+    const emailRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'CRANIS2 <noreply@poste.cranis2.com>',
+        to: [reportEmail],
+        subject: `Your NIS2 Readiness Assessment Report \u2014 ${scores.overallPct}% Ready`,
+        html: reportHtml,
+      })
+    });
+
+    if (!emailRes.ok) {
+      const errBody = await emailRes.text();
+      console.error('NIS2 report email failed:', emailRes.status, errBody);
+      return res.status(502).json({ error: 'Failed to send report email.' });
+    }
+
+    // Lead notification
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'CRANIS2 Assessment <noreply@poste.cranis2.com>',
+        to: ['info@cranis2.com'],
+        subject: `NIS2 Assessment Completed \u2014 ${reportEmail} (${scores.overallPct}% ready, ${nis2.ENTITY_LABELS[entity_class]})`,
+        html: `<h3>NIS2 Readiness Assessment Completed</h3>
+<table style="border-collapse:collapse;font-family:sans-serif;">
+<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Email</td><td>${escapeHtml(reportEmail)}</td></tr>
+<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Readiness</td><td>${scores.overallPct}%</td></tr>
+<tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Entity Class</td><td>${nis2.ENTITY_LABELS[entity_class]}</td></tr>
+</table>
+<h4>Section Scores</h4>
+<table style="border-collapse:collapse;font-family:sans-serif;">
+${nis2.SECTIONS.map(s => `<tr><td style="padding:2px 12px 2px 0;">${s.title}</td><td>${scores.sections[s.id].pct}% (${scores.sections[s.id].level})</td></tr>`).join('\n')}
+</table>`
+      })
+    });
+
+    logAccess(req, 'nis2_report_sent');
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('NIS2 send report error:', err);
+    res.status(500).json({ error: 'Failed to send report.' });
+  }
+});
 
 /* ── Start ────────────────────────────────────────────────────────────── */
 
