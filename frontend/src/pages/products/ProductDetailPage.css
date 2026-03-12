@@ -1511,3 +1511,16 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
   background: rgba(0,0,0,0.04); padding: 0.1rem 0.3rem;
   border-radius: 3px; font-size: 0.65rem; word-break: break-all;
 }
+
+.cv-expired-badge {
+  display: flex; align-items: center; gap: 0.3rem;
+  padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 500;
+  border-radius: 5px; color: var(--muted);
+  background: rgba(0,0,0,0.04); border: 1px solid var(--border);
+}
+
+.cv-cold-badge {
+  display: inline-flex; align-items: center; gap: 0.2rem;
+  font-size: 0.7rem; color: #0ea5e9; font-weight: 500;
+}
+.cv-cold-pending { color: var(--muted); }

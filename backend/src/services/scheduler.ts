@@ -1102,6 +1102,43 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
   }
 }
 
+// ── Snapshot local file cleanup (24-hour expiry) ─────────────────────────
+async function cleanupExpiredSnapshots(): Promise<void> {
+  try {
+    // Find snapshots older than 24 hours that are complete and still have a local file
+    const result = await pool.query(
+      `SELECT id, org_id, product_id, filename
+       FROM compliance_snapshots
+       WHERE status = 'complete'
+         AND created_at < NOW() - INTERVAL '24 hours'`
+    );
+
+    if (result.rows.length === 0) return;
+
+    const { deleteSnapshotFile, getSnapshotPath } = await import('../services/compliance-snapshot.js');
+    const { stat } = await import('node:fs/promises');
+    let cleaned = 0;
+
+    for (const row of result.rows) {
+      const filepath = getSnapshotPath(row.org_id, row.product_id, row.filename);
+      try {
+        await stat(filepath);
+        // File still exists — delete it
+        await deleteSnapshotFile(row.org_id, row.product_id, row.filename);
+        cleaned++;
+      } catch {
+        // File already gone — nothing to do
+      }
+    }
+
+    if (cleaned > 0) {
+      logger.info(`[SNAPSHOT-CLEANUP] Purged ${cleaned} local snapshot file(s) older than 24 hours`);
+    }
+  } catch (err: any) {
+    console.error('[SNAPSHOT-CLEANUP] Error during cleanup:', err.message);
+  }
+}
+
 export function startScheduler(): void {
   logger.info('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00');
 
@@ -1116,5 +1153,6 @@ export function startScheduler(): void {
     runDailyWebhookHealthCheck().catch(err => console.error('[SCHEDULER] Uncaught error in webhook health:', err));
     checkSupportPeriodExpiry().catch(err => console.error('[SCHEDULER] Uncaught error in support period check:', err));
     checkSmartDeadlineAlerts().catch(err => console.error('[SCHEDULER] Uncaught error in smart deadline check:', err));
+    cleanupExpiredSnapshots().catch(err => console.error('[SCHEDULER] Uncaught error in snapshot cleanup:', err));
   }, CHECK_INTERVAL_MS);
 }

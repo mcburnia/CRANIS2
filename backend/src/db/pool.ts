@@ -1962,10 +1962,20 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
         status VARCHAR(20) NOT NULL DEFAULT 'generating',
         error_message TEXT,
         metadata JSONB,
+        cold_storage_key VARCHAR(512),
+        cold_storage_status VARCHAR(20) DEFAULT 'pending',
+        cold_storage_uploaded_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
       CREATE INDEX IF NOT EXISTS idx_cs_product ON compliance_snapshots(product_id, created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_cs_org ON compliance_snapshots(org_id, created_at DESC);
+    `);
+
+    // ── Cold storage columns (P8 #42) ──
+    await client.query(`
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS cold_storage_key VARCHAR(512);
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS cold_storage_status VARCHAR(20) DEFAULT 'pending';
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS cold_storage_uploaded_at TIMESTAMPTZ;
     `);
 
   } finally {

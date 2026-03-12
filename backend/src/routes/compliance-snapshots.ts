@@ -1,9 +1,10 @@
 /**
- * Compliance Snapshots API — P8 #40
+ * Compliance Snapshots API — P8 #40 + #42
  *
  * POST   /api/products/:productId/compliance-snapshots          — generate a new snapshot
  * GET    /api/products/:productId/compliance-snapshots          — list snapshots
  * GET    /api/products/:productId/compliance-snapshots/:id/download — download ZIP
+ * GET    /api/products/:productId/compliance-snapshots/:id/status   — poll generation status
  * DELETE /api/products/:productId/compliance-snapshots/:id      — delete snapshot
  */
 
@@ -14,6 +15,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { generateComplianceSnapshot, deleteSnapshotFile, getSnapshotPath } from '../services/compliance-snapshot.js';
+import { uploadToGlacier, deleteFromGlacier } from '../services/cold-storage.js';
 import { logProductActivity } from '../services/activity-log.js';
 
 const router = Router();
@@ -106,6 +108,10 @@ router.post('/:productId/compliance-snapshots', requireAuth, async (req: Request
         metadata: { filename: result.filename, sizeBytes: result.sizeBytes, contentHash: result.contentHash },
       }).catch(() => {});
 
+      // Upload to Glacier cold storage in background (non-blocking)
+      uploadToGlacier(orgId, productId, result.filename, result.filepath, snapshotId)
+        .catch(err => console.error('[COMPLIANCE-SNAPSHOT] Glacier upload failed:', err));
+
     } catch (err: any) {
       console.error('[COMPLIANCE-SNAPSHOT] Generation failed:', err);
       await pool.query(
@@ -136,7 +142,8 @@ router.get('/:productId/compliance-snapshots', requireAuth, async (req: Request,
 
     const result = await pool.query(
       `SELECT cs.id, cs.filename, cs.size_bytes, cs.content_hash, cs.status, cs.error_message,
-              cs.metadata, cs.created_at, u.email AS created_by_email
+              cs.metadata, cs.cold_storage_status, cs.cold_storage_uploaded_at,
+              cs.created_at, u.email AS created_by_email
        FROM compliance_snapshots cs
        LEFT JOIN users u ON u.id = cs.created_by
        WHERE cs.product_id = $1 AND cs.org_id = $2
@@ -152,7 +159,7 @@ router.get('/:productId/compliance-snapshots', requireAuth, async (req: Request,
 });
 
 // ─── GET /api/products/:productId/compliance-snapshots/:id/download ──
-// Download a snapshot ZIP
+// Download a snapshot ZIP (available for 24 hours after generation)
 router.get('/:productId/compliance-snapshots/:snapshotId/download', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const productId = req.params.productId as string;
@@ -200,7 +207,11 @@ router.get('/:productId/compliance-snapshots/:snapshotId/download', requireAuth,
       });
     } catch (err: any) {
       if (err.code === 'ENOENT') {
-        res.status(404).json({ error: 'Snapshot file not found on disk' });
+        // Local file has been purged (24-hour expiry) — archived to cold storage
+        res.status(410).json({
+          error: 'Snapshot expired',
+          message: 'This snapshot is no longer available for download. Local copies are retained for 24 hours after generation. The archive has been preserved in cold storage for audit purposes. Please generate a new snapshot if needed.',
+        });
       } else {
         throw err;
       }
@@ -225,7 +236,8 @@ router.get('/:productId/compliance-snapshots/:snapshotId/status', requireAuth, a
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
     const result = await pool.query(
-      `SELECT id, status, filename, size_bytes, content_hash, error_message, metadata, created_at
+      `SELECT id, status, filename, size_bytes, content_hash, error_message, metadata,
+              cold_storage_status, cold_storage_uploaded_at, created_at
        FROM compliance_snapshots
        WHERE id = $1 AND product_id = $2 AND org_id = $3`,
       [snapshotId, productId, orgId]
@@ -244,7 +256,7 @@ router.get('/:productId/compliance-snapshots/:snapshotId/status', requireAuth, a
 });
 
 // ─── DELETE /api/products/:productId/compliance-snapshots/:id ──
-// Delete a snapshot (record + file)
+// Delete a snapshot (record + local file + cold storage)
 router.delete('/:productId/compliance-snapshots/:snapshotId', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const userEmail = (req as any).email;
@@ -259,7 +271,7 @@ router.delete('/:productId/compliance-snapshots/:snapshotId', requireAuth, async
     if (!productName) { res.status(404).json({ error: 'Product not found' }); return; }
 
     const result = await pool.query(
-      'SELECT filename FROM compliance_snapshots WHERE id = $1 AND product_id = $2 AND org_id = $3',
+      'SELECT filename, cold_storage_status FROM compliance_snapshots WHERE id = $1 AND product_id = $2 AND org_id = $3',
       [snapshotId, productId, orgId]
     );
 
@@ -268,10 +280,16 @@ router.delete('/:productId/compliance-snapshots/:snapshotId', requireAuth, async
       return;
     }
 
-    const { filename } = result.rows[0];
+    const { filename, cold_storage_status } = result.rows[0];
 
-    // Delete file from disk
+    // Delete local file (best-effort — may already be purged)
     await deleteSnapshotFile(orgId, productId, filename);
+
+    // Delete from Glacier if uploaded
+    if (cold_storage_status === 'archived') {
+      deleteFromGlacier(orgId, productId, filename)
+        .catch(err => console.error('[COMPLIANCE-SNAPSHOT] Glacier delete failed:', err));
+    }
 
     // Delete DB record
     await pool.query('DELETE FROM compliance_snapshots WHERE id = $1', [snapshotId]);

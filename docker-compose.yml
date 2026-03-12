@@ -50,6 +50,10 @@ services:
       FORGEJO_URL: ${FORGEJO_URL}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      SCW_ACCESS_KEY: ${SCW_ACCESS_KEY}
+      SCW_SECRET_KEY: ${SCW_SECRET_KEY}
+      SCW_REGION: ${SCW_REGION}
+      SCW_BUCKET_NAME: ${SCW_BUCKET_NAME}
     volumes:
       - ./docs:/app/docs:ro
       - ./data/snapshots:/app/data/snapshots
@@ -131,6 +135,10 @@ services:
       # Placeholder keys — prevent actual AI calls during tests
       RESEND_API_KEY: "re_placeholder"
       ANTHROPIC_API_KEY: "sk-ant-placeholder"
+      SCW_ACCESS_KEY: "scw-placeholder"
+      SCW_SECRET_KEY: "scw-placeholder"
+      SCW_REGION: "fr-par"
+      SCW_BUCKET_NAME: "cranis2-test-bucket"
     volumes:
       - ./docs:/app/docs:ro
       - ./data/snapshots-test:/app/data/snapshots

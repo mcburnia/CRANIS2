@@ -2,7 +2,8 @@
  * Compliance Snapshots Route Tests — /api/products/:productId/compliance-snapshots
  *
  * Tests: authentication, cross-org isolation,
- * snapshot generation, listing, download, deletion, status polling
+ * snapshot generation, listing, download, deletion, status polling,
+ * cold storage columns, expired file handling
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -120,6 +121,14 @@ describe('/api/products/:productId/compliance-snapshots', () => {
     expect(snapshot.metadata).toHaveProperty('generatedAt');
   });
 
+  it('should include cold_storage_status in listing', async () => {
+    const res = await api.get(`/api/products/${MFG_PRODUCT}/compliance-snapshots`, { auth: mfgToken });
+    const snapshot = res.body.snapshots.find((s: any) => s.id === snapshotId);
+    expect(snapshot).toHaveProperty('cold_storage_status');
+    // In test env (placeholder credentials), cold storage upload is skipped — status stays 'pending'
+    expect(['pending', 'archived', 'failed']).toContain(snapshot.cold_storage_status);
+  });
+
   // ═══════════════════════════════════════════════════════
   // DOWNLOAD
   // ═══════════════════════════════════════════════════════
@@ -144,6 +153,50 @@ describe('/api/products/:productId/compliance-snapshots', () => {
   });
 
   // ═══════════════════════════════════════════════════════
+  // EXPIRED LOCAL FILE (410 Gone)
+  // ═══════════════════════════════════════════════════════
+
+  it('should return 410 Gone when local file has been deleted', async () => {
+    // Generate a second snapshot, then manually delete the local file
+    const genRes = await api.post(`/api/products/${MFG_PRODUCT}/compliance-snapshots`, { auth: mfgToken });
+    expect(genRes.status).toBe(202);
+    const tempId = genRes.body.id;
+
+    // Wait for generation to complete
+    let status = 'generating';
+    let attempts = 0;
+    while (status === 'generating' && attempts < 20) {
+      await new Promise(r => setTimeout(r, 500));
+      const statusRes = await api.get(
+        `/api/products/${MFG_PRODUCT}/compliance-snapshots/${tempId}/status`,
+        { auth: mfgToken }
+      );
+      status = statusRes.body.status;
+      attempts++;
+    }
+    expect(status).toBe('complete');
+
+    // Simulate the local file being purged (24-hour cleanup) by pointing
+    // the DB record at a non-existent filename
+    const pool = getAppPool();
+    await pool.query(
+      "UPDATE compliance_snapshots SET filename = 'purged-snapshot.zip' WHERE id = $1",
+      [tempId]
+    );
+
+    // Try to download — should get 410
+    const dlRes = await api.get(
+      `/api/products/${MFG_PRODUCT}/compliance-snapshots/${tempId}/download`,
+      { auth: mfgToken }
+    );
+    expect(dlRes.status).toBe(410);
+    expect(dlRes.body.error).toBe('Snapshot expired');
+
+    // Clean up
+    await pool.query('DELETE FROM compliance_snapshots WHERE id = $1', [tempId]);
+  }, 15000);
+
+  // ═══════════════════════════════════════════════════════
   // STATUS POLLING
   // ═══════════════════════════════════════════════════════
 
@@ -155,6 +208,15 @@ describe('/api/products/:productId/compliance-snapshots', () => {
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('complete');
     expect(res.body.filename).toMatch(/\.zip$/);
+  });
+
+  it('should include cold_storage_status in status response', async () => {
+    const res = await api.get(
+      `/api/products/${MFG_PRODUCT}/compliance-snapshots/${snapshotId}/status`,
+      { auth: mfgToken }
+    );
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('cold_storage_status');
   });
 
   it('should return 404 for status of non-existent snapshot', async () => {

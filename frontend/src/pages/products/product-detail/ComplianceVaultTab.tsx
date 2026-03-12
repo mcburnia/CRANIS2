@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Archive, Download, Trash2, Loader2, CheckCircle, XCircle,
-  Clock, FileText, Shield, AlertTriangle, Package,
+  Clock, FileText, Shield, AlertTriangle, Package, CloudOff, Cloud,
 } from 'lucide-react';
 
 interface Snapshot {
@@ -19,6 +19,8 @@ interface Snapshot {
     activityCount?: number;
     generatedAt?: string;
   } | null;
+  cold_storage_status: 'pending' | 'archived' | 'failed' | null;
+  cold_storage_uploaded_at: string | null;
   created_at: string;
   created_by_email: string | null;
 }
@@ -35,6 +37,12 @@ function formatDate(dateStr: string): string {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
+}
+
+function isLocalFileExpired(createdAt: string): boolean {
+  const created = new Date(createdAt).getTime();
+  const now = Date.now();
+  return now - created > 24 * 60 * 60 * 1000;
 }
 
 export default function ComplianceVaultTab({ productId }: { productId: string }) {
@@ -102,7 +110,6 @@ export default function ComplianceVaultTab({ productId }: { productId: string })
       if (res.ok || res.status === 202) {
         const data = await res.json();
         setPollingId(data.id);
-        // Add a placeholder to the list
         setSnapshots(prev => [{
           id: data.id,
           filename: 'Generating...',
@@ -111,6 +118,8 @@ export default function ComplianceVaultTab({ productId }: { productId: string })
           status: 'generating',
           error_message: null,
           metadata: null,
+          cold_storage_status: null,
+          cold_storage_uploaded_at: null,
           created_at: new Date().toISOString(),
           created_by_email: null,
         }, ...prev]);
@@ -137,6 +146,9 @@ export default function ComplianceVaultTab({ productId }: { productId: string })
       a.download = snapshot.filename;
       a.click();
       URL.revokeObjectURL(url);
+    } else if (res.status === 410) {
+      setError('This snapshot has expired locally. Generate a new snapshot if needed.');
+      fetchSnapshots();
     }
   }
 
@@ -166,6 +178,9 @@ export default function ComplianceVaultTab({ productId }: { productId: string })
     }
   };
 
+  const localExpired = (snapshot: Snapshot) =>
+    snapshot.status === 'complete' && isLocalFileExpired(snapshot.created_at);
+
   if (loading) {
     return (
       <div className="cv-loading">
@@ -185,7 +200,7 @@ export default function ComplianceVaultTab({ productId }: { productId: string })
             Generate self-contained compliance archives for audit readiness.
             Each snapshot includes your technical file, EU Declaration of Conformity,
             SBOMs, vulnerability evidence, obligation statuses, and a SHA-256 integrity manifest.
-            All human-readable documents are in Markdown; machine-readable data in JSON.
+            Downloads are available for 24 hours — archives are automatically preserved in cold storage.
           </p>
         </div>
         <button
@@ -211,6 +226,7 @@ export default function ComplianceVaultTab({ productId }: { productId: string })
         <span>
           <strong>Art. 13(10):</strong> Technical documentation and the EU declaration of conformity
           shall be retained for at least 10 years after the product is placed on the market.
+          Archives are automatically preserved in cold storage for long-term audit retention.
         </span>
       </div>
 
@@ -233,10 +249,15 @@ export default function ComplianceVaultTab({ productId }: { productId: string })
                   </span>
                 </div>
                 <div className="cv-snapshot-actions">
-                  {snapshot.status === 'complete' && (
+                  {snapshot.status === 'complete' && !localExpired(snapshot) && (
                     <button className="cv-action-btn cv-download-btn" onClick={() => handleDownload(snapshot)} title="Download">
                       <Download size={14} /> Download
                     </button>
+                  )}
+                  {snapshot.status === 'complete' && localExpired(snapshot) && (
+                    <span className="cv-expired-badge" title="Local file has expired after 24 hours. Generate a new snapshot if needed.">
+                      <CloudOff size={12} /> Download expired
+                    </span>
                   )}
                   {snapshot.status !== 'generating' && (
                     <button
@@ -255,6 +276,16 @@ export default function ComplianceVaultTab({ productId }: { productId: string })
                 <span><Clock size={12} /> {formatDate(snapshot.created_at)}</span>
                 {snapshot.size_bytes && <span>{formatBytes(snapshot.size_bytes)}</span>}
                 {snapshot.created_by_email && <span>by {snapshot.created_by_email}</span>}
+                {snapshot.cold_storage_status === 'archived' && (
+                  <span className="cv-cold-badge">
+                    <Cloud size={12} /> Archived
+                  </span>
+                )}
+                {snapshot.cold_storage_status === 'pending' && snapshot.status === 'complete' && (
+                  <span className="cv-cold-badge cv-cold-pending">
+                    <Cloud size={12} /> Archiving...
+                  </span>
+                )}
               </div>
 
               {snapshot.status === 'failed' && snapshot.error_message && (
