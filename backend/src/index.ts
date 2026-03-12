@@ -16,7 +16,7 @@ import reposOverviewRoutes from "./routes/repos-overview.js";
 import contributorsOverviewRoutes from "./routes/contributors-overview.js";
 import dependenciesOverviewRoutes from "./routes/dependencies-overview.js";
 import riskFindingsRoutes from "./routes/risk-findings.js";
-import adminRoutes from "./routes/admin.js";
+import adminRoutes from "./routes/admin/index.js";
 import notificationRoutes from "./routes/notifications.js";
 import feedbackRoutes from "./routes/feedback.js";
 import sbomExportRoutes from "./routes/sbom-export.js";
