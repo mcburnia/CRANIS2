@@ -66,6 +66,22 @@ A task is only complete when **all** of the following are true:
 ### 10. Never commit `.env`
 The `.env` file contains credentials. Never stage or commit it under any circumstances.
 
+### 11. Monitor file growth
+Before starting work that will add significant code to an existing file, check the largest files:
+
+```bash
+find backend/src/routes -name '*.ts' | xargs wc -l | sort -rn | head -20
+find frontend/src/pages -name '*.tsx' | xargs wc -l | sort -rn | head -20
+```
+
+**Thresholds:**
+- **500+ lines** — flag to the user as approaching the decomposition threshold
+- **800+ lines** — propose decomposition before adding more code
+
+**When to split:** Decompose when a file has **distinct responsibilities** (e.g. OAuth + sync + webhooks in one router). Data-driven registries and single-purpose pipelines are fine at higher line counts — size alone is not sufficient reason to split.
+
+**How to split:** Use the established pattern — sub-directory with `index.ts` composing focused sub-routers via `router.use()`, and `shared.ts` for common middleware/helpers. See `routes/github/`, `routes/technical-file/`, and `routes/admin/` for examples.
+
 ---
 
 ## Environment Notes
