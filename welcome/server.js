@@ -101,6 +101,30 @@ function verifyToken(token) {
   }
 }
 
+function makeUnsubscribeToken(email) {
+  const payload = email.toLowerCase();
+  const hmac = crypto.createHmac('sha256', WELCOME_SECRET).update('unsub:' + payload).digest('hex');
+  return Buffer.from(payload).toString('base64url') + '.' + hmac;
+}
+
+function verifyUnsubscribeToken(token) {
+  if (!token) return null;
+  try {
+    const [b64, hmac] = token.split('.');
+    const email = Buffer.from(b64, 'base64url').toString();
+    const expected = crypto.createHmac('sha256', WELCOME_SECRET).update('unsub:' + email).digest('hex');
+    if (hmac !== expected) return null;
+    return email;
+  } catch {
+    return null;
+  }
+}
+
+function getUnsubscribeUrl(email) {
+  const token = makeUnsubscribeToken(email);
+  return `https://dev.cranis2.dev/conformity-assessment/unsubscribe?token=${token}`;
+}
+
 function logAccess(req, event) {
   const entry = {
     timestamp: new Date().toISOString(),
@@ -990,9 +1014,9 @@ app.post('/conformity-assessment/subscribe', async (req, res) => {
 <p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:16px;">Thank you for your interest in CRANIS2. We\u2019ll notify you as soon as the platform is ready for launch \u2014 and not before.</p>
 <p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:24px;">In the meantime, your CRA Readiness Assessment report is available in your inbox if you haven\u2019t already received it.</p>
 <div style="background:#f9fafb;border-radius:8px;padding:16px;font-size:13px;color:#6b7280;line-height:1.6;">
-<strong style="color:#374151;">Our promise:</strong> We will only use your email address to notify you of the CRANIS2 launch. We will never spam you or share your information with anyone. You can reply to this email at any time to unsubscribe.
+<strong style="color:#374151;">Our promise:</strong> We will only use your email address to notify you of the CRANIS2 launch. We will never spam you or share your information with anyone.
 </div>
-<p style="font-size:12px;color:#9ca3af;margin-top:24px;">\u00a9 CRANIS2 ${new Date().getFullYear()}</p>
+<p style="font-size:12px;color:#9ca3af;margin-top:24px;"><a href="${getUnsubscribeUrl(email)}" style="color:#9ca3af;">Unsubscribe</a> &middot; \u00a9 CRANIS2 ${new Date().getFullYear()}</p>
 </div>`
         })
       });
@@ -1019,6 +1043,70 @@ app.post('/conformity-assessment/subscribe', async (req, res) => {
     res.status(500).json({ error: 'Failed to subscribe.' });
   }
 });
+
+// Unsubscribe from launch list
+app.get('/conformity-assessment/unsubscribe', async (req, res) => {
+  const token = req.query.token;
+  const email = verifyUnsubscribeToken(token);
+
+  if (!email) {
+    return res.status(400).send(unsubscribePage(false, 'Invalid or expired unsubscribe link.'));
+  }
+
+  if (!pool) {
+    return res.status(503).send(unsubscribePage(false, 'Service temporarily unavailable.'));
+  }
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM cra_launch_subscribers WHERE email = $1 RETURNING id`,
+      [email]
+    );
+
+    if (result.rowCount > 0) {
+      logAccess(req, 'launch_unsubscribe');
+      return res.send(unsubscribePage(true, email));
+    } else {
+      return res.send(unsubscribePage(true, email)); // Already removed — still show success
+    }
+  } catch (err) {
+    console.error('Unsubscribe error:', err);
+    return res.status(500).send(unsubscribePage(false, 'Something went wrong. Please try again.'));
+  }
+});
+
+function unsubscribePage(success, detail) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${success ? 'Unsubscribed' : 'Error'} \u2014 CRANIS2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; padding: 40px; max-width: 480px; text-align: center; }
+  .brand { font-size: 13px; font-weight: 700; color: #a855f7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+  p { font-size: 14px; color: #6b7280; line-height: 1.6; margin-bottom: 12px; }
+  .check { font-size: 48px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand">CRANIS2</div>
+  ${success
+    ? `<div class="check">\u2713</div>
+       <h1>You\u2019ve been unsubscribed</h1>
+       <p><strong>${escapeHtml(detail)}</strong> has been removed from our launch notification list.</p>
+       <p>You won\u2019t receive any further emails from us about the CRANIS2 launch. If you change your mind, you can always take the assessment again.</p>`
+    : `<h1>Something went wrong</h1>
+       <p>${escapeHtml(detail)}</p>`
+  }
+</div>
+</body>
+</html>`;
+}
 
 /* ── Report Email Builder ────────────────────────────────────────────── */
 
@@ -1147,7 +1235,7 @@ ${recommendations.length > 0 ? `
 <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;padding:28px;text-align:center;margin-bottom:20px;">
   <h2 style="font-size:18px;color:#111827;margin:0 0 8px;">CRANIS2 Is Coming Soon</h2>
   <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 16px;">We\u2019re building a platform that helps you manage every aspect of CRA compliance \u2014 from SBOM management and vulnerability scanning to technical documentation and conformity assessment tracking.</p>
-  <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0:20px;">Reply to this email if you\u2019d like to be notified when we launch. We\u2019ll only contact you about the launch \u2014 no spam, no sharing your information, ever.</p>
+  <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 20px;">Visit <a href="https://dev.cranis2.dev/conformity-assessment" style="color:#a855f7;text-decoration:none;font-weight:600;">dev.cranis2.dev/conformity-assessment</a> to join our launch notification list. We\u2019ll only contact you about the launch \u2014 no spam, no sharing your information, ever.</p>
 </div>
 
 <!-- Footer -->
