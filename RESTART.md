@@ -290,8 +290,18 @@ cd ~/CRANIS2/e2e && npm run push-results
         auth.ts            ← POST /register, POST /login, GET /verify-email, GET /me
         org.ts             ← POST /org (create org), GET /org (get org), PUT /org (update org)
         products.ts        ← Full CRUD for products (Neo4j nodes linked to Organisation)
-        github.ts          ← GitHub OAuth flow, repo sync, SBOM, versions, webhook
-        technical-file.ts  ← CRA Annex VII technical file CRUD (8 sections)
+        github/            ← GitHub/Codeberg integration (decomposed)
+          index.ts         ← Composes sub-routers
+          shared.ts        ← requireAuth middleware, in-memory token stores
+          oauth.ts         ← OAuth/PAT connection, status, disconnect
+          sync.ts          ← Repo sync, SBOM, versions, history, push events, repo data
+          webhook.ts       ← Push webhook handler (HMAC-verified)
+        technical-file/    ← CRA Annex VII technical file (decomposed)
+          index.ts         ← Composes sub-routers
+          shared.ts        ← Auth, helpers, DEFAULT_SECTIONS data
+          sections.ts      ← CRUD routes, suggestions, progress
+          doc-pdf.ts       ← EU Declaration of Conformity PDF generator
+          cvd-pdf.ts       ← CVD Policy PDF generator
         audit.ts           ← GET /audit/events (paginated audit log)
         dashboard.ts       ← GET /dashboard (aggregate stats with vulnerability data)
         stakeholders.ts    ← GET/PUT stakeholders (org + product CRA contacts)
@@ -301,7 +311,9 @@ cd ~/CRANIS2/e2e && npm run push-results
         contributors-overview.ts ← GET /contributors/overview
         dependencies-overview.ts ← GET /dependencies/overview (+ license analysis)
         risk-findings.ts   ← Vulnerability scanning + findings CRUD (5 endpoints)
-        admin.ts           ← Platform admin endpoints (dashboard, orgs, users, invite, audit, system, vuln-scan, vuln-db)
+        admin/             ← Platform admin endpoints (decomposed into 8 modules)
+          index.ts         ← Composes sub-routers
+          dashboard.ts, orgs.ts, users.ts, audit-log.ts, system.ts, vuln-scan.ts, copilot.ts, utils.ts
         docs.ts            ← Public + admin documentation page CRUD
         dev.ts             ← Dev-only routes (nuke button — MUST REMOVE BEFORE PRODUCTION)
 marketplace.ts     ← Marketplace endpoints (listings, profile, contact, admin)

@@ -63,10 +63,12 @@ P6 — Compliance Document Library — ALL DONE
 36	Auto-populated templates	Medium	DONE
 37	Full template library (7 templates)	High	DONE
 
-P7 - Andi's good catches — 1/2 DONE
+P7 - Andi's good catches — 2/3 DONE
 #	Feature	Effort	Status
 38	AI CoPilot Prompt Engineering Topic Focus	High	PHASE 2 DONE
 39	Automation wizards	Unknown	TODO
+40	Codebase modularity refactor	Medium	DONE
+41  Update the welcome page, the user documentation and the FAQ pages to reflect all implemented capabilities.
 
 Cross-cutting (done)
 -	Pro plan billing (Standard €6/contributor, Pro €9/product + €6/contributor)	DONE
@@ -92,9 +94,11 @@ Cross-cutting (done)
 **P6:** ALL DONE (document template library)
 **Bugs:** 3/3 ALL DONE
 
+**P7:** 2/3 DONE (#38 AI copilot prompts, #40 codebase modularity) — #39 automation wizards TODO
+
 **Immediate next:**
-- P7 #38 Phase 3 — Industry awareness, structured output options, EPSS/reachability
 - P7 #39 — Automation wizards (batch fill, post-scan triage, onboarding wizard)
+- P7 #41 — Update welcome page, user docs, and FAQ to reflect all capabilities
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
 
