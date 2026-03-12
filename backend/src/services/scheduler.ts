@@ -23,7 +23,7 @@ import { sendScanFailedEmail, sendComplianceGapEmail, sendDeadlineAlertEmail, se
 import { scanProductLicenses } from './license-scanner.js';
 import { createSnapshot } from './ip-proof.js';
 import { createDeadlineCard, createComplianceStallCard, resolveCardsByPrefix } from './trello.js';
-import { extractPackageInfo } from '../routes/github.js';
+import { extractPackageInfo } from './repo-helpers.js';
 import { checkTrialExpiry, checkPaymentGrace } from './billing.js';
 import { ensureWebhook } from './webhook.js';
 import { runAllEscrowDeposits } from './escrow-service.js';
