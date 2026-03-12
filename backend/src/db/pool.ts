@@ -1999,6 +1999,41 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS signature_key_id VARCHAR(16);
     `);
 
+    // ── Retention reserve ledger (P8 Phase D) ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS retention_reserve_ledger (
+        id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id                VARCHAR(255) NOT NULL,
+        product_id            UUID NOT NULL,
+        snapshot_id           UUID NOT NULL REFERENCES compliance_snapshots(id) ON DELETE CASCADE,
+        archive_hash          VARCHAR(64) NOT NULL,
+        archive_size_bytes    BIGINT NOT NULL,
+        estimated_cost_eur    DECIMAL(10,4) NOT NULL,
+        funded_amount_eur     DECIMAL(10,2) NOT NULL,
+        costing_model_version VARCHAR(30) NOT NULL,
+        retention_start_date  DATE,
+        retention_end_date    DATE,
+        wise_transaction_ref  VARCHAR(100),
+        certificate_hash      VARCHAR(64),
+        status                VARCHAR(20) NOT NULL DEFAULT 'allocated',
+        notes                 TEXT,
+        created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_retention_ledger_org ON retention_reserve_ledger(org_id);
+      CREATE INDEX IF NOT EXISTS idx_retention_ledger_product ON retention_reserve_ledger(product_id);
+      CREATE INDEX IF NOT EXISTS idx_retention_ledger_snapshot ON retention_reserve_ledger(snapshot_id);
+    `);
+
+    // Seed retention costing model in platform_settings
+    await client.query(`
+      INSERT INTO platform_settings (key, value) VALUES
+        ('retention.costing_model_version', '"2026-03-v1"'::jsonb),
+        ('retention.buffer_multiplier', '2.0'::jsonb),
+        ('retention.glacier_rate_per_gb_month', '0.00254'::jsonb)
+      ON CONFLICT (key) DO NOTHING
+    `);
+
   } finally {
     client.release();
   }

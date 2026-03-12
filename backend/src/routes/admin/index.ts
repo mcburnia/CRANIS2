@@ -6,6 +6,7 @@ import auditLogRoutes from './audit-log.js';
 import systemRoutes from './system.js';
 import vulnScanRoutes from './vuln-scan.js';
 import copilotRoutes from './copilot.js';
+import retentionLedgerRoutes from './retention-ledger.js';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use(auditLogRoutes);
 router.use(systemRoutes);
 router.use(vulnScanRoutes);
 router.use(copilotRoutes);
+router.use(retentionLedgerRoutes);
 
 export default router;

@@ -17,6 +17,7 @@ import { verifySessionToken } from '../utils/token.js';
 import { generateComplianceSnapshot, deleteSnapshotFile, getSnapshotPath } from '../services/compliance-snapshot.js';
 import { uploadToGlacier, deleteFromGlacier } from '../services/cold-storage.js';
 import { logProductActivity } from '../services/activity-log.js';
+import { createLedgerEntry } from '../services/retention-ledger.js';
 
 const router = Router();
 
@@ -115,6 +116,15 @@ router.post('/:productId/compliance-snapshots', requireAuth, async (req: Request
       // Upload to Glacier cold storage in background (non-blocking)
       uploadToGlacier(orgId, productId, result.filename, result.filepath, snapshotId)
         .catch(err => console.error('[COMPLIANCE-SNAPSHOT] Glacier upload failed:', err));
+
+      // Create retention reserve ledger entry + funding certificate (non-blocking)
+      createLedgerEntry({
+        orgId, productId, snapshotId,
+        archiveHash: result.contentHash,
+        archiveSizeBytes: result.sizeBytes,
+        releaseVersion: null,
+        coldStorageKey: `${orgId}/${productId}/${result.filename}`,
+      }).catch(err => console.error('[COMPLIANCE-SNAPSHOT] Ledger entry failed:', err));
 
     } catch (err: any) {
       console.error('[COMPLIANCE-SNAPSHOT] Generation failed:', err);

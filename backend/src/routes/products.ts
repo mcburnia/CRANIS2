@@ -10,6 +10,7 @@ import { cleanupProductEscrow } from '../services/escrow-service.js';
 import { generateCycloneDX } from '../services/sbom-service.js';
 import { generateComplianceSnapshot } from '../services/compliance-snapshot.js';
 import { uploadToGlacier } from '../services/cold-storage.js';
+import { createLedgerEntry } from '../services/retention-ledger.js';
 
 const router = Router();
 
@@ -672,6 +673,15 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
           // Upload to cold storage
           uploadToGlacier(orgId, productId, result.filename, result.filepath, snapshotId)
             .catch(err => console.error('[PRODUCT] Glacier upload failed:', err));
+
+          // Create retention reserve ledger entry + funding certificate
+          createLedgerEntry({
+            orgId, productId, snapshotId,
+            archiveHash: result.contentHash,
+            archiveSizeBytes: result.sizeBytes,
+            releaseVersion,
+            coldStorageKey: `${orgId}/${productId}/${result.filename}`,
+          }).catch(err => console.error('[PRODUCT] Ledger entry failed:', err));
 
           console.log(`[PRODUCT] Auto-generated evidence vault snapshot for product ${productId} on market placement`);
         } catch (err: any) {
