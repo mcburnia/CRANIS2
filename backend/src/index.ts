@@ -6,7 +6,7 @@ import authRoutes from './routes/auth.js';
 import orgRoutes from './routes/org.js';
 import auditRoutes from './routes/audit.js';
 import productRoutes from './routes/products.js';
-import githubRoutes from './routes/github.js';
+import githubRoutes from './routes/github/index.js';
 import technicalFileRoutes from './routes/technical-file.js';
 import dashboardRoutes from './routes/dashboard.js';
 import stakeholderRoutes from './routes/stakeholders.js';
