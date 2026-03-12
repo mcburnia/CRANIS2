@@ -103,12 +103,12 @@ Cross-cutting (done)
 
 ---
 
-## P8 — 10-Year Compliance Vault (Art. 13(10)) — 2/5 DONE
+## P8 — 10-Year Compliance Vault (Art. 13(10)) — 3/5 DONE
 
 | # | Feature | Effort | Status |
 |---|---------|--------|--------|
 | 40 | Compliance snapshot generator | Medium | DONE |
-| 41 | RFC 3161 qualified timestamping | Low | TODO |
+| 41 | RFC 3161 qualified timestamping | Low | DONE |
 | 42 | Scaleway Glacier cold storage | Medium | DONE |
 | 43 | Automated snapshot scheduling | Low | TODO |
 | 44 | Retention dashboard | Low | TODO |

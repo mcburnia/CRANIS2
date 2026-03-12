@@ -94,10 +94,12 @@ router.post('/:productId/compliance-snapshots', requireAuth, async (req: Request
       await pool.query(
         `UPDATE compliance_snapshots
          SET filename = $1, size_bytes = $2, content_hash = $3, status = 'complete', metadata = $4,
-             rfc3161_token = $6, rfc3161_tsa_url = $7, rfc3161_timestamp = CASE WHEN $6 IS NOT NULL THEN NOW() ELSE NULL END
+             rfc3161_token = $6, rfc3161_tsa_url = $7, rfc3161_timestamp = CASE WHEN $6 IS NOT NULL THEN NOW() ELSE NULL END,
+             signature = $8, signature_algorithm = $9, signature_key_id = $10
          WHERE id = $5`,
         [result.filename, result.sizeBytes, result.contentHash, JSON.stringify(result.metadata), snapshotId,
-         result.rfc3161Token, result.rfc3161TsaUrl]
+         result.rfc3161Token, result.rfc3161TsaUrl,
+         result.signature, result.signatureAlgorithm, result.signatureKeyId]
       );
 
       // Activity log
@@ -106,8 +108,8 @@ router.post('/:productId/compliance-snapshots', requireAuth, async (req: Request
         action: 'compliance_snapshot_generated',
         entityType: 'compliance_snapshot',
         entityId: snapshotId,
-        summary: `Generated compliance snapshot (${(result.sizeBytes / 1024).toFixed(0)} KB)${result.rfc3161Token ? ' — RFC 3161 timestamped' : ''}`,
-        metadata: { filename: result.filename, sizeBytes: result.sizeBytes, contentHash: result.contentHash, rfc3161: !!result.rfc3161Token },
+        summary: `Generated compliance snapshot (${(result.sizeBytes / 1024).toFixed(0)} KB)${result.rfc3161Token ? ' — RFC 3161 timestamped' : ''}${result.signature ? ' — CRANIS2 signed' : ''}`,
+        metadata: { filename: result.filename, sizeBytes: result.sizeBytes, contentHash: result.contentHash, rfc3161: !!result.rfc3161Token, signed: !!result.signature },
       }).catch(() => {});
 
       // Upload to Glacier cold storage in background (non-blocking)
@@ -147,6 +149,7 @@ router.get('/:productId/compliance-snapshots', requireAuth, async (req: Request,
               cs.metadata, cs.cold_storage_status, cs.cold_storage_uploaded_at,
               cs.rfc3161_tsa_url, cs.rfc3161_timestamp,
               cs.trigger_type, cs.release_version,
+              cs.signature_algorithm, cs.signature_key_id,
               cs.created_at, u.email AS created_by_email
        FROM compliance_snapshots cs
        LEFT JOIN users u ON u.id = cs.created_by
@@ -158,6 +161,7 @@ router.get('/:productId/compliance-snapshots', requireAuth, async (req: Request,
     const snapshots = result.rows.map(row => ({
       ...row,
       rfc3161_timestamped: !!row.rfc3161_timestamp,
+      cranis2_signed: !!row.signature_algorithm,
     }));
 
     res.json({ snapshots });
@@ -248,6 +252,7 @@ router.get('/:productId/compliance-snapshots/:snapshotId/status', requireAuth, a
       `SELECT id, status, filename, size_bytes, content_hash, error_message, metadata,
               cold_storage_status, cold_storage_uploaded_at,
               rfc3161_tsa_url, rfc3161_timestamp,
+              signature_algorithm, signature_key_id,
               created_at
        FROM compliance_snapshots
        WHERE id = $1 AND product_id = $2 AND org_id = $3`,
@@ -263,6 +268,7 @@ router.get('/:productId/compliance-snapshots/:snapshotId/status', requireAuth, a
     res.json({
       ...row,
       rfc3161_timestamped: !!row.rfc3161_timestamp,
+      cranis2_signed: !!row.signature_algorithm,
     });
   } catch (err: any) {
     console.error('[COMPLIANCE-SNAPSHOT] Status error:', err);

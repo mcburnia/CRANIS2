@@ -16,6 +16,7 @@ import { getDriver } from '../db/neo4j.js';
 import { generateCycloneDX } from './sbom-service.js';
 import { OBLIGATIONS, computeDerivedStatuses } from './obligation-engine.js';
 import { requestTimestamp, getTsaUrl } from './rfc3161.js';
+import { signDocument } from './signing.js';
 
 // ── Snapshot storage root ──
 const SNAPSHOT_ROOT = join(process.cwd(), 'data', 'snapshots');
@@ -35,6 +36,9 @@ interface SnapshotResult {
   metadata: Record<string, any>;
   rfc3161Token: Buffer | null;
   rfc3161TsaUrl: string | null;
+  signature: Buffer | null;
+  signatureAlgorithm: string | null;
+  signatureKeyId: string | null;
 }
 
 // ── Helper: SHA-256 of a string ──
@@ -624,6 +628,22 @@ Get-Content MANIFEST.sha256 | ForEach-Object {
 To verify the archive hash, compute the SHA-256 of the ZIP file itself and compare
 against the \`content_hash\` stored in the compliance snapshot record.
 
+## Signature Verification
+
+If a \`.sig\` file accompanies this archive, it is an Ed25519 signature issued by CRANIS2.
+To verify:
+
+\`\`\`bash
+# Download the CRANIS2 public key:
+curl -o cranis2-signing-key.pem https://dev.cranis2.dev/.well-known/cranis2-signing-key.pem
+
+# Verify the signature:
+openssl pkeyutl -verify -pubin -inkey cranis2-signing-key.pem \\
+  -sigfile archive.sig -rawin -in archive.zip
+\`\`\`
+
+This proves the archive was issued by CRANIS2 and has not been modified since signing.
+
 ---
 
 ## Legal Basis
@@ -838,6 +858,27 @@ export async function generateComplianceSnapshot(
     // Continue without timestamp — the archive is still valid
   }
 
+  // Ed25519 signature of the archive
+  let signature: Buffer | null = null;
+  let signatureAlgorithm: string | null = null;
+  let signatureKeyId: string | null = null;
+  try {
+    const sigResult = signDocument(zipBuffer);
+    if (sigResult) {
+      signature = sigResult.signature;
+      signatureAlgorithm = sigResult.algorithm;
+      signatureKeyId = sigResult.keyId;
+
+      // Save the .sig file alongside the ZIP
+      const sigPath = filepath.replace(/\.zip$/, '.sig');
+      await writeFile(sigPath, signature);
+
+      console.log(`[COMPLIANCE-SNAPSHOT] Ed25519 signature saved: ${sigPath} (${signature.length} bytes, key: ${signatureKeyId})`);
+    }
+  } catch (err: any) {
+    console.error('[COMPLIANCE-SNAPSHOT] Signing failed (non-blocking):', err.message);
+  }
+
   return {
     id: snapshotId,
     filename,
@@ -847,6 +888,9 @@ export async function generateComplianceSnapshot(
     metadata,
     rfc3161Token,
     rfc3161TsaUrl,
+    signature,
+    signatureAlgorithm,
+    signatureKeyId,
   };
 }
 

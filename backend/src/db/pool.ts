@@ -1992,6 +1992,13 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS rfc3161_timestamp TIMESTAMPTZ;
     `);
 
+    // ── Document signing columns (P8 Phase C) ──
+    await client.query(`
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS signature BYTEA;
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS signature_algorithm VARCHAR(20);
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS signature_key_id VARCHAR(16);
+    `);
+
   } finally {
     client.release();
   }

@@ -54,6 +54,7 @@ services:
       SCW_SECRET_KEY: ${SCW_SECRET_KEY}
       SCW_REGION: ${SCW_REGION}
       SCW_BUCKET_NAME: ${SCW_BUCKET_NAME}
+      CRANIS2_SIGNING_KEY: ${CRANIS2_SIGNING_KEY}
     volumes:
       - ./docs:/app/docs:ro
       - ./data/snapshots:/app/data/snapshots

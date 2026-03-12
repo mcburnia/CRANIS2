@@ -47,6 +47,7 @@ import complianceSnapshotRoutes from "./routes/compliance-snapshots.js";
 import { startScheduler } from './services/scheduler.js';
 import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
+import { getPublicKeyPem } from './services/signing.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -124,6 +125,18 @@ app.use('/api/products', complianceSnapshotRoutes);
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
+});
+
+// CRANIS2 document signing public key (for independent verification of signed archives)
+app.get('/.well-known/cranis2-signing-key.pem', (_req, res) => {
+  const pem = getPublicKeyPem();
+  if (!pem) {
+    res.status(404).json({ error: 'Signing key not configured' });
+    return;
+  }
+  res.setHeader('Content-Type', 'application/x-pem-file');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.send(pem);
 });
 
 // Start server

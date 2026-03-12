@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Archive, Download, Trash2, Loader2, CheckCircle, XCircle,
-  Clock, FileText, Shield, AlertTriangle, Package, CloudOff, Cloud, Stamp, Zap,
+  Clock, FileText, Shield, ShieldCheck, AlertTriangle, Package, CloudOff, Cloud, Stamp, Zap,
 } from 'lucide-react';
 
 interface Snapshot {
@@ -23,6 +23,9 @@ interface Snapshot {
   cold_storage_uploaded_at: string | null;
   rfc3161_timestamped: boolean;
   rfc3161_timestamp: string | null;
+  cranis2_signed: boolean;
+  signature_algorithm: string | null;
+  signature_key_id: string | null;
   trigger_type: string | null;
   release_version: string | null;
   created_at: string;
@@ -154,6 +157,9 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
           cold_storage_uploaded_at: null,
           rfc3161_timestamped: false,
           rfc3161_timestamp: null,
+          cranis2_signed: false,
+          signature_algorithm: null,
+          signature_key_id: null,
           trigger_type: null,
           release_version: null,
           created_at: new Date().toISOString(),
@@ -357,6 +363,11 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
                 {snapshot.rfc3161_timestamped && (
                   <span className="cv-cold-badge cv-rfc3161-badge">
                     <Stamp size={12} /> RFC 3161
+                  </span>
+                )}
+                {snapshot.cranis2_signed && (
+                  <span className="cv-cold-badge cv-signed-badge" title={`Signed with ${snapshot.signature_algorithm || 'Ed25519'} (key: ${snapshot.signature_key_id || '—'})`}>
+                    <ShieldCheck size={12} /> Signed
                   </span>
                 )}
                 {snapshot.trigger_type === 'lifecycle_on_market' && (
