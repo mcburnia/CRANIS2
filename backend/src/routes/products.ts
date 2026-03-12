@@ -651,9 +651,11 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
 
           await pool.query(
             `UPDATE compliance_snapshots
-             SET filename = $1, size_bytes = $2, content_hash = $3, status = 'complete', metadata = $4
+             SET filename = $1, size_bytes = $2, content_hash = $3, status = 'complete', metadata = $4,
+                 rfc3161_token = $6, rfc3161_tsa_url = $7, rfc3161_timestamp = CASE WHEN $6 IS NOT NULL THEN NOW() ELSE NULL END
              WHERE id = $5`,
-            [result.filename, result.sizeBytes, result.contentHash, JSON.stringify(result.metadata), snapshotId]
+            [result.filename, result.sizeBytes, result.contentHash, JSON.stringify(result.metadata), snapshotId,
+             result.rfc3161Token, result.rfc3161TsaUrl]
           );
 
           logProductActivity({

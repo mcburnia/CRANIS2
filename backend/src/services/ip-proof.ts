@@ -3,6 +3,7 @@ import neo4j from 'neo4j-driver';
 import crypto from 'crypto';
 import AdmZip from 'adm-zip';
 import { createNotification } from './notifications.js';
+import { requestTimestamp as rfc3161RequestTimestamp, validateTimestampToken, getTsaUrl } from './rfc3161.js';
 
 const neo4jDriver = neo4j.driver(
   process.env.NEO4J_URI || 'bolt://neo4j:7687',
@@ -84,104 +85,7 @@ async function buildCanonicalSnapshot(productId: string): Promise<{
   };
 }
 
-/**
- * Build an RFC 3161 TimeStampReq in DER format using raw ASN.1 encoding.
- * This avoids complex PKI.js dependency issues with ESM/CJS.
- *
- * Structure: SEQUENCE {
- *   version INTEGER (1),
- *   messageImprint SEQUENCE {
- *     hashAlgorithm AlgorithmIdentifier { OID sha256 },
- *     hashedMessage OCTET STRING
- *   },
- *   certReq BOOLEAN TRUE
- * }
- */
-function buildTimestampRequest(hash: Buffer): Buffer {
-  // SHA-256 OID: 2.16.840.1.101.3.4.2.1
-  const sha256Oid = Buffer.from([
-    0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01
-  ]);
-
-  // AlgorithmIdentifier: SEQUENCE { OID, NULL }
-  const algIdContent = Buffer.concat([sha256Oid, Buffer.from([0x05, 0x00])]);
-  const algId = wrapDer(0x30, algIdContent);
-
-  // hashedMessage: OCTET STRING
-  const hashedMessage = wrapDer(0x04, hash);
-
-  // messageImprint: SEQUENCE { algId, hashedMessage }
-  const messageImprint = wrapDer(0x30, Buffer.concat([algId, hashedMessage]));
-
-  // version: INTEGER 1
-  const version = Buffer.from([0x02, 0x01, 0x01]);
-
-  // certReq: BOOLEAN TRUE (context-specific, implicit)
-  const certReq = Buffer.from([0x01, 0x01, 0xff]);
-
-  // TimeStampReq: SEQUENCE { version, messageImprint, certReq }
-  return wrapDer(0x30, Buffer.concat([version, messageImprint, certReq]));
-}
-
-/**
- * Wrap data in a DER TLV (Tag-Length-Value) structure
- */
-function wrapDer(tag: number, content: Buffer): Buffer {
-  const len = content.length;
-  let header: Buffer;
-
-  if (len < 128) {
-    header = Buffer.from([tag, len]);
-  } else if (len < 256) {
-    header = Buffer.from([tag, 0x81, len]);
-  } else if (len < 65536) {
-    header = Buffer.from([tag, 0x82, (len >> 8) & 0xff, len & 0xff]);
-  } else {
-    header = Buffer.from([tag, 0x83, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff]);
-  }
-
-  return Buffer.concat([header, content]);
-}
-
-/**
- * Submit a hash to an RFC 3161 TSA and get a signed timestamp token.
- */
-async function requestTimestamp(contentHash: string, tsaUrl: string): Promise<Buffer> {
-  const hashBuffer = Buffer.from(contentHash, 'hex');
-  const tsReq = buildTimestampRequest(hashBuffer);
-
-  const response = await fetch(tsaUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/timestamp-query',
-    },
-    body: new Uint8Array(tsReq),
-  });
-
-  if (!response.ok) {
-    throw new Error(`TSA returned ${response.status}: ${response.statusText}`);
-  }
-
-  const contentType = response.headers.get('content-type');
-  if (!contentType?.includes('application/timestamp-reply')) {
-    console.warn(`[IP Proof] TSA returned unexpected content-type: ${contentType}`);
-  }
-
-  const arrayBuffer = await response.arrayBuffer();
-  const tsResp = Buffer.from(arrayBuffer);
-
-  if (tsResp.length < 10) {
-    throw new Error('TSA returned empty or invalid response');
-  }
-
-  // Basic validation: DER SEQUENCE tag should be 0x30
-  if (tsResp[0] !== 0x30) {
-    throw new Error(`TSA response is not valid DER (first byte: 0x${tsResp[0].toString(16)})`);
-  }
-
-  console.log(`[IP Proof] RFC 3161 timestamp received: ${tsResp.length} bytes from ${tsaUrl}`);
-  return tsResp;
-}
+// RFC 3161 functions now imported from shared services/rfc3161.ts
 
 /**
  * Create a timestamped snapshot of a product's SBOM state.
@@ -193,7 +97,7 @@ export async function createSnapshot(
   userId: string | null,
   snapshotType: 'sync' | 'release' | 'manual' = 'manual'
 ): Promise<{ snapshotId: string; contentHash: string }> {
-  const tsaUrl = 'https://freetsa.org/tsr';
+  const tsaUrl = getTsaUrl();
 
   // Build canonical snapshot
   const { canonical, summary } = await buildCanonicalSnapshot(productId);
@@ -204,7 +108,7 @@ export async function createSnapshot(
   // Request RFC 3161 timestamp
   let rfc3161Token: Buffer | null = null;
   try {
-    rfc3161Token = await requestTimestamp(contentHash, tsaUrl);
+    rfc3161Token = await rfc3161RequestTimestamp(contentHash, tsaUrl);
   } catch (err) {
     console.error(`[IP Proof] Failed to get RFC 3161 timestamp:`, err);
     // Continue without timestamp — we still store the hash
@@ -256,18 +160,8 @@ export async function verifySnapshot(snapshotId: string): Promise<{
   try {
     const tokenBuffer = Buffer.from(rfc3161_token);
 
-    // Basic DER structure validation
-    if (tokenBuffer[0] !== 0x30) {
-      throw new Error('Invalid DER structure');
-    }
-
-    // Check that the content hash appears in the token
-    const hashHex = content_hash.toLowerCase();
-    const tokenHex = tokenBuffer.toString('hex').toLowerCase();
-    const hashBytes = Buffer.from(hashHex, 'hex').toString('hex');
-
-    if (!tokenHex.includes(hashBytes)) {
-      throw new Error('Content hash not found in timestamp token');
+    if (!validateTimestampToken(tokenBuffer, content_hash)) {
+      throw new Error('Timestamp token validation failed — invalid structure or hash mismatch');
     }
 
     // Token is structurally valid and contains our hash

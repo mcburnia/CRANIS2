@@ -15,6 +15,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { generateCycloneDX } from './sbom-service.js';
 import { OBLIGATIONS, computeDerivedStatuses } from './obligation-engine.js';
+import { requestTimestamp, getTsaUrl } from './rfc3161.js';
 
 // ── Snapshot storage root ──
 const SNAPSHOT_ROOT = join(process.cwd(), 'data', 'snapshots');
@@ -32,6 +33,8 @@ interface SnapshotResult {
   sizeBytes: number;
   contentHash: string;
   metadata: Record<string, any>;
+  rfc3161Token: Buffer | null;
+  rfc3161TsaUrl: string | null;
 }
 
 // ── Helper: SHA-256 of a string ──
@@ -818,6 +821,23 @@ export async function generateComplianceSnapshot(
   const zipBuffer = await readFile(filepath);
   const contentHash = createHash('sha256').update(zipBuffer).digest('hex');
 
+  // RFC 3161 timestamp of the archive hash
+  let rfc3161Token: Buffer | null = null;
+  let rfc3161TsaUrl: string | null = null;
+  try {
+    rfc3161TsaUrl = getTsaUrl();
+    rfc3161Token = await requestTimestamp(contentHash, rfc3161TsaUrl);
+
+    // Save the .tsr file alongside the ZIP
+    const tsrPath = filepath.replace(/\.zip$/, '.tsr');
+    await writeFile(tsrPath, rfc3161Token);
+
+    console.log(`[COMPLIANCE-SNAPSHOT] RFC 3161 timestamp saved: ${tsrPath} (${rfc3161Token.length} bytes)`);
+  } catch (err: any) {
+    console.error('[COMPLIANCE-SNAPSHOT] RFC 3161 timestamp failed (non-blocking):', err.message);
+    // Continue without timestamp — the archive is still valid
+  }
+
   return {
     id: snapshotId,
     filename,
@@ -825,6 +845,8 @@ export async function generateComplianceSnapshot(
     sizeBytes,
     contentHash,
     metadata,
+    rfc3161Token,
+    rfc3161TsaUrl,
   };
 }
 

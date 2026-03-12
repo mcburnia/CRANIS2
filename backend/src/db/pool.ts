@@ -1985,6 +1985,13 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS trigger_type VARCHAR(30) DEFAULT 'manual';
     `);
 
+    // ── RFC 3161 timestamping columns (P8 Phase B) ──
+    await client.query(`
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS rfc3161_token BYTEA;
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS rfc3161_tsa_url VARCHAR(255);
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS rfc3161_timestamp TIMESTAMPTZ;
+    `);
+
   } finally {
     client.release();
   }

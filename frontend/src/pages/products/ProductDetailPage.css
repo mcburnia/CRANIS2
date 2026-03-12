@@ -1536,3 +1536,5 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
   font-size: 0.7rem; color: #0ea5e9; font-weight: 500;
 }
 .cv-cold-pending { color: var(--muted); }
+.cv-rfc3161-badge { color: #8b5cf6 !important; }
+.cv-trigger-badge { color: #f59e0b !important; }

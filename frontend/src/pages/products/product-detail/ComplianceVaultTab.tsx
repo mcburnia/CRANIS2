@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Archive, Download, Trash2, Loader2, CheckCircle, XCircle,
-  Clock, FileText, Shield, AlertTriangle, Package, CloudOff, Cloud,
+  Clock, FileText, Shield, AlertTriangle, Package, CloudOff, Cloud, Stamp, Zap,
 } from 'lucide-react';
 
 interface Snapshot {
@@ -21,6 +21,10 @@ interface Snapshot {
   } | null;
   cold_storage_status: 'pending' | 'archived' | 'failed' | null;
   cold_storage_uploaded_at: string | null;
+  rfc3161_timestamped: boolean;
+  rfc3161_timestamp: string | null;
+  trigger_type: string | null;
+  release_version: string | null;
   created_at: string;
   created_by_email: string | null;
 }
@@ -148,6 +152,10 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
           metadata: null,
           cold_storage_status: null,
           cold_storage_uploaded_at: null,
+          rfc3161_timestamped: false,
+          rfc3161_timestamp: null,
+          trigger_type: null,
+          release_version: null,
           created_at: new Date().toISOString(),
           created_by_email: null,
         }, ...prev]);
@@ -345,6 +353,19 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
                   <span className="cv-cold-badge cv-cold-pending">
                     <Cloud size={12} /> Archiving...
                   </span>
+                )}
+                {snapshot.rfc3161_timestamped && (
+                  <span className="cv-cold-badge cv-rfc3161-badge">
+                    <Stamp size={12} /> RFC 3161
+                  </span>
+                )}
+                {snapshot.trigger_type === 'lifecycle_on_market' && (
+                  <span className="cv-cold-badge cv-trigger-badge">
+                    <Zap size={12} /> Market release
+                  </span>
+                )}
+                {snapshot.release_version && (
+                  <span className="cv-cold-badge">v{snapshot.release_version}</span>
                 )}
               </div>
 
