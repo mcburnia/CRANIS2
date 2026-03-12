@@ -76,6 +76,7 @@ Expected containers:
 | cranis2_postgres | postgres:16-alpine | 5433 → 5432 | Application database (users, auth, GitHub connections) |
 | cranis2_neo4j | neo4j:5-community | 7475 → 7474, 7688 → 7687 | Graph database (organisations, products, contributors, dependencies) |
 | cranis2_forgejo | codeberg.org/forgejo/forgejo:10 | 3003 → 3000 | Source code escrow (EU-hosted, Forgejo git server) |
+| cranis2_welcome | cranis2-welcome | 3004 → 3004 | Welcome site + public assessment tools (Express) |
 | cranis2_test_runner (optional) | cranis2_test-runner | none | Morning regression harness container |
 
 If containers are down, start them:
@@ -167,15 +168,24 @@ tail -20 ~/cranis2/logs/nightly-tests-$(date '+%Y-%m-%d').log
 
 ### Manual Backend Tests (1147+ tests — runs on server)
 
+**CRITICAL: Always use the isolated test stack, never the dev stack.**
+
 ```bash
-cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://localhost:3001 npx vitest run --config vitest.config.ts
+# One-command workflow (start test stack → run tests → stop test stack):
+./scripts/test-stack.sh run
+
+# Or manually:
+./scripts/test-stack.sh start
+cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://localhost:3011 TEST_NEO4J_URI=bolt://localhost:7699 npx vitest run --config vitest.config.ts
+./scripts/test-stack.sh stop
 ```
 
 - `globalSetup` seeds data once + cleans stale rate-limit/billing rows
-- Tests target localhost:3001 (not Cloudflare — avoids rate limits)
+- Tests target localhost:3011 (isolated test stack — NOT port 3001)
 - Single Cloudflare smoke test in `integration/cloudflare-tunnel.test.ts`
 - Deterministic test IDs for idempotent seeding
-- Expected result: **1147+ passed, 0 failed** (67 test files, ~480s)
+- Expected result: **1147+ passed, 16 expected infra-dependent failures** (67 test files, ~480s)
+- Expected failures: tier3-import-scanning (13, needs Forgejo), webhook-e2e B5/B6 (2, needs Forgejo), category-recommendation (1, needs Anthropic API)
 
 ### Playwright E2E Tests (~280 tests — runs locally on Mac)
 
@@ -266,6 +276,11 @@ cd ~/CRANIS2/e2e && npm run push-results
   scripts/
     usb-storage-init.sh
     usb-storage-sync-artifacts.sh
+  welcome/                 ← Welcome site + public assessment tools (Express, port 3004)
+    server.js              ← Express server: landing, contact form, CRA assessment, shared subscribe/unsubscribe
+    nis2-assessment.js     ← NIS2 Readiness Assessment module (25 questions, entity classification, scoring)
+    public/index.html      ← Welcome/landing page HTML
+    Dockerfile             ← Node.js container for welcome site
   public/                  ← Original HTML prototypes (reference only)
   backend/                 ← Express API service
     Dockerfile             ← Multi-stage build (builder for TS compile, production for runtime)
@@ -1062,7 +1077,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-06 (session 25)
+**Last updated:** 2026-03-12 (session 39)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -1173,7 +1188,7 @@ sudo systemctl restart cloudflared
 - Compose project naming mismatch can leave temporary `docker-*` orphan containers; cleanup and naming standardisation is tracked as technical debt in `docs/Stories-and-spikes.csv` (CRN-14)
 
 **Session 15 (2026-03-04):**
-- **welcome.cranis2.dev** — Password-protected standalone site serving the Strategy & Ecosystem content for external stakeholders. Express app on port 3004, HMAC-signed cookie auth (24h expiry), access logging (IP, geo via Cloudflare headers, user agent). Docker service with 64M memory limit, Cloudflare Tunnel route. Credentials via env vars.
+- **Welcome site** — Standalone Express app on port 3004 serving public-facing content. Originally password-protected for Strategy & Ecosystem content; later evolved into the public welcome page with contact form, CRA and NIS2 conformity assessments, and launch list subscription (sessions 38–39). Docker service, Cloudflare Tunnel route via nginx proxy.
 - **Full prioritised backlog** — `memory/BACKLOG.md` created with 14 items across P0–P3 including AI Copilot and MCP API as future features.
 - **Email alerts for critical compliance events (P0 #1)** — New `backend/src/services/alert-emails.ts` with 5 alert types: vulnerability found (critical/high), scan failed, SBOM stale, compliance gaps (>10%), CRA deadline approaching (12h/1h thresholds). Recipients resolved from stakeholders table by role_key at product + org levels, deduplicated. 24-hour deduplication via notifications metadata. Non-blocking (fire-and-forget). Wired into vulnerability-scanner.ts (sendScanNotifications), scheduler.ts (autoSyncProduct error, compliance gap, CRA deadline), github.ts (webhook stale handler). 12 new tests. **Total: 943 backend tests passing.**
 - **Technical file N+1 query fix** — `ensureSections()` was running 8 individual INSERT queries per product sequentially (2,209 test products × 8 = 17,672 round trips). Refactored to chunked multi-row INSERT (100 products per chunk). Added `idx_technical_file_sections_product` index on `product_id`. Response time: 15s+ timeout → ~2s. Fixed the only flaky test in the suite.
@@ -1277,8 +1292,26 @@ sudo systemctl restart cloudflared
 - **Flaky risk-findings test fix** — Changed status filter test from `?status=resolved` (single fragile finding) to `?status=open` (multiple robust findings), eliminating cross-file state pollution.
 - **Nightly test Trello notification** — Created "Test Results" Trello board with Passed/Failed lists. Updated nightly script to post a card after each run with pass/fail status, test counts, timing, and failed test names. Non-blocking (Trello failure doesn't break the script).
 
+**Session 37 (2026-03-11):**
+- **CoPilot prompt management (P7 #38 Phase 1)** — Quality standard document (`docs/copilot-quality-standard.md`) with 7 rules (Q1–Q7) for CRA-grounded AI output. `copilot_prompts` table seeded with 32 prompts: 1 foundation quality standard, 4 capability prompts (suggest, vulnerability_triage, risk_assessment, incident_report_draft), 8 section guidance prompts (section:*), 19 obligation guidance prompts (obligation:*). 3-layer architecture: quality standard preamble → regulatory context (section/obligation) → capability prompt. Admin UI at `/admin/copilot` with editable textareas, model/token/temperature controls. `GET/PUT /api/admin/copilot-prompts/:promptKey`. 5-minute in-memory cache with DB fallback.
+- **Section + obligation prompt enrichment (P7 #38 Phase 2)** — `getGuidanceText()` loads section/obligation guidance from `copilot_prompts` table (5-min cache), injected into `generateSuggestion()` and obligation evidence generation. Section prompts provide Annex VII-specific CRA references. Obligation prompts provide per-article regulatory guidance. Full prompt inventory documented in `docs/prompts.md`.
+- **Batch DB query optimisation** — Eliminated N+1 patterns causing 18 test timeouts. Batched obligation and stakeholder INSERT queries with 500-row chunking.
+- **Isolated test infrastructure** — 5-layer safety architecture: separate containers (`backend_test` port 3011, `neo4j_test` port 7699), separate Postgres DB (`cranis2_test`), backend startup guards (verify DB URLs match `CRANIS2_TEST_MODE`), test-side guards (verify `cranis2_test` connection), port separation (no overlap possible). `test-stack.sh` script for start/stop/run. Docker Compose `test` profile.
+- **Copilot cache bug fix** — Fixed cache returning same response for all obligations (was hashing only product context, not obligation key).
+- **Admin copilot auth fix** — Fixed missing auth headers on admin copilot page API calls.
+
+**Session 38 (2026-03-11):**
+- **CRA Conformity Assessment (P9 #47)** — Full public CRA readiness assessment tool at `/cra-conformity-assessment`. 12 CRA-specific questions across 4 sections (Product Scope, Security Requirements, Conformity & Documentation, Vulnerability Management). Email verification flow (6-digit codes via Resend), assessment progress saved to Postgres (`assessments` table), results with per-section maturity scoring and recommendations. Emailed PDF-style HTML reports with progress bars. Lead notifications to `info@cranis2.com`. HMAC-signed unsubscribe tokens. Welcome site Express container on port 3004.
+- **Launch list subscription** — Subscribe/unsubscribe system for assessment users. `assessment_subscribers` table. HMAC-signed unsubscribe links in all assessment emails. Shared endpoints at `/conformity-assessment/subscribe` and `/conformity-assessment/unsubscribe`.
+- **Container memory optimisation** — Retuned container memory allocations for 16 GiB server with welcome site added.
+
+**Session 39 (2026-03-12):**
+- **Welcome page made public** — Removed authentication from `/` and `/contact` routes. Replaced "Sign Out" link with "Free CRA Assessment" link. Added welcome page URL to assessment report emails.
+- **NIS2 Readiness Assessment** — Full 25-question NIS2 readiness assessment at `/nis2-conformity-assessment`. 7 sections (Applicability, Governance, Risk Management, Incident Reporting, Supply Chain, Business Continuity, Technical Measures). Entity classification (essential_critical/essential/important/not_in_scope) based on sector + size. Supervision regime details (proactive/reactive), penalty levels (€10M/2% vs €7M/1.4%), per-section maturity scoring, top recommendations. Email verification + progress saving + emailed reports. Extracted to `welcome/nis2-assessment.js` module (~1250 lines). Cross-links to CRA assessment. `nis2_assessments` Postgres table.
+- **Assessment landing page** — `/conformity-assessment` serves a landing page with cards for both CRA and NIS2 assessments. URL reorganisation: CRA moved to `/cra-conformity-assessment`, NIS2 at `/nis2-conformity-assessment`. Shared subscribe/unsubscribe endpoints kept at original paths for backward compatibility with already-sent emails.
+- **Navigation improvements** — "Returning?" info box on landing page explaining progress restoration. "← All assessments" back link on both assessment pages.
+
 **Next Steps:**
-- P7 #38 — AI CoPilot prompt engineering topic focus
 - P7 #39 — Automation wizards
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
