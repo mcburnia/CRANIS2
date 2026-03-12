@@ -52,6 +52,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     volumes:
       - ./docs:/app/docs:ro
+      - ./data/snapshots:/app/data/snapshots
     deploy:
       resources:
         limits:
@@ -132,6 +133,7 @@ services:
       ANTHROPIC_API_KEY: "sk-ant-placeholder"
     volumes:
       - ./docs:/app/docs:ro
+      - ./data/snapshots-test:/app/data/snapshots
     deploy:
       resources:
         limits:

@@ -6,3 +6,5 @@ backend/node_modules/
 backend/dist/
 backend/tests/node_modules/
 .mcp.json
+data/snapshots/
+logs/

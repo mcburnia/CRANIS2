@@ -1949,6 +1949,25 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       );
     `);
 
+    // ── Compliance Snapshots (P8 — 10-Year Compliance Vault) ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS compliance_snapshots (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id UUID NOT NULL,
+        product_id VARCHAR(255) NOT NULL,
+        created_by UUID REFERENCES users(id),
+        filename VARCHAR(255) NOT NULL,
+        size_bytes INT,
+        content_hash VARCHAR(64),
+        status VARCHAR(20) NOT NULL DEFAULT 'generating',
+        error_message TEXT,
+        metadata JSONB,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_cs_product ON compliance_snapshots(product_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_cs_org ON compliance_snapshots(org_id, created_at DESC);
+    `);
+
   } finally {
     client.release();
   }

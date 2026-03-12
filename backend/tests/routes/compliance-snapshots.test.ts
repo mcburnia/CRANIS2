@@ -1,0 +1,213 @@
+/**
+ * Compliance Snapshots Route Tests — /api/products/:productId/compliance-snapshots
+ *
+ * Tests: authentication, Pro plan gating, cross-org isolation,
+ * snapshot generation, listing, download, deletion, status polling
+ */
+
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { api, loginTestUser, getAppPool, TEST_USERS } from '../setup/test-helpers.js';
+import { TEST_IDS } from '../setup/seed-test-data.js';
+
+const MFG_PRODUCT = TEST_IDS.products.github;
+const IMP_PRODUCT = TEST_IDS.products.impGithub;
+
+let mfgToken: string;
+let impToken: string;
+
+describe('/api/products/:productId/compliance-snapshots', () => {
+  beforeAll(async () => {
+    mfgToken = await loginTestUser(TEST_USERS.mfgAdmin);
+    impToken = await loginTestUser(TEST_USERS.impAdmin);
+
+    // Upgrade mfgActive to Pro (compliance snapshots require Pro)
+    const pool = getAppPool();
+    await pool.query("UPDATE org_billing SET plan = 'pro' WHERE org_id = $1", [TEST_IDS.orgs.mfgActive]);
+  });
+
+  afterAll(async () => {
+    // Restore billing plan + clean up test snapshots
+    const pool = getAppPool();
+    await pool.query("UPDATE org_billing SET plan = 'standard' WHERE org_id = $1", [TEST_IDS.orgs.mfgActive]);
+    await pool.query("DELETE FROM compliance_snapshots WHERE product_id = $1", [MFG_PRODUCT]);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // AUTH
+  // ═══════════════════════════════════════════════════════
+
+  it('should reject unauthenticated GET request', async () => {
+    const res = await api.get(`/api/products/${MFG_PRODUCT}/compliance-snapshots`);
+    expect(res.status).toBe(401);
+  });
+
+  it('should reject unauthenticated POST request', async () => {
+    const res = await api.post(`/api/products/${MFG_PRODUCT}/compliance-snapshots`);
+    expect(res.status).toBe(401);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // PRO PLAN GATING
+  // ═══════════════════════════════════════════════════════
+
+  it('should reject POST from standard-plan org', async () => {
+    // impTrial is on standard plan
+    const res = await api.post(`/api/products/${IMP_PRODUCT}/compliance-snapshots`, { auth: impToken });
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe('feature_requires_plan');
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // CROSS-ORG ISOLATION
+  // ═══════════════════════════════════════════════════════
+
+  it('should return 404 for product belonging to another org (GET)', async () => {
+    const res = await api.get(`/api/products/${IMP_PRODUCT}/compliance-snapshots`, { auth: mfgToken });
+    expect(res.status).toBe(404);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // LISTING (empty state)
+  // ═══════════════════════════════════════════════════════
+
+  it('should return empty snapshots list initially', async () => {
+    const res = await api.get(`/api/products/${MFG_PRODUCT}/compliance-snapshots`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('snapshots');
+    expect(Array.isArray(res.body.snapshots)).toBe(true);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // SNAPSHOT GENERATION
+  // ═══════════════════════════════════════════════════════
+
+  let snapshotId: string;
+
+  it('should accept POST and return 202 with snapshot ID', async () => {
+    const res = await api.post(`/api/products/${MFG_PRODUCT}/compliance-snapshots`, { auth: mfgToken });
+    expect(res.status).toBe(202);
+    expect(res.body).toHaveProperty('id');
+    expect(res.body).toHaveProperty('status');
+    expect(res.body.status).toBe('generating');
+    snapshotId = res.body.id;
+  });
+
+  it('should complete generation within 10 seconds', async () => {
+    // Poll until complete or timeout
+    let status = 'generating';
+    let attempts = 0;
+    while (status === 'generating' && attempts < 20) {
+      await new Promise(r => setTimeout(r, 500));
+      const res = await api.get(
+        `/api/products/${MFG_PRODUCT}/compliance-snapshots/${snapshotId}/status`,
+        { auth: mfgToken }
+      );
+      expect(res.status).toBe(200);
+      status = res.body.status;
+      attempts++;
+    }
+    expect(status).toBe('complete');
+  }, 15000);
+
+  // ═══════════════════════════════════════════════════════
+  // LISTING (with data)
+  // ═══════════════════════════════════════════════════════
+
+  it('should list the generated snapshot', async () => {
+    const res = await api.get(`/api/products/${MFG_PRODUCT}/compliance-snapshots`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    expect(res.body.snapshots.length).toBeGreaterThanOrEqual(1);
+
+    const snapshot = res.body.snapshots.find((s: any) => s.id === snapshotId);
+    expect(snapshot).toBeDefined();
+    expect(snapshot.status).toBe('complete');
+    expect(snapshot.filename).toMatch(/\.zip$/);
+    expect(snapshot.size_bytes).toBeGreaterThan(0);
+    expect(snapshot.content_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(snapshot.metadata).toBeDefined();
+  });
+
+  it('snapshot metadata should contain expected summary fields', async () => {
+    const res = await api.get(`/api/products/${MFG_PRODUCT}/compliance-snapshots`, { auth: mfgToken });
+    const snapshot = res.body.snapshots.find((s: any) => s.id === snapshotId);
+    expect(snapshot.metadata).toHaveProperty('techFile');
+    expect(snapshot.metadata).toHaveProperty('obligations');
+    expect(snapshot.metadata).toHaveProperty('vulns');
+    expect(snapshot.metadata).toHaveProperty('generatedAt');
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // DOWNLOAD
+  // ═══════════════════════════════════════════════════════
+
+  it('should download the snapshot ZIP', async () => {
+    const res = await api.get(
+      `/api/products/${MFG_PRODUCT}/compliance-snapshots/${snapshotId}/download`,
+      { auth: mfgToken }
+    );
+    expect(res.status).toBe(200);
+    expect(res.raw.headers.get('content-type')).toBe('application/zip');
+    expect(res.raw.headers.get('content-disposition')).toMatch(/attachment.*\.zip/);
+  });
+
+  it('should return 404 for download of non-existent snapshot', async () => {
+    const fakeId = 'f0000000-0000-0000-0000-000000000099';
+    const res = await api.get(
+      `/api/products/${MFG_PRODUCT}/compliance-snapshots/${fakeId}/download`,
+      { auth: mfgToken }
+    );
+    expect(res.status).toBe(404);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // STATUS POLLING
+  // ═══════════════════════════════════════════════════════
+
+  it('should return status for a completed snapshot', async () => {
+    const res = await api.get(
+      `/api/products/${MFG_PRODUCT}/compliance-snapshots/${snapshotId}/status`,
+      { auth: mfgToken }
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('complete');
+    expect(res.body.filename).toMatch(/\.zip$/);
+  });
+
+  it('should return 404 for status of non-existent snapshot', async () => {
+    const fakeId = 'f0000000-0000-0000-0000-000000000099';
+    const res = await api.get(
+      `/api/products/${MFG_PRODUCT}/compliance-snapshots/${fakeId}/status`,
+      { auth: mfgToken }
+    );
+    expect(res.status).toBe(404);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // DELETE
+  // ═══════════════════════════════════════════════════════
+
+  it('should delete a snapshot', async () => {
+    const res = await api.delete(
+      `/api/products/${MFG_PRODUCT}/compliance-snapshots/${snapshotId}`,
+      { auth: mfgToken }
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  it('should no longer list the deleted snapshot', async () => {
+    const res = await api.get(`/api/products/${MFG_PRODUCT}/compliance-snapshots`, { auth: mfgToken });
+    expect(res.status).toBe(200);
+    const found = res.body.snapshots.find((s: any) => s.id === snapshotId);
+    expect(found).toBeUndefined();
+  });
+
+  it('should return 404 when deleting non-existent snapshot', async () => {
+    const fakeId = 'f0000000-0000-0000-0000-000000000099';
+    const res = await api.delete(
+      `/api/products/${MFG_PRODUCT}/compliance-snapshots/${fakeId}`,
+      { auth: mfgToken }
+    );
+    expect(res.status).toBe(404);
+  });
+});

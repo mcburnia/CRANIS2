@@ -43,6 +43,7 @@ import grcBridgeRoutes from "./routes/grc-bridge.js";
 import publicApiV1Routes from "./routes/public-api-v1.js";
 import documentTemplatesRoutes from "./routes/document-templates.js";
 import { publicConformityRouter, productConformityRouter } from "./routes/conformity-assessment.js";
+import complianceSnapshotRoutes from "./routes/compliance-snapshots.js";
 import { startScheduler } from './services/scheduler.js';
 import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
@@ -118,6 +119,7 @@ app.use('/api/v1', publicApiV1Routes);
 app.use('/api/document-templates', documentTemplatesRoutes);
 app.use('/api/conformity-assessment', publicConformityRouter);
 app.use('/api/products', productConformityRouter);
+app.use('/api/products', complianceSnapshotRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

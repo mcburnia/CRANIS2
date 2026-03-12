@@ -6,6 +6,7 @@ import PageHeader from '../../components/PageHeader';
 import HelpTip from '../../components/HelpTip';
 import CategoryRecommenderModal from '../../components/CategoryRecommenderModal';
 import SupplyChainTab from '../../components/SupplyChainTab';
+import ComplianceVaultTab from './product-detail/ComplianceVaultTab';
 import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, RefreshCw, Loader2, Download, Archive, Sparkles,
@@ -40,6 +41,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Package }[] = [
   { key: 'risk-findings', label: 'Risk Findings', icon: AlertTriangle },
   { key: 'dependencies', label: 'Dependencies', icon: GitBranch },
   { key: 'supply-chain', label: 'Supply Chain', icon: Package },
+  { key: 'compliance-vault', label: 'Compliance Vault', icon: Archive },
 ];
 
 export default function ProductDetailPage() {
@@ -649,6 +651,7 @@ export default function ProductDetailPage() {
         {activeTab === 'risk-findings' && <RiskFindingsTab productId={product.id} />}
         {activeTab === 'dependencies' && <DependenciesTab ghData={ghData} sbomData={sbomData} sbomLoading={sbomLoading} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onRefreshSBOM={handleRefreshSBOM} repoProvider={currentProvider} isProviderConnected={isProviderConnected} />}
         {activeTab === 'supply-chain' && <SupplyChainTab productId={product.id} />}
+        {activeTab === 'compliance-vault' && <ComplianceVaultTab productId={product.id} />}
       </div>
 
       {/* Delete Product Modal */}

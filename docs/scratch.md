@@ -161,7 +161,8 @@ At scale (100 customers, 5 products each = 500 products): **~€1,890 total over
 
 **#40 — Compliance snapshot generator** (Medium effort)
 - Backend service that assembles a complete compliance archive ZIP for a product
-- Includes: technical file (all 8 sections as PDF + JSON), EU DoC PDF, all SBOM versions (SPDX JSON + CycloneDX JSON), vulnerability scan history JSON, obligation evidence JSON with status history, activity log JSON
+- Includes: technical file (all 8 sections as Markdown + JSON), EU DoC as Markdown, all SBOM versions (SPDX JSON + CycloneDX JSON), vulnerability scan history JSON, obligation evidence JSON with status history, activity log JSON
+- Format policy: Markdown for human-readable documents, JSON for machine-readable data — no PDF generation
 - SHA-256 manifest file listing every file + hash
 - Self-contained: includes a README explaining the archive structure and how to verify integrity without CRANIS2
 - API endpoint: `POST /api/products/:id/compliance-snapshot`
@@ -232,8 +233,8 @@ At scale (100 customers, 5 products each = 500 products): **~€1,890 total over
 - One-click "Export Everything" generates a complete data package:
   - All historical compliance snapshots (ZIP + RFC 3161 timestamp tokens)
   - Current live data export (products, SBOMs, obligations, vulnerabilities, activity log) in JSON + CSV
-  - EU Declarations of Conformity as PDFs
-  - Technical file content as structured JSON + human-readable PDFs
+  - EU Declarations of Conformity as Markdown
+  - Technical file content as structured JSON + human-readable Markdown
   - Verification guide explaining how to independently verify timestamp tokens
 - No export fees, no degraded formats, no artificial delays
 - Available throughout the grace period and at any time during active subscription
@@ -253,8 +254,26 @@ At scale (100 customers, 5 products each = 500 products): **~€1,890 total over
 - No "call to cancel" — cancellation is self-service in account settings
 - No downgrade-to-retain dark patterns
 - No withholding of data behind premium tiers
-- No format lock-in — all exports use open standards (JSON, CSV, PDF, SPDX, CycloneDX)
+- No format lock-in — all exports use open standards (JSON, CSV, Markdown, SPDX, CycloneDX)
 - Exit package is the same whether on Standard or Pro plan
+
+---
+
+## Backlog
+
+**#45 — Replace PDF generation with Markdown across the platform** (Medium effort)
+- Replace all 6 pdfkit-based PDF generators with Markdown output
+- Affected files:
+  - `backend/src/routes/product-reports.ts` — product compliance report
+  - `backend/src/routes/reports.ts` — general reports
+  - `backend/src/routes/technical-file/cvd-pdf.ts` — CVD policy PDF
+  - `backend/src/routes/technical-file/doc-pdf.ts` — EU DoC PDF
+  - `backend/src/routes/supplier-due-diligence.ts` — due diligence report
+  - `backend/src/services/due-diligence.ts` — due diligence export
+- Benefits: lighter files, version-controllable, future-proof, no pdfkit dependency
+- Can remove `pdfkit` from package.json once complete
+- Update frontend download links to serve `.md` files instead of `.pdf`
+- Update tests accordingly
 
 ### Status: BACKLOG — ready to scope when prioritised
 ### Dependencies: None — can be built independently of other P8 items
