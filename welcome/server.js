@@ -737,7 +737,7 @@ app.post('/contact', async (req, res) => {
 /* ── Conformity Assessment API Endpoints ─────────────────────────────── */
 
 // Send verification code
-app.post('/conformity-assessment/send-code', async (req, res) => {
+app.post('/cra-conformity-assessment/send-code', async (req, res) => {
   const { email } = req.body || {};
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: 'Please enter a valid email address.' });
@@ -801,7 +801,7 @@ app.post('/conformity-assessment/send-code', async (req, res) => {
 });
 
 // Verify code and return/create session
-app.post('/conformity-assessment/verify', async (req, res) => {
+app.post('/cra-conformity-assessment/verify', async (req, res) => {
   const { email, code } = req.body || {};
   if (!email || !code) {
     return res.status(400).json({ error: 'Email and code are required.' });
@@ -872,7 +872,7 @@ app.post('/conformity-assessment/verify', async (req, res) => {
 });
 
 // Save progress
-app.post('/conformity-assessment/save-progress', async (req, res) => {
+app.post('/cra-conformity-assessment/save-progress', async (req, res) => {
   const { assessmentId, answers, currentSection } = req.body || {};
   if (!assessmentId) {
     return res.status(400).json({ error: 'Assessment ID is required.' });
@@ -894,7 +894,7 @@ app.post('/conformity-assessment/save-progress', async (req, res) => {
 });
 
 // Complete assessment
-app.post('/conformity-assessment/complete', async (req, res) => {
+app.post('/cra-conformity-assessment/complete', async (req, res) => {
   const { assessmentId, answers } = req.body || {};
   if (!assessmentId) {
     return res.status(400).json({ error: 'Assessment ID is required.' });
@@ -923,7 +923,7 @@ app.post('/conformity-assessment/complete', async (req, res) => {
 });
 
 // Send report email
-app.post('/conformity-assessment/send-report', async (req, res) => {
+app.post('/cra-conformity-assessment/send-report', async (req, res) => {
   const { assessmentId, email: reportEmail } = req.body || {};
   if (!assessmentId) {
     return res.status(400).json({ error: 'Assessment ID is required.' });
@@ -1266,10 +1266,15 @@ ${recommendations.length > 0 ? `
 </html>`;
 }
 
-/* ── Conformity Assessment Page ──────────────────────────────────────── */
+/* ── Assessment Landing Page ──────────────────────────────────────────── */
 
 app.get('/conformity-assessment', (req, res) => {
-  logAccess(req, 'conformity_assessment_tool');
+  logAccess(req, 'assessment_landing');
+  res.send(assessmentLandingPage());
+});
+
+app.get('/cra-conformity-assessment', (req, res) => {
+  logAccess(req, 'cra_assessment_tool');
   res.send(conformityAssessmentPage());
 });
 
@@ -1352,6 +1357,95 @@ function loginPage(error) {
 }
 
 /* ── Conformity Assessment Questionnaire Page ────────────────────────── */
+
+function assessmentLandingPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Compliance Assessments \u2014 CRANIS2</title>
+<meta name="description" content="Free EU cybersecurity compliance assessments. Check your readiness for the Cyber Resilience Act (CRA) and the Network and Information Security Directive 2 (NIS2).">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; min-height: 100vh; }
+  .page { max-width: 720px; margin: 0 auto; padding: 48px 20px 80px; }
+  .brand { font-size: 13px; font-weight: 700; color: #a855f7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+  h1 { font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 8px; line-height: 1.3; }
+  .subtitle { font-size: 15px; color: #6b7280; margin-bottom: 36px; line-height: 1.7; max-width: 600px; }
+  .cards { display: grid; gap: 20px; }
+  .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; padding: 32px; transition: border-color 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }
+  .card:hover { border-color: #a855f7; box-shadow: 0 4px 12px rgba(168,85,247,0.1); text-decoration: none; }
+  .card-tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 4px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .card-tag.cra { background: #f5f3ff; color: #7c3aed; }
+  .card-tag.nis2 { background: #eff6ff; color: #2563eb; }
+  .card h2 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+  .card p { font-size: 14px; color: #6b7280; line-height: 1.6; margin-bottom: 16px; }
+  .card-meta { display: flex; gap: 20px; font-size: 12px; color: #9ca3af; }
+  .card-meta span { display: flex; align-items: center; gap: 4px; }
+  .card-arrow { float: right; font-size: 20px; color: #a855f7; margin-top: -28px; }
+  .info-box { background: white; border-radius: 12px; border: 1px solid #e5e7eb; padding: 24px; margin-top: 32px; }
+  .info-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .info-box p { font-size: 13px; color: #6b7280; line-height: 1.6; }
+  .info-box ul { font-size: 13px; color: #6b7280; line-height: 1.8; padding-left: 20px; margin-top: 8px; }
+  .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #9ca3af; }
+  .footer a { color: #a855f7; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="brand">CRANIS2</div>
+  <h1>Free Compliance Assessments</h1>
+  <p class="subtitle">
+    Two major EU cybersecurity regulations are reshaping how organisations build and operate digital products and services.
+    Our free assessments help you understand where you stand and what you need to do next.
+  </p>
+
+  <div class="cards">
+    <a href="/cra-conformity-assessment" class="card">
+      <span class="card-tag cra">Product Compliance</span>
+      <h2>CRA Readiness Assessment</h2>
+      <p>For manufacturers and developers of products with digital elements. Determine your product\u2019s risk category, required conformity assessment module, and get a personalised maturity report covering vulnerability management, SBOMs, security by design, and technical documentation.</p>
+      <div class="card-meta">
+        <span>\u23F1 ~10 minutes</span>
+        <span>\u2709 22 questions</span>
+        <span>\u2728 6 areas assessed</span>
+      </div>
+      <div class="card-arrow">\u2192</div>
+    </a>
+
+    <a href="/nis2-conformity-assessment" class="card">
+      <span class="card-tag nis2">Organisation Compliance</span>
+      <h2>NIS2 Readiness Assessment</h2>
+      <p>For organisations in essential and important sectors. Determine your entity classification, supervision regime, and penalty exposure. Get a maturity assessment covering governance, risk management, incident reporting, supply chain security, business continuity, and technical measures.</p>
+      <div class="card-meta">
+        <span>\u23F1 ~12 minutes</span>
+        <span>\u2709 25 questions</span>
+        <span>\u2728 7 areas assessed</span>
+      </div>
+      <div class="card-arrow">\u2192</div>
+    </a>
+  </div>
+
+  <div class="info-box">
+    <h3>What you get</h3>
+    <p>Both assessments are completely free and provide:</p>
+    <ul>
+      <li>A personalised readiness score with per-area maturity breakdown</li>
+      <li>Classification of your product (CRA) or organisation (NIS2) under the regulation</li>
+      <li>Priority recommendations with specific next steps and regulatory references</li>
+      <li>A detailed report emailed to you that you can share with your team</li>
+    </ul>
+    <p style="margin-top:12px;">Your progress is saved automatically \u2014 you can pause and return at any time. We will never spam you or share your information.</p>
+  </div>
+
+  <div class="footer">
+    <a href="/welcome">Learn more about CRANIS2</a> \u2014 EU Cybersecurity Compliance Platform
+  </div>
+</div>
+</body>
+</html>`;
+}
 
 function conformityAssessmentPage() {
   // Embed questions and sections as JSON for client-side rendering
@@ -1529,7 +1623,7 @@ function conformityAssessmentPage() {
 
   <div class="footer">
     Powered by <a href="https://dev.cranis2.dev/welcome">CRANIS2</a> \u2014 EU Cybersecurity Compliance Platform
-    <br><a href="https://dev.cranis2.dev/nis2-assessment">Also try our NIS2 Readiness Assessment \u2192</a>
+    <br><a href="https://dev.cranis2.dev/nis2-conformity-assessment">Also try our NIS2 Readiness Assessment \u2192</a>
   </div>
 </div>
 
@@ -1557,7 +1651,7 @@ async function sendCode() {
   showMsg('email-msg', '', '');
 
   try {
-    const res = await fetch('/conformity-assessment/send-code', {
+    const res = await fetch('/cra-conformity-assessment/send-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -1593,7 +1687,7 @@ async function verifyCode() {
   btn.innerHTML = '<span class="spinner"></span>Verifying\u2026';
 
   try {
-    const res = await fetch('/conformity-assessment/verify', {
+    const res = await fetch('/cra-conformity-assessment/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: sessionEmail, code }),
@@ -1708,7 +1802,7 @@ function selectOption(qId, optionIndex, el) {
 async function saveProgress() {
   if (!assessmentId) return;
   try {
-    await fetch('/conformity-assessment/save-progress', {
+    await fetch('/cra-conformity-assessment/save-progress', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ assessmentId, answers, currentSection }),
@@ -1742,7 +1836,7 @@ async function completeAssessment() {
   btn.innerHTML = '<span class="spinner"></span>Calculating\u2026';
 
   try {
-    const res = await fetch('/conformity-assessment/complete', {
+    const res = await fetch('/cra-conformity-assessment/complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ assessmentId, answers }),
@@ -1920,7 +2014,7 @@ async function sendReport() {
   showMsg('report-msg', '', '');
 
   try {
-    var res = await fetch('/conformity-assessment/send-report', {
+    var res = await fetch('/cra-conformity-assessment/send-report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ assessmentId: assessmentId, email: email }),
@@ -2008,13 +2102,13 @@ function escapeHtmlJS(str) {
 /* ── NIS2 Assessment API Endpoints ────────────────────────────────────── */
 
 // NIS2 assessment page
-app.get('/nis2-assessment', (req, res) => {
+app.get('/nis2-conformity-assessment', (req, res) => {
   logAccess(req, 'nis2_assessment_tool');
   res.send(nis2.assessmentPage());
 });
 
 // NIS2: Send verification code (reuses CRA verification codes table)
-app.post('/nis2-assessment/send-code', async (req, res) => {
+app.post('/nis2-conformity-assessment/send-code', async (req, res) => {
   const { email } = req.body || {};
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: 'Please enter a valid email address.' });
@@ -2077,7 +2171,7 @@ app.post('/nis2-assessment/send-code', async (req, res) => {
 });
 
 // NIS2: Verify code and return/create session
-app.post('/nis2-assessment/verify', async (req, res) => {
+app.post('/nis2-conformity-assessment/verify', async (req, res) => {
   const { email, code } = req.body || {};
   if (!email || !code) {
     return res.status(400).json({ error: 'Email and code are required.' });
@@ -2145,7 +2239,7 @@ app.post('/nis2-assessment/verify', async (req, res) => {
 });
 
 // NIS2: Save progress
-app.post('/nis2-assessment/save-progress', async (req, res) => {
+app.post('/nis2-conformity-assessment/save-progress', async (req, res) => {
   const { assessmentId, answers, currentSection } = req.body || {};
   if (!assessmentId) {
     return res.status(400).json({ error: 'Assessment ID is required.' });
@@ -2167,7 +2261,7 @@ app.post('/nis2-assessment/save-progress', async (req, res) => {
 });
 
 // NIS2: Complete assessment
-app.post('/nis2-assessment/complete', async (req, res) => {
+app.post('/nis2-conformity-assessment/complete', async (req, res) => {
   const { assessmentId, answers } = req.body || {};
   if (!assessmentId) {
     return res.status(400).json({ error: 'Assessment ID is required.' });
@@ -2196,7 +2290,7 @@ app.post('/nis2-assessment/complete', async (req, res) => {
 });
 
 // NIS2: Send report email
-app.post('/nis2-assessment/send-report', async (req, res) => {
+app.post('/nis2-conformity-assessment/send-report', async (req, res) => {
   const { assessmentId, email: reportEmail } = req.body || {};
   if (!assessmentId) {
     return res.status(400).json({ error: 'Assessment ID is required.' });

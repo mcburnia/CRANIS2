@@ -624,7 +624,7 @@ ${recommendations.length > 0 ? `
   <h2 style="font-size:18px;color:#111827;margin:0 0 8px;">CRANIS2 Is Coming Soon</h2>
   <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 16px;">We\u2019re building a platform that helps you manage every aspect of cybersecurity compliance \u2014 from NIS2 governance and risk management to CRA product compliance, vulnerability scanning, and supply chain security.</p>
   <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 16px;"><a href="https://dev.cranis2.dev/welcome" style="color:#a855f7;text-decoration:none;font-weight:600;">Learn more about CRANIS2 \u2192</a></p>
-  <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 20px;">Already assessed your products for CRA? Try our <a href="https://dev.cranis2.dev/conformity-assessment" style="color:#a855f7;text-decoration:none;font-weight:600;">free CRA Readiness Assessment</a> too.</p>
+  <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 20px;">Already assessed your products for CRA? Try our <a href="https://dev.cranis2.dev/cra-conformity-assessment" style="color:#a855f7;text-decoration:none;font-weight:600;">free CRA Readiness Assessment</a> too.</p>
 </div>
 
 <!-- Footer -->
@@ -783,7 +783,7 @@ function assessmentPage() {
 
   <div class="footer">
     Powered by <a href="https://dev.cranis2.dev/welcome">CRANIS2</a> \u2014 EU Cybersecurity Compliance Platform
-    <br><a href="https://dev.cranis2.dev/conformity-assessment">Also try our CRA Readiness Assessment \u2192</a>
+    <br><a href="https://dev.cranis2.dev/cra-conformity-assessment">Also try our CRA Readiness Assessment \u2192</a>
   </div>
 </div>
 
@@ -811,7 +811,7 @@ async function sendCode() {
   showMsg('email-msg', '', '');
 
   try {
-    const res = await fetch('/nis2-assessment/send-code', {
+    const res = await fetch('/nis2-conformity-assessment/send-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -847,7 +847,7 @@ async function verifyCode() {
   btn.innerHTML = '<span class="spinner"></span>Verifying\u2026';
 
   try {
-    const res = await fetch('/nis2-assessment/verify', {
+    const res = await fetch('/nis2-conformity-assessment/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: sessionEmail, code }),
@@ -957,7 +957,7 @@ function selectOption(qId, optionIndex, el) {
 async function saveProgress() {
   if (!assessmentId) return;
   try {
-    await fetch('/nis2-assessment/save-progress', {
+    await fetch('/nis2-conformity-assessment/save-progress', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ assessmentId, answers, currentSection }),
@@ -991,7 +991,7 @@ async function completeAssessment() {
   btn.innerHTML = '<span class="spinner"></span>Calculating\u2026';
 
   try {
-    const res = await fetch('/nis2-assessment/complete', {
+    const res = await fetch('/nis2-conformity-assessment/complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ assessmentId, answers }),
@@ -1177,7 +1177,7 @@ async function sendReport() {
   showMsg('report-msg', '', '');
 
   try {
-    var res = await fetch('/nis2-assessment/send-report', {
+    var res = await fetch('/nis2-conformity-assessment/send-report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ assessmentId: assessmentId, email: email }),
