@@ -187,11 +187,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5433:5432"
-    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "work_mem=2MB", "-c", "effective_cache_size=256MB"]
+    command: ["postgres", "-c", "shared_buffers=512MB", "-c", "work_mem=4MB", "-c", "effective_cache_size=1536MB", "-c", "maintenance_work_mem=128MB"]
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 2G
     volumes:
       - cranis2_pg_data:/var/lib/postgresql/data
       - ./postgres/init-forgejo-db.sh:/docker-entrypoint-initdb.d/01-init-forgejo-db.sh:ro
@@ -264,7 +264,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 384M
+          memory: 512M
     depends_on:
       postgres:
         condition: service_healthy
