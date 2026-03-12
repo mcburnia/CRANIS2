@@ -61,6 +61,14 @@ async function initDatabase() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS cra_launch_subscribers (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) NOT NULL UNIQUE,
+        source VARCHAR(50) NOT NULL DEFAULT 'assessment',
+        subscribed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
     // Index for lookups
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_assessments_email ON cra_assessments(email)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_verification_codes_email ON cra_verification_codes(email, used)`);
@@ -785,6 +793,7 @@ app.post('/conformity-assessment/verify', async (req, res) => {
     );
 
     let assessment;
+    let isNewAssessment = false;
     if (existing.rows.length > 0 && !existing.rows[0].completed_at) {
       assessment = existing.rows[0];
     } else {
@@ -793,6 +802,21 @@ app.post('/conformity-assessment/verify', async (req, res) => {
         [email.toLowerCase()]
       );
       assessment = newAssessment.rows[0];
+      isNewAssessment = true;
+    }
+
+    // Notify us of new assessment users (not on resume)
+    if (isNewAssessment && RESEND_API_KEY) {
+      fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'CRANIS2 Assessment <noreply@poste.cranis2.com>',
+          to: ['info@cranis2.com'],
+          subject: `New CRA assessment started \u2014 ${email.toLowerCase()}`,
+          html: `<p>A new user has started the CRA Readiness Assessment:</p><p><strong>${escapeHtml(email)}</strong></p><p>Assessment ID: ${assessment.id}</p><p>Time: ${new Date().toISOString()}</p>`
+        })
+      }).catch(err => console.error('Assessment notification failed:', err));
     }
 
     logAccess(req, 'assessment_verified');
@@ -935,6 +959,67 @@ ${SECTIONS.map(s => `<tr><td style="padding:2px 12px 2px 0;">${s.title}</td><td>
   }
 });
 
+// Subscribe to launch notifications
+app.post('/conformity-assessment/subscribe', async (req, res) => {
+  const { email } = req.body || {};
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Valid email address is required.' });
+  }
+
+  if (!pool) return res.status(503).json({ error: 'Database not available.' });
+
+  try {
+    await pool.query(
+      `INSERT INTO cra_launch_subscribers (email, source) VALUES ($1, 'assessment')
+       ON CONFLICT (email) DO NOTHING`,
+      [email.toLowerCase()]
+    );
+
+    // Send confirmation email
+    if (RESEND_API_KEY) {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'CRANIS2 <noreply@poste.cranis2.com>',
+          to: [email],
+          subject: 'You\u2019re on the CRANIS2 launch list',
+          html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;padding:32px 20px;">
+<div style="font-size:13px;font-weight:700;color:#a855f7;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:16px;">CRANIS2</div>
+<h2 style="font-size:20px;color:#111827;margin-bottom:16px;">You\u2019re on the list</h2>
+<p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:16px;">Thank you for your interest in CRANIS2. We\u2019ll notify you as soon as the platform is ready for launch \u2014 and not before.</p>
+<p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:24px;">In the meantime, your CRA Readiness Assessment report is available in your inbox if you haven\u2019t already received it.</p>
+<div style="background:#f9fafb;border-radius:8px;padding:16px;font-size:13px;color:#6b7280;line-height:1.6;">
+<strong style="color:#374151;">Our promise:</strong> We will only use your email address to notify you of the CRANIS2 launch. We will never spam you or share your information with anyone. You can reply to this email at any time to unsubscribe.
+</div>
+<p style="font-size:12px;color:#9ca3af;margin-top:24px;">\u00a9 CRANIS2 ${new Date().getFullYear()}</p>
+</div>`
+        })
+      });
+    }
+
+    // Notify us
+    if (RESEND_API_KEY) {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'CRANIS2 Launch List <noreply@poste.cranis2.com>',
+          to: ['info@cranis2.com'],
+          subject: `New launch subscriber \u2014 ${email}`,
+          html: `<p>New subscriber to the CRANIS2 launch notification list:</p><p><strong>${escapeHtml(email)}</strong></p><p>Source: CRA Readiness Assessment</p>`
+        })
+      });
+    }
+
+    logAccess(req, 'launch_subscribe');
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Subscribe error:', err);
+    res.status(500).json({ error: 'Failed to subscribe.' });
+  }
+});
+
 /* ── Report Email Builder ────────────────────────────────────────────── */
 
 function buildReportEmail(answers, scores, category, conformity, recommendations) {
@@ -1060,9 +1145,9 @@ ${recommendations.length > 0 ? `
 
 <!-- CTA -->
 <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;padding:28px;text-align:center;margin-bottom:20px;">
-  <h2 style="font-size:18px;color:#111827;margin:0 0 8px;">Need Help Getting CRA Ready?</h2>
-  <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 20px;">CRANIS2 helps you manage every aspect of CRA compliance \u2014 from SBOM management and vulnerability scanning to technical documentation and conformity assessment tracking.</p>
-  <a href="https://dev.cranis2.dev" style="display:inline-block;padding:12px 28px;background:#a855f7;color:white;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">Learn More About CRANIS2</a>
+  <h2 style="font-size:18px;color:#111827;margin:0 0 8px;">CRANIS2 Is Coming Soon</h2>
+  <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 16px;">We\u2019re building a platform that helps you manage every aspect of CRA compliance \u2014 from SBOM management and vulnerability scanning to technical documentation and conformity assessment tracking.</p>
+  <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0:20px;">Reply to this email if you\u2019d like to be notified when we launch. We\u2019ll only contact you about the launch \u2014 no spam, no sharing your information, ever.</p>
 </div>
 
 <!-- Footer -->
@@ -1642,6 +1727,19 @@ function showResults(scores, category) {
   html += '</div>';
   html += '</div>';
 
+  // Coming soon — launch list
+  html += '<div class="card" style="text-align:center;">';
+  html += '<h2 style="font-size:18px;margin-bottom:4px;">CRANIS2 Is Coming Soon</h2>';
+  html += '<p style="font-size:13px;color:#6b7280;margin-bottom:16px;">We\u2019re building a platform that helps you manage every aspect of CRA compliance \u2014 from SBOM management and vulnerability scanning to technical documentation and conformity assessment tracking.</p>';
+  html += '<p style="font-size:13px;color:#6b7280;margin-bottom:16px;">Join our launch list and we\u2019ll let you know when it\u2019s ready.</p>';
+  html += '<div id="subscribe-msg"></div>';
+  html += '<div class="report-form" id="subscribe-form">';
+  html += '<input type="email" class="email-input" id="subscribe-email" value="' + escapeHtmlJS(sessionEmail) + '" placeholder="you@company.com">';
+  html += '<button class="btn btn-primary" id="subscribe-btn" onclick="subscribeLaunch()">Notify Me at Launch</button>';
+  html += '</div>';
+  html += '<p style="font-size:11px;color:#9ca3af;margin-top:12px;line-height:1.5;">We will only use your email to notify you when CRANIS2 launches.<br>No spam, no sharing your information \u2014 ever.</p>';
+  html += '</div>';
+
   // Start over
   html += '<div style="text-align:center;margin-top:12px;">';
   html += '<button class="btn btn-secondary btn-sm" onclick="startOver()">Start a New Assessment</button>';
@@ -1730,6 +1828,39 @@ async function sendReport() {
     showMsg('report-msg', 'Network error. Please try again.', 'error');
     btn.disabled = false;
     btn.textContent = 'Send Report';
+  }
+}
+
+async function subscribeLaunch() {
+  var email = document.getElementById('subscribe-email').value.trim();
+  if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    showMsg('subscribe-msg', 'Please enter a valid email address.', 'error');
+    return;
+  }
+  var btn = document.getElementById('subscribe-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Subscribing\u2026';
+  showMsg('subscribe-msg', '', '');
+
+  try {
+    var res = await fetch('/conformity-assessment/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email }),
+    });
+    var data = await res.json();
+    if (!res.ok) {
+      showMsg('subscribe-msg', data.error || 'Failed to subscribe.', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Notify Me at Launch';
+      return;
+    }
+    showMsg('subscribe-msg', 'You\\u2019re on the list! We\\u2019ll be in touch when CRANIS2 launches.', 'success');
+    document.getElementById('subscribe-form').classList.add('hidden');
+  } catch (err) {
+    showMsg('subscribe-msg', 'Network error. Please try again.', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Notify Me at Launch';
   }
 }
 
