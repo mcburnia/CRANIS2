@@ -660,7 +660,6 @@ app.get('/access-log', (req, res) => {
 });
 
 app.post('/contact', async (req, res) => {
-  if (!isAuthenticated(req)) return res.status(401).json({ error: 'Unauthorised' });
 
   const { name, email, position } = req.body || {};
   if (!name || !email || !position) {
@@ -1012,7 +1011,8 @@ app.post('/conformity-assessment/subscribe', async (req, res) => {
 <div style="font-size:13px;font-weight:700;color:#a855f7;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:16px;">CRANIS2</div>
 <h2 style="font-size:20px;color:#111827;margin-bottom:16px;">You\u2019re on the list</h2>
 <p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:16px;">Thank you for your interest in CRANIS2. We\u2019ll notify you as soon as the platform is ready for launch \u2014 and not before.</p>
-<p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:24px;">In the meantime, your CRA Readiness Assessment report is available in your inbox if you haven\u2019t already received it.</p>
+<p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:16px;">In the meantime, your CRA Readiness Assessment report is available in your inbox if you haven\u2019t already received it.</p>
+<p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:24px;">Learn more about what CRANIS2 can do for your organisation: <a href="https://dev.cranis2.dev/welcome" style="color:#a855f7;font-weight:600;">dev.cranis2.dev/welcome</a></p>
 <div style="background:#f9fafb;border-radius:8px;padding:16px;font-size:13px;color:#6b7280;line-height:1.6;">
 <strong style="color:#374151;">Our promise:</strong> We will only use your email address to notify you of the CRANIS2 launch. We will never spam you or share your information with anyone.
 </div>
@@ -1235,6 +1235,7 @@ ${recommendations.length > 0 ? `
 <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;padding:28px;text-align:center;margin-bottom:20px;">
   <h2 style="font-size:18px;color:#111827;margin:0 0 8px;">CRANIS2 Is Coming Soon</h2>
   <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 16px;">We\u2019re building a platform that helps you manage every aspect of CRA compliance \u2014 from SBOM management and vulnerability scanning to technical documentation and conformity assessment tracking.</p>
+  <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 16px;"><a href="https://dev.cranis2.dev/welcome" style="color:#a855f7;text-decoration:none;font-weight:600;">Learn more about CRANIS2 \u2192</a></p>
   <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 20px;">Visit <a href="https://dev.cranis2.dev/conformity-assessment" style="color:#a855f7;text-decoration:none;font-weight:600;">dev.cranis2.dev/conformity-assessment</a> to join our launch notification list. We\u2019ll only contact you about the launch \u2014 no spam, no sharing your information, ever.</p>
 </div>
 
@@ -1256,8 +1257,12 @@ app.get('/conformity-assessment', (req, res) => {
   res.send(conformityAssessmentPage());
 });
 
+app.get('/welcome', (req, res) => {
+  logAccess(req, 'page_view');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.get('/', (req, res) => {
-  if (!isAuthenticated(req)) return res.redirect('/login');
   logAccess(req, 'page_view');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
