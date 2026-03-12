@@ -63,12 +63,12 @@ P6 — Compliance Document Library — ALL DONE
 36	Auto-populated templates	Medium	DONE
 37	Full template library (7 templates)	High	DONE
 
-P7 - Andi's good catches — 2/3 DONE
+P7 - Andi's good catches — 3/4 DONE
 #	Feature	Effort	Status
 38	AI CoPilot Prompt Engineering Topic Focus	High	PHASE 2 DONE
 39	Automation wizards	Unknown	TODO
 40	Codebase modularity refactor	Medium	DONE
-41  Update the welcome page, the user documentation and the FAQ pages to reflect all implemented capabilities.
+41	Update welcome page, user docs, and FAQ	Medium	DONE
 
 Cross-cutting (done)
 -	Pro plan billing (Standard €6/contributor, Pro €9/product + €6/contributor)	DONE
@@ -94,11 +94,10 @@ Cross-cutting (done)
 **P6:** ALL DONE (document template library)
 **Bugs:** 3/3 ALL DONE
 
-**P7:** 2/3 DONE (#38 AI copilot prompts, #40 codebase modularity) — #39 automation wizards TODO
+**P7:** 3/4 DONE (#38 AI copilot prompts, #40 codebase modularity, #41 docs update) — #39 automation wizards TODO
 
 **Immediate next:**
 - P7 #39 — Automation wizards (batch fill, post-scan triage, onboarding wizard)
-- P7 #41 — Update welcome page, user docs, and FAQ to reflect all capabilities
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
 
@@ -134,26 +133,29 @@ Cross-cutting (done)
 - Snapshot triggers: quarterly schedule + on significant changes (SBOM update, vulnerability fix, obligation status change, DoC revision)
 - Customer also receives a copy for their own archives
 
-**Layer 2 — OVHcloud Cold Archive (EU cold storage)**
-- **OVHcloud Cold Archive** (https://www.ovhcloud.com/en-gb/public-cloud/cold-archive/)
-  - French company, EU data centres, GDPR-native
-  - Magnetic tape architecture — designed for decade-scale retention
-  - 11 nines durability (99.999999999%)
+**Layer 2 — Scaleway Glacier (EU-sovereign cold storage)**
+- **Scaleway Glacier** (https://www.scaleway.com/en/object-storage/)
+  - French company (Iliad group), own data centres in Paris and Amsterdam
+  - GDPR-native, genuinely EU-sovereign (not reselling AWS/Azure)
   - S3-compatible API — straightforward integration from backend
-  - 99.9% monthly availability SLA
-  - Retrieval: minutes to hours for typical archive sizes (MB–GB)
-  - Energy-efficient, lowest-cost storage class
-- Alternative options evaluated: Iron Mountain EU, Swiss Fort Knox / Mount10, Piql (Arctic World Archive, Svalbard)
+  - €0.00254/GB/month storage, €0.009/GB restoration
+  - API requests included, 75 GB/month egress free
+  - Designed for long-term archival with high durability
+- **Why not OVHcloud?** OVHcloud Cold Archive resells AWS S3 Glacier — undermines the EU data sovereignty claim
+- Alternative options evaluated: Hetzner Object Storage (German), Backblaze B2 EU (Amsterdam), Exoscale (Swiss), Iron Mountain EU, Piql (Arctic World Archive, Svalbard)
 
 ### Cost analysis (per product, 10-year lifecycle)
 
 | Item | Calculation | Cost |
 |------|-----------|------|
-| Cold storage (40 quarterly snapshots, ~200 MB each = 8 GB) | 8 GB x €0.0012/GB/month x 120 months | ~€1.15 |
-| RFC 3161 timestamps (40 snapshots) | 40 x €0.03 | ~€1.20 |
-| **Total per product over 10 years** | | **~€2.35** |
+| Scaleway Glacier storage (40 quarterly snapshots, ~200 MB each = 8 GB) | 8 GB × €0.00254/GB/month × 120 months | ~€2.44 |
+| Restoration (assume 2 full retrievals over 10 years) | 8 GB × €0.009/GB × 2 | ~€0.14 |
+| RFC 3161 timestamps (40 snapshots) | 40 × €0.03 | ~€1.20 |
+| Egress (within 75 GB/month free tier) | — | €0.00 |
+| API requests (included by Scaleway) | — | €0.00 |
+| **Total per product over 10 years** | | **~€3.78** |
 
-At scale (100 customers, 5 products each = 500 products): **~€1,175 total over 10 years**, or ~€10/month platform-wide. Effectively free.
+At scale (100 customers, 5 products each = 500 products): **~€1,890 total over 10 years**, or ~€15.75/month platform-wide. Effectively free.
 
 ### Implementation plan
 
@@ -172,8 +174,8 @@ At scale (100 customers, 5 products each = 500 products): **~€1,175 total over
 - Include verification instructions in the archive README
 - `compliance_snapshots` table: product_id, org_id, snapshot_hash, timestamp_token, storage_url, created_at, size_bytes
 
-**#42 — OVHcloud Cold Archive integration** (Medium effort)
-- S3-compatible upload of snapshot ZIP + timestamp token to OVHcloud Cold Archive
+**#42 — Scaleway Glacier integration** (Medium effort)
+- S3-compatible upload of snapshot ZIP + timestamp token to Scaleway Glacier
 - Bucket structure: `/{org_id}/{product_id}/{date}-snapshot.zip`
 - Retrieval endpoint: `POST /api/products/:id/compliance-snapshot/:snapshotId/retrieve` (triggers restore from cold storage)
 - Retrieval status polling (cold storage restore is async)
@@ -212,9 +214,9 @@ At scale (100 customers, 5 products each = 500 products): **~€1,175 total over
 - "Audit-ready in minutes, not weeks"
 - "Your compliance evidence survives even if we don't" — builds trust
 - "eIDAS-qualified timestamps — legally binding across the EU"
-- "11 nines durability on EU-based cold storage"
+- "EU-sovereign cold storage — French infrastructure, no US cloud dependency"
 - 10-year compliance vault included in the Pro plan product charge (€9/product/month) — no additional cost, no per-archive fees
-- At ~€0.24/product/year, the retention cost is effectively zero — a rounding error inside the Pro subscription
+- At ~€0.38/product/year, the retention cost is effectively zero — a rounding error inside the Pro subscription
 
 ### Customer exit & data portability policy
 
@@ -239,7 +241,7 @@ At scale (100 customers, 5 products each = 500 products): **~€1,175 total over
 **Post-cancellation archive persistence**
 - Cold storage archives persist for the remainder of the 10-year retention period, even after cancellation
 - Former customers can request retrieval of archived snapshots without an active subscription
-- Retrieval charged at cost only (effectively free — cold storage retrieval is pennies)
+- Retrieval charged at cost only (effectively free — Scaleway Glacier restoration is €0.009/GB)
 - This is a legal obligation fulfilment, not a commercial lever
 
 **Automatic deletion**
