@@ -103,7 +103,15 @@ Cross-cutting (done)
 
 ---
 
-## P8 — 10-Year Compliance Vault (Art. 13(10)) — DIFFERENTIATOR
+## P8 — 10-Year Compliance Vault (Art. 13(10)) — 2/5 DONE
+
+| # | Feature | Effort | Status |
+|---|---------|--------|--------|
+| 40 | Compliance snapshot generator | Medium | DONE |
+| 41 | RFC 3161 qualified timestamping | Low | TODO |
+| 42 | Scaleway Glacier cold storage | Medium | DONE |
+| 43 | Automated snapshot scheduling | Low | TODO |
+| 44 | Retention dashboard | Low | TODO |
 
 **Why this matters:** The CRA requires technical documentation + EU DoC retained for at least 10 years after market placement (or support period, whichever is longer). No competitor is solving this. Most manufacturers have no idea how they'll comply. CRANIS2 can make it automatic, legally robust, and essentially free — included in the subscription.
 

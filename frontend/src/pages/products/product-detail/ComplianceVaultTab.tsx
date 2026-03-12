@@ -45,7 +45,35 @@ function isLocalFileExpired(createdAt: string): boolean {
   return now - created > 24 * 60 * 60 * 1000;
 }
 
-export default function ComplianceVaultTab({ productId }: { productId: string }) {
+function calculateRetentionEndDate(marketPlacementDate: string | null, supportEndDate: string | null): string | null {
+  if (!marketPlacementDate) return null;
+  const tenYears = new Date(marketPlacementDate);
+  tenYears.setFullYear(tenYears.getFullYear() + 10);
+  if (supportEndDate) {
+    const supportEnd = new Date(supportEndDate);
+    return supportEnd > tenYears ? supportEnd.toISOString().split('T')[0] : tenYears.toISOString().split('T')[0];
+  }
+  return tenYears.toISOString().split('T')[0];
+}
+
+function formatRetentionDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function daysUntil(dateStr: string): number {
+  const target = new Date(dateStr).getTime();
+  const now = Date.now();
+  return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+}
+
+interface ComplianceVaultProps {
+  productId: string;
+  marketPlacementDate?: string | null;
+  supportEndDate?: string | null;
+  lifecycleStatus?: string;
+}
+
+export default function ComplianceVaultTab({ productId, marketPlacementDate, supportEndDate, lifecycleStatus }: ComplianceVaultProps) {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -229,6 +257,38 @@ export default function ComplianceVaultTab({ productId }: { productId: string })
           Archives are automatically preserved in cold storage for long-term audit retention.
         </span>
       </div>
+
+      {/* Retention period info */}
+      {(() => {
+        const retentionEnd = calculateRetentionEndDate(marketPlacementDate || null, supportEndDate || null);
+        if (retentionEnd) {
+          const remaining = daysUntil(retentionEnd);
+          const years = Math.floor(remaining / 365);
+          const months = Math.floor((remaining % 365) / 30);
+          return (
+            <div className="cv-retention-info">
+              <Shield size={14} />
+              <span>
+                <strong>Retention period:</strong> Until {formatRetentionDate(retentionEnd)}
+                {remaining > 0 ? ` (${years > 0 ? `${years}y ` : ''}${months}m remaining)` : ' (expired)'}
+                {marketPlacementDate && <> · Market placement: {formatRetentionDate(marketPlacementDate)}</>}
+              </span>
+            </div>
+          );
+        }
+        if (lifecycleStatus === 'pre_production') {
+          return (
+            <div className="cv-retention-info cv-retention-pending">
+              <Clock size={14} />
+              <span>
+                Retention period will begin when the product is placed on the market.
+                The market placement date is set automatically when you change the lifecycle stage to "On market".
+              </span>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       {/* Snapshots list */}
       {snapshots.length === 0 ? (

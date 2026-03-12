@@ -8,6 +8,8 @@ import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { logProductActivity } from '../services/activity-log.js';
 import { cleanupProductEscrow } from '../services/escrow-service.js';
 import { generateCycloneDX } from '../services/sbom-service.js';
+import { generateComplianceSnapshot } from '../services/compliance-snapshot.js';
+import { uploadToGlacier } from '../services/cold-storage.js';
 
 const router = Router();
 
@@ -350,6 +352,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       instanceUrl: p.instanceUrl || '',
       distributionModel: p.distributionModel || null,
       lifecycleStatus: p.lifecycleStatus || 'pre_production',
+      marketPlacementDate: p.marketPlacementDate || null,
       status: p.status || 'active',
       createdAt: p.createdAt?.toString() || '',
       updatedAt: p.updatedAt?.toString() || '',
@@ -366,7 +369,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId(userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-  const { name, description, version, productType, craCategory, repoUrl, distributionModel, provider, instanceUrl, lifecycleStatus } = req.body;
+  const { name, description, version, productType, craCategory, repoUrl, distributionModel, provider, instanceUrl, lifecycleStatus, marketPlacementDate } = req.body;
 
   if (!name?.trim()) {
     res.status(400).json({ error: 'Product name is required' });
@@ -376,6 +379,10 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   const validTypes = ['firmware', 'saas', 'library', 'desktop_app', 'mobile_app', 'iot_device', 'embedded', 'other'];
   const validCategories = ['default', 'important_i', 'important_ii', 'critical'];
   const validLifecycles = ['pre_production', 'on_market', 'end_of_life'];
+
+  // Auto-set market placement date when lifecycle is on_market and no date provided
+  const resolvedLifecycle = validLifecycles.includes(lifecycleStatus) ? lifecycleStatus : 'pre_production';
+  const resolvedMarketDate = marketPlacementDate || (resolvedLifecycle === 'on_market' ? new Date().toISOString().split('T')[0] : null);
 
   const productId = uuidv4();
   const session = getDriver().session();
@@ -392,6 +399,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
          repoUrl: $repoUrl,
          distributionModel: $distributionModel,
          lifecycleStatus: $lifecycleStatus,
+         marketPlacementDate: $marketPlacementDate,
          status: 'active',
          createdAt: datetime(),
          updatedAt: datetime()
@@ -408,7 +416,8 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         craCategory: validCategories.includes(craCategory) ? craCategory : 'default',
         repoUrl: repoUrl?.trim() || '',
         distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
-        lifecycleStatus: validLifecycles.includes(lifecycleStatus) ? lifecycleStatus : 'pre_production',
+        lifecycleStatus: resolvedLifecycle,
+        marketPlacementDate: resolvedMarketDate,
         provider: provider?.trim() || '',
         instanceUrl: instanceUrl?.trim() || '',
       }
@@ -480,7 +489,8 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       craCategory: validCategories.includes(craCategory) ? craCategory : 'default',
       repoUrl: repoUrl?.trim() || '',
       distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
-      lifecycleStatus: validLifecycles.includes(lifecycleStatus) ? lifecycleStatus : 'pre_production',
+      lifecycleStatus: resolvedLifecycle,
+      marketPlacementDate: resolvedMarketDate,
       provider: provider?.trim() || '',
       instanceUrl: instanceUrl?.trim() || '',
       status: 'active',
@@ -500,7 +510,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId(userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-  const { name, description, version, productType, craCategory, repoUrl, distributionModel, provider, instanceUrl, lifecycleStatus } = req.body;
+  const { name, description, version, productType, craCategory, repoUrl, distributionModel, provider, instanceUrl, lifecycleStatus, marketPlacementDate } = req.body;
   if (!name?.trim()) { res.status(400).json({ error: 'Product name is required' }); return; }
 
   const validLifecycles = ['pre_production', 'on_market', 'end_of_life'];
@@ -512,7 +522,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
        RETURN p.name AS name, p.craCategory AS craCategory, p.repoUrl AS repoUrl,
               p.distributionModel AS distributionModel, p.productType AS productType,
-              p.lifecycleStatus AS lifecycleStatus`,
+              p.lifecycleStatus AS lifecycleStatus, p.marketPlacementDate AS marketPlacementDate`,
       { orgId, productId }
     );
     const oldProps = oldResult.records.length > 0 ? {
@@ -522,7 +532,18 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       distributionModel: oldResult.records[0].get('distributionModel'),
       productType: oldResult.records[0].get('productType'),
       lifecycleStatus: oldResult.records[0].get('lifecycleStatus'),
+      marketPlacementDate: oldResult.records[0].get('marketPlacementDate'),
     } : null;
+
+    // Auto-set market placement date when transitioning to on_market (if not already set)
+    const newLifecycle = validLifecycles.includes(lifecycleStatus) ? lifecycleStatus : null;
+    const transitioningToOnMarket = newLifecycle === 'on_market' && oldProps?.lifecycleStatus !== 'on_market';
+    let resolvedMarketDate = marketPlacementDate || null;
+    if (transitioningToOnMarket && !resolvedMarketDate && !oldProps?.marketPlacementDate) {
+      resolvedMarketDate = new Date().toISOString().split('T')[0];
+    } else if (!resolvedMarketDate && oldProps?.marketPlacementDate) {
+      resolvedMarketDate = oldProps.marketPlacementDate;
+    }
 
     const result = await session.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
@@ -530,6 +551,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
            p.productType = $productType, p.craCategory = $craCategory,
            p.repoUrl = $repoUrl, p.distributionModel = $distributionModel,
            p.lifecycleStatus = $lifecycleStatus,
+           p.marketPlacementDate = $marketPlacementDate,
            p.provider = $provider, p.instanceUrl = $instanceUrl,
            p.updatedAt = datetime()
        RETURN p`,
@@ -543,7 +565,8 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
         craCategory: craCategory || 'default',
         repoUrl: repoUrl?.trim() || '',
         distributionModel: VALID_DIST_MODELS.includes(distributionModel) ? distributionModel : null,
-        lifecycleStatus: validLifecycles.includes(lifecycleStatus) ? lifecycleStatus : null,
+        lifecycleStatus: newLifecycle,
+        marketPlacementDate: resolvedMarketDate,
         provider: provider?.trim() || '',
         instanceUrl: instanceUrl?.trim() || '',
       }
@@ -569,8 +592,8 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       if ((oldProps.repoUrl || '') !== newRepoUrl) { oldVals.repoUrl = oldProps.repoUrl; changes.repoUrl = newRepoUrl; }
       if (oldProps.distributionModel !== newDistModel) { oldVals.distributionModel = oldProps.distributionModel; changes.distributionModel = newDistModel; }
       if (oldProps.productType !== newProductType) { oldVals.productType = oldProps.productType; changes.productType = newProductType; }
-      const newLifecycle = validLifecycles.includes(lifecycleStatus) ? lifecycleStatus : null;
       if (oldProps.lifecycleStatus !== newLifecycle) { oldVals.lifecycleStatus = oldProps.lifecycleStatus; changes.lifecycleStatus = newLifecycle; }
+      if ((oldProps.marketPlacementDate || null) !== resolvedMarketDate) { oldVals.marketPlacementDate = oldProps.marketPlacementDate; changes.marketPlacementDate = resolvedMarketDate; }
 
       if (Object.keys(changes).length > 0) {
         const changedFields = Object.keys(changes).join(', ');
@@ -599,7 +622,59 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       instanceUrl: p.instanceUrl || '',
       distributionModel: p.distributionModel || null,
       lifecycleStatus: p.lifecycleStatus || 'pre_production',
+      marketPlacementDate: p.marketPlacementDate || null,
     });
+
+    // Auto-trigger evidence vault snapshot when product transitions to on_market
+    if (transitioningToOnMarket) {
+      (async () => {
+        try {
+          // Get the latest product version for release tracking
+          const versionResult = await pool.query(
+            `SELECT id, cranis_version FROM product_versions
+             WHERE product_id = $1 ORDER BY created_at DESC LIMIT 1`,
+            [productId]
+          );
+          const releaseId = versionResult.rows[0]?.id || null;
+          const releaseVersion = versionResult.rows[0]?.cranis_version || null;
+
+          // Create the snapshot record
+          const insertResult = await pool.query(
+            `INSERT INTO compliance_snapshots (org_id, product_id, created_by, filename, status, trigger_type, release_id, release_version)
+             VALUES ($1, $2, $3, 'pending', 'generating', 'lifecycle_on_market', $4, $5)
+             RETURNING id`,
+            [orgId, productId, userId, releaseId, releaseVersion]
+          );
+          const snapshotId = insertResult.rows[0].id;
+
+          const result = await generateComplianceSnapshot(orgId, productId, userId, snapshotId);
+
+          await pool.query(
+            `UPDATE compliance_snapshots
+             SET filename = $1, size_bytes = $2, content_hash = $3, status = 'complete', metadata = $4
+             WHERE id = $5`,
+            [result.filename, result.sizeBytes, result.contentHash, JSON.stringify(result.metadata), snapshotId]
+          );
+
+          logProductActivity({
+            productId, orgId, userId, userEmail,
+            action: 'evidence_vault_release_archived',
+            entityType: 'compliance_snapshot',
+            entityId: snapshotId,
+            summary: `Auto-generated evidence vault snapshot on market placement${releaseVersion ? ` (v${releaseVersion})` : ''}`,
+            metadata: { filename: result.filename, sizeBytes: result.sizeBytes, triggerType: 'lifecycle_on_market', releaseVersion },
+          }).catch(() => {});
+
+          // Upload to cold storage
+          uploadToGlacier(orgId, productId, result.filename, result.filepath, snapshotId)
+            .catch(err => console.error('[PRODUCT] Glacier upload failed:', err));
+
+          console.log(`[PRODUCT] Auto-generated evidence vault snapshot for product ${productId} on market placement`);
+        } catch (err: any) {
+          console.error('[PRODUCT] Auto evidence vault snapshot failed (non-blocking):', err.message);
+        }
+      })();
+    }
   } finally {
     await session.close();
   }

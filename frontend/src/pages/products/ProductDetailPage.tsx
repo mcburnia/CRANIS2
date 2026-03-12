@@ -54,7 +54,7 @@ export default function ProductDetailPage() {
   const initialTab = (searchParams.get('tab') as TabKey) || 'overview';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '', distributionModel: '', lifecycleStatus: '', provider: '', instanceUrl: '' });
+  const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '', distributionModel: '', lifecycleStatus: '', marketPlacementDate: '', provider: '', instanceUrl: '' });
   const [availableProviders, setAvailableProviders] = useState<ProviderInfo[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -136,6 +136,7 @@ export default function ProductDetailPage() {
           repoUrl: data.repoUrl || '',
           distributionModel: data.distributionModel || '',
           lifecycleStatus: data.lifecycleStatus || 'pre_production',
+          marketPlacementDate: data.marketPlacementDate || '',
           provider: data.provider || detectProvider(data.repoUrl || ''),
           instanceUrl: data.instanceUrl || '',
         });
@@ -492,7 +493,7 @@ export default function ProductDetailPage() {
               </button>
             ) : (
               <>
-                <button className="pd-cancel-btn" onClick={() => { setEditing(false); setEditForm({ name: product.name, description: product.description, version: product.version, productType: product.productType, craCategory: product.craCategory, repoUrl: product.repoUrl, distributionModel: product.distributionModel || '', lifecycleStatus: product.lifecycleStatus || 'pre_production', provider: product.provider || detectProvider(product.repoUrl), instanceUrl: product.instanceUrl || '' }); }}>
+                <button className="pd-cancel-btn" onClick={() => { setEditing(false); setEditForm({ name: product.name, description: product.description, version: product.version, productType: product.productType, craCategory: product.craCategory, repoUrl: product.repoUrl, distributionModel: product.distributionModel || '', lifecycleStatus: product.lifecycleStatus || 'pre_production', marketPlacementDate: product.marketPlacementDate || '', provider: product.provider || detectProvider(product.repoUrl), instanceUrl: product.instanceUrl || '' }); }}>
                   <X size={14} /> Cancel
                 </button>
                 <button className="btn btn-primary pd-save-btn" onClick={handleSave} disabled={saving || !editForm.name.trim()}>
@@ -620,6 +621,16 @@ export default function ProductDetailPage() {
                   <option value="end_of_life">End of life</option>
                 </select>
               </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Market Placement Date</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={editForm.marketPlacementDate}
+                  onChange={e => setEditForm({ ...editForm, marketPlacementDate: e.target.value })}
+                  placeholder="Auto-set when placed on market"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -651,7 +662,7 @@ export default function ProductDetailPage() {
         {activeTab === 'risk-findings' && <RiskFindingsTab productId={product.id} />}
         {activeTab === 'dependencies' && <DependenciesTab ghData={ghData} sbomData={sbomData} sbomLoading={sbomLoading} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onRefreshSBOM={handleRefreshSBOM} repoProvider={currentProvider} isProviderConnected={isProviderConnected} />}
         {activeTab === 'supply-chain' && <SupplyChainTab productId={product.id} />}
-        {activeTab === 'compliance-vault' && <ComplianceVaultTab productId={product.id} />}
+        {activeTab === 'compliance-vault' && <ComplianceVaultTab productId={product.id} marketPlacementDate={product.marketPlacementDate} supportEndDate={techFileData.sections.find(s => s.sectionKey === 'support_period')?.content?.fields?.end_date || null} lifecycleStatus={product.lifecycleStatus} />}
       </div>
 
       {/* Delete Product Modal */}

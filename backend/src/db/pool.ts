@@ -1978,6 +1978,13 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS cold_storage_uploaded_at TIMESTAMPTZ;
     `);
 
+    // ── Release tracking columns (P8 Phase A) ──
+    await client.query(`
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS release_id UUID;
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS release_version VARCHAR(100);
+      ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS trigger_type VARCHAR(30) DEFAULT 'manual';
+    `);
+
   } finally {
     client.release();
   }

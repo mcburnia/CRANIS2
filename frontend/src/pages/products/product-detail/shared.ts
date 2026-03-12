@@ -110,6 +110,7 @@ export interface Product {
   instanceUrl: string;
   distributionModel: string | null;
   lifecycleStatus: string;
+  marketPlacementDate: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
