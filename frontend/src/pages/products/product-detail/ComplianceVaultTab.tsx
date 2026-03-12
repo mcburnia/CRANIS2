@@ -114,14 +114,6 @@ export default function ComplianceVaultTab({ productId }: { productId: string })
           created_at: new Date().toISOString(),
           created_by_email: null,
         }, ...prev]);
-      } else if (res.status === 403) {
-        const data = await res.json();
-        if (data.error === 'feature_requires_plan') {
-          setError('Compliance Vault requires the Pro plan.');
-        } else {
-          setError(data.error || 'Access denied');
-        }
-        setGenerating(false);
       } else {
         setError('Failed to generate snapshot');
         setGenerating(false);

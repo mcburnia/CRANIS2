@@ -13,7 +13,6 @@ import { stat } from 'node:fs/promises';
 import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
-import { requirePlan } from '../middleware/requirePlan.js';
 import { generateComplianceSnapshot, deleteSnapshotFile, getSnapshotPath } from '../services/compliance-snapshot.js';
 import { logProductActivity } from '../services/activity-log.js';
 
@@ -56,7 +55,7 @@ async function verifyProductOwnership(orgId: string, productId: string): Promise
 
 // ─── POST /api/products/:productId/compliance-snapshots ──────
 // Generate a new compliance snapshot
-router.post('/:productId/compliance-snapshots', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
+router.post('/:productId/compliance-snapshots', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const userEmail = (req as any).email;
   const productId = req.params.productId as string;

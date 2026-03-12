@@ -1,12 +1,12 @@
 /**
  * Compliance Snapshots Route Tests — /api/products/:productId/compliance-snapshots
  *
- * Tests: authentication, Pro plan gating, cross-org isolation,
+ * Tests: authentication, cross-org isolation,
  * snapshot generation, listing, download, deletion, status polling
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { api, loginTestUser, getAppPool, TEST_USERS } from '../setup/test-helpers.js';
+import { api, loginTestUser, TEST_USERS, getAppPool } from '../setup/test-helpers.js';
 import { TEST_IDS } from '../setup/seed-test-data.js';
 
 const MFG_PRODUCT = TEST_IDS.products.github;
@@ -19,16 +19,11 @@ describe('/api/products/:productId/compliance-snapshots', () => {
   beforeAll(async () => {
     mfgToken = await loginTestUser(TEST_USERS.mfgAdmin);
     impToken = await loginTestUser(TEST_USERS.impAdmin);
-
-    // Upgrade mfgActive to Pro (compliance snapshots require Pro)
-    const pool = getAppPool();
-    await pool.query("UPDATE org_billing SET plan = 'pro' WHERE org_id = $1", [TEST_IDS.orgs.mfgActive]);
   });
 
   afterAll(async () => {
-    // Restore billing plan + clean up test snapshots
+    // Clean up test snapshots
     const pool = getAppPool();
-    await pool.query("UPDATE org_billing SET plan = 'standard' WHERE org_id = $1", [TEST_IDS.orgs.mfgActive]);
     await pool.query("DELETE FROM compliance_snapshots WHERE product_id = $1", [MFG_PRODUCT]);
   });
 
@@ -44,17 +39,6 @@ describe('/api/products/:productId/compliance-snapshots', () => {
   it('should reject unauthenticated POST request', async () => {
     const res = await api.post(`/api/products/${MFG_PRODUCT}/compliance-snapshots`);
     expect(res.status).toBe(401);
-  });
-
-  // ═══════════════════════════════════════════════════════
-  // PRO PLAN GATING
-  // ═══════════════════════════════════════════════════════
-
-  it('should reject POST from standard-plan org', async () => {
-    // impTrial is on standard plan
-    const res = await api.post(`/api/products/${IMP_PRODUCT}/compliance-snapshots`, { auth: impToken });
-    expect(res.status).toBe(403);
-    expect(res.body.error).toBe('feature_requires_plan');
   });
 
   // ═══════════════════════════════════════════════════════
