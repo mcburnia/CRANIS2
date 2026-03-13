@@ -142,3 +142,60 @@ export async function createLedgerEntry(input: CreateLedgerEntryInput): Promise<
     return null;
   }
 }
+
+/**
+ * Extend retention dates for existing snapshots when a product's support
+ * end date is updated to a date later than the current retention end.
+ *
+ * CRA Art. 13(10): retention = max(market placement + 10y, support end date).
+ * Retention can only be extended, never shortened — once a retention obligation
+ * exists, reducing the support period does not reduce the obligation.
+ *
+ * Called from the technical file section save handler when `support_period`
+ * content changes. Non-blocking — failures are logged but do not affect
+ * the section save.
+ */
+export async function extendRetentionForSupportDate(
+  productId: string,
+  newSupportEndDate: string
+): Promise<{ extended: number }> {
+  const newEnd = new Date(newSupportEndDate);
+  if (isNaN(newEnd.getTime())) {
+    return { extended: 0 };
+  }
+
+  const newEndStr = newEnd.toISOString().split('T')[0];
+
+  try {
+    // Extend snapshots where current retention_end_date < new support end date
+    const snapshotResult = await pool.query(
+      `UPDATE compliance_snapshots
+       SET retention_end_date = $1
+       WHERE product_id = $2
+         AND retention_end_date IS NOT NULL
+         AND retention_end_date < $1::date
+       RETURNING id`,
+      [newEndStr, productId]
+    );
+
+    // Extend matching ledger entries
+    const ledgerResult = await pool.query(
+      `UPDATE retention_reserve_ledger
+       SET retention_end_date = $1, updated_at = NOW()
+       WHERE product_id = $2
+         AND retention_end_date IS NOT NULL
+         AND retention_end_date < $1::date`,
+      [newEndStr, productId]
+    );
+
+    const extended = snapshotResult.rowCount || 0;
+    if (extended > 0) {
+      console.log(`[RETENTION-LEDGER] Extended retention to ${newEndStr} for ${extended} snapshot(s) of product ${productId} (support period update)`);
+    }
+
+    return { extended };
+  } catch (err: any) {
+    console.error('[RETENTION-LEDGER] Failed to extend retention dates:', err.message);
+    return { extended: 0 };
+  }
+}

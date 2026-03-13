@@ -3,6 +3,7 @@ import { getDriver } from '../../db/neo4j.js';
 import pool from '../../db/pool.js';
 import { recordEvent, extractRequestData } from '../../services/telemetry.js';
 import { logProductActivity } from '../../services/activity-log.js';
+import { extendRetentionForSupportDate } from '../../services/retention-ledger.js';
 import {
   requireAuth, getUserOrgId, ensureSections, updateTechFileNode, formatCraCategory,
 } from './shared.js';
@@ -177,6 +178,24 @@ router.put('/:productId/:sectionKey', requireAuth, async (req: Request, res: Res
       newValues: statusChanged ? { status: newStatus } : null,
       metadata: { sectionKey, title: row.title },
     }).catch(() => {});
+
+    // If support_period end_date changed, extend retention on existing snapshots
+    if (sectionKey === 'support_period' && content?.fields?.end_date) {
+      extendRetentionForSupportDate(productId, content.fields.end_date)
+        .then(({ extended }) => {
+          if (extended > 0) {
+            logProductActivity({
+              productId, orgId, userId, userEmail,
+              action: 'retention_extended',
+              entityType: 'compliance_snapshot',
+              entityId: productId,
+              summary: `Retention extended to ${content.fields.end_date} for ${extended} snapshot(s) — support period updated`,
+              metadata: { newSupportEndDate: content.fields.end_date, snapshotsExtended: extended },
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
 
     res.json({
       sectionKey: row.section_key,
