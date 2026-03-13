@@ -5,9 +5,9 @@ import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import {
   ensureObligations, ensureObligationsBatch, computeDerivedStatuses, enrichObligation,
+  OBLIGATIONS, CraRole,
 } from '../services/obligation-engine.js';
 import { logProductActivity } from '../services/activity-log.js';
-import { OBLIGATIONS } from '../services/obligation-engine.js';
 import { createObligationCard, resolveCard } from '../services/trello.js';
 
 const router = Router();
@@ -32,6 +32,21 @@ async function getOrgId(userId: string): Promise<string | null> {
   return result.rows[0]?.org_id || null;
 }
 
+async function getOrgCraRole(orgId: string): Promise<CraRole> {
+  const driver = getDriver();
+  const session = driver.session();
+  try {
+    const result = await session.run(
+      'MATCH (o:Organisation {id: $orgId}) RETURN o.craRole AS craRole',
+      { orgId }
+    );
+    const role = result.records[0]?.get('craRole') || 'manufacturer';
+    return role as CraRole;
+  } finally {
+    await session.close();
+  }
+}
+
 // ─── GET /api/obligations/overview ───────────────────────────
 router.get('/overview', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
@@ -40,7 +55,8 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
     const orgId = await getOrgId(userId);
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-    // Get products from Neo4j
+    // Get org role and products from Neo4j
+    const craRole = await getOrgCraRole(orgId);
     const driver = getDriver();
     const session = driver.session();
     let products: { id: string; name: string; craCategory: string | null }[] = [];
@@ -66,7 +82,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
     }
 
     // Auto-create obligations for all products (single batch INSERT)
-    await ensureObligationsBatch(orgId, products.map(p => ({ id: p.id, craCategory: p.craCategory })));
+    await ensureObligationsBatch(orgId, products.map(p => ({ id: p.id, craCategory: p.craCategory })), craRole);
 
     // Fetch all obligations and derived statuses in parallel
     const productIds = products.map(p => p.id);
@@ -79,7 +95,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
          ORDER BY created_at ASC`,
         [orgId, productIds]
       ),
-      computeDerivedStatuses(productIds, orgId, categoryMap),
+      computeDerivedStatuses(productIds, orgId, categoryMap, craRole),
     ]);
 
     // Group by product
@@ -131,7 +147,8 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
     const orgId = await getOrgId(userId);
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-    // Verify product belongs to org and get category
+    // Verify product belongs to org and get category + role
+    const craRole = await getOrgCraRole(orgId);
     const driver = getDriver();
     const session = driver.session();
     let craCategory: string | null = null;
@@ -151,7 +168,7 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
     }
 
     // Auto-create obligations and fetch derived statuses in parallel
-    await ensureObligations(orgId, productId, craCategory);
+    await ensureObligations(orgId, productId, craCategory, craRole);
 
     const [obResult, derivedMap] = await Promise.all([
       pool.query(
@@ -160,7 +177,7 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
          ORDER BY created_at ASC`,
         [orgId, productId]
       ),
-      computeDerivedStatuses([productId], orgId, { [productId]: craCategory }),
+      computeDerivedStatuses([productId], orgId, { [productId]: craCategory }, craRole),
     ]);
 
     const productDerived = derivedMap[productId] ?? {};

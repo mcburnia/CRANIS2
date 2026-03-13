@@ -305,12 +305,12 @@ At scale (100 customers, 5 products each = 500 products): **~€1,890 total over
 ### Features
 
 #	Feature	Effort	Status	Funnel Hook
-45	Importer/distributor obligation workflows	High	TODO	"Are you importing software into the EU? Check your CRA obligations"
+45	Importer/distributor obligation workflows	High	IN PROGRESS	"Are you importing software into the EU? Check your CRA obligations"
 46	Post-market monitoring & field issue tracking	High	TODO	"Is your product still CRA-compliant after launch?"
-47	Conformity assessment module selector	Medium	TODO	"Which conformity assessment do you need? Free interactive tool"
+47	Conformity assessment module selector	Medium	DONE	"Which conformity assessment do you need? Free interactive tool"
 48	Notified body directory & assessment tracking	Medium	TODO	"Find your notified body – prepare for third-party assessment"
 49	Market surveillance registration (Art. 20)	Medium	TODO	"Critical product? You must register with market surveillance"
-50	NIS2 entity classifier & obligation tracker	High	TODO	"Are you essential or important under NIS2? Free classifier"
+50	NIS2 entity classifier & obligation tracker	High	DONE	"Are you essential or important under NIS2? Free classifier"
 51	Supply chain risk assessment (NIS2 Art. 21)	Medium	TODO	"Map your supply chain risk – beyond individual dependency checks"
 52	Internal incident lifecycle management	Medium	TODO	"Detection → containment → recovery → lessons learned"
 53	Cryptographic standards inventory	Low	TODO	"Will your crypto pass a CRA audit? SHA-1, RSA-1024, DES – find out"
@@ -369,8 +369,8 @@ Each feature also generates blog/SEO content:
 
 ### Priority order (based on market demand + implementation effort)
 
-1. **#47 Conformity assessment selector** – Low effort, high search volume, clear conversion path
-2. **#50 NIS2 entity classifier** – High demand, positions CRANIS2 as CRA+NIS2 platform
+1. ~~**#47 Conformity assessment selector** – DONE (P9)~~
+2. ~~**#50 NIS2 entity classifier** – DONE (P9)~~
 3. **#45 Importer/distributor workflows** – Opens new customer segment
 4. **#46 Post-market monitoring** – Genuine compliance gap for existing customers
 5. **#53 Crypto inventory** – Low effort, high fear factor, good content marketing
@@ -382,6 +382,6 @@ Each feature also generates blog/SEO content:
 11. **#55 EU Authorised Rep** – Niche (non-EU manufacturers only)
 12. **#56 Non-compliance reporting** – Niche, low frequency event
 
-### Status: BACKLOG – ready to scope when prioritised
+### Status: 2/12 DONE (#47, #50 completed in P9), #45 IN PROGRESS (Phase A done: role-aware obligations), 9 remaining
 ### Dependencies: #45 builds on P5 supplier marketplace concepts; #52 extends existing Art. 14 reporting
-### Estimated effort: High (12 items, ~10–15 sessions total)
+### Estimated effort: High (10 remaining items, ~8–12 sessions total)

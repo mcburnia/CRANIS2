@@ -348,7 +348,7 @@ async function collectVulnerabilities(orgId: string, productId: string): Promise
   return { files, stats };
 }
 
-async function collectObligations(orgId: string, productId: string, craCategory: string): Promise<{ files: SnapshotFile[]; stats: Record<string, number> }> {
+async function collectObligations(orgId: string, productId: string, craCategory: string, craRole?: string): Promise<{ files: SnapshotFile[]; stats: Record<string, number> }> {
   const files: SnapshotFile[] = [];
   const stats = { total: 0, met: 0, in_progress: 0, not_started: 0 };
 
@@ -363,13 +363,12 @@ async function collectObligations(orgId: string, productId: string, craCategory:
 
   // Derived statuses
   const categoryMap: Record<string, string | null> = { [productId]: craCategory };
-  const derived = await computeDerivedStatuses([productId], orgId, categoryMap);
+  const derived = await computeDerivedStatuses([productId], orgId, categoryMap, craRole);
   const derivedMap = derived[productId] || {};
 
-  // Merge manual + derived + definitions
-  const applicableObs = OBLIGATIONS.filter(o =>
-    o.appliesTo.includes(craCategory || 'default')
-  );
+  // Merge manual + derived + definitions (filtered by both category and role)
+  const { getApplicableObligations } = await import('./obligation-engine.js');
+  const applicableObs = getApplicableObligations(craCategory || 'default', craRole);
 
   const manualMap: Record<string, any> = {};
   for (const row of obligations.rows) {
@@ -697,7 +696,7 @@ export async function generateComplianceSnapshot(
     collectDeclarationOfConformity(orgId, productId, product, org),
     collectSBOMs(orgId, productId),
     collectVulnerabilities(orgId, productId),
-    collectObligations(orgId, productId, product.craCategory),
+    collectObligations(orgId, productId, product.craCategory, org.craRole),
     collectActivityLog(orgId, productId),
     collectCraReports(orgId, productId),
     collectStakeholders(orgId, productId),

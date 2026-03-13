@@ -1372,6 +1372,20 @@ sudo systemctl restart cloudflared
   - Frontend: GRC/OSCAL integration card added to Integrations page with endpoint table, curl quick-test, and 3-step GRC tool setup guide.
   - Tests: 20 new tests in `oscal.test.ts` — auth, cross-org isolation, structure validation, control counts, finding states, observations, version consistency.
 
+**Session 46 (2026-03-13):**
+- **Role-aware obligation engine (#45 Phase A)** — Extended the obligation engine to filter obligations by both CRA product category AND the economic operator role of the organisation.
+  - Added `appliesToRoles` field to every obligation definition with type `CraRole` ('manufacturer' | 'importer' | 'distributor' | 'open_source_steward').
+  - 16 new obligations: 10 importer obligations (Art. 18) covering conformity verification, CE marking, manufacturer contact, storage/transport, non-conformity reporting, ENISA reporting, documentation retention, and market surveillance cooperation; 6 distributor obligations (Art. 19) covering documentation verification, product handling, non-conformity reporting, ENISA reporting, market surveillance cooperation, and documentation retention.
+  - Total obligations: 35 (19 manufacturer + 10 importer + 6 distributor). Open source stewards share manufacturer obligations.
+  - `getApplicableObligations(craCategory, craRole?)` — backward-compatible; defaults to 'manufacturer' if no role passed.
+  - `computeDerivedStatuses()` now includes role-specific derivation: importer obligations derive from DoC verification, documentation completeness, and ENISA reports; distributor obligations derive from documentation/marking checks and ENISA reports.
+  - Wired `craRole` through all 10 call sites: obligations.ts, dashboard.ts, products.ts, product-reports.ts, public-api-v1.ts, scheduler.ts, compliance-snapshot.ts, compliance-gaps.ts, oscal.ts.
+  - OSCAL catalog now includes all 35 obligations with `applies-to-roles` prop on each control.
+  - Frontend requires no changes — dynamically renders whatever obligations the API returns.
+  - Tests: 22 new tests (21 in obligation-engine-roles.test.ts + 1 new OSCAL test). Full suite: 1244 tests (73 files), 1228 pass, 16 expected infra-dependent failures.
+
 **Next Steps:**
+- #45 remaining phases: product-level operator context, importer verification workflow, public funnel tool
+- #46 Post-market monitoring & field issue tracking
+- #53 Cryptographic standards inventory
 - Production deployment planning (Infomaniak hosting, cranis2.com)
-- P5 — Supplier marketplace (post-launch)

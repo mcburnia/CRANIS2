@@ -103,16 +103,18 @@ export async function analyseComplianceGaps(
   const neo4jSession = getDriver().session();
   let productName: string;
   let craCategory: string;
+  let craRole: string = 'manufacturer';
 
   try {
     const result = await neo4jSession.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
-       RETURN p.name AS name, p.craCategory AS craCategory`,
+       RETURN p.name AS name, p.craCategory AS craCategory, o.craRole AS craRole`,
       { orgId, productId }
     );
     if (result.records.length === 0) return null;
     productName = result.records[0].get('name') || productId;
     craCategory = result.records[0].get('craCategory') || 'default';
+    craRole = result.records[0].get('craRole') || 'manufacturer';
   } finally {
     await neo4jSession.close();
   }
@@ -196,11 +198,11 @@ export async function analyseComplianceGaps(
 
   // 4. Compute derived statuses
   const categoryMap = { [productId]: craCategory };
-  const derivedMap = await computeDerivedStatuses([productId], orgId, categoryMap);
+  const derivedMap = await computeDerivedStatuses([productId], orgId, categoryMap, craRole);
   const derived = derivedMap[productId] ?? {};
 
   // 5. Compute effective obligation statuses
-  const applicable = getApplicableObligations(craCategory);
+  const applicable = getApplicableObligations(craCategory, craRole);
   let obligationsMet = 0;
 
   for (const ob of applicable) {

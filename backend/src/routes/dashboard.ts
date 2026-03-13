@@ -4,7 +4,7 @@ import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import {
   getApplicableObligations, ensureObligations, ensureObligationsBatch,
-  computeDerivedStatuses, higherStatus,
+  computeDerivedStatuses, higherStatus, CraRole,
 } from '../services/obligation-engine.js';
 
 const router = Router();
@@ -60,8 +60,16 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
 
     let products: any[] = [];
     let totalContributors = 0;
+    let craRole: CraRole = 'manufacturer';
 
     try {
+      // Fetch org role for role-aware obligations
+      const orgResult = await session.run(
+        'MATCH (o:Organisation {id: $orgId}) RETURN o.craRole AS craRole',
+        { orgId }
+      );
+      craRole = (orgResult.records[0]?.get('craRole') || 'manufacturer') as CraRole;
+
       const productResult = await session.run(
         `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product)
          OPTIONAL MATCH (p)-[:HAS_REPO]->(r:Repository)
@@ -229,7 +237,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       for (const p of products) categoryMap[p.id] = p.category;
 
       // Ensure obligations exist for all products (single batch INSERT)
-      await ensureObligationsBatch(orgId, products.map(p => ({ id: p.id, craCategory: p.category })));
+      await ensureObligationsBatch(orgId, products.map(p => ({ id: p.id, craCategory: p.category })), craRole);
 
       // Fetch obligations + derived statuses in parallel
       const [obResult, derivedMap] = await Promise.all([
@@ -238,7 +246,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
            FROM obligations WHERE org_id = $1 AND product_id = ANY($2)`,
           [orgId, productIds]
         ),
-        computeDerivedStatuses(productIds, orgId, categoryMap),
+        computeDerivedStatuses(productIds, orgId, categoryMap, craRole),
       ]);
 
       // Compute per-product readiness
@@ -255,7 +263,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
 
       for (const p of products) {
         const obligations = obByProduct[p.id] || [];
-        const applicable = getApplicableObligations(p.category);
+        const applicable = getApplicableObligations(p.category, craRole);
         const total = applicable.length;
         const met = obligations.filter(o => o.effectiveStatus === 'met').length;
         const readiness = total > 0 ? Math.round((met / total) * 100) : 0;

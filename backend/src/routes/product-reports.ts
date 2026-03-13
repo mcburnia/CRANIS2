@@ -37,18 +37,19 @@ async function getOrgId(userId: string): Promise<string | null> {
   return result.rows[0]?.org_id || null;
 }
 
-async function getProductInfo(orgId: string, productId: string): Promise<{ name: string; craCategory: string | null } | null> {
+async function getProductInfo(orgId: string, productId: string): Promise<{ name: string; craCategory: string | null; craRole: string } | null> {
   const session = getDriver().session();
   try {
     const result = await session.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
-       RETURN p.name AS name, p.craCategory AS craCategory`,
+       RETURN p.name AS name, p.craCategory AS craCategory, o.craRole AS craRole`,
       { orgId, productId }
     );
     if (result.records.length === 0) return null;
     return {
       name: result.records[0].get('name'),
       craCategory: result.records[0].get('craCategory') || null,
+      craRole: result.records[0].get('craRole') || 'manufacturer',
     };
   } finally {
     await session.close();
@@ -344,7 +345,7 @@ router.get('/:productId/reports/obligations', requireAuth, async (req: Request, 
     const productInfo = await getProductInfo(orgId, productId);
     if (!productInfo) { res.status(404).json({ error: 'Product not found' }); return; }
 
-    await ensureObligations(orgId, productId, productInfo.craCategory);
+    await ensureObligations(orgId, productId, productInfo.craCategory, productInfo.craRole);
 
     const [obResult, derivedMap] = await Promise.all([
       pool.query(
@@ -353,7 +354,7 @@ router.get('/:productId/reports/obligations', requireAuth, async (req: Request, 
          ORDER BY created_at ASC`,
         [orgId, productId]
       ),
-      computeDerivedStatuses([productId], orgId, { [productId]: productInfo.craCategory }),
+      computeDerivedStatuses([productId], orgId, { [productId]: productInfo.craCategory }, productInfo.craRole),
     ]);
 
     const productDerived = derivedMap[productId] ?? {};

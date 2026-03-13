@@ -91,6 +91,7 @@ export function buildCraCatalog() {
         { name: 'cra-article', value: ob.article },
         { name: 'cra-obligation-key', value: ob.key },
         { name: 'applies-to', value: ob.appliesTo.join(', ') },
+        { name: 'applies-to-roles', value: ob.appliesToRoles.join(', ') },
       ],
       parts: [
         {
@@ -113,8 +114,8 @@ export function buildCraCatalog() {
 
 // ─── Profile ─────────────────────────────────────────────────────────────────
 
-export function buildCraProfile(craCategory: string) {
-  const applicable = getApplicableObligations(craCategory);
+export function buildCraProfile(craCategory: string, craRole?: string) {
+  const applicable = getApplicableObligations(craCategory, craRole);
 
   return {
     profile: {
@@ -144,10 +145,10 @@ export function buildCraProfile(craCategory: string) {
 export async function buildAssessmentResults(
   productId: string,
   orgId: string,
-  product: { name: string; craCategory: string },
+  product: { name: string; craCategory: string; craRole?: string },
 ) {
   const craCategory = product.craCategory || 'default';
-  const applicable = getApplicableObligations(craCategory);
+  const applicable = getApplicableObligations(craCategory, product.craRole);
 
   // Fetch obligation statuses (manual + derived)
   const [obligationsResult, categoryMap] = await Promise.all([
@@ -169,7 +170,7 @@ export async function buildAssessmentResults(
     };
   }
 
-  const derivedMap = await computeDerivedStatuses([productId], orgId, categoryMap);
+  const derivedMap = await computeDerivedStatuses([productId], orgId, categoryMap, product.craRole);
   const derived = derivedMap[productId] ?? {};
 
   // Vulnerability summary
@@ -314,10 +315,10 @@ export async function buildAssessmentResults(
 export async function buildComponentDefinition(
   productId: string,
   orgId: string,
-  product: { name: string; version?: string; description?: string; craCategory: string; productType?: string },
+  product: { name: string; version?: string; description?: string; craCategory: string; productType?: string; craRole?: string },
 ) {
   const craCategory = product.craCategory || 'default';
-  const applicable = getApplicableObligations(craCategory);
+  const applicable = getApplicableObligations(craCategory, product.craRole);
 
   // SBOM data
   const sbomResult = await pool.query(

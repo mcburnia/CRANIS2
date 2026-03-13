@@ -777,10 +777,11 @@ router.post('/:productId/onboard', requireAuth, async (req: Request, res: Respon
     const session = getDriver().session();
     let productName: string;
     let craCategory: string | null;
+    let craRole: string = 'manufacturer';
     try {
       const result = await session.run(
         `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
-         RETURN p.name AS name, p.craCategory AS craCategory`,
+         RETURN p.name AS name, p.craCategory AS craCategory, o.craRole AS craRole`,
         { orgId, productId }
       );
       if (result.records.length === 0) {
@@ -789,6 +790,7 @@ router.post('/:productId/onboard', requireAuth, async (req: Request, res: Respon
       }
       productName = result.records[0].get('name') || productId;
       craCategory = result.records[0].get('craCategory') || null;
+      craRole = result.records[0].get('craRole') || 'manufacturer';
     } finally {
       await session.close();
     }
@@ -796,7 +798,7 @@ router.post('/:productId/onboard', requireAuth, async (req: Request, res: Respon
     const provisioned: { step: string; action: string; detail?: string }[] = [];
 
     // 1. Ensure obligations
-    await ensureObligations(orgId, productId, craCategory);
+    await ensureObligations(orgId, productId, craCategory, craRole);
     const obCount = await pool.query(
       'SELECT COUNT(*)::int AS cnt FROM obligations WHERE org_id = $1 AND product_id = $2',
       [orgId, productId]
@@ -841,7 +843,7 @@ router.post('/:productId/onboard', requireAuth, async (req: Request, res: Respon
 
     // 4. Compute derived obligation statuses
     const categoryMap: Record<string, string | null> = { [productId]: craCategory || 'default' };
-    await computeDerivedStatuses([productId], orgId, categoryMap);
+    await computeDerivedStatuses([productId], orgId, categoryMap, craRole);
     provisioned.push({ step: 'derived_statuses', action: 'computed' });
 
     // Activity log

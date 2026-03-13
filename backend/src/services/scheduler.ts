@@ -994,10 +994,10 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
     let stallAlertsSent = 0;
 
     try {
-      // Get all products with their org IDs and categories
+      // Get all products with their org IDs, categories, and org roles
       const productResult = await session.run(
         `MATCH (p:Product)-[:BELONGS_TO]->(o:Organisation)
-         RETURN p.id AS id, p.name AS name, o.id AS orgId, p.craCategory AS category`
+         RETURN p.id AS id, p.name AS name, o.id AS orgId, p.craCategory AS category, o.craRole AS craRole`
       );
 
       if (productResult.records.length > 0) {
@@ -1006,6 +1006,7 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
           name: r.get('name') || 'Unknown',
           orgId: r.get('orgId'),
           category: r.get('category') || null,
+          craRole: r.get('craRole') || 'manufacturer',
         }));
         const productIds = products.map(p => p.id);
 
@@ -1032,7 +1033,7 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
 
         // Group products by org for ensureObligations
         for (const p of products) {
-          await ensureObligations(p.orgId, p.id, p.category);
+          await ensureObligations(p.orgId, p.id, p.category, p.craRole);
         }
 
         const obResult = await pool.query(
@@ -1054,7 +1055,7 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
 
         for (const p of products) {
           const obligations = obByProduct[p.id] || [];
-          const applicable = getApplicableObligations(p.category);
+          const applicable = getApplicableObligations(p.category, p.craRole);
           const total = applicable.length;
           const met = obligations.filter(o => o.effectiveStatus === 'met').length;
           const readiness = total > 0 ? Math.round((met / total) * 100) : 0;

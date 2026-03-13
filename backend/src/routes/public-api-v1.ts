@@ -26,6 +26,7 @@ import {
   computeDerivedStatuses,
   enrichObligation,
   getApplicableObligations,
+  CraRole,
 } from '../services/obligation-engine.js';
 import { analyseComplianceGaps } from '../services/compliance-gaps.js';
 import { runProductScan } from '../services/vulnerability-scanner.js';
@@ -54,18 +55,33 @@ function toISOString(dt: any): string | null {
   return null;
 }
 
-/** Helper: verify product belongs to the API key's org */
+/** Helper: verify product belongs to the API key's org, returns product props + org craRole */
 async function verifyProductOrg(orgId: string, productId: string): Promise<any | null> {
   const driver = getDriver();
   const session = driver.session();
   try {
     const result = await session.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
-       RETURN p`,
+       RETURN p, o.craRole AS craRole`,
       { orgId, productId },
     );
     if (result.records.length === 0) return null;
-    return result.records[0].get('p').properties;
+    return { ...result.records[0].get('p').properties, orgCraRole: result.records[0].get('craRole') || 'manufacturer' };
+  } finally {
+    await session.close();
+  }
+}
+
+/** Helper: get org's CRA role */
+async function getOrgCraRole(orgId: string): Promise<CraRole> {
+  const driver = getDriver();
+  const session = driver.session();
+  try {
+    const result = await session.run(
+      'MATCH (o:Organisation {id: $orgId}) RETURN o.craRole AS craRole',
+      { orgId },
+    );
+    return (result.records[0]?.get('craRole') || 'manufacturer') as CraRole;
   } finally {
     await session.close();
   }
@@ -198,9 +214,10 @@ router.get('/products/:id/obligations', requireApiKey('read:obligations'), async
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
     const craCategory = product.craCategory || 'default';
+    const craRole = product.orgCraRole || 'manufacturer';
 
     // Ensure obligations exist
-    await ensureObligations(orgId, productId, craCategory);
+    await ensureObligations(orgId, productId, craCategory, craRole);
 
     // Fetch obligations
     const obResult = await pool.query(
@@ -213,7 +230,7 @@ router.get('/products/:id/obligations', requireApiKey('read:obligations'), async
 
     // Compute derived statuses
     const categoryMap: Record<string, string | null> = { [productId]: craCategory };
-    const derivedMap = await computeDerivedStatuses([productId], orgId, categoryMap);
+    const derivedMap = await computeDerivedStatuses([productId], orgId, categoryMap, craRole);
     const productDerived = derivedMap[productId] || {};
 
     const obligations = obResult.rows.map(row => {
@@ -222,11 +239,12 @@ router.get('/products/:id/obligations', requireApiKey('read:obligations'), async
     });
 
     // Applicable obligations for this category
-    const applicable = getApplicableObligations(craCategory);
+    const applicable = getApplicableObligations(craCategory, craRole);
 
     res.json({
       productId,
       craCategory,
+      craRole,
       applicableCount: applicable.length,
       obligations,
     });
@@ -429,7 +447,7 @@ router.get('/products/:id/oscal/profile', requireApiKey('read:compliance'), asyn
     const product = await verifyProductOrg(orgId, req.params.id as string);
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    const profile = buildCraProfile(product.craCategory || 'default');
+    const profile = buildCraProfile(product.craCategory || 'default', product.orgCraRole);
     res.json(profile);
   } catch (error) {
     console.error('[API-V1] GET /products/:id/oscal/profile error:', error);
@@ -445,11 +463,12 @@ router.get('/products/:id/oscal/assessment-results', requireApiKey('read:complia
     const product = await verifyProductOrg(orgId, productId);
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    await ensureObligations(orgId, productId, product.craCategory || 'default');
+    await ensureObligations(orgId, productId, product.craCategory || 'default', product.orgCraRole);
 
     const results = await buildAssessmentResults(productId, orgId, {
       name: product.name,
       craCategory: product.craCategory || 'default',
+      craRole: product.orgCraRole,
     });
     res.json(results);
   } catch (error) {
@@ -472,6 +491,7 @@ router.get('/products/:id/oscal/component-definition', requireApiKey('read:compl
       description: product.description || undefined,
       craCategory: product.craCategory || 'default',
       productType: product.productType || undefined,
+      craRole: product.orgCraRole,
     });
     res.json(componentDef);
   } catch (error) {

@@ -79,12 +79,12 @@ describe('/api/v1 — OSCAL GRC Bridge', () => {
       expect(catalog.metadata['oscal-version']).toBe('1.1.2');
     });
 
-    it('should contain all 19 CRA controls across groups', async () => {
+    it('should contain all 35 CRA controls across groups (19 mfg + 10 importer + 6 distributor)', async () => {
       const res = await v1('get', '/oscal/catalog', mfgApiKey);
       const catalog = res.body.catalog;
 
       const allControls = catalog.groups.flatMap((g: any) => g.controls);
-      expect(allControls.length).toBe(19);
+      expect(allControls.length).toBe(35);
 
       // Verify each control has required fields
       for (const ctrl of allControls) {
@@ -102,11 +102,29 @@ describe('/api/v1 — OSCAL GRC Bridge', () => {
       const keys = allControls.map((c: any) =>
         c.props.find((p: any) => p.name === 'cra-obligation-key')?.value,
       );
+      // Manufacturer obligations
       expect(keys).toContain('art_13');
       expect(keys).toContain('art_13_6');
       expect(keys).toContain('art_13_11');
       expect(keys).toContain('art_20');
       expect(keys).toContain('annex_i_part_i');
+      // Importer obligations
+      expect(keys).toContain('art_18_1');
+      expect(keys).toContain('art_18_7');
+      // Distributor obligations
+      expect(keys).toContain('art_19_1');
+      expect(keys).toContain('art_19_4');
+    });
+
+    it('should include applies-to-roles prop on each control', async () => {
+      const res = await v1('get', '/oscal/catalog', mfgApiKey);
+      const allControls = res.body.catalog.groups.flatMap((g: any) => g.controls);
+
+      for (const ctrl of allControls) {
+        const rolesProp = ctrl.props.find((p: any) => p.name === 'applies-to-roles');
+        expect(rolesProp, `${ctrl.id} missing applies-to-roles prop`).toBeDefined();
+        expect(rolesProp.value).toBeTruthy();
+      }
     });
   });
 
