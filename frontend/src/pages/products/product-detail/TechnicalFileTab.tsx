@@ -82,7 +82,7 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || 'eu-declaration-of-conformity.pdf';
+      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || 'eu-declaration-of-conformity.md';
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -104,7 +104,7 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || 'cvd-policy.pdf';
+      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || 'cvd-policy.md';
       a.click();
       URL.revokeObjectURL(url);
     } catch {

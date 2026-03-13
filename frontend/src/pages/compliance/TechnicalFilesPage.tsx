@@ -98,7 +98,7 @@ export default function TechnicalFilesPage() {
       a.href = url;
       const safeName = productName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const dateStr = new Date().toISOString().split('T')[0];
-      a.download = `eu-declaration-of-conformity-${safeName}-${dateStr}.pdf`;
+      a.download = `eu-declaration-of-conformity-${safeName}-${dateStr}.md`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {

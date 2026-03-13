@@ -154,7 +154,7 @@ describe('/api/technical-files', () => {
   });
 });
 
-// ─── EU Declaration of Conformity PDF endpoint ──────────────────────────────
+// ─── EU Declaration of Conformity Markdown endpoint ──────────────────────────
 
 describe('/api/technical-file/:productId/declaration-of-conformity/pdf', () => {
   let mfgToken: string;
@@ -175,29 +175,28 @@ describe('/api/technical-file/:productId/declaration-of-conformity/pdf', () => {
     expect(res.status).toBe(404);
   });
 
-  it('should return 200 with Content-Type application/pdf', async () => {
+  it('should return 200 with Content-Type text/markdown', async () => {
     const res = await api.get(`/api/technical-file/${PRODUCT_ID}/declaration-of-conformity/pdf`, { auth: mfgToken });
     expect(res.status).toBe(200);
-    expect(res.headers.get('content-type')).toMatch(/application\/pdf/);
+    expect(res.headers.get('content-type')).toMatch(/text\/markdown/);
   });
 
-  it('should return a valid PDF (starts with %PDF magic bytes)', async () => {
+  it('should return valid Markdown content', async () => {
     const res = await api.get(`/api/technical-file/${PRODUCT_ID}/declaration-of-conformity/pdf`, { auth: mfgToken });
     expect(res.status).toBe(200);
-    // Binary responses are returned as ArrayBuffer by the test helper
-    const buf = Buffer.from(res.body as ArrayBuffer);
-    expect(buf.slice(0, 4).toString()).toBe('%PDF');
+    const body = typeof res.body === 'string' ? res.body : Buffer.from(res.body as ArrayBuffer).toString('utf-8');
+    expect(body).toContain('# ');
   });
 
   it('should include Content-Disposition attachment header', async () => {
     const res = await api.get(`/api/technical-file/${PRODUCT_ID}/declaration-of-conformity/pdf`, { auth: mfgToken });
     expect(res.status).toBe(200);
     expect(res.headers.get('content-disposition')).toMatch(/attachment/);
-    expect(res.headers.get('content-disposition')).toMatch(/\.pdf/);
+    expect(res.headers.get('content-disposition')).toMatch(/\.md/);
   });
 });
 
-// ─── CVD Policy PDF endpoint ─────────────────────────────────────────────────
+// ─── CVD Policy Markdown endpoint ─────────────────────────────────────────────
 
 describe('/api/technical-file/:productId/cvd-policy/pdf', () => {
   let mfgToken: string;
@@ -218,17 +217,17 @@ describe('/api/technical-file/:productId/cvd-policy/pdf', () => {
     expect(res.status).toBe(404);
   });
 
-  it('should return 200 with Content-Type application/pdf', async () => {
+  it('should return 200 with Content-Type text/markdown', async () => {
     const res = await api.get(`/api/technical-file/${PRODUCT_ID}/cvd-policy/pdf`, { auth: mfgToken });
     expect(res.status).toBe(200);
-    expect(res.headers.get('content-type')).toMatch(/application\/pdf/);
+    expect(res.headers.get('content-type')).toMatch(/text\/markdown/);
   });
 
-  it('should return a valid PDF (starts with %PDF magic bytes)', async () => {
+  it('should return valid Markdown content', async () => {
     const res = await api.get(`/api/technical-file/${PRODUCT_ID}/cvd-policy/pdf`, { auth: mfgToken });
     expect(res.status).toBe(200);
-    const buf = Buffer.from(res.body as ArrayBuffer);
-    expect(buf.slice(0, 4).toString()).toBe('%PDF');
+    const body = typeof res.body === 'string' ? res.body : Buffer.from(res.body as ArrayBuffer).toString('utf-8');
+    expect(body).toContain('# ');
   });
 
   it('should include Content-Disposition attachment header', async () => {

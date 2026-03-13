@@ -181,7 +181,7 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
     }
   };
 
-  const handleExport = async (format: 'pdf' | 'csv') => {
+  const handleExport = async (format: 'md' | 'csv') => {
     setExporting(format);
     try {
       const res = await fetch(`/api/products/${productId}/supplier-questionnaires/export/${format}`, {
@@ -262,8 +262,8 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
               <button className="sc-btn sc-btn-outline" onClick={() => handleExport('csv')} disabled={!!exporting}>
                 {exporting === 'csv' ? <Loader2 className="sc-spinner" size={14} /> : <Download size={14} />} CSV
               </button>
-              <button className="sc-btn sc-btn-outline" onClick={() => handleExport('pdf')} disabled={!!exporting}>
-                {exporting === 'pdf' ? <Loader2 className="sc-spinner" size={14} /> : <FileText size={14} />} PDF
+              <button className="sc-btn sc-btn-outline" onClick={() => handleExport('md')} disabled={!!exporting}>
+                {exporting === 'md' ? <Loader2 className="sc-spinner" size={14} /> : <FileText size={14} />} Report
               </button>
             </>
           )}
@@ -315,7 +315,7 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
               <div className="sc-step-icon"><Mail size={20} /></div>
               <div className="sc-step-content">
                 <strong>3. Send</strong>
-                <p>Export the questionnaire as PDF or CSV and send it to the supplier. Update the status to track progress.</p>
+                <p>Export the questionnaire as Markdown or CSV and send it to the supplier. Update the status to track progress.</p>
               </div>
             </div>
             <div className="sc-workflow-step">
@@ -327,7 +327,7 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
             </div>
           </div>
           <p className="sc-info-audit">
-            <strong>For auditors:</strong> The exported PDF contains the complete evidence trail: which components were assessed, what risks were identified,
+            <strong>For auditors:</strong> The exported report contains the complete evidence trail: which components were assessed, what risks were identified,
             what questions were asked, and how the supplier responded. This demonstrates CRA Art. 13(5) compliance.
           </p>
         </div>
@@ -536,7 +536,7 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
                     {q.questionnaireContent.questions && q.questionnaireContent.questions.length > 0 && (
                       <div className="sc-section">
                         <h5>Due Diligence Questions</h5>
-                        <p className="sc-section-hint">These questions should be sent to the supplier or maintainer of this component. Export as PDF for a ready-to-send document.</p>
+                        <p className="sc-section-hint">These questions should be sent to the supplier or maintainer of this component. Export as Markdown for a ready-to-send document.</p>
                         <div className="sc-questions">
                           {q.questionnaireContent.questions.map((question, i) => (
                             <div key={question.id || i} className="sc-question">

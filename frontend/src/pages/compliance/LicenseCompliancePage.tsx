@@ -112,7 +112,7 @@ export default function LicenseCompliancePage() {
     }
   }
 
-  async function handleExportLic(productId: string, format: 'pdf' | 'csv') {
+  async function handleExportLic(productId: string, format: 'md' | 'csv') {
     setExportingLic(`${productId}-${format}`);
     try {
       const res = await fetch(`/api/products/${productId}/reports/licences?format=${format}`, {
@@ -400,9 +400,9 @@ export default function LicenseCompliancePage() {
                         <div className="lc-findings-panel">
                           <div className="lc-findings-header">
                             <h4>License Findings – {p.productName}</h4>
-                            <button className="tf-doc-download-btn" onClick={(e) => { e.stopPropagation(); handleExportLic(p.productId, 'pdf'); }} disabled={!!exportingLic}>
-                              {exportingLic === `${p.productId}-pdf` ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
-                              {exportingLic === `${p.productId}-pdf` ? 'Generating...' : 'Export PDF'}
+                            <button className="tf-doc-download-btn" onClick={(e) => { e.stopPropagation(); handleExportLic(p.productId, 'md'); }} disabled={!!exportingLic}>
+                              {exportingLic === `${p.productId}-md` ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+                              {exportingLic === `${p.productId}-md` ? 'Generating...' : 'Export Report'}
                             </button>
                             <button className="tf-doc-download-btn" onClick={(e) => { e.stopPropagation(); handleExportLic(p.productId, 'csv'); }} disabled={!!exportingLic}>
                               {exportingLic === `${p.productId}-csv` ? <Loader2 size={14} className="spin" /> : <Download size={14} />}

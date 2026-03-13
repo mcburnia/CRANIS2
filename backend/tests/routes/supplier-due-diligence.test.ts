@@ -245,19 +245,17 @@ describe('/api/products/:productId/supplier-questionnaires', () => {
     });
   });
 
-  // ── PDF Export ──
+  // ── Markdown Export ──
 
   describe('GET /:productId/supplier-questionnaires/export/pdf', () => {
-    it('should return a PDF', async () => {
+    it('should return Markdown', async () => {
       const res = await api.get(
         `/api/products/${MFG_PRODUCT}/supplier-questionnaires/export/pdf`,
         { auth: mfgToken }
       );
       expect(res.status).toBe(200);
-      // body is ArrayBuffer for binary responses
-      const buffer = Buffer.from(res.body);
-      // PDF magic bytes: %PDF
-      expect(buffer.slice(0, 4).toString()).toBe('%PDF');
+      const body = typeof res.body === 'string' ? res.body : Buffer.from(res.body).toString('utf-8');
+      expect(body).toMatch(/^#/);
     });
   });
 

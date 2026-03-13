@@ -12,8 +12,6 @@
  */
 
 import { Router, Request, Response } from 'express';
-import PDFDocument from 'pdfkit';
-import { PassThrough } from 'stream';
 import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
@@ -160,7 +158,7 @@ router.get(
 
 /**
  * GET /:productId/supplier-questionnaires/export/pdf
- * Export all questionnaires as PDF
+ * Export all questionnaires as Markdown
  */
 router.get(
   '/:productId/supplier-questionnaires/export/pdf',
@@ -181,106 +179,74 @@ router.get(
         return res.status(404).json({ error: 'No questionnaires to export' });
       }
 
-      // Build PDF
-      const doc = new PDFDocument({ margin: 50, size: 'A4' });
-      const chunks: Buffer[] = [];
-      const stream = new PassThrough();
-      stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-      doc.pipe(stream);
+      const lines: string[] = [];
+      lines.push('# Supplier Due Diligence Report');
+      lines.push('**CRA Art. 13(5) — Third-Party Component Assessment**');
+      lines.push('');
+      lines.push(`**Product:** ${product.name}`);
+      lines.push(`**Generated:** ${new Date().toISOString().split('T')[0]} | ${questionnaires.length} component(s) assessed`);
+      lines.push('');
 
-      const pageWidth = doc.page.width - 100;
-
-      // Cover page
-      doc.moveDown(6);
-      doc.fontSize(24).fillColor('#6366f1').text('Supplier Due Diligence Report', { align: 'center' });
-      doc.moveDown(0.5);
-      doc.fontSize(13).fillColor('#6b7280').text('CRA Art. 13(5) – Third-Party Component Assessment', { align: 'center' });
-      doc.moveDown(2);
-      doc.fontSize(12).fillColor('#374151').text(product.name, { align: 'center' });
-      doc.moveDown(1);
-      doc.fontSize(10).fillColor('#6b7280').text(
-        `Generated: ${new Date().toISOString().split('T')[0]} | ${questionnaires.length} component(s) assessed`,
-        { align: 'center' }
-      );
-
-      // Each questionnaire
       for (const q of questionnaires) {
-        doc.addPage();
+        lines.push('---');
+        lines.push('');
+        lines.push(`## ${q.dependencyName}`);
+        lines.push('');
+        lines.push(`Version: ${q.dependencyVersion || 'N/A'} | Ecosystem: ${q.dependencyEcosystem || 'N/A'} | Licence: ${q.dependencyLicense || 'N/A'} | Supplier: ${q.dependencySupplier || 'Unknown'}`);
+        lines.push('');
 
-        // Header
-        doc.fontSize(16).fillColor('#6366f1').text(q.dependencyName, 50, 50);
-        doc.moveDown(0.2);
-        doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor('#6366f1').lineWidth(1).stroke();
-        doc.moveDown(0.5);
-
-        // Metadata
-        doc.fontSize(9).fillColor('#6b7280');
-        doc.text(`Version: ${q.dependencyVersion || 'N/A'} | Ecosystem: ${q.dependencyEcosystem || 'N/A'} | Licence: ${q.dependencyLicense || 'N/A'} | Supplier: ${q.dependencySupplier || 'Unknown'}`);
-        doc.moveDown(0.3);
-
-        // Risk flags
-        doc.fontSize(9).fillColor('#dc2626');
-        for (const flag of q.riskFlags) {
-          doc.text(`⚠ ${flag.detail}`);
+        if (q.riskFlags.length > 0) {
+          for (const flag of q.riskFlags) {
+            lines.push(`- **Risk:** ${flag.detail}`);
+          }
+          lines.push('');
         }
-        doc.moveDown(0.5);
 
-        // Summary + risk assessment
         const content = q.questionnaireContent;
         if (content.summary) {
-          doc.fontSize(11).fillColor('#111827').font('Helvetica-Bold').text('Summary');
-          doc.font('Helvetica').fontSize(9).fillColor('#374151').text(content.summary);
-          doc.moveDown(0.4);
+          lines.push('### Summary');
+          lines.push('');
+          lines.push(content.summary);
+          lines.push('');
         }
         if (content.riskAssessment) {
-          doc.fontSize(11).fillColor('#111827').font('Helvetica-Bold').text('Risk Assessment');
-          doc.font('Helvetica').fontSize(9).fillColor('#374151').text(content.riskAssessment);
-          doc.moveDown(0.4);
+          lines.push('### Risk Assessment');
+          lines.push('');
+          lines.push(content.riskAssessment);
+          lines.push('');
         }
 
-        // Questions
         if (content.questions && content.questions.length > 0) {
-          doc.fontSize(11).fillColor('#111827').font('Helvetica-Bold').text('Due Diligence Questions');
-          doc.font('Helvetica');
-          doc.moveDown(0.3);
-
+          lines.push('### Due Diligence Questions');
+          lines.push('');
           for (const question of content.questions) {
-            if (doc.y > doc.page.height - 100) doc.addPage();
-
-            doc.fontSize(9).fillColor('#6366f1').font('Helvetica-Bold').text(
-              `[${question.category.replace(/_/g, ' ').toUpperCase()}]${question.craReference ? ` – ${question.craReference}` : ''}`
-            );
-            doc.font('Helvetica').fontSize(9).fillColor('#111827').text(question.question);
-            doc.fontSize(8).fillColor('#6b7280').text(`Rationale: ${question.rationale}`);
-            doc.moveDown(0.4);
+            const catLabel = question.category.replace(/_/g, ' ').toUpperCase();
+            lines.push(`**[${catLabel}]${question.craReference ? ` — ${question.craReference}` : ''}**`);
+            lines.push(question.question);
+            lines.push(`*Rationale: ${question.rationale}*`);
+            lines.push('');
           }
         }
 
-        // Recommended actions
         if (content.recommendedActions && content.recommendedActions.length > 0) {
-          if (doc.y > doc.page.height - 100) doc.addPage();
-          doc.fontSize(11).fillColor('#111827').font('Helvetica-Bold').text('Recommended Actions');
-          doc.font('Helvetica');
-          doc.moveDown(0.2);
+          lines.push('### Recommended Actions');
+          lines.push('');
           for (const action of content.recommendedActions) {
-            doc.fontSize(9).fillColor('#374151').text(`• ${action}`);
+            lines.push(`- ${action}`);
           }
+          lines.push('');
         }
       }
 
-      // Finalise
-      const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
-        stream.on('end', () => resolve(Buffer.concat(chunks)));
-        stream.on('error', reject);
-        doc.end();
-      });
+      lines.push('---');
+      lines.push(`*Generated by CRANIS2 — ${new Date().toLocaleDateString('en-GB')}*`);
 
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="supplier-due-diligence-${productId}.pdf"`);
-      res.send(pdfBuffer);
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="supplier-due-diligence-${productId}.md"`);
+      res.send(lines.join('\n'));
     } catch (error) {
-      console.error('[SUPPLIER-DD] PDF export error:', error);
-      res.status(500).json({ error: 'Failed to export PDF' });
+      console.error('[SUPPLIER-DD] Markdown export error:', error);
+      res.status(500).json({ error: 'Failed to export report' });
     }
   }
 );

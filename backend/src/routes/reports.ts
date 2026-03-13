@@ -2,8 +2,6 @@ import { Router, Request, Response } from 'express';
 import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
-import PDFDocument from 'pdfkit';
-import { PassThrough } from 'stream';
 
 const router = Router();
 
@@ -102,106 +100,22 @@ function rowsToCsv(headers: string[], rows: unknown[][]): string {
   return lines.join('\n');
 }
 
-// ─── PDF helpers (same style as due-diligence) ───────────────────────────────
+// ─── Markdown helpers ─────────────────────────────────────────────────────────
 
-const PDF_ACCENT = '#6366f1';
-const PDF_MUTED = '#6b7280';
-const PDF_DARK = '#111827';
-const PDF_BODY = '#374151';
-
-function buildPdfBase(title: string, subtitle: string, orgName: string, from: Date, to: Date) {
-  const doc = new PDFDocument({ margin: 50, size: 'A4' });
-  const chunks: Buffer[] = [];
-  const stream = new PassThrough();
-  stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-  doc.pipe(stream);
-
-  const pageWidth = doc.page.width - 100;
-  let pageNum = 1;
-
-  function addFooter() {
-    const bottom = doc.page.height - 30;
-    doc.save();
-    doc.fontSize(8).fillColor(PDF_MUTED);
-    const range = `${formatDate(from)} – ${formatDate(to)}`;
-    doc.text(`CRANIS2 | ${range}`, 50, bottom, { lineBreak: false });
-    doc.text(`Page ${pageNum}`, 50 + pageWidth - 80, bottom, { lineBreak: false, width: 80, align: 'right' });
-    doc.restore();
+function mdTable(headers: string[], rows: string[][]): string {
+  const lines: string[] = [];
+  lines.push('| ' + headers.join(' | ') + ' |');
+  lines.push('| ' + headers.map(() => '---').join(' | ') + ' |');
+  for (const row of rows) {
+    lines.push('| ' + row.map(c => (c || '').replace(/\|/g, '\\|').replace(/\n/g, ' ')).join(' | ') + ' |');
   }
+  return lines.join('\n');
+}
 
-  function newPage() {
-    doc.addPage();
-    pageNum++;
-    addFooter();
-  }
-
-  function sectionTitle(t: string) {
-    newPage();
-    doc.fontSize(16).fillColor(PDF_ACCENT).text(t, 50, 50, { lineBreak: false });
-    doc.moveDown(0.3);
-    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor(PDF_ACCENT).lineWidth(1).stroke();
-    doc.moveDown(0.8);
-  }
-
-  function subHeading(t: string) {
-    doc.moveDown(0.5);
-    doc.fontSize(11).fillColor(PDF_DARK).font('Helvetica-Bold').text(t);
-    doc.font('Helvetica');
-    doc.moveDown(0.2);
-  }
-
-  function bodyText(t: string) {
-    doc.fontSize(10).fillColor(PDF_BODY).text(t, { lineGap: 2 });
-  }
-
-  function statLine(label: string, value: string | number, colour?: string) {
-    const y = doc.y;
-    doc.fontSize(9).fillColor(PDF_MUTED).text(label, 50, y, { width: 240 });
-    doc.fontSize(9).fillColor(colour ?? PDF_DARK).font('Helvetica-Bold').text(String(value), 295, y, { width: 255 });
-    doc.font('Helvetica');
-    doc.moveDown(0.15);
-  }
-
-  function tableRow(cols: string[], widths: number[], y: number, bold = false, colour = PDF_BODY) {
-    let x = 50;
-    doc.fontSize(8).fillColor(colour).font(bold ? 'Helvetica-Bold' : 'Helvetica');
-    for (let i = 0; i < cols.length; i++) {
-      doc.text(cols[i], x, y, { width: widths[i] - 4, lineBreak: false });
-      x += widths[i];
-    }
-    doc.font('Helvetica');
-  }
-
-  function checkPageBreak(neededHeight = 20) {
-    if (doc.y + neededHeight > doc.page.height - 60) {
-      newPage();
-    }
-  }
-
-  // Cover page
-  doc.moveDown(6);
-  doc.fontSize(28).fillColor(PDF_ACCENT).text(title, { align: 'center' });
-  doc.moveDown(0.5);
-  doc.fontSize(13).fillColor(PDF_MUTED).text(subtitle, { align: 'center' });
-  doc.moveDown(2);
-  doc.fontSize(12).fillColor(PDF_BODY).text(orgName, { align: 'center' });
-  doc.moveDown(1);
-  doc.fontSize(10).fillColor(PDF_MUTED).text(
-    `Period: ${formatDate(from)} – ${formatDate(to)}`,
-    { align: 'center' }
-  );
-  doc.moveDown(0.5);
-  doc.fontSize(10).fillColor(PDF_MUTED).text(
-    `Generated: ${formatDate(new Date())}`,
-    { align: 'center' }
-  );
-  addFooter();
-
-  return {
-    doc, stream, chunks, pageWidth,
-    newPage, sectionTitle, subHeading, bodyText, statLine,
-    tableRow, checkPageBreak,
-  };
+function sendMarkdown(res: Response, filename: string, content: string) {
+  res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(content);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -349,7 +263,7 @@ router.get('/compliance-summary', requireAuth, async (req: Request, res: Respons
 // GET /api/reports/compliance-summary/export
 router.get('/compliance-summary/export', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
-  const format = (req.query.format as string) || 'pdf';
+  const format = (req.query.format as string) || 'md';
   try {
     const orgId = await getOrgId(userId);
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
@@ -381,77 +295,55 @@ router.get('/compliance-summary/export', requireAuth, async (req: Request, res: 
       return;
     }
 
-    // PDF
-    const { doc, stream, chunks, pageWidth, sectionTitle, subHeading, tableRow, checkPageBreak } =
-      buildPdfBase('Compliance Summary', 'CRA Obligations & Product Posture', data.orgName, from, to);
+    // Markdown
+    const lines: string[] = [];
+    lines.push('# Compliance Summary');
+    lines.push('');
+    lines.push(`**Organisation:** ${data.orgName}`);
+    lines.push(`**Period:** ${formatDate(from)} – ${formatDate(to)}`);
+    lines.push(`**Generated:** ${formatDate(new Date())}`);
+    lines.push('');
 
-    const done = new Promise<Buffer>((resolve, reject) => {
-      stream.on('end', () => resolve(Buffer.concat(chunks)));
-      stream.on('error', reject);
-    });
-
-    sectionTitle('Compliance Summary');
-
-    const colWidths = [150, 100, 70, 70, 70, 80];
-    const colHeaders = ['Product', 'CRA Category', 'Obligations', 'Tech File %', 'Open Vulns', 'CRA Reports'];
-
-    // Table header
-    tableRow(colHeaders, colWidths, doc.y, true, PDF_ACCENT);
-    doc.moveDown(0.6);
-    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
-    doc.moveDown(0.3);
-
-    for (const p of data.products) {
-      checkPageBreak(20);
-      const oblText = `${p.obligations.met}/${p.obligations.total} met`;
-      const tfText = `${p.technicalFile.percentComplete}%`;
+    // Overview table
+    lines.push('## Overview');
+    lines.push('');
+    const overviewRows = data.products.map(p => {
       const vulnText = p.vulnerabilities
         ? `${p.vulnerabilities.critical}C ${p.vulnerabilities.high}H`
         : '–';
-      const craText = `${p.craReports.total} (${p.craReports.draft} draft)`;
-      tableRow(
-        [p.name, craLabel(p.craCategory), oblText, tfText, vulnText, craText],
-        colWidths, doc.y
-      );
-      doc.moveDown(0.5);
-      doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor('#f3f4f6').lineWidth(0.3).stroke();
-      doc.moveDown(0.2);
-    }
+      return [
+        p.name, craLabel(p.craCategory),
+        `${p.obligations.met}/${p.obligations.total} met`,
+        `${p.technicalFile.percentComplete}%`,
+        vulnText,
+        `${p.craReports.total} (${p.craReports.draft} draft)`,
+      ];
+    });
+    lines.push(mdTable(['Product', 'CRA Category', 'Obligations', 'Tech File %', 'Open Vulns', 'CRA Reports'], overviewRows));
+    lines.push('');
 
-    // Per-product detail pages
+    // Per-product details
     for (const p of data.products) {
-      sectionTitle(p.name);
-
-      subHeading('Obligations');
-      doc.fontSize(9).fillColor(PDF_BODY)
-        .text(`Total: ${p.obligations.total}  |  Met: ${p.obligations.met}  |  In Progress: ${p.obligations.inProgress}  |  Not Started: ${p.obligations.notStarted}`);
-      doc.moveDown(0.5);
-
-      subHeading('Technical File (Annex VII)');
-      doc.fontSize(9).fillColor(PDF_BODY)
-        .text(`${p.technicalFile.completeSections} of ${p.technicalFile.totalSections} sections complete (${p.technicalFile.percentComplete}%)`);
-      doc.moveDown(0.5);
-
-      subHeading('Vulnerability Posture');
+      lines.push(`## ${p.name}`);
+      lines.push('');
+      lines.push(`**Obligations:** Total: ${p.obligations.total} | Met: ${p.obligations.met} | In Progress: ${p.obligations.inProgress} | Not Started: ${p.obligations.notStarted}`);
+      lines.push('');
+      lines.push(`**Technical File (Annex VII):** ${p.technicalFile.completeSections} of ${p.technicalFile.totalSections} sections complete (${p.technicalFile.percentComplete}%)`);
+      lines.push('');
       if (p.vulnerabilities) {
-        doc.fontSize(9).fillColor(PDF_BODY)
-          .text(`Last scan: ${formatDate(p.vulnerabilities.lastScannedAt)}  |  Critical: ${p.vulnerabilities.critical}  |  High: ${p.vulnerabilities.high}  |  Medium: ${p.vulnerabilities.medium}  |  Low: ${p.vulnerabilities.low}`);
+        lines.push(`**Vulnerability Posture:** Last scan: ${formatDate(p.vulnerabilities.lastScannedAt)} | Critical: ${p.vulnerabilities.critical} | High: ${p.vulnerabilities.high} | Medium: ${p.vulnerabilities.medium} | Low: ${p.vulnerabilities.low}`);
       } else {
-        doc.fontSize(9).fillColor(PDF_MUTED).text('No scan completed in selected period.');
+        lines.push('**Vulnerability Posture:** No scan completed in selected period.');
       }
-      doc.moveDown(0.5);
-
-      subHeading(`ENISA Reports (${formatDate(from)} – ${formatDate(to)})`);
-      doc.fontSize(9).fillColor(PDF_BODY)
-        .text(`Total: ${p.craReports.total}  |  Draft: ${p.craReports.draft}  |  Submitted: ${p.craReports.submitted}`);
+      lines.push('');
+      lines.push(`**ENISA Reports (${formatDate(from)} – ${formatDate(to)}):** Total: ${p.craReports.total} | Draft: ${p.craReports.draft} | Submitted: ${p.craReports.submitted}`);
+      lines.push('');
     }
 
-    doc.end();
-    const buf = await done;
+    lines.push('---');
+    lines.push(`*Generated by CRANIS2 — ${formatDate(new Date())}*`);
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="compliance-summary-${from.toISOString().slice(0,10)}.pdf"`);
-    res.send(buf);
+    sendMarkdown(res, `compliance-summary-${from.toISOString().slice(0,10)}.md`, lines.join('\n'));
   } catch (err) {
     console.error('[reports] compliance-summary/export error:', err);
     res.status(500).json({ error: 'Failed to export compliance summary' });
@@ -597,7 +489,7 @@ router.get('/vulnerability-trends', requireAuth, async (req: Request, res: Respo
 // GET /api/reports/vulnerability-trends/export
 router.get('/vulnerability-trends/export', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
-  const format = (req.query.format as string) || 'pdf';
+  const format = (req.query.format as string) || 'md';
   try {
     const orgId = await getOrgId(userId);
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
@@ -606,13 +498,11 @@ router.get('/vulnerability-trends/export', requireAuth, async (req: Request, res
     const data = await fetchVulnTrendsData(orgId, from, to, productId);
 
     if (format === 'csv') {
-      // Sheet 1 (prefixed): scan history
       const scanHeaders = ['Date', 'Product ID', 'Total Findings', 'Critical', 'High', 'Medium', 'Low'];
       const scanRows = data.scans.map(s => [
         formatDate(s.completedAt), s.productId,
         s.findingsCount, s.critical, s.high, s.medium, s.low,
       ]);
-      // Sheet 2: ecosystem breakdown
       const ecoHeaders = ['Ecosystem', 'Total Findings', 'Open Findings'];
       const ecoRows = data.ecosystems.map(e => [e.ecosystem, e.total, e.openCount]);
 
@@ -630,7 +520,7 @@ router.get('/vulnerability-trends/export', requireAuth, async (req: Request, res
       return;
     }
 
-    // Org name for cover
+    // Org name
     const driver = getDriver();
     const session = driver.session();
     let orgName = '';
@@ -641,83 +531,68 @@ router.get('/vulnerability-trends/export', requireAuth, async (req: Request, res
       await session.close();
     }
 
-    const { doc, stream, chunks, pageWidth, sectionTitle, subHeading, tableRow, checkPageBreak } =
-      buildPdfBase('Vulnerability Trends', 'Scan History & Risk Analysis', orgName, from, to);
+    const lines: string[] = [];
+    lines.push('# Vulnerability Trends');
+    lines.push('');
+    lines.push(`**Organisation:** ${orgName}`);
+    lines.push(`**Period:** ${formatDate(from)} – ${formatDate(to)}`);
+    lines.push(`**Generated:** ${formatDate(new Date())}`);
+    lines.push('');
 
-    const done = new Promise<Buffer>((resolve, reject) => {
-      stream.on('end', () => resolve(Buffer.concat(chunks)));
-      stream.on('error', reject);
-    });
-
-    // Summary section
-    sectionTitle('Summary');
+    // Summary
     const s = data.summary;
-    doc.fontSize(10).fillColor(PDF_BODY)
-      .text(`Total findings: ${s.total}  |  Open: ${s.open}  |  Resolved/Mitigated: ${s.resolved}  |  Dismissed: ${s.dismissed}`);
-    doc.moveDown(0.5);
-    doc.fontSize(10).fillColor(PDF_BODY)
-      .text(`Critical: ${s.critical}  |  High: ${s.high}  |  Medium: ${s.medium}  |  Low: ${s.low}`);
+    lines.push('## Summary');
+    lines.push('');
+    lines.push(`| Metric | Count |`);
+    lines.push(`| --- | --- |`);
+    lines.push(`| Total findings | ${s.total} |`);
+    lines.push(`| Open | ${s.open} |`);
+    lines.push(`| Resolved/Mitigated | ${s.resolved} |`);
+    lines.push(`| Dismissed | ${s.dismissed} |`);
+    lines.push(`| Critical | ${s.critical} |`);
+    lines.push(`| High | ${s.high} |`);
+    lines.push(`| Medium | ${s.medium} |`);
+    lines.push(`| Low | ${s.low} |`);
+    lines.push('');
 
-    // Scan history table
-    sectionTitle('Scan History');
-    const scanCols = [90, 90, 70, 60, 60, 60, 60];
-    const scanHeaders = ['Date', 'Product', 'Total', 'Critical', 'High', 'Medium', 'Low'];
-    tableRow(scanHeaders, scanCols, doc.y, true, PDF_ACCENT);
-    doc.moveDown(0.6);
-    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
-    doc.moveDown(0.3);
-
-    for (const scan of data.scans) {
-      checkPageBreak(16);
-      tableRow([
-        formatDate(scan.completedAt), scan.productId.slice(0, 20),
-        String(scan.findingsCount), String(scan.critical),
-        String(scan.high), String(scan.medium), String(scan.low),
-      ], scanCols, doc.y);
-      doc.moveDown(0.5);
+    // Scan history
+    if (data.scans.length) {
+      lines.push('## Scan History');
+      lines.push('');
+      const scanRows = data.scans.map(sc => [
+        formatDate(sc.completedAt), sc.productId.slice(0, 20),
+        String(sc.findingsCount), String(sc.critical), String(sc.high),
+        String(sc.medium), String(sc.low),
+      ]);
+      lines.push(mdTable(['Date', 'Product', 'Total', 'Critical', 'High', 'Medium', 'Low'], scanRows));
+      lines.push('');
     }
 
     // Status by month
     if (data.statusByMonth.length) {
-      sectionTitle('Finding Status by Month');
-      const mCols = [70, 60, 80, 70, 70, 70];
-      const mHeaders = ['Month', 'Open', 'Acknowledged', 'Mitigated', 'Resolved', 'Dismissed'];
-      tableRow(mHeaders, mCols, doc.y, true, PDF_ACCENT);
-      doc.moveDown(0.6);
-      doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
-      doc.moveDown(0.3);
-      for (const row of data.statusByMonth) {
-        checkPageBreak(16);
-        tableRow([
-          row.month, String(row.open), String(row.acknowledged),
-          String(row.mitigated), String(row.resolved), String(row.dismissed),
-        ], mCols, doc.y);
-        doc.moveDown(0.5);
-      }
+      lines.push('## Finding Status by Month');
+      lines.push('');
+      const monthRows = data.statusByMonth.map(m => [
+        m.month, String(m.open), String(m.acknowledged),
+        String(m.mitigated), String(m.resolved), String(m.dismissed),
+      ]);
+      lines.push(mdTable(['Month', 'Open', 'Acknowledged', 'Mitigated', 'Resolved', 'Dismissed'], monthRows));
+      lines.push('');
     }
 
     // Ecosystem breakdown
     if (data.ecosystems.length) {
-      sectionTitle('Ecosystem Breakdown');
-      const eCols = [200, 150, 140];
-      const eHeaders = ['Ecosystem', 'Total Findings', 'Open Findings'];
-      tableRow(eHeaders, eCols, doc.y, true, PDF_ACCENT);
-      doc.moveDown(0.6);
-      doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
-      doc.moveDown(0.3);
-      for (const eco of data.ecosystems) {
-        checkPageBreak(16);
-        tableRow([eco.ecosystem, String(eco.total), String(eco.openCount)], eCols, doc.y);
-        doc.moveDown(0.5);
-      }
+      lines.push('## Ecosystem Breakdown');
+      lines.push('');
+      const ecoRows = data.ecosystems.map(e => [e.ecosystem, String(e.total), String(e.openCount)]);
+      lines.push(mdTable(['Ecosystem', 'Total Findings', 'Open Findings'], ecoRows));
+      lines.push('');
     }
 
-    doc.end();
-    const buf = await done;
+    lines.push('---');
+    lines.push(`*Generated by CRANIS2 — ${formatDate(new Date())}*`);
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="vulnerability-trends-${from.toISOString().slice(0,10)}.pdf"`);
-    res.send(buf);
+    sendMarkdown(res, `vulnerability-trends-${from.toISOString().slice(0,10)}.md`, lines.join('\n'));
   } catch (err) {
     console.error('[reports] vulnerability-trends/export error:', err);
     res.status(500).json({ error: 'Failed to export vulnerability trends' });
@@ -841,7 +716,7 @@ router.get('/audit-trail', requireAuth, async (req: Request, res: Response) => {
 // GET /api/reports/audit-trail/export
 router.get('/audit-trail/export', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
-  const format = (req.query.format as string) || 'pdf';
+  const format = (req.query.format as string) || 'md';
   try {
     const orgId = await getOrgId(userId);
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
@@ -896,77 +771,58 @@ router.get('/audit-trail/export', requireAuth, async (req: Request, res: Respons
       await session.close();
     }
 
-    const { doc, stream, chunks, pageWidth, sectionTitle, subHeading, tableRow, checkPageBreak } =
-      buildPdfBase('Audit Trail', 'User Activity & Compliance Events', orgName, from, to);
+    const lines: string[] = [];
+    lines.push('# Audit Trail');
+    lines.push('');
+    lines.push(`**Organisation:** ${orgName}`);
+    lines.push(`**Period:** ${formatDate(from)} – ${formatDate(to)}`);
+    lines.push(`**Generated:** ${formatDate(new Date())}`);
+    lines.push('');
 
-    const done = new Promise<Buffer>((resolve, reject) => {
-      stream.on('end', () => resolve(Buffer.concat(chunks)));
-      stream.on('error', reject);
-    });
-
-    // User events
-    sectionTitle('User Activity');
-    const evCols = [110, 140, 130, 110];
-    tableRow(['Timestamp', 'User', 'Event', 'IP Address'], evCols, doc.y, true, PDF_ACCENT);
-    doc.moveDown(0.6);
-    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
-    doc.moveDown(0.3);
-
-    for (const e of data.userEvents) {
-      checkPageBreak(16);
-      tableRow([
-        formatDate(e.createdAt),
-        e.userEmail.slice(0, 24),
-        e.eventType,
-        e.ipAddress ?? '–',
-      ], evCols, doc.y);
-      doc.moveDown(0.5);
+    // User activity
+    lines.push('## User Activity');
+    lines.push('');
+    if (data.userEvents.length) {
+      const eventRows = data.userEvents.map(e => [
+        formatDate(e.createdAt), e.userEmail.slice(0, 30),
+        e.eventType, e.ipAddress ?? '–',
+      ]);
+      lines.push(mdTable(['Timestamp', 'User', 'Event', 'IP Address'], eventRows));
+    } else {
+      lines.push('No user events in selected period.');
     }
+    lines.push('');
 
-    // Compliance stage submissions
+    // Compliance stages
     if (data.complianceStages.length) {
-      sectionTitle('ENISA Report Stage Submissions');
-      const stCols = [110, 140, 100, 140];
-      tableRow(['Timestamp', 'Submitted By', 'Stage', 'Product ID'], stCols, doc.y, true, PDF_ACCENT);
-      doc.moveDown(0.6);
-      doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
-      doc.moveDown(0.3);
-      for (const s of data.complianceStages) {
-        checkPageBreak(16);
-        tableRow([
-          formatDate(s.submittedAt), s.submittedBy.slice(0, 24),
-          s.stage, s.productId.slice(0, 24),
-        ], stCols, doc.y);
-        doc.moveDown(0.5);
-      }
+      lines.push('## ENISA Report Stage Submissions');
+      lines.push('');
+      const stageRows = data.complianceStages.map(s => [
+        formatDate(s.submittedAt), s.submittedBy.slice(0, 30),
+        s.stage, s.productId.slice(0, 24),
+      ]);
+      lines.push(mdTable(['Timestamp', 'Submitted By', 'Stage', 'Product ID'], stageRows));
+      lines.push('');
     }
 
     // Sync history
     if (data.syncHistory.length) {
-      sectionTitle('Repository Syncs');
-      const synCols = [110, 100, 80, 60, 70, 80, 110];
-      tableRow(['Timestamp', 'Product ID', 'Type', 'Duration', 'Pkgs', 'Status', 'Triggered By'], synCols, doc.y, true, PDF_ACCENT);
-      doc.moveDown(0.6);
-      doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
-      doc.moveDown(0.3);
-      for (const s of data.syncHistory) {
-        checkPageBreak(16);
-        tableRow([
-          formatDate(s.startedAt), s.productId.slice(0, 20),
-          s.syncType, `${s.durationSeconds}s`,
-          String(s.packageCount), s.status,
-          (s.triggeredBy ?? 'system').slice(0, 20),
-        ], synCols, doc.y);
-        doc.moveDown(0.5);
-      }
+      lines.push('## Repository Syncs');
+      lines.push('');
+      const syncRows = data.syncHistory.map(s => [
+        formatDate(s.startedAt), s.productId.slice(0, 20),
+        s.syncType, `${s.durationSeconds}s`,
+        String(s.packageCount), s.status,
+        (s.triggeredBy ?? 'system').slice(0, 20),
+      ]);
+      lines.push(mdTable(['Timestamp', 'Product ID', 'Type', 'Duration', 'Pkgs', 'Status', 'Triggered By'], syncRows));
+      lines.push('');
     }
 
-    doc.end();
-    const buf = await done;
+    lines.push('---');
+    lines.push(`*Generated by CRANIS2 — ${formatDate(new Date())}*`);
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="audit-trail-${from.toISOString().slice(0,10)}.pdf"`);
-    res.send(buf);
+    sendMarkdown(res, `audit-trail-${from.toISOString().slice(0,10)}.md`, lines.join('\n'));
   } catch (err) {
     console.error('[reports] audit-trail/export error:', err);
     res.status(500).json({ error: 'Failed to export audit trail' });

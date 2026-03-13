@@ -3,11 +3,11 @@
  *
  * Tests the three compliance report endpoints:
  * - GET /api/reports/compliance-summary
- * - GET /api/reports/compliance-summary/export?format=pdf|csv
+ * - GET /api/reports/compliance-summary/export?format=md|csv
  * - GET /api/reports/vulnerability-trends
- * - GET /api/reports/vulnerability-trends/export?format=pdf|csv
+ * - GET /api/reports/vulnerability-trends/export?format=md|csv
  * - GET /api/reports/audit-trail
- * - GET /api/reports/audit-trail/export?format=pdf|csv
+ * - GET /api/reports/audit-trail/export?format=md|csv
  *
  * All endpoints require auth and return data scoped to the caller's org.
  */
@@ -128,21 +128,20 @@ describe('/api/reports', () => {
   describe('GET /compliance-summary/export', () => {
     it('should reject unauthenticated request', async () => {
       const res = await api.get('/api/reports/compliance-summary/export', {
-        query: { format: 'pdf', from, to },
+        query: { format: 'md', from, to },
       });
       expect(res.status).toBe(401);
     });
 
-    it('should return a PDF binary for format=pdf', async () => {
+    it('should return Markdown for format=md', async () => {
       const res = await api.get('/api/reports/compliance-summary/export', {
         auth: mfgToken,
-        query: { format: 'pdf', from, to },
+        query: { format: 'md', from, to },
       });
       expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('application/pdf');
-      // PDF magic bytes: %PDF
-      const buf = Buffer.from(res.body);
-      expect(buf.slice(0, 4).toString('ascii')).toBe('%PDF');
+      expect(res.headers.get('content-type')).toContain('text/markdown');
+      const body = typeof res.body === 'string' ? res.body : Buffer.from(res.body).toString('utf-8');
+      expect(body).toMatch(/^#/);
     });
 
     it('should return CSV text for format=csv', async () => {
@@ -271,20 +270,20 @@ describe('/api/reports', () => {
   describe('GET /vulnerability-trends/export', () => {
     it('should reject unauthenticated request', async () => {
       const res = await api.get('/api/reports/vulnerability-trends/export', {
-        query: { format: 'pdf', from, to },
+        query: { format: 'md', from, to },
       });
       expect(res.status).toBe(401);
     });
 
-    it('should return a PDF for format=pdf', async () => {
+    it('should return Markdown for format=md', async () => {
       const res = await api.get('/api/reports/vulnerability-trends/export', {
         auth: mfgToken,
-        query: { format: 'pdf', from, to },
+        query: { format: 'md', from, to },
       });
       expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('application/pdf');
-      const buf = Buffer.from(res.body);
-      expect(buf.slice(0, 4).toString('ascii')).toBe('%PDF');
+      expect(res.headers.get('content-type')).toContain('text/markdown');
+      const body = typeof res.body === 'string' ? res.body : Buffer.from(res.body).toString('utf-8');
+      expect(body).toMatch(/^#/);
     });
 
     it('should return CSV for format=csv', async () => {
@@ -423,20 +422,20 @@ describe('/api/reports', () => {
   describe('GET /audit-trail/export', () => {
     it('should reject unauthenticated request', async () => {
       const res = await api.get('/api/reports/audit-trail/export', {
-        query: { format: 'pdf', from, to },
+        query: { format: 'md', from, to },
       });
       expect(res.status).toBe(401);
     });
 
-    it('should return a PDF for format=pdf', async () => {
+    it('should return Markdown for format=md', async () => {
       const res = await api.get('/api/reports/audit-trail/export', {
         auth: mfgToken,
-        query: { format: 'pdf', from, to },
+        query: { format: 'md', from, to },
       });
       expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('application/pdf');
-      const buf = Buffer.from(res.body);
-      expect(buf.slice(0, 4).toString('ascii')).toBe('%PDF');
+      expect(res.headers.get('content-type')).toContain('text/markdown');
+      const body = typeof res.body === 'string' ? res.body : Buffer.from(res.body).toString('utf-8');
+      expect(body).toMatch(/^#/);
     });
 
     it('should return CSV for format=csv', async () => {

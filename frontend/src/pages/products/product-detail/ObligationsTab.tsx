@@ -37,7 +37,7 @@ export default function ObligationsTab({ product }: { product: Product }) {
   const [obAiError, setObAiError] = useState<string | null>(null);
   const token = localStorage.getItem('session_token');
 
-  async function handleExportObl(format: 'pdf' | 'csv') {
+  async function handleExportObl(format: 'md' | 'csv') {
     setExportingObl(format);
     try {
       const res = await fetch(`/api/products/${product.id}/reports/obligations?format=${format}`, {
@@ -166,9 +166,9 @@ export default function ObligationsTab({ product }: { product: Product }) {
         </div>
       </div>
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-        <button className="tf-doc-download-btn" onClick={() => handleExportObl('pdf')} disabled={!!exportingObl}>
-          {exportingObl === 'pdf' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
-          {exportingObl === 'pdf' ? 'Generating...' : 'Export PDF'}
+        <button className="tf-doc-download-btn" onClick={() => handleExportObl('md')} disabled={!!exportingObl}>
+          {exportingObl === 'md' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+          {exportingObl === 'md' ? 'Generating...' : 'Export Report'}
         </button>
         <button className="tf-doc-download-btn" onClick={() => handleExportObl('csv')} disabled={!!exportingObl}>
           {exportingObl === 'csv' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}

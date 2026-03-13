@@ -2,11 +2,11 @@
  * Product Reports Tests — /api/products/:productId/reports
  *
  * Tests the three standalone per-product export endpoints:
- * - GET /api/products/:productId/reports/vulnerabilities?format=pdf|csv
- * - GET /api/products/:productId/reports/licences?format=pdf|csv
- * - GET /api/products/:productId/reports/obligations?format=pdf|csv
+ * - GET /api/products/:productId/reports/vulnerabilities?format=md|csv
+ * - GET /api/products/:productId/reports/licences?format=md|csv
+ * - GET /api/products/:productId/reports/obligations?format=md|csv
  *
- * All endpoints require auth, verify product ownership, and support PDF + CSV.
+ * All endpoints require auth, verify product ownership, and support Markdown + CSV.
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -45,18 +45,18 @@ describe('/api/products/:productId/reports', () => {
       expect(res.status).toBe(404);
     });
 
-    it('should return a PDF by default', async () => {
+    it('should return Markdown by default', async () => {
       const res = await api.get(`/api/products/${PRODUCT_ID}/reports/vulnerabilities`, { auth: mfgToken });
       expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('application/pdf');
-      const buf = Buffer.from(res.body);
-      expect(buf.slice(0, 4).toString('ascii')).toBe('%PDF');
+      expect(res.headers.get('content-type')).toContain('text/markdown');
+      const body = typeof res.body === 'string' ? res.body : Buffer.from(res.body).toString('utf-8');
+      expect(body).toMatch(/^#/);
     });
 
-    it('should return a PDF with Content-Disposition', async () => {
+    it('should return Markdown with Content-Disposition', async () => {
       const res = await api.get(`/api/products/${PRODUCT_ID}/reports/vulnerabilities`, {
         auth: mfgToken,
-        query: { format: 'pdf' },
+        query: { format: 'md' },
       });
       expect(res.status).toBe(200);
       expect(res.headers.get('content-disposition')).toContain('attachment');
@@ -97,18 +97,18 @@ describe('/api/products/:productId/reports', () => {
       expect(res.status).toBe(404);
     });
 
-    it('should return a PDF by default', async () => {
+    it('should return Markdown by default', async () => {
       const res = await api.get(`/api/products/${PRODUCT_ID}/reports/licences`, { auth: mfgToken });
       expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('application/pdf');
-      const buf = Buffer.from(res.body);
-      expect(buf.slice(0, 4).toString('ascii')).toBe('%PDF');
+      expect(res.headers.get('content-type')).toContain('text/markdown');
+      const body = typeof res.body === 'string' ? res.body : Buffer.from(res.body).toString('utf-8');
+      expect(body).toMatch(/^#/);
     });
 
-    it('should return a PDF with Content-Disposition', async () => {
+    it('should return Markdown with Content-Disposition', async () => {
       const res = await api.get(`/api/products/${PRODUCT_ID}/reports/licences`, {
         auth: mfgToken,
-        query: { format: 'pdf' },
+        query: { format: 'md' },
       });
       expect(res.status).toBe(200);
       expect(res.headers.get('content-disposition')).toContain('attachment');
@@ -149,18 +149,18 @@ describe('/api/products/:productId/reports', () => {
       expect(res.status).toBe(404);
     });
 
-    it('should return a PDF by default', async () => {
+    it('should return Markdown by default', async () => {
       const res = await api.get(`/api/products/${PRODUCT_ID}/reports/obligations`, { auth: mfgToken });
       expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('application/pdf');
-      const buf = Buffer.from(res.body);
-      expect(buf.slice(0, 4).toString('ascii')).toBe('%PDF');
+      expect(res.headers.get('content-type')).toContain('text/markdown');
+      const body = typeof res.body === 'string' ? res.body : Buffer.from(res.body).toString('utf-8');
+      expect(body).toMatch(/^#/);
     });
 
-    it('should return a PDF with Content-Disposition', async () => {
+    it('should return Markdown with Content-Disposition', async () => {
       const res = await api.get(`/api/products/${PRODUCT_ID}/reports/obligations`, {
         auth: mfgToken,
-        query: { format: 'pdf' },
+        query: { format: 'md' },
       });
       expect(res.status).toBe(200);
       expect(res.headers.get('content-disposition')).toContain('attachment');

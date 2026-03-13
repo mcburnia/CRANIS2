@@ -50,7 +50,7 @@ export default function ComplianceSummaryReport() {
   const [to, setTo] = useState(defaultTo);
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null);
+  const [exporting, setExporting] = useState<'md' | 'csv' | null>(null);
   const [error, setError] = useState('');
 
   const token = localStorage.getItem('session_token');
@@ -70,7 +70,7 @@ export default function ComplianceSummaryReport() {
     }
   }
 
-  async function download(format: 'pdf' | 'csv') {
+  async function download(format: 'md' | 'csv') {
     setExporting(format);
     try {
       const res = await fetch(
@@ -120,10 +120,10 @@ export default function ComplianceSummaryReport() {
 
         {data && (
           <>
-            <button onClick={() => download('pdf')} disabled={exporting !== null}
+            <button onClick={() => download('md')} disabled={exporting !== null}
               style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 6, cursor: exporting ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}>
-              {exporting === 'pdf' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
-              Download PDF
+              {exporting === 'md' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+              Download Report
             </button>
             <button onClick={() => download('csv')} disabled={exporting !== null}
               style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 6, cursor: exporting ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}>

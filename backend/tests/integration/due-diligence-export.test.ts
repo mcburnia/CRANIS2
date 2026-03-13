@@ -1,7 +1,7 @@
 /**
  * Integration Test — Due Diligence Export
  *
- * Tests the full due diligence flow: preview → download PDF → download ZIP.
+ * Tests the full due diligence flow: preview → download ZIP.
  * Verifies export content types and response shapes.
  */
 
@@ -37,26 +37,11 @@ describe('Integration: Due Diligence Export Flow', () => {
     });
   });
 
-  // ─── Step 2: PDF download ───────────────────────────────────────────
-
-  describe('PDF generation', () => {
-    it('should generate PDF for product', async () => {
-      const res = await api.get(`/api/due-diligence/${TEST_IDS.products.github}/pdf`, { auth: token });
-      // May return PDF or error if no data
-      if (res.status === 200) {
-        const contentType = res.headers.get('content-type') || '';
-        expect(contentType).toContain('pdf');
-      } else {
-        expect([404, 500]).toContain(res.status);
-      }
-    });
-  });
-
-  // ─── Step 3: ZIP download ───────────────────────────────────────────
+  // ─── Step 2: ZIP download ───────────────────────────────────────────
 
   describe('ZIP generation', () => {
     it('should generate ZIP for product', async () => {
-      const res = await api.get(`/api/due-diligence/${TEST_IDS.products.github}/zip`, { auth: token });
+      const res = await api.get(`/api/due-diligence/${TEST_IDS.products.github}/export`, { auth: token });
       if (res.status === 200) {
         const contentType = res.headers.get('content-type') || '';
         // ZIP content type

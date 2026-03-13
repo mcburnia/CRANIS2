@@ -25,7 +25,7 @@ export default function RiskFindingsTab({ productId }: { productId: string }) {
 
   const token = localStorage.getItem('session_token');
 
-  async function handleExportVuln(format: 'pdf' | 'csv') {
+  async function handleExportVuln(format: 'md' | 'csv') {
     setExportingVuln(format);
     try {
       const res = await fetch(`/api/products/${productId}/reports/vulnerabilities?format=${format}`, {

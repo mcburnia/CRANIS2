@@ -3,7 +3,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
-import { gatherReportData, generatePDF, generateFindingsCSV, generateDueDiligenceZIP } from '../services/due-diligence.js';
+import { gatherReportData, generateMarkdown, generateFindingsCSV, generateDueDiligenceZIP } from '../services/due-diligence.js';
 import { generateCycloneDX } from '../services/sbom-service.js';
 
 const router = Router();
@@ -105,8 +105,8 @@ router.get('/:productId/export', requireAuth, async (req: Request, res: Response
     // Gather all report data
     const data = await gatherReportData(orgId, productId);
 
-    // Generate PDF
-    const pdfBuffer = await generatePDF(data);
+    // Generate Markdown report
+    const reportMarkdown = generateMarkdown(data);
 
     // Generate CycloneDX SBOM
     let sbomJson: any = null;
@@ -125,7 +125,7 @@ router.get('/:productId/export', requireAuth, async (req: Request, res: Response
     const csv = generateFindingsCSV(data.licenseFindings);
 
     // Assemble ZIP
-    const zipBuffer = generateDueDiligenceZIP(data, pdfBuffer, sbomJson, csv);
+    const zipBuffer = generateDueDiligenceZIP(data, reportMarkdown, sbomJson, csv);
 
     // Send response
     const safeName = (data.product.name || 'product').replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -145,7 +145,7 @@ router.get('/:productId/export', requireAuth, async (req: Request, res: Response
       userAgent: reqData.userAgent,
       metadata: {
         productId,
-        pdfSizeBytes: pdfBuffer.length,
+        markdownSizeBytes: Buffer.byteLength(reportMarkdown, 'utf-8'),
         zipSizeBytes: zipBuffer.length,
         findingsCount: data.licenseFindings.length,
       },
