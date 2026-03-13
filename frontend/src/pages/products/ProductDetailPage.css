@@ -1678,3 +1678,100 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
 .bf-result-summary {
   font-size: 0.78rem; color: var(--muted); padding: 0.4rem 0; margin-top: 0.25rem;
 }
+
+/* ─── Post-Scan Triage Wizard ──────────────────────────── */
+.pst-triage-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.4rem 0.9rem; border-radius: 6px; font-size: 0.82rem; font-weight: 500;
+  border: 1px solid var(--accent); background: var(--accent); color: #fff;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.pst-triage-btn:hover { opacity: 0.88; }
+.pst-triage-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pst-modal { max-width: 700px; max-height: 85vh; }
+.pst-modal .bf-body { max-height: 60vh; overflow-y: auto; }
+
+.pst-intro { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
+.pst-empty { text-align: center; padding: 2rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+.pst-empty p { font-size: 0.9rem; color: var(--muted); }
+
+.pst-error {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 0.75rem;
+  background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626; font-size: 0.82rem;
+}
+
+.pst-findings-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.pst-finding {
+  border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.75rem;
+  transition: border-color 0.15s;
+}
+.pst-finding.pst-skipped { opacity: 0.5; }
+.pst-finding-header {
+  display: flex; align-items: center; gap: 0.6rem; cursor: pointer;
+}
+.pst-severity {
+  font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 3px;
+  font-weight: 700; text-transform: uppercase; min-width: 55px; text-align: center;
+}
+.pst-finding-info { flex: 1; min-width: 0; }
+.pst-finding-title { font-size: 0.82rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pst-finding-meta { font-size: 0.72rem; color: var(--muted); display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.pst-fix-available { color: var(--green); font-weight: 500; }
+.pst-expand-icon { color: var(--muted); flex-shrink: 0; }
+
+.pst-finding-desc {
+  font-size: 0.78rem; color: var(--muted); padding: 0.5rem 0 0.25rem 0;
+  line-height: 1.4;
+}
+
+.pst-actions { margin-top: 0.5rem; }
+.pst-suggestion {
+  font-size: 0.78rem; color: var(--accent); margin-bottom: 0.4rem;
+  font-style: italic;
+}
+
+.pst-action-btns { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.pst-action-btn {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.72rem; font-weight: 500;
+  border: 1px solid var(--border); background: transparent; color: var(--muted);
+  cursor: pointer; transition: all 0.15s;
+}
+.pst-action-btn:hover { border-color: var(--accent); color: var(--accent); }
+.pst-action-btn.active { border-color: var(--accent); background: rgba(100, 149, 237, 0.1); color: var(--accent); }
+.pst-action-btn.active[title*="Dismiss"] { border-color: var(--green); background: rgba(76, 175, 80, 0.1); color: var(--green); }
+.pst-action-btn.active[title*="Mitigate"] { border-color: #f97316; background: rgba(249, 115, 22, 0.1); color: #f97316; }
+.pst-skip-btn.active { border-color: var(--muted); background: rgba(139, 141, 152, 0.08); color: var(--muted); }
+
+.pst-summary-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.pst-count {
+  font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: 500;
+}
+.pst-count.dismiss { background: rgba(76, 175, 80, 0.12); color: var(--green); }
+.pst-count.acknowledge { background: rgba(100, 149, 237, 0.12); color: var(--accent); }
+.pst-count.mitigate { background: rgba(249, 115, 22, 0.12); color: #f97316; }
+.pst-count.skip { background: rgba(139, 141, 152, 0.08); color: var(--muted); }
+
+.pst-done-header { text-align: center; margin-bottom: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.pst-done-header h4 { margin: 0; font-size: 1rem; }
+
+.pst-done-stats {
+  display: flex; justify-content: center; gap: 2rem; margin-bottom: 1rem;
+  padding: 0.75rem 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.pst-stat { text-align: center; }
+.pst-stat-num { display: block; font-size: 1.4rem; font-weight: 700; color: var(--text); }
+.pst-stat-label { font-size: 0.75rem; color: var(--muted); }
+
+.pst-results-list { max-height: 200px; overflow-y: auto; }
+.pst-result-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.3rem 0.5rem; font-size: 0.78rem; border-bottom: 1px solid var(--border);
+}
+.pst-result-row:last-child { border-bottom: none; }
+.pst-result-action { font-weight: 500; text-transform: capitalize; min-width: 80px; }
+.pst-result-id { color: var(--muted); font-family: monospace; font-size: 0.72rem; }

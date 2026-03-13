@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-  Shield, AlertTriangle, CheckCircle2, ChevronRight, ChevronDown, Loader2, Download, X, RefreshCw, Info, Sparkles, Copy, Check,
+  Shield, AlertTriangle, CheckCircle2, ChevronRight, ChevronDown, Loader2, Download, X, RefreshCw, Info, Sparkles, Copy, Check, ListChecks,
 } from 'lucide-react';
+import PostScanTriageWizard from '../../../components/PostScanTriageWizard';
 
 export default function RiskFindingsTab({ productId }: { productId: string }) {
   const [findings, setFindings] = useState<any[]>([]);
@@ -20,6 +21,7 @@ export default function RiskFindingsTab({ productId }: { productId: string }) {
   const [showTriageUpgrade, setShowTriageUpgrade] = useState(false);
   const [bulkAutoApply, setBulkAutoApply] = useState(false);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
+  const [showTriageWizard, setShowTriageWizard] = useState(false);
 
   const token = localStorage.getItem('session_token');
 
@@ -235,6 +237,9 @@ export default function RiskFindingsTab({ productId }: { productId: string }) {
             {triaging ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
             {triaging ? 'Triaging…' : 'AI Triage All'}
           </button>
+          <button className="btn pst-triage-btn" onClick={() => setShowTriageWizard(true)} disabled={findings.filter(f => f.status === 'open' || f.status === 'acknowledged').length === 0}>
+            <ListChecks size={14} /> Triage Findings
+          </button>
           <button className="tf-doc-download-btn" onClick={() => handleExportVuln('csv')} disabled={!!exportingVuln}>
             {exportingVuln === 'csv' ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
             {exportingVuln === 'csv' ? 'Generating...' : 'Export CSV'}
@@ -374,6 +379,15 @@ export default function RiskFindingsTab({ productId }: { productId: string }) {
           )}
         </div>
       ))}
+
+      {showTriageWizard && (
+        <PostScanTriageWizard
+          productId={productId}
+          findings={findings}
+          onClose={() => setShowTriageWizard(false)}
+          onComplete={fetchFindings}
+        />
+      )}
     </div>
   );
 }

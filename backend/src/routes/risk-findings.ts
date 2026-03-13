@@ -462,6 +462,119 @@ router.post('/:productId/scan', requireAuth, async (req: Request, res: Response)
   }
 });
 
+// POST /api/risk-findings/:productId/batch-triage – Batch triage decisions from wizard
+// Accepts an array of { findingId, action, reason? } and applies them in one pass.
+// Valid actions: dismiss, acknowledge, mitigate, resolve, skip (no-op).
+router.post('/:productId/batch-triage', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const email = (req as any).email;
+  const productId = req.params.productId as string;
+  const { decisions } = req.body || {};
+
+  if (!Array.isArray(decisions) || decisions.length === 0) {
+    res.status(400).json({ error: 'decisions array is required' });
+    return;
+  }
+
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    // Verify product belongs to org
+    const driver = getDriver();
+    const session = driver.session();
+    try {
+      const check = await session.run(
+        'MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId}) RETURN p.id',
+        { orgId, productId }
+      );
+      if (check.records.length === 0) {
+        res.status(404).json({ error: 'Product not found' });
+        return;
+      }
+    } finally {
+      await session.close();
+    }
+
+    const validActions = ['dismiss', 'acknowledge', 'mitigate', 'resolve', 'skip'];
+    const results: { findingId: string; action: string; applied: boolean }[] = [];
+    let applied = 0;
+    let skipped = 0;
+
+    for (const dec of decisions) {
+      const { findingId, action, reason } = dec;
+
+      if (!findingId || !action || !validActions.includes(action)) {
+        results.push({ findingId: findingId || 'unknown', action: action || 'invalid', applied: false });
+        skipped++;
+        continue;
+      }
+
+      if (action === 'skip') {
+        results.push({ findingId, action: 'skip', applied: false });
+        skipped++;
+        continue;
+      }
+
+      // Map wizard actions to finding statuses
+      const statusMap: Record<string, string> = {
+        dismiss: 'dismissed',
+        acknowledge: 'acknowledged',
+        mitigate: 'mitigated',
+        resolve: 'resolved',
+      };
+      const newStatus = statusMap[action];
+
+      let query: string;
+      let params: any[];
+
+      if (newStatus === 'dismissed') {
+        query = 'UPDATE vulnerability_findings SET status = $1, dismissed_by = $2, dismissed_at = NOW(), dismissed_reason = $3, updated_at = NOW() WHERE id = $4 AND org_id = $5 AND product_id = $6 RETURNING id';
+        params = [newStatus, email, reason || 'Batch triage wizard', findingId, orgId, productId];
+      } else if (newStatus === 'acknowledged') {
+        query = 'UPDATE vulnerability_findings SET status = $1, dismissed_by = $2, dismissed_at = NOW(), updated_at = NOW() WHERE id = $3 AND org_id = $4 AND product_id = $5 RETURNING id';
+        params = [newStatus, email, findingId, orgId, productId];
+      } else if (newStatus === 'mitigated') {
+        query = 'UPDATE vulnerability_findings SET status = $1, mitigation_notes = $2, dismissed_by = $3, updated_at = NOW() WHERE id = $4 AND org_id = $5 AND product_id = $6 RETURNING id';
+        params = [newStatus, reason || null, email, findingId, orgId, productId];
+      } else if (newStatus === 'resolved') {
+        query = 'UPDATE vulnerability_findings SET status = $1, resolved_at = NOW(), resolved_by = $2, updated_at = NOW() WHERE id = $3 AND org_id = $4 AND product_id = $5 RETURNING id';
+        params = [newStatus, email, findingId, orgId, productId];
+      } else {
+        results.push({ findingId, action, applied: false });
+        skipped++;
+        continue;
+      }
+
+      const result = await pool.query(query, params);
+      if (result.rows.length > 0) {
+        results.push({ findingId, action, applied: true });
+        applied++;
+      } else {
+        results.push({ findingId, action, applied: false });
+        skipped++;
+      }
+    }
+
+    // Telemetry
+    const reqData = extractRequestData(req);
+    recordEvent({
+      userId, email,
+      eventType: 'batch_triage_completed',
+      ...reqData,
+      metadata: { productId, applied, skipped, total: decisions.length },
+    }).catch(() => {});
+
+    res.json({
+      results,
+      summary: { applied, skipped, total: decisions.length },
+    });
+  } catch (err) {
+    console.error('Failed to batch triage findings:', err);
+    res.status(500).json({ error: 'Failed to apply batch triage decisions' });
+  }
+});
+
 // PUT /api/risk-findings/:findingId – Update finding status (FR-1: full triage workflow)
 router.put('/:findingId', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
