@@ -12,10 +12,8 @@
 .helptip:hover { color: var(--accent); }
 
 .helptip-bubble {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed;
+  z-index: 9999;
   background: #252836;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -26,7 +24,6 @@
   max-width: 320px;
   min-width: 200px;
   width: max-content;
-  z-index: 1000;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   pointer-events: none;
   animation: helptipFadeIn 0.12s ease;
@@ -45,15 +42,10 @@
 }
 
 @media (max-width: 768px) {
-  .helptip-bubble {
-    left: 0;
-    transform: none;
-    max-width: 260px;
-  }
-  .helptip-bubble::after { left: 10px; transform: none; }
+  .helptip-bubble { max-width: 260px; }
 }
 
 @keyframes helptipFadeIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from { opacity: 0; transform: translate(-50%, calc(-100% + 4px)); }
+  to { opacity: 1; transform: translate(-50%, -100%); }
 }
