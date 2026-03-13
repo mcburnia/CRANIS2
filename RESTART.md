@@ -1347,7 +1347,21 @@ sudo systemctl restart cloudflared
   - Backend: 103 files, 692 em dashes removed. Copilot system prompts, obligation engine reason strings, licence scanner output, conformity assessment descriptions, route error messages, alert email content all updated.
   - Documentation: 28 UML diagram files (43 em dashes), USER-GUIDE.md (~150 edits including double-dash separators), LLD.md (UK English fix), USB-STORAGE-SETUP.md (UK English fixes). Fixed Unicode escape artefacts (`\u2013` literals) in EXECUTIVE-SUMMARY.md and CRANIS2-CAPABILITIES-AND-SAFEGUARDS.md.
 
+**Session 43 (2026-03-13):**
+- **Automation wizards (P7 #39)** — Three guided workflow wizards for common compliance tasks:
+  - **Batch Fill wizard** — Bulk-populate technical file sections and obligation evidence from a single form. Product selector, section/obligation picker, AI-assisted content generation with review step, batch save. Accessible from Technical File tab.
+  - **Post-Scan Triage wizard** — After a vulnerability scan completes, guides user through triaging new findings. Severity-sorted list with accept/mitigate/defer actions, bulk operations, notes per finding, summary confirmation step.
+  - **Onboarding wizard** — First-time product setup flow. Steps: product details, repository connection, initial scan trigger, CRA category selection, key obligation review, technical file kickstart. Accessible from empty-state product list and dashboard CTA.
+
+**Session 44 (2026-03-13):**
+- **PDF to Markdown migration (#45)** — Replaced all 6 pdfkit-based PDF generators with Markdown output. 24 files changed, 986 insertions, 1,633 deletions.
+  - Backend: 6 generators rewritten from async stream-based PDFDocument to sync string-based Markdown functions. Content-Type changed from `application/pdf` to `text/markdown; charset=utf-8`. Default format parameter changed from `pdf` to `md`. API route URLs unchanged.
+  - Frontend: 9 files updated. Format types `'pdf'` to `'md'`, filenames `.pdf` to `.md`, button labels "Download PDF"/"Export PDF" to "Download Report"/"Export Report".
+  - Tests: 5 test files updated. Content-type assertions, magic byte checks replaced with Markdown content assertions, format query params updated.
+  - Dependency: Removed `pdfkit` and `@types/pdfkit` from package.json (~2MB saved).
+  - Files affected: `technical-file/cvd-pdf.ts`, `technical-file/doc-pdf.ts`, `product-reports.ts`, `reports.ts`, `supplier-due-diligence.ts`, `services/due-diligence.ts` (backend); `ComplianceSummaryReport`, `VulnerabilityTrendsReport`, `AuditTrailReport`, `ObligationsTab`, `RiskFindingsTab`, `LicenseCompliancePage`, `TechnicalFilesPage`, `TechnicalFileTab`, `SupplyChainTab` (frontend).
+
 **Next Steps:**
-- P7 #39 — Automation wizards (batch fill, post-scan triage, onboarding wizard)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
+- P9 — Growth funnels (conformity assessment selector, NIS2 classifier, importer workflows)

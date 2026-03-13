@@ -63,10 +63,10 @@ P6 – Compliance Document Library – ALL DONE
 36	Auto-populated templates	Medium	DONE
 37	Full template library (7 templates)	High	DONE
 
-P7 - Andi's good catches – 3/4 DONE
+P7 - Andi's good catches – ALL DONE
 #	Feature	Effort	Status
 38	AI CoPilot Prompt Engineering Topic Focus	High	PHASE 2 DONE
-39	Automation wizards	Unknown	TODO
+39	Automation wizards (Batch Fill, Post-Scan Triage, Onboarding)	Medium	DONE
 40	Codebase modularity refactor	Medium	DONE
 41	Update welcome page, user docs, and FAQ	Medium	DONE
 
@@ -94,15 +94,16 @@ Cross-cutting (done)
 **P5:** 0/7 – Supplier marketplace not started (post-launch)
 **P6:** ALL DONE (document template library)
 **Bugs:** 3/3 ALL DONE
-**P7:** 3/4 DONE (#38 AI copilot prompts, #40 codebase modularity, #41 docs update) – #39 automation wizards TODO
+**P7:** ALL DONE (#38 AI copilot prompts, #39 automation wizards, #40 codebase modularity, #41 docs update)
 **P8:** ALL DONE (10-year compliance vault, 7 phases A–G)
 **P9:** ALL DONE (CRA + NIS2 conformity assessments, assessment landing page, launch list subscription)
+**#45:** DONE (PDF to Markdown migration – pdfkit removed, all exports now Markdown)
 **Cross-cutting:** Editorial standard established and applied across entire codebase (frontend, backend, docs, welcome site)
 
 **Immediate next:**
-- P7 #39 – Automation wizards (batch fill, post-scan triage, onboarding wizard)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 – Supplier marketplace (post-launch)
+- P9 growth funnels – conformity assessment selector, NIS2 classifier, importer workflows
 
 ---
 
@@ -180,7 +181,7 @@ At scale (100 customers, 5 products each = 500 products): **~€1,890 total over
 **#40 – Compliance snapshot generator** (Medium effort)
 - Backend service that assembles a complete compliance archive ZIP for a product
 - Includes: technical file (all 8 sections as Markdown + JSON), EU DoC as Markdown, all SBOM versions (SPDX JSON + CycloneDX JSON), vulnerability scan history JSON, obligation evidence JSON with status history, activity log JSON
-- Format policy: Markdown for human-readable documents, JSON for machine-readable data – no PDF generation
+- Format policy: Markdown for human-readable documents, JSON for machine-readable data – no PDF generation anywhere in the platform
 - SHA-256 manifest file listing every file + hash
 - Self-contained: includes a README explaining the archive structure and how to verify integrity without CRANIS2
 - API endpoint: `POST /api/products/:id/compliance-snapshot`
@@ -279,23 +280,12 @@ At scale (100 customers, 5 products each = 500 products): **~€1,890 total over
 
 ## Backlog
 
-**#45 – Replace PDF generation with Markdown across the platform** (Medium effort)
-- Replace all 6 pdfkit-based PDF generators with Markdown output
-- Affected files:
-  - `backend/src/routes/product-reports.ts` – product compliance report
-  - `backend/src/routes/reports.ts` – general reports
-  - `backend/src/routes/technical-file/cvd-pdf.ts` – CVD policy PDF
-  - `backend/src/routes/technical-file/doc-pdf.ts` – EU DoC PDF
-  - `backend/src/routes/supplier-due-diligence.ts` – due diligence report
-  - `backend/src/services/due-diligence.ts` – due diligence export
-- Benefits: lighter files, version-controllable, future-proof, no pdfkit dependency
-- Can remove `pdfkit` from package.json once complete
-- Update frontend download links to serve `.md` files instead of `.pdf`
-- Update tests accordingly
-
-### Status: BACKLOG – ready to scope when prioritised
-### Dependencies: None – can be built independently of other P8 items
-### Estimated effort: Medium (5 items, ~4–5 sessions total)
+**#45 – Replace PDF generation with Markdown across the platform** – DONE (Session 44)
+- Replaced all 6 pdfkit-based PDF generators with Markdown output
+- Removed `pdfkit` and `@types/pdfkit` dependencies (~2MB saved)
+- 24 files changed, 986 insertions, 1,633 deletions
+- All report exports now use `text/markdown; charset=utf-8`, format param `md`
+- Frontend buttons updated: "Download Report" / "Export Report" instead of PDF labels
 
 ---
 
