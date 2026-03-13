@@ -1,4 +1,4 @@
-@startuml Registration & Onboarding — User Level
+@startuml Registration & Onboarding – User Level
 title Registration & Onboarding
 
 actor "New User" as user

@@ -1,5 +1,5 @@
-@startuml Billing & Subscription — System Level
-title Billing & Subscription — System Process
+@startuml Billing & Subscription – System Level
+title Billing & Subscription – System Process
 
 actor "Browser" as browser
 participant "React Frontend" as fe

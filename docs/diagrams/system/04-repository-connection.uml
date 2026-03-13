@@ -1,5 +1,5 @@
-@startuml Repository Connection — System Level
-title Repository Connection — System Process
+@startuml Repository Connection – System Level
+title Repository Connection – System Process
 
 actor "Browser" as browser
 participant "React Frontend" as fe

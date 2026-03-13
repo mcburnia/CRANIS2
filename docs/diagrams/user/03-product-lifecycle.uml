@@ -1,4 +1,4 @@
-@startuml Product Lifecycle — User Level
+@startuml Product Lifecycle – User Level
 title Product Lifecycle (Create, Edit, View, Delete)
 
 actor "User" as user

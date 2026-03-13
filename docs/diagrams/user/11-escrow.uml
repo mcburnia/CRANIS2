@@ -1,4 +1,4 @@
-@startuml Escrow Management — User Level
+@startuml Escrow Management – User Level
 title Escrow (Source Code & Artifact Deposits)
 
 actor "User" as user

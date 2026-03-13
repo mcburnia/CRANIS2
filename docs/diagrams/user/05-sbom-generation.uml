@@ -1,4 +1,4 @@
-@startuml SBOM Generation — User Level
+@startuml SBOM Generation – User Level
 title SBOM Generation & Export
 
 actor "User" as user

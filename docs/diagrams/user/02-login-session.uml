@@ -1,4 +1,4 @@
-@startuml Login & Session — User Level
+@startuml Login & Session – User Level
 title Login & Session Management
 
 actor "User" as user

@@ -1,4 +1,4 @@
-@startuml Technical File Management — User Level
+@startuml Technical File Management – User Level
 title Technical File (CRA Annex VII Documentation)
 
 actor "User" as user

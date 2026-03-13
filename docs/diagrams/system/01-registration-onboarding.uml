@@ -1,5 +1,5 @@
-@startuml Registration & Onboarding — System Level
-title Registration & Onboarding — System Process
+@startuml Registration & Onboarding – System Level
+title Registration & Onboarding – System Process
 
 actor "Browser" as browser
 participant "React Frontend" as fe

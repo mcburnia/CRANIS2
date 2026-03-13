@@ -1,5 +1,5 @@
-@startuml Product Lifecycle — System Level
-title Product Lifecycle — System Process
+@startuml Product Lifecycle – System Level
+title Product Lifecycle – System Process
 
 actor "Browser" as browser
 participant "React Frontend" as fe

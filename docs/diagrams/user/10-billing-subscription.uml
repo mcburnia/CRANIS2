@@ -1,4 +1,4 @@
-@startuml Billing & Subscription — User Level
+@startuml Billing & Subscription – User Level
 title Billing & Subscription Management
 
 actor "User" as user

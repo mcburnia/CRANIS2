@@ -1,5 +1,5 @@
-@startuml Login & Session — System Level
-title Login & Session Management — System Process
+@startuml Login & Session – System Level
+title Login & Session Management – System Process
 
 actor "Browser" as browser
 participant "React Frontend" as fe

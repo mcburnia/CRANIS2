@@ -1,5 +1,5 @@
-@startuml Admin Operations — System Level
-title Platform Admin Operations — System Process
+@startuml Admin Operations – System Level
+title Platform Admin Operations – System Process
 
 actor "Admin Browser" as browser
 participant "React Frontend\n(AdminLayout)" as fe

@@ -1,4 +1,4 @@
-@startuml CRA Incident Reporting — User Level
+@startuml CRA Incident Reporting – User Level
 title CRA Incident & Vulnerability Reporting
 
 actor "User" as user

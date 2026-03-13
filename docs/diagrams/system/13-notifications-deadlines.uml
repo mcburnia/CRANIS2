@@ -1,5 +1,5 @@
-@startuml Notifications & CRA Deadlines — System Level
-title Notifications & CRA Deadlines — System Process
+@startuml Notifications & CRA Deadlines – System Level
+title Notifications & CRA Deadlines – System Process
 
 actor "Browser" as browser
 participant "React Frontend" as fe

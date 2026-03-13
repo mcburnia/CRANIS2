@@ -1,5 +1,5 @@
-@startuml CRA Incident Reporting — System Level
-title CRA Incident & Vulnerability Reporting — System Process
+@startuml CRA Incident Reporting – System Level
+title CRA Incident & Vulnerability Reporting – System Process
 
 actor "Browser" as browser
 participant "React Frontend" as fe

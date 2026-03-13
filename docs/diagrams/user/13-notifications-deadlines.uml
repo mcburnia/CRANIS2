@@ -1,4 +1,4 @@
-@startuml Notifications & CRA Deadlines — User Level
+@startuml Notifications & CRA Deadlines – User Level
 title Notifications & CRA Deadline Alerts
 
 actor "User" as user
@@ -21,7 +21,7 @@ user -> notif : Sees notification list:\n- Severity (info/low/medium/high/critic
 note over notif : System checks CRA report\ndeadlines every hour and\nsends alerts at key intervals.
 
 notif -> user : "12 hours remaining"\nalert for Early Warning stage
-notif -> user : "4 hours remaining"\nalert — urgency increases
+notif -> user : "4 hours remaining"\nalert – urgency increases
 notif -> user : "1 hour remaining"\ncritical alert
 notif -> user : "OVERDUE" alert if\ndeadline has passed
 

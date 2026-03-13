@@ -1,4 +1,4 @@
-@startuml Due Diligence Export — User Level
+@startuml Due Diligence Export – User Level
 title Due Diligence Package
 
 actor "User" as user

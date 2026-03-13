@@ -1,5 +1,5 @@
-@startuml Due Diligence Export — System Level
-title Due Diligence Package — System Process
+@startuml Due Diligence Export – System Level
+title Due Diligence Package – System Process
 
 actor "Browser" as browser
 participant "React Frontend" as fe

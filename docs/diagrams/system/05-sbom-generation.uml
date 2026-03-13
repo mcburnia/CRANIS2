@@ -1,5 +1,5 @@
-@startuml SBOM Generation — System Level
-title SBOM Generation (Three-Tier Fallback) — System Process
+@startuml SBOM Generation – System Level
+title SBOM Generation (Three-Tier Fallback) – System Process
 
 participant "Scheduler\n(2 AM daily)" as sched
 participant "SBOM Service" as sbom

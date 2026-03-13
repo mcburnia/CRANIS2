@@ -523,7 +523,7 @@ All jobs run via `scheduler.ts` using node-cron:
 | Time (UTC) | Job | Description |
 |------------|-----|-------------|
 | 01:00 | Vulnerability DB Sync | Fetches latest OSV + NVD data, updates local cache tables |
-| 02:00 | SBOM Auto-Sync | Re-syncs stale SBOMs only → triggers license scan + IP proof enrichment |
+| 02:00 | SBOM Auto-Sync | Re-syncs stale SBOMs only → triggers licence scan + IP proof enrichment |
 | 03:00 | Platform Vulnerability Scan | Runs all products against latest vulnerability database |
 | 04:00 | Billing Checks | Trial expiry warnings, payment grace period enforcement |
 | 05:00 | Escrow Deposits | Pushes all escrow-enabled products to Forgejo mirrors |

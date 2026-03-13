@@ -1,6 +1,6 @@
 # USB Storage Setup (Non-Destructive)
 
-This setup mounts the existing external drive **as-is** and uses it only for CRANIS2 backups/artifacts.
+This setup mounts the existing external drive **as-is** and uses it only for CRANIS2 backups/artefacts.
 
 It does **not** format the drive and does **not** remove existing files.
 
@@ -45,11 +45,11 @@ This creates:
 - `CRANIS2-storage/backups/repo-snapshots`
 - `CRANIS2-storage/backups/db-dumps`
 
-## 5) Sync artifacts and repo snapshot
+## 5) Sync artefacts and repo snapshot
 
 ```bash
 cd ~/cranis2
 ./scripts/usb-storage-sync-artifacts.sh /mnt/usb-storage
 ```
 
-This copies generated test artifacts and writes a timestamped repository snapshot tarball.
+This copies generated test artefacts and writes a timestamped repository snapshot tarball.

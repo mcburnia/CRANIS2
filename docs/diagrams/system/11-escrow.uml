@@ -1,5 +1,5 @@
-@startuml Escrow Management — System Level
-title Escrow (Source Code Deposits) — System Process
+@startuml Escrow Management – System Level
+title Escrow (Source Code Deposits) – System Process
 
 actor "Browser" as browser
 participant "React Frontend" as fe

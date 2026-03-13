@@ -1,5 +1,5 @@
-@startuml Technical File — System Level
-title Technical File Management — System Process
+@startuml Technical File – System Level
+title Technical File Management – System Process
 
 actor "Browser" as browser
 participant "React Frontend" as fe

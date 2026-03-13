@@ -1,4 +1,4 @@
-@startuml Repository Connection — User Level
+@startuml Repository Connection – User Level
 title Repository Connection
 
 actor "User" as user

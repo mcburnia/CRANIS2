@@ -1,5 +1,5 @@
-@startuml Marketplace — System Level
-title Marketplace — System Process
+@startuml Marketplace – System Level
+title Marketplace – System Process
 
 actor "Visitor Browser" as visitor
 actor "Admin Browser" as admin

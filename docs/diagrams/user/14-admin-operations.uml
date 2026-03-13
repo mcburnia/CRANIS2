@@ -1,4 +1,4 @@
-@startuml Admin Operations — User Level
+@startuml Admin Operations – User Level
 title Platform Admin Operations
 
 actor "Platform Admin" as admin

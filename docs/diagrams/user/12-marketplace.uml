@@ -1,4 +1,4 @@
-@startuml Marketplace — User Level
+@startuml Marketplace – User Level
 title Marketplace (Public Profile & Contact)
 
 actor "Visitor" as visitor
