@@ -96,12 +96,12 @@ router.post('/:productId/compliance-snapshots', requireAuth, async (req: Request
       await pool.query(
         `UPDATE compliance_snapshots
          SET filename = $1, size_bytes = $2, content_hash = $3, status = 'complete', metadata = $4,
-             rfc3161_token = $6, rfc3161_tsa_url = $7, rfc3161_timestamp = CASE WHEN $6 IS NOT NULL THEN NOW() ELSE NULL END,
-             signature = $8, signature_algorithm = $9, signature_key_id = $10
+             rfc3161_token = $6::bytea, rfc3161_tsa_url = $7::text, rfc3161_timestamp = CASE WHEN $6::bytea IS NOT NULL THEN NOW() ELSE NULL END,
+             signature = $8::bytea, signature_algorithm = $9::text, signature_key_id = $10::text
          WHERE id = $5`,
         [result.filename, result.sizeBytes, result.contentHash, JSON.stringify(result.metadata), snapshotId,
-         result.rfc3161Token, result.rfc3161TsaUrl,
-         result.signature, result.signatureAlgorithm, result.signatureKeyId]
+         result.rfc3161Token || null, result.rfc3161TsaUrl || null,
+         result.signature || null, result.signatureAlgorithm || null, result.signatureKeyId || null]
       );
 
       // Activity log
