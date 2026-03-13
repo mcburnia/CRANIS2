@@ -9,6 +9,12 @@
  * POST /api/v1/products/:id/sync                     – Trigger SBOM sync + vulnerability rescan
  * PUT  /api/v1/products/:id/findings/:fid/resolve    – Mark finding as resolved with evidence
  * GET  /api/v1/products/:id/scans/:scanId            – Poll scan status
+ *
+ * OSCAL (GRC Bridge) endpoints:
+ * GET  /api/v1/oscal/catalog                           – CRA obligations as OSCAL controls
+ * GET  /api/v1/products/:id/oscal/profile              – Applicable controls for product category
+ * GET  /api/v1/products/:id/oscal/assessment-results   – Obligation statuses as OSCAL findings
+ * GET  /api/v1/products/:id/oscal/component-definition – Product metadata + SBOM summary
  */
 
 import { Router, Request, Response } from 'express';
@@ -23,6 +29,12 @@ import {
 } from '../services/obligation-engine.js';
 import { analyseComplianceGaps } from '../services/compliance-gaps.js';
 import { runProductScan } from '../services/vulnerability-scanner.js';
+import {
+  buildCraCatalog,
+  buildCraProfile,
+  buildAssessmentResults,
+  buildComponentDefinition,
+} from '../services/oscal.js';
 
 const router = Router();
 
@@ -391,6 +403,79 @@ router.put('/products/:id/findings/:findingId/resolve', requireApiKey('write:fin
     });
   } catch (error) {
     console.error('[API-V1] PUT /products/:id/findings/:findingId/resolve error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OSCAL (GRC Bridge) endpoints
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── GET /api/v1/oscal/catalog – CRA obligation catalog (static, no product context) ──
+router.get('/oscal/catalog', requireApiKey('read:compliance'), async (_req: Request, res: Response) => {
+  try {
+    const catalog = buildCraCatalog();
+    res.json(catalog);
+  } catch (error) {
+    console.error('[API-V1] GET /oscal/catalog error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── GET /api/v1/products/:id/oscal/profile – Applicable controls for product category ──
+router.get('/products/:id/oscal/profile', requireApiKey('read:compliance'), async (req: Request, res: Response) => {
+  try {
+    const orgId = (req as any).orgId;
+    const product = await verifyProductOrg(orgId, req.params.id as string);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    const profile = buildCraProfile(product.craCategory || 'default');
+    res.json(profile);
+  } catch (error) {
+    console.error('[API-V1] GET /products/:id/oscal/profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── GET /api/v1/products/:id/oscal/assessment-results – Obligation statuses as OSCAL findings ──
+router.get('/products/:id/oscal/assessment-results', requireApiKey('read:compliance'), async (req: Request, res: Response) => {
+  try {
+    const orgId = (req as any).orgId;
+    const productId = req.params.id as string;
+    const product = await verifyProductOrg(orgId, productId);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    await ensureObligations(orgId, productId, product.craCategory || 'default');
+
+    const results = await buildAssessmentResults(productId, orgId, {
+      name: product.name,
+      craCategory: product.craCategory || 'default',
+    });
+    res.json(results);
+  } catch (error) {
+    console.error('[API-V1] GET /products/:id/oscal/assessment-results error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── GET /api/v1/products/:id/oscal/component-definition – Product metadata + SBOM summary ──
+router.get('/products/:id/oscal/component-definition', requireApiKey('read:compliance'), async (req: Request, res: Response) => {
+  try {
+    const orgId = (req as any).orgId;
+    const productId = req.params.id as string;
+    const product = await verifyProductOrg(orgId, productId);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    const componentDef = await buildComponentDefinition(productId, orgId, {
+      name: product.name,
+      version: product.version || undefined,
+      description: product.description || undefined,
+      craCategory: product.craCategory || 'default',
+      productType: product.productType || undefined,
+    });
+    res.json(componentDef);
+  } catch (error) {
+    console.error('[API-V1] GET /products/:id/oscal/component-definition error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
