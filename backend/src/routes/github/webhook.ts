@@ -117,7 +117,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
         console.error('[WEBHOOK] Failed to store push event:', pushErr.message);
       }
 
-      // Record telemetry (system event — no user, insert directly)
+      // Record telemetry (system event – no user, insert directly)
       try {
         await pool.query(
           `INSERT INTO user_events (event_type, ip_address, user_agent, metadata)

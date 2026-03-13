@@ -33,7 +33,7 @@ async function getOrgId(userId: string): Promise<string | null> {
   return result.rows[0]?.org_id || null;
 }
 
-// GET /overview — cross-product license compliance summary
+// GET /overview – cross-product license compliance summary
 router.get('/overview', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
@@ -149,7 +149,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /:productId/scan — trigger license scan for a product
+// POST /:productId/scan – trigger license scan for a product
 router.post('/:productId/scan', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
@@ -194,7 +194,7 @@ router.post('/:productId/scan', requireAuth, async (req: Request, res: Response)
   }
 });
 
-// POST /:productId/recheck-compatibility — re-run compatibility checks without full scan
+// POST /:productId/recheck-compatibility – re-run compatibility checks without full scan
 router.post('/:productId/recheck-compatibility', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
@@ -224,7 +224,7 @@ router.post('/:productId/recheck-compatibility', requireAuth, async (req: Reques
         `UPDATE license_findings SET compatibility_verdict = NULL, compatibility_reason = NULL WHERE product_id = $1 AND org_id = $2`,
         [productId, orgId]
       );
-      res.json({ message: 'No distribution model set — compatibility verdicts cleared', counts: { compatible: 0, incompatible: 0, reviewNeeded: 0 } });
+      res.json({ message: 'No distribution model set. Compatibility verdicts cleared.', counts: { compatible: 0, incompatible: 0, reviewNeeded: 0 } });
       return;
     }
 
@@ -265,7 +265,7 @@ router.post('/:productId/recheck-compatibility', requireAuth, async (req: Reques
   }
 });
 
-// GET /:productId — list license findings for a product
+// GET /:productId – list license findings for a product
 router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
@@ -315,7 +315,7 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// PUT /finding/:findingId — acknowledge or waive a finding
+// PUT /finding/:findingId – acknowledge or waive a finding
 router.put('/finding/:findingId', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
@@ -365,7 +365,7 @@ router.put('/finding/:findingId', requireAuth, async (req: Request, res: Respons
   }
 });
 
-// FR-6: GET /compatibility-matrix — visual compatibility rules grid
+// FR-6: GET /compatibility-matrix – visual compatibility rules grid
 router.get("/compatibility-matrix", requireAuth, async (_req: Request, res: Response) => {
   const distributionModels = [
     { value: "proprietary_binary", label: "Proprietary Binary" },

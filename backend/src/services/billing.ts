@@ -71,8 +71,8 @@ export async function ensureStripePrices(): Promise<void> {
     // Ensure pro product price exists
     if (!config.stripeProProductPriceId) {
       const product = await stripe.products.create({
-        name: 'CRANIS2 Pro — Per Product',
-        description: 'CRA compliance with AI Copilot — per-product monthly charge',
+        name: 'CRANIS2 Pro – Per Product',
+        description: 'CRA compliance with AI Copilot, per-product monthly charge',
       });
       const price = await stripe.prices.create({
         product: product.id,
@@ -337,7 +337,7 @@ export async function createCheckoutSession(orgId: string, email: string, plan: 
   lineItems.push({ price: contributorPriceId, quantity: contributorQty });
 
   if (plan === 'pro') {
-    if (!config.stripeProProductPriceId) throw new Error('Stripe Pro product price not configured — run ensureStripePrices() first');
+    if (!config.stripeProProductPriceId) throw new Error('Stripe Pro product price not configured. Run ensureStripePrices() first.');
     const productQty = Math.max(1, await countProducts(orgId));
     lineItems.push({ price: config.stripeProProductPriceId, quantity: productQty });
   }
@@ -575,7 +575,7 @@ export async function processWebhookEvent(event: Stripe.Event): Promise<void> {
       const orgId = orgBilling.rows[0]?.org_id;
       if (!orgId) break;
 
-      // Clear any grace period — payment succeeded
+      // Clear any grace period – payment succeeded
       await updateBillingStatus(orgId, {
         status: 'active',
         graceEndsAt: null,
@@ -721,7 +721,7 @@ export async function checkTrialExpiry(): Promise<void> {
     await sendTrialExpiryWarning(org7d, 7).catch(e => console.error('[BILLING] Email error (7d):', e.message));
   }
 
-  // Trial just expired — start 7-day grace
+  // Trial just expired – start 7-day grace
   const justExpired = await pool.query(
     `SELECT org_id FROM org_billing
      WHERE status = 'trial'
@@ -747,7 +747,7 @@ export async function checkTrialExpiry(): Promise<void> {
     await sendTrialExpired(orgExpired).catch(e => console.error('[BILLING] Email error (expired):', e.message));
   }
 
-  // Grace period ended — move to read_only
+  // Grace period ended – move to read_only
   const graceExpired = await pool.query(
     `SELECT org_id FROM org_billing
      WHERE status = 'trial'
@@ -769,7 +769,7 @@ export async function checkTrialExpiry(): Promise<void> {
     await sendTrialGraceEnded(orgGrace).catch(e => console.error('[BILLING] Email error (grace):', e.message));
   }
 
-  // Read-only for 60+ days — suspend
+  // Read-only for 60+ days – suspend
   const readOnlyExpired = await pool.query(
     `SELECT org_id FROM org_billing
      WHERE status = 'read_only'
@@ -786,7 +786,7 @@ export async function checkTrialExpiry(): Promise<void> {
 export async function checkPaymentGrace(): Promise<void> {
   console.log('[BILLING] Checking payment grace periods...');
 
-  // Past due with grace period ended — move to read_only
+  // Past due with grace period ended – move to read_only
   const pastDueExpired = await pool.query(
     `SELECT org_id FROM org_billing
      WHERE status = 'past_due'
@@ -800,7 +800,7 @@ export async function checkPaymentGrace(): Promise<void> {
       orgId: row.org_id,
       type: 'billing',
       severity: 'critical',
-      title: 'Account restricted — payment overdue',
+      title: 'Account restricted – payment overdue',
       body: 'Your account is now read-only due to non-payment. Update your payment method to restore access.',
       link: '/billing',
     });
@@ -809,7 +809,7 @@ export async function checkPaymentGrace(): Promise<void> {
     await sendAccessRestricted(orgPayGrace).catch(e => console.error('[BILLING] Email error (restricted):', e.message));
   }
 
-  // Read-only for 30+ days due to payment failure — suspend
+  // Read-only for 30+ days due to payment failure – suspend
   const readOnlyLong = await pool.query(
     `SELECT org_id FROM org_billing
      WHERE status = 'read_only'

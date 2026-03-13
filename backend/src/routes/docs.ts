@@ -4,7 +4,7 @@ import { requirePlatformAdmin } from '../middleware/requirePlatformAdmin.js';
 
 const router = Router();
 
-// GET /api/docs — List all doc pages (public, no auth)
+// GET /api/docs – List all doc pages (public, no auth)
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const { rows } = await pool.query(
@@ -17,7 +17,7 @@ router.get('/', async (_req: Request, res: Response) => {
   }
 });
 
-// GET /api/docs/:slug — Get single page (public, no auth)
+// GET /api/docs/:slug – Get single page (public, no auth)
 router.get('/:slug', async (req: Request, res: Response) => {
   try {
     const { rows } = await pool.query(
@@ -39,7 +39,7 @@ router.get('/:slug', async (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/docs/:slug — Update page (platform admin only)
+// PUT /api/docs/:slug – Update page (platform admin only)
 router.put('/:slug', requirePlatformAdmin, async (req: Request, res: Response) => {
   const { title, content } = req.body;
   const userId = (req as any).userId;

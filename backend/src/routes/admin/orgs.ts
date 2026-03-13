@@ -7,7 +7,7 @@ import { toISOString } from './utils.js';
 
 const router = Router();
 
-// GET /api/admin/orgs — List all organisations with summary stats
+// GET /api/admin/orgs – List all organisations with summary stats
 router.get('/orgs', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const driver = getDriver();
@@ -139,7 +139,7 @@ router.get('/orgs', requirePlatformAdmin, async (req: Request, res: Response) =>
   }
 });
 
-// GET /api/admin/orgs/:orgId — Organisation detail
+// GET /api/admin/orgs/:orgId – Organisation detail
 router.get('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const { orgId } = req.params;
@@ -274,7 +274,7 @@ router.get('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Respo
   }
 });
 
-// PUT /api/admin/orgs/:orgId/plan — Change organisation plan
+// PUT /api/admin/orgs/:orgId/plan – Change organisation plan
 router.put('/orgs/:orgId/plan', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const { orgId } = req.params;
@@ -311,7 +311,7 @@ router.put('/orgs/:orgId/plan', requirePlatformAdmin, async (req: Request, res: 
   }
 });
 
-// DELETE /api/admin/orgs/:orgId — Delete organisation and all data
+// DELETE /api/admin/orgs/:orgId – Delete organisation and all data
 router.delete('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const { orgId } = req.params;
@@ -348,7 +348,7 @@ router.delete('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Re
       );
       const productIds = prodResult.records.map(r => r.get('id'));
 
-      // Cascading Postgres deletes — order matters for FK constraints
+      // Cascading Postgres deletes – order matters for FK constraints
       // Tables with org_id (direct)
       await pool.query('DELETE FROM copilot_usage WHERE org_id = $1', [orgId]);
       await pool.query('DELETE FROM product_activity_log WHERE org_id = $1', [orgId]);
@@ -378,7 +378,7 @@ router.delete('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Re
       await pool.query('DELETE FROM stakeholders WHERE org_id = $1', [orgId]);
       await pool.query('DELETE FROM notifications WHERE org_id = $1', [orgId]);
 
-      // Product-only tables (no org_id column — delete by product_id)
+      // Product-only tables (no org_id column – delete by product_id)
       if (productIds.length > 0) {
         await pool.query('DELETE FROM sync_history WHERE product_id = ANY($1)', [productIds]);
         await pool.query('DELETE FROM repo_push_events WHERE product_id = ANY($1)', [productIds]);

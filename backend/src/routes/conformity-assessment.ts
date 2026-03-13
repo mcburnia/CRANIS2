@@ -1,8 +1,8 @@
 /**
  * Conformity Assessment Routes
  *
- * GET  /api/conformity-assessment/:category       — Public: get assessment for a CRA category
- * GET  /api/products/:productId/conformity-assessment — Authenticated: get assessment for a product
+ * GET  /api/conformity-assessment/:category       – Public: get assessment for a CRA category
+ * GET  /api/products/:productId/conformity-assessment – Authenticated: get assessment for a product
  *
  * The public endpoint requires no auth and is used by the welcome site lead-gen tool.
  * The product endpoint auto-populates from the product's CRA category and technical file.
@@ -25,7 +25,7 @@ export const publicConformityRouter = express.Router();
 
 /**
  * GET /api/conformity-assessment/modules/all
- * Public endpoint — returns all module definitions for reference.
+ * Public endpoint – returns all module definitions for reference.
  * Must be registered BEFORE /:category to avoid route conflict.
  */
 publicConformityRouter.get('/modules/all', (_req: Request, res: Response) => {
@@ -41,7 +41,7 @@ publicConformityRouter.get('/modules/all', (_req: Request, res: Response) => {
 
 /**
  * GET /api/conformity-assessment/:category
- * Public endpoint — no auth required. Used by welcome site interactive tool.
+ * Public endpoint – no auth required. Used by welcome site interactive tool.
  */
 publicConformityRouter.get('/:category', (req: Request, res: Response) => {
   const category = req.params.category as string;
@@ -70,7 +70,7 @@ export const productConformityRouter = express.Router();
 
 /**
  * GET /api/products/:productId/conformity-assessment
- * Authenticated — returns assessment based on the product's actual CRA category
+ * Authenticated – returns assessment based on the product's actual CRA category
  * and whether harmonised standards are documented in the technical file.
  */
 productConformityRouter.get('/:productId/conformity-assessment', async (req: Request, res: Response) => {

@@ -295,7 +295,7 @@ export async function generatePDF(data: DueDiligenceData): Promise<Buffer> {
     const amberColour = '#f59e0b';
     const redColour = '#ef4444';
 
-    // ── Footer helper (no event listeners — avoids recursion) ──
+    // ── Footer helper (no event listeners – avoids recursion) ──
     let pageNum = 1;
 
     function addFooter() {
@@ -608,7 +608,7 @@ export async function generatePDF(data: DueDiligenceData): Promise<Buffer> {
         const statusIcon = obl.status === 'met' ? '✓' : obl.status === 'in_progress' ? '◐' : '○';
         const statusCol = obl.status === 'met' ? greenColour : obl.status === 'in_progress' ? amberColour : mutedColour;
         const oblLabel = obl.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        doc.fontSize(9).fillColor(statusCol).text(`${statusIcon}  ${oblLabel}  —  ${obl.status.replace('_', ' ')}`, { indent: 10 });
+        doc.fontSize(9).fillColor(statusCol).text(`${statusIcon}  ${oblLabel}  –  ${obl.status.replace('_', ' ')}`, { indent: 10 });
         doc.moveDown(0.2);
       }
     } else {
@@ -642,7 +642,7 @@ export async function generatePDF(data: DueDiligenceData): Promise<Buffer> {
         const statusCol = section.status === 'completed' ? greenColour : section.status === 'in_progress' ? amberColour : mutedColour;
         const updatedStr = section.updatedAt ? new Date(section.updatedAt).toLocaleDateString('en-GB') : 'not updated';
         doc.fontSize(9).fillColor(statusCol).text(
-          `${statusIcon}  ${section.title}  (${section.craReference || ''})  —  ${section.status.replace('_', ' ')}  —  last updated ${updatedStr}`,
+          `${statusIcon}  ${section.title}  (${section.craReference || ''})  –  ${section.status.replace('_', ' ')}  –  last updated ${updatedStr}`,
           { indent: 10 }
         );
         doc.moveDown(0.2);
@@ -744,7 +744,7 @@ export function generateDueDiligenceZIP(
   };
   zip.addFile('vulnerability-summary.json', Buffer.from(JSON.stringify(vulnSummary, null, 2), 'utf-8'));
 
-  // 5. Technical File (Annex VII) — all 8 sections as structured JSON
+  // 5. Technical File (Annex VII) – all 8 sections as structured JSON
   const technicalFileExport = {
     generatedAt: data.generatedAt,
     productId: data.product.id,
@@ -795,12 +795,12 @@ export function generateDueDiligenceZIP(
     },
     organisation: data.organisation.name,
     contents: [
-      'due-diligence-report.pdf — Investor-readable compliance report',
-      'sbom-cyclonedx-1.6.json — Software Bill of Materials (CycloneDX 1.6)',
-      'license-findings.csv — Per-dependency licence classification',
-      'vulnerability-summary.json — Vulnerability posture summary',
-      `technical-file.json — CRA Annex VII Technical File (${data.technicalFileSections.length} sections)`,
-      `license-texts/ — Full licence texts (${nonPermissiveIds.size} non-permissive licences)`,
+      'due-diligence-report.pdf – Investor-readable compliance report',
+      'sbom-cyclonedx-1.6.json – Software Bill of Materials (CycloneDX 1.6)',
+      'license-findings.csv – Per-dependency licence classification',
+      'vulnerability-summary.json – Vulnerability posture summary',
+      `technical-file.json – CRA Annex VII Technical File (${data.technicalFileSections.length} sections)`,
+      `license-texts/ – Full licence texts (${nonPermissiveIds.size} non-permissive licences)`,
     ],
   };
   zip.addFile('metadata.json', Buffer.from(JSON.stringify(metadata, null, 2), 'utf-8'));

@@ -114,7 +114,7 @@ router.get('/:productId/export', requireAuth, async (req: Request, res: Response
       const result = await generateCycloneDX(orgId, productId);
       sbomJson = result.cyclonedx;
     } catch {
-      // SBOM may not be available — include a placeholder
+      // SBOM may not be available – include a placeholder
       sbomJson = {
         note: 'SBOM not available. Sync the repository first.',
         generatedAt: data.generatedAt,

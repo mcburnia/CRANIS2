@@ -111,7 +111,7 @@ export async function createSnapshot(
     rfc3161Token = await rfc3161RequestTimestamp(contentHash, tsaUrl);
   } catch (err) {
     console.error(`[IP Proof] Failed to get RFC 3161 timestamp:`, err);
-    // Continue without timestamp — we still store the hash
+    // Continue without timestamp – we still store the hash
   }
 
   // Store in database
@@ -161,7 +161,7 @@ export async function verifySnapshot(snapshotId: string): Promise<{
     const tokenBuffer = Buffer.from(rfc3161_token);
 
     if (!validateTimestampToken(tokenBuffer, content_hash)) {
-      throw new Error('Timestamp token validation failed — invalid structure or hash mismatch');
+      throw new Error('Timestamp token validation failed – invalid structure or hash mismatch');
     }
 
     // Token is structurally valid and contains our hash

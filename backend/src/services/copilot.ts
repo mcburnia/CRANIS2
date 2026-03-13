@@ -1,8 +1,8 @@
 /**
- * AI Copilot — generates CRA compliance content suggestions using Claude.
+ * AI Copilot – generates CRA compliance content suggestions using Claude.
  *
  * Non-streaming: returns full response as a string.
- * Never throws — logs errors and returns error message.
+ * Never throws – logs errors and returns error message.
  */
 import Anthropic from '@anthropic-ai/sdk';
 import pool from '../db/pool.js';
@@ -154,11 +154,11 @@ const SYSTEM_PROMPT = `You are a CRA (EU Cyber Resilience Act) compliance expert
 Rules:
 1. Ground all suggestions in the product's actual data (SBOM, vulnerability findings, repo metadata, obligation statuses).
 2. Write in a professional, factual tone suitable for regulatory documentation and auditors.
-3. Be specific — reference actual dependency counts, vulnerability stats, and product details rather than using generic placeholders.
+3. Be specific: reference actual dependency counts, vulnerability stats, and product details rather than using generic placeholders.
 4. Where the product data is insufficient, note what information the user should add manually.
 5. Use British English spelling throughout.
 6. Never invent data that isn't provided in the context. If data is missing, say so clearly.
-7. Keep content concise but thorough — aim for evidence-grade documentation.`;
+7. Keep content concise but thorough. Aim for evidence-grade documentation.`;
 
 // ─── DB-backed prompt loading ───────────────────────────────
 
@@ -294,21 +294,21 @@ const TRIAGE_SYSTEM_PROMPT = `You are a CRA (EU Cyber Resilience Act) vulnerabil
 
 For each finding, suggest one of:
 - "dismiss": The vulnerability is not exploitable in the product's context, is a false positive, affects only dev dependencies, or has negligible real-world risk.
-- "acknowledge": The vulnerability is real but low priority — the team should track it but no immediate action is required.
-- "escalate_mitigate": The vulnerability requires urgent attention — a fix, upgrade, or mitigation must be applied.
+- "acknowledge": The vulnerability is real but low priority. The team should track it but no immediate action is required.
+- "escalate_mitigate": The vulnerability requires urgent attention. A fix, upgrade, or mitigation must be applied.
 
 Rules:
-1. Consider the product's CRA category when assessing risk. For "important_i", "important_ii", and "critical" categories, be significantly stricter — escalate more aggressively.
+1. Consider the product's CRA category when assessing risk. For "important_i", "important_ii", and "critical" categories, be significantly stricter; escalate more aggressively.
 2. A fix being available (fixedVersion) should increase urgency to escalate.
 3. Critical/high severity with a high CVSS score should almost always escalate unless clearly not applicable.
 4. Low severity findings in dev-only dependencies are strong dismiss candidates.
-5. Set confidence between 0 and 1. Be conservative — only use confidence >= 0.85 when the decision is clear-cut.
+5. Set confidence between 0 and 1. Be conservative: only use confidence >= 0.85 when the decision is clear-cut.
 6. Set automatable to true ONLY when confidence >= 0.85 AND action is "dismiss".
 7. Provide reasoning of 2-4 sentences explaining your assessment.
 8. If dismissing, include a brief dismissReason suitable for an audit trail.
 9. Use British English.
 
-10. When the action is "acknowledge" or "escalate_mitigate" and a fix is available, include a mitigationCommand — the exact CLI command to resolve the issue (e.g. "npm install lodash@4.17.21", "pip install requests>=2.31.0", "composer require guzzlehttp/guzzle:^7.8"). Tailor the command to the dependency's ecosystem (npm, pip, maven, composer, cargo, go, nuget, gem, etc.). If no fix version is known, suggest the general upgrade command (e.g. "npm update lodash"). For dismiss actions, omit this field.
+10. When the action is "acknowledge" or "escalate_mitigate" and a fix is available, include a mitigationCommand: the exact CLI command to resolve the issue (e.g. "npm install lodash@4.17.21", "pip install requests>=2.31.0", "composer require guzzlehttp/guzzle:^7.8"). Tailor the command to the dependency's ecosystem (npm, pip, maven, composer, cargo, go, nuget, gem, etc.). If no fix version is known, suggest the general upgrade command (e.g. "npm update lodash"). For dismiss actions, omit this field.
 
 Return a JSON array of objects with these fields:
 - findingId (string)
@@ -556,13 +556,13 @@ export async function generateRiskAssessment(context: EnrichedRiskContext): Prom
 
   const vulnDetails = context.topVulnerabilities.length > 0
     ? context.topVulnerabilities.map(v =>
-        `- ${v.sourceId}: ${v.title} (${v.severity}, CVSS ${v.cvssScore ?? 'N/A'}) — ${v.dependencyName}@${v.dependencyVersion} [${v.dependencyEcosystem}]${v.fixedVersion ? ` → fix: ${v.fixedVersion}` : ''}`
+        `- ${v.sourceId}: ${v.title} (${v.severity}, CVSS ${v.cvssScore ?? 'N/A'}) – ${v.dependencyName}@${v.dependencyVersion} [${v.dependencyEcosystem}]${v.fixedVersion ? ` → fix: ${v.fixedVersion}` : ''}`
       ).join('\n')
     : 'No open vulnerability findings.';
 
   const licenceDetails = context.licenceRisks.length > 0
     ? context.licenceRisks.map(l =>
-        `- ${l.dependencyName}: ${l.licenseDeclared} (${l.riskLevel}) — ${l.riskReason}`
+        `- ${l.dependencyName}: ${l.licenseDeclared} (${l.riskLevel}) – ${l.riskReason}`
       ).join('\n')
     : 'No licence risk findings.';
 
@@ -685,11 +685,11 @@ Background: Under CRA Article 14, manufacturers must report actively exploited v
 Rules:
 1. Ground all content in the product's actual data (SBOM, vulnerability findings, linked finding details, repo metadata).
 2. Write in a professional, factual tone suitable for CSIRT/ENISA regulatory submissions.
-3. Be specific — reference actual CVE IDs, dependency names, versions, and statistics when available.
+3. Be specific: reference actual CVE IDs, dependency names, versions, and statistics when available.
 4. Where data is insufficient, note what the user should add manually with "[TO COMPLETE: ...]" placeholders.
 5. Use British English spelling throughout.
 6. Never invent data not provided in the context.
-7. Keep content concise but thorough — these are regulatory submissions, not essays.
+7. Keep content concise but thorough. These are regulatory submissions, not essays.
 8. If previous stages have been submitted, maintain consistency with their content and build upon them.
 9. For the suspectedMalicious field, use only "yes", "no", or "unknown".
 10. For patchStatus, use only "available", "in_progress", or "planned".
@@ -789,7 +789,7 @@ export async function generateIncidentReportDraft(
     ? `Linked vulnerability finding:
 - Title: ${linkedFinding.title}
 - Severity: ${linkedFinding.severity}${linkedFinding.cvssScore ? ` (CVSS ${linkedFinding.cvssScore})` : ''}
-- Source: ${linkedFinding.source} — ${linkedFinding.sourceId}
+- Source: ${linkedFinding.source} – ${linkedFinding.sourceId}
 - Affected: ${linkedFinding.dependencyName}@${linkedFinding.dependencyVersion}
 - Fix: ${linkedFinding.fixedVersion || 'none available'}
 - Description: ${linkedFinding.description?.substring(0, 500) || 'N/A'}`
@@ -925,7 +925,7 @@ Each field value should be a string of 2-5 sentences of substantive content.`;
 
     userPrompt = `Generate evidence/compliance notes for the following CRA obligation:
 
-Obligation: ${obligation.article} — ${obligation.title}
+Obligation: ${obligation.article} – ${obligation.title}
 Description: ${obligation.description}
 ${obligationGuidance ? `\nDetailed regulatory guidance:\n${obligationGuidance}\n` : ''}
 Product context:

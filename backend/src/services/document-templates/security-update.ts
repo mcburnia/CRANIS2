@@ -1,4 +1,4 @@
-export const SECURITY_UPDATE_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTION BEFORE FINALISING**
+export const SECURITY_UPDATE_TEMPLATE = `> **INSTRUCTIONS – DELETE THIS SECTION BEFORE FINALISING**
 >
 > This is a template document provided by CRANIS2 to help you meet your
 > obligations under EU Cyber Resilience Act Article 13(8).
@@ -12,7 +12,7 @@ export const SECURITY_UPDATE_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTIO
 >
 > **Where to store the completed document:**
 > Once finalised, paste the content into your product's **Tech File** in
-> CRANIS2 under the **Art. 13 — Security Properties** section.
+> CRANIS2 under the **Art. 13 – Security Properties** section.
 
 ---
 
@@ -21,7 +21,7 @@ export const SECURITY_UPDATE_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTIO
 **Document Owner:** {{TECHNICAL_FILE_OWNER}}
 **Applicable Product:** {{PRODUCT_NAME}}
 **Organisation:** {{ORG_NAME}}
-**CRA Reference:** Article 13(8) — Security updates provided free of charge
+**CRA Reference:** Article 13(8) – Security updates provided free of charge
 **Effective Date:** {{EFFECTIVE_DATE}}
 **Review Cycle:** Annually, or upon significant change to the update process
 
@@ -58,7 +58,7 @@ In accordance with CRA Article 13(8), {{ORG_NAME}} commits that:
 
 | Type | Description | Delivery |
 |---|---|---|
-| **Security-only update** | Contains exclusively vulnerability fixes. No feature changes. | Priority deployment — severity-based timeline |
+| **Security-only update** | Contains exclusively vulnerability fixes. No feature changes. | Priority deployment – severity-based timeline |
 | **Dependency update** | Upgrades third-party components to address known CVEs | Included in security-only updates or scheduled releases |
 | **Configuration update** | Security-relevant configuration changes | Documented and communicated with update instructions |
 | **Emergency hotfix** | Critical/actively exploited vulnerability requiring immediate response | Expedited deployment within 24 hours |
@@ -186,5 +186,5 @@ Every security update includes clear instructions for users to apply the update.
 
 | Date | Author | Summary |
 |---|---|---|
-| {{EFFECTIVE_DATE}} | | Initial version — establishes security update procedure for CRA Art. 13(8) compliance |
+| {{EFFECTIVE_DATE}} | | Initial version – establishes security update procedure for CRA Art. 13(8) compliance |
 `;

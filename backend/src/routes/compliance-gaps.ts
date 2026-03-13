@@ -1,7 +1,7 @@
 /**
  * Compliance Gap Narrator Routes
  *
- * GET /:productId/compliance-gaps — Deterministic gap analysis for a product
+ * GET /:productId/compliance-gaps – Deterministic gap analysis for a product
  *
  * Mount at: app.use('/api/products', complianceGapsRoutes)
  */

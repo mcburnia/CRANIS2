@@ -1,4 +1,4 @@
-// Multi-format lockfile parsers — no external dependencies
+// Multi-format lockfile parsers – no external dependencies
 // Each parser produces a common ParsedDependency[] output
 // Supports 28 lockfile/manifest formats across all major ecosystems
 
@@ -17,7 +17,7 @@ export interface LockfileParseResult {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// EXISTING PARSERS (npm, pip, go, cargo, gem) — 49 tests passing
+// EXISTING PARSERS (npm, pip, go, cargo, gem) – 49 tests passing
 // ══════════════════════════════════════════════════════════════════
 
 // ── npm: package-lock.json ──────────────────────────────────────
@@ -211,7 +211,7 @@ export function parseGemfileLock(content: string): LockfileParseResult {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// NEW PARSERS — Dependabot-supported ecosystems
+// NEW PARSERS – Dependabot-supported ecosystems
 // ══════════════════════════════════════════════════════════════════
 
 // ── Java: build.gradle.lock ─────────────────────────────────────
@@ -349,7 +349,7 @@ export function parseTerraformLock(content: string): LockfileParseResult {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// NEW PARSERS — NOT supported by Dependabot
+// NEW PARSERS – NOT supported by Dependabot
 // ══════════════════════════════════════════════════════════════════
 
 // ── C/C++: conan.lock ───────────────────────────────────────────
@@ -521,7 +521,7 @@ export function parseNixFlakeLock(content: string): LockfileParseResult {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// NEW PARSERS — Manifests (fallback, lower priority than lockfiles)
+// NEW PARSERS – Manifests (fallback, lower priority than lockfiles)
 // ══════════════════════════════════════════════════════════════════
 
 // ── Python: requirements.txt ────────────────────────────────────
@@ -746,7 +746,7 @@ export function parseDockerfile(content: string): LockfileParseResult {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// DISPATCHER — Registration order determines fallback priority
+// DISPATCHER – Registration order determines fallback priority
 // ══════════════════════════════════════════════════════════════════
 
 export const LOCKFILE_CONFIGS: Array<{ filename: string; parser: (content: string) => LockfileParseResult }> = [
@@ -776,7 +776,7 @@ export const LOCKFILE_CONFIGS: Array<{ filename: string; parser: (content: strin
   { filename: 'renv.lock', parser: parseRenvLock },
   { filename: 'Manifest.toml', parser: parseJuliaManifest },
   { filename: 'flake.lock', parser: parseNixFlakeLock },
-  // ── Manifests (fallback — lower priority than lockfiles) ──
+  // ── Manifests (fallback – lower priority than lockfiles) ──
   { filename: 'requirements.txt', parser: parseRequirementsTxt },
   { filename: 'pyproject.toml', parser: parsePyprojectToml },
   { filename: 'go.mod', parser: parseGoMod },

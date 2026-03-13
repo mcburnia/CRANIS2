@@ -1,5 +1,5 @@
 /**
- * Webhook lifecycle — auto-register and cleanup push-event webhooks.
+ * Webhook lifecycle – auto-register and cleanup push-event webhooks.
  *
  * Called after a successful repo sync (manual or scheduled) to ensure
  * the provider will POST push events to our webhook endpoint, keeping
@@ -16,8 +16,8 @@ const WEBHOOK_CALLBACK = `${APP_BASE_URL}/api/github/webhook`;
 
 /**
  * Ensure a push-event webhook exists for the given repository.
- * Idempotent — skips if the Repository node already stores a webhookId.
- * Non-blocking — logs errors but never throws (caller must not fail).
+ * Idempotent – skips if the Repository node already stores a webhookId.
+ * Non-blocking – logs errors but never throws (caller must not fail).
  */
 export async function ensureWebhook(
   prov: RepoProvider,
@@ -32,7 +32,7 @@ export async function ensureWebhook(
 
   const secret = provider.getWebhookSecret(prov);
   if (!secret) {
-    logger.warn(`[WEBHOOK] No webhook secret configured for ${prov} — skipping auto-registration`);
+    logger.warn(`[WEBHOOK] No webhook secret configured for ${prov} – skipping auto-registration`);
     return;
   }
 
@@ -45,7 +45,7 @@ export async function ensureWebhook(
     );
     const currentId = existing.records[0]?.get('webhookId');
     if (currentId) {
-      logger.info(`[WEBHOOK] Already registered (id=${currentId}) for ${owner}/${repo} — skipping`);
+      logger.info(`[WEBHOOK] Already registered (id=${currentId}) for ${owner}/${repo} – skipping`);
       return;
     }
 
@@ -65,7 +65,7 @@ export async function ensureWebhook(
     );
     logger.info(`[WEBHOOK] Registered webhook id=${webhookId} for ${prov}:${owner}/${repo}`);
   } catch (err: any) {
-    // Non-blocking — log but don't throw
+    // Non-blocking – log but don't throw
     console.error(`[WEBHOOK] Failed to register webhook for ${owner}/${repo}: ${err.message}`);
   } finally {
     await session.close();
@@ -75,7 +75,7 @@ export async function ensureWebhook(
 /**
  * Remove all webhooks for repositories owned by a user for a given provider.
  * Called when a user disconnects their repo connection.
- * Best-effort — logs errors but does not throw.
+ * Best-effort – logs errors but does not throw.
  */
 export async function removeWebhooksForUser(
   prov: RepoProvider,

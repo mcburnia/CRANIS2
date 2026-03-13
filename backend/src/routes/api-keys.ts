@@ -1,9 +1,9 @@
 /**
  * API Key Management Routes (session-authenticated)
  *
- * POST   /api/settings/api-keys     — Create a new API key
- * GET    /api/settings/api-keys     — List all keys for the org
- * DELETE /api/settings/api-keys/:id — Revoke a key
+ * POST   /api/settings/api-keys     – Create a new API key
+ * GET    /api/settings/api-keys     – List all keys for the org
+ * DELETE /api/settings/api-keys/:id – Revoke a key
  */
 
 import { Router, Request, Response } from 'express';

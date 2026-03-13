@@ -45,7 +45,7 @@ async function getOrgId(userId: string): Promise<string | null> {
 }
 
 // ═══════════════════════════════════════════════
-// PUBLIC — Stripe Webhook (no auth, signature only)
+// PUBLIC – Stripe Webhook (no auth, signature only)
 // ═══════════════════════════════════════════════
 
 router.post('/webhook', async (req: Request, res: Response) => {
@@ -73,10 +73,10 @@ router.post('/webhook', async (req: Request, res: Response) => {
 });
 
 // ═══════════════════════════════════════════════
-// AUTHENTICATED — Billing status & operations
+// AUTHENTICATED – Billing status & operations
 // ═══════════════════════════════════════════════
 
-// GET /api/billing/status — Current org billing status
+// GET /api/billing/status – Current org billing status
 router.get('/status', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -124,7 +124,7 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/billing/contributors — Contributor roster with categories
+// GET /api/billing/contributors – Contributor roster with categories
 router.get('/contributors', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -139,7 +139,7 @@ router.get('/contributors', requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-// POST /api/billing/checkout — Create Stripe Checkout session
+// POST /api/billing/checkout – Create Stripe Checkout session
 router.post('/checkout', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;
@@ -163,7 +163,7 @@ router.post('/checkout', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/billing/portal — Create Stripe Customer Portal session
+// POST /api/billing/portal – Create Stripe Customer Portal session
 router.post('/portal', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -178,7 +178,7 @@ router.post('/portal', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/billing/upgrade — Upgrade current subscription to Pro
+// POST /api/billing/upgrade – Upgrade current subscription to Pro
 router.post('/upgrade', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -203,7 +203,7 @@ router.post('/upgrade', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/billing/downgrade — Downgrade current subscription to Standard
+// POST /api/billing/downgrade – Downgrade current subscription to Standard
 router.post('/downgrade', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -224,7 +224,7 @@ router.post('/downgrade', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/billing/contributors/:login/departed — Mark contributor as departed
+// POST /api/billing/contributors/:login/departed – Mark contributor as departed
 router.post('/contributors/:login/departed', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const login = req.params.login as string;
@@ -259,7 +259,7 @@ router.post('/contributors/:login/departed', requireAuth, async (req: Request, r
   }
 });
 
-// DELETE /api/billing/contributors/:login/departed — Un-mark contributor
+// DELETE /api/billing/contributors/:login/departed – Un-mark contributor
 router.delete('/contributors/:login/departed', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const login = req.params.login as string;
@@ -286,10 +286,10 @@ router.delete('/contributors/:login/departed', requireAuth, async (req: Request,
 });
 
 // ═══════════════════════════════════════════════
-// ADMIN — Platform admin billing controls
+// ADMIN – Platform admin billing controls
 // ═══════════════════════════════════════════════
 
-// GET /api/billing/admin/overview — All orgs billing overview
+// GET /api/billing/admin/overview – All orgs billing overview
 router.get('/admin/overview', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const result = await pool.query(`
@@ -360,7 +360,7 @@ router.get('/admin/overview', requirePlatformAdmin, async (req: Request, res: Re
   }
 });
 
-// PUT /api/billing/admin/:orgId/trial — Extend/modify trial
+// PUT /api/billing/admin/:orgId/trial – Extend/modify trial
 router.put('/admin/:orgId/trial', requirePlatformAdmin, async (req: Request, res: Response) => {
   const { orgId } = req.params;
   const { daysToAdd, newEndDate } = req.body;
@@ -390,7 +390,7 @@ router.put('/admin/:orgId/trial', requirePlatformAdmin, async (req: Request, res
   }
 });
 
-// PUT /api/billing/admin/:orgId/exempt — Toggle billing exemption
+// PUT /api/billing/admin/:orgId/exempt – Toggle billing exemption
 router.put('/admin/:orgId/exempt', requirePlatformAdmin, async (req: Request, res: Response) => {
   const { orgId } = req.params;
   const { exempt, reason } = req.body;
@@ -415,7 +415,7 @@ router.put('/admin/:orgId/exempt', requirePlatformAdmin, async (req: Request, re
   }
 });
 
-// PUT /api/billing/admin/:orgId/pause — Payment pause
+// PUT /api/billing/admin/:orgId/pause – Payment pause
 router.put('/admin/:orgId/pause', requirePlatformAdmin, async (req: Request, res: Response) => {
   const { orgId } = req.params;
   const { days, reason } = req.body;
@@ -442,7 +442,7 @@ router.put('/admin/:orgId/pause', requirePlatformAdmin, async (req: Request, res
   }
 });
 
-// GET /api/billing/admin/pricing — Get current pricing configuration
+// GET /api/billing/admin/pricing – Get current pricing configuration
 router.get('/admin/pricing', requirePlatformAdmin, async (_req: Request, res: Response) => {
   try {
     const pricing = await getPricingConfig();
@@ -453,7 +453,7 @@ router.get('/admin/pricing', requirePlatformAdmin, async (_req: Request, res: Re
   }
 });
 
-// PUT /api/billing/admin/pricing — Update pricing configuration
+// PUT /api/billing/admin/pricing – Update pricing configuration
 router.put('/admin/pricing', requirePlatformAdmin, async (req: Request, res: Response) => {
   const { contributorPriceCents, proProductPriceCents } = req.body;
   const userId = (req as any).userId;
@@ -474,8 +474,8 @@ router.put('/admin/pricing', requirePlatformAdmin, async (req: Request, res: Res
         const Stripe = (await import('stripe')).default;
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2025-01-27.acacia' as any });
         const product = await stripe.products.create({
-          name: `CRANIS2 Pro — Per Product (€${(proProductPriceCents / 100).toFixed(2)})`,
-          description: 'CRA compliance with AI Copilot — per-product monthly charge',
+          name: `CRANIS2 Pro – Per Product (€${(proProductPriceCents / 100).toFixed(2)})`,
+          description: 'CRA compliance with AI Copilot – per-product monthly charge',
         });
         const price = await stripe.prices.create({
           product: product.id,
@@ -500,7 +500,7 @@ router.put('/admin/pricing', requirePlatformAdmin, async (req: Request, res: Res
 });
 
 // ═══════════════════════════════════════════════
-// CSIRT Country — org-level default
+// CSIRT Country – org-level default
 // ═══════════════════════════════════════════════
 
 router.get('/csirt-country', requireAuth, async (req: Request, res: Response) => {

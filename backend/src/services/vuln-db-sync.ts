@@ -497,7 +497,7 @@ async function syncOSVEcosystem(ecosystem: OSVEcosystem): Promise<{ advisoryCoun
     [ecosystem, latestModified?.toISOString() || null, totalAdvisories, totalPackages, durationSeconds.toFixed(2)]
   );
 
-  console.log('[VULN-DB] ' + ecosystem + ': done in ' + durationSeconds.toFixed(1) + 's — ' + totalAdvisories + ' advisories, ' + totalPackages + ' packages');
+  console.log('[VULN-DB] ' + ecosystem + ': done in ' + durationSeconds.toFixed(1) + 's – ' + totalAdvisories + ' advisories, ' + totalPackages + ' packages');
   return { advisoryCount: totalAdvisories, packageCount: totalPackages };
 }
 
@@ -772,7 +772,7 @@ async function syncNVDData(): Promise<{ cveCount: number }> {
       [cveCount, durationSeconds.toFixed(2)]
     );
 
-    console.log('[VULN-DB] NVD: done in ' + durationSeconds.toFixed(1) + 's — ' + cveCount + ' CVEs total, ' + totalUpserted + ' upserted this run');
+    console.log('[VULN-DB] NVD: done in ' + durationSeconds.toFixed(1) + 's – ' + cveCount + ' CVEs total, ' + totalUpserted + ' upserted this run');
     return { cveCount };
 
   } catch (err: any) {

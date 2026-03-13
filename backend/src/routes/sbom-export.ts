@@ -102,7 +102,7 @@ function buildComplianceRiskNote(g: ReturnType<typeof Object>, total: number, en
 }
 
 // ─── Structural validators ───────────────────────────────────────────
-// Lightweight completeness checks — no external schema library required.
+// Lightweight completeness checks – no external schema library required.
 // Returns an array of warning strings; empty array means structurally valid.
 
 function validateCycloneDX(bom: any): string[] {
@@ -113,7 +113,7 @@ function validateCycloneDX(bom: any): string[] {
   if (!bom.serialNumber) warnings.push('serialNumber is missing');
 
   if (!Array.isArray(bom.components) || bom.components.length === 0) {
-    warnings.push('components array is empty — SBOM has no dependencies');
+    warnings.push('components array is empty – SBOM has no dependencies');
   } else {
     const missing = bom.components.filter((c: any) => !c.name || !c.version).length;
     if (missing > 0) warnings.push(`${missing} component(s) are missing name or version`);
@@ -132,7 +132,7 @@ function validateSPDX(sbom: any): string[] {
   if (!sbom?.name) warnings.push('document name is missing');
 
   if (!Array.isArray(sbom?.packages) || sbom.packages.length === 0) {
-    warnings.push('packages array is empty — SBOM has no dependencies');
+    warnings.push('packages array is empty – SBOM has no dependencies');
   }
 
   const created = sbom?.creationInfo?.created;
@@ -546,7 +546,7 @@ router.get('/:productId/export/status', requireAuth, async (req: Request, res: R
     // Derive completeness warnings from known data (without building the full export)
     const validationWarnings: string[] = [];
     if (sbomRow.rows.length === 0) {
-      validationWarnings.push('No SBOM available — sync the repository first');
+      validationWarnings.push('No SBOM available – sync the repository first');
     } else if (gapData.total === 0) {
       validationWarnings.push('SBOM contains no dependencies');
     } else {

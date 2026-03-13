@@ -223,7 +223,7 @@ export async function getSBOM(token: string, owner: string, repo: string): Promi
     return result;
   } catch (err: any) {
     console.log(`[SBOM] Error: ${err.message}`);
-    // 404 means no dependency data available — not an error
+    // 404 means no dependency data available – not an error
     if (err.message?.includes('404')) return null;
     // 403 can mean dependency graph not enabled
     if (err.message?.includes('403')) return null;

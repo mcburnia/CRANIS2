@@ -44,14 +44,14 @@ interface PopulatedData {
   stakeholders: Record<string, { name: string; email: string }>;
 }
 
-/** Template catalogue — metadata only (no content) */
+/** Template catalogue – metadata only (no content) */
 export const TEMPLATE_CATALOGUE: DocumentTemplate[] = [
   {
     id: 'versioning-security-release-policy',
     title: 'Versioning & Security Release Policy',
     craArticle: 'Article 13(9)',
     description: 'Defines how your organisation separates security updates from feature releases. Covers versioning scheme, branching strategy, security release procedure, response timelines, user communication, and evidence retention. Required to demonstrate that security patches can be deployed independently of functionality changes.',
-    techFileSection: 'Art. 13 — Security Properties',
+    techFileSection: 'Art. 13 – Security Properties',
     filename: 'versioning-and-security-release-policy.md',
   },
   {
@@ -59,15 +59,15 @@ export const TEMPLATE_CATALOGUE: DocumentTemplate[] = [
     title: 'Coordinated Vulnerability Disclosure Policy',
     craArticle: 'Article 13(6)',
     description: 'Public-facing policy describing how external security researchers can report vulnerabilities, what to expect during the handling process, response timelines, safe harbour provisions, and recognition. Required to demonstrate a documented and accessible CVD process aligned with ISO 29147.',
-    techFileSection: 'Art. 13 — Security Properties',
+    techFileSection: 'Art. 13 – Security Properties',
     filename: 'coordinated-vulnerability-disclosure-policy.md',
   },
   {
     id: 'vulnerability-handling-process',
     title: 'Vulnerability Handling Process',
     craArticle: 'Article 13(5)',
-    description: 'Internal process for managing the full vulnerability lifecycle — detection, triage, remediation, verification, and disclosure. Covers tooling integration, severity-based response timelines, and evidence retention. References CRANIS2 AI-assisted triage and IDE-based remediation via MCP tools.',
-    techFileSection: 'Art. 13 — Security Properties',
+    description: 'Internal process for managing the full vulnerability lifecycle: detection, triage, remediation, verification, and disclosure. Covers tooling integration, severity-based response timelines, and evidence retention. References CRANIS2 AI-assisted triage and IDE-based remediation via MCP tools.',
+    techFileSection: 'Art. 13 – Security Properties',
     filename: 'vulnerability-handling-process.md',
   },
   {
@@ -75,7 +75,7 @@ export const TEMPLATE_CATALOGUE: DocumentTemplate[] = [
     title: 'Security Update Procedure',
     craArticle: 'Article 13(8)',
     description: 'Defines how security updates are developed, tested, and deployed free of charge. Covers update types, development workflow, testing requirements, deployment procedures, and the CRA requirement to provide security updates without cost to the user.',
-    techFileSection: 'Art. 13 — Security Properties',
+    techFileSection: 'Art. 13 – Security Properties',
     filename: 'security-update-procedure.md',
   },
   {
@@ -83,7 +83,7 @@ export const TEMPLATE_CATALOGUE: DocumentTemplate[] = [
     title: 'Incident Response Plan',
     craArticle: 'Article 14',
     description: 'ENISA notification procedures for actively exploited vulnerabilities and severe incidents. Covers the three-stage reporting process (early warning, notification, final report), internal response procedures, stakeholder communication, and post-incident review.',
-    techFileSection: 'Art. 14 — Incident Response',
+    techFileSection: 'Art. 14 – Incident Response',
     filename: 'incident-response-plan.md',
   },
   {
@@ -91,7 +91,7 @@ export const TEMPLATE_CATALOGUE: DocumentTemplate[] = [
     title: 'End-of-Support Policy',
     craArticle: 'Article 13(15)',
     description: 'Defines the support period commitment for your product, the obligations that apply during that period, the wind-down process, user notification procedures, and post-support responsibilities. Ensures transparent communication of the support lifecycle.',
-    techFileSection: 'Art. 13 — Support & Maintenance',
+    techFileSection: 'Art. 13 – Support & Maintenance',
     filename: 'end-of-support-policy.md',
   },
   {
@@ -99,7 +99,7 @@ export const TEMPLATE_CATALOGUE: DocumentTemplate[] = [
     title: 'Secure Development Lifecycle',
     craArticle: 'Annex I, Part I',
     description: 'Security-by-design practices covering threat modelling, secure coding standards, dependency management, SBOM generation, testing requirements, and compliance verification. Demonstrates that security is integrated throughout the product development process.',
-    techFileSection: 'Annex I — Design & Development',
+    techFileSection: 'Annex I – Design & Development',
     filename: 'secure-development-lifecycle.md',
   },
 ];
@@ -156,14 +156,14 @@ export async function generateTemplateForProduct(id: string, ctx: GenerateContex
 
   // Replace the instructions block generically (all templates use the same header)
   content = content.replace(
-    /> \*\*INSTRUCTIONS — DELETE THIS SECTION BEFORE FINALISING\*\*[\s\S]*?\n\n---/,
+    /> \*\*INSTRUCTIONS – DELETE THIS SECTION BEFORE FINALISING\*\*[\s\S]*?\n\n---/,
     `> **REVIEW BEFORE FINALISING**
 >
 > This document was auto-generated by CRANIS2 from your product and
 > organisation data. Fields marked with **[REVIEW]** need your attention.
 >
 > **Next steps:**
-> 1. Review all sections — particularly timelines, roles, and process details
+> 1. Review all sections, particularly timelines, roles, and process details
 > 2. Adjust any [REVIEW] fields to match your actual process
 > 3. Have the document reviewed and approved by the appropriate stakeholders
 >

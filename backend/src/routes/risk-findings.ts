@@ -27,7 +27,7 @@ async function getOrgId(userId: string): Promise<string | null> {
   return result.rows[0]?.org_id || null;
 }
 
-// GET /api/risk-findings/overview — Cross-product vulnerability overview
+// GET /api/risk-findings/overview – Cross-product vulnerability overview
 router.get('/overview', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
 
@@ -159,7 +159,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/risk-findings/platform-scan/latest — Latest platform-wide scan info
+// GET /api/risk-findings/platform-scan/latest – Latest platform-wide scan info
 router.get('/platform-scan/latest', requireAuth, async (req: Request, res: Response) => {
   try {
     const result = await pool.query(
@@ -209,7 +209,7 @@ router.get('/platform-scan/latest', requireAuth, async (req: Request, res: Respo
   }
 });
 
-// GET /api/risk-findings/scan/:scanId — Poll scan status
+// GET /api/risk-findings/scan/:scanId – Poll scan status
 router.get('/scan/:scanId', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const scanId = req.params.scanId as string;
@@ -241,7 +241,7 @@ router.get('/scan/:scanId', requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-// GET /api/risk-findings/:productId — Per-product findings list
+// GET /api/risk-findings/:productId – Per-product findings list
 router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const productId = req.params.productId as string;
@@ -299,7 +299,7 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
       [productId, orgId]
     );
 
-    // Summary counts — FR-1: include all 5 statuses
+    // Summary counts – FR-1: include all 5 statuses
     const summary = { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0 };
     for (const row of result.rows) {
       summary[row.severity as keyof typeof summary] = (summary[row.severity as keyof typeof summary] || 0) + 1;
@@ -322,7 +322,7 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/risk-findings/:productId/scan-history — Scan performance history
+// GET /api/risk-findings/:productId/scan-history – Scan performance history
 router.get('/:productId/scan-history', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const productId = req.params.productId as string;
@@ -403,7 +403,7 @@ router.get('/:productId/scan-history', requireAuth, async (req: Request, res: Re
   }
 });
 
-// POST /api/risk-findings/:productId/scan — Trigger per-product vulnerability scan (FR-2)
+// POST /api/risk-findings/:productId/scan – Trigger per-product vulnerability scan (FR-2)
 router.post('/:productId/scan', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;
@@ -462,14 +462,14 @@ router.post('/:productId/scan', requireAuth, async (req: Request, res: Response)
   }
 });
 
-// PUT /api/risk-findings/:findingId — Update finding status (FR-1: full triage workflow)
+// PUT /api/risk-findings/:findingId – Update finding status (FR-1: full triage workflow)
 router.put('/:findingId', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;
   const findingId = req.params.findingId as string;
   const { status, reason, mitigationNotes } = req.body;
 
-  // FR-1: Full triage — open, acknowledged, mitigated, resolved, dismissed
+  // FR-1: Full triage – open, acknowledged, mitigated, resolved, dismissed
   const validStatuses = ['open', 'dismissed', 'acknowledged', 'mitigated', 'resolved'];
   if (!status || !validStatuses.includes(status)) {
     res.status(400).json({ error: 'Invalid status. Must be: ' + validStatuses.join(', ') });

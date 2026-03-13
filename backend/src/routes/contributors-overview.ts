@@ -77,7 +77,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       await session.close();
     }
 
-    // Calculate totals — deduplicate contributors across products by githubId
+    // Calculate totals – deduplicate contributors across products by githubId
     const uniqueContributors = new Map<number, any>();
     let totalContributions = 0;
     let productsWithRepos = 0;

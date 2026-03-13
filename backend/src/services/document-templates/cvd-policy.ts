@@ -1,4 +1,4 @@
-export const CVD_POLICY_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTION BEFORE FINALISING**
+export const CVD_POLICY_TEMPLATE = `> **INSTRUCTIONS – DELETE THIS SECTION BEFORE FINALISING**
 >
 > This is a template document provided by CRANIS2 to help you meet your
 > obligations under EU Cyber Resilience Act Article 13(6).
@@ -12,7 +12,7 @@ export const CVD_POLICY_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTION BEF
 >
 > **Where to store the completed document:**
 > Once finalised, paste the content into your product's **Tech File** in
-> CRANIS2 under the **Art. 13 — Security Properties** section. The policy
+> CRANIS2 under the **Art. 13 – Security Properties** section. The policy
 > should also be published at a publicly accessible URL.
 
 ---
@@ -22,7 +22,7 @@ export const CVD_POLICY_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTION BEF
 **Document Owner:** {{SECURITY_CONTACT}}
 **Applicable Product:** {{PRODUCT_NAME}}
 **Organisation:** {{ORG_NAME}}
-**CRA Reference:** Article 13(6) — Coordinated vulnerability disclosure
+**CRA Reference:** Article 13(6) – Coordinated vulnerability disclosure
 **Standard Alignment:** ISO/IEC 29147:2018
 **Effective Date:** {{EFFECTIVE_DATE}}
 **Review Cycle:** Annually, or upon significant change to the handling process
@@ -85,7 +85,7 @@ We strongly encourage encrypting vulnerability reports using our PGP key.
 │     Report logged in CRANIS2. AI-assisted triage assigns an      │
 │     initial severity and recommended disposition. The security   │
 │     team reviews and confirms the classification before          │
-│     proceeding — no automated action is taken without human      │
+│     proceeding. No automated action is taken without human       │
 │     approval.                                                    │
 │                           │                                      │
 │  3. INVESTIGATION         ▼                                      │
@@ -136,9 +136,9 @@ We strongly encourage encrypting vulnerability reports using our PGP key.
 
 {{ORG_NAME}} commits to the following for good-faith security researchers:
 
-- **No legal action** — We will not pursue legal action against researchers who report vulnerabilities in accordance with this policy
-- **No negative consequences** — Researchers who act in good faith will not be subject to penalties
-- **Good faith defined** — Avoiding privacy violations, data destruction, and service disruption; not accessing or modifying other users' data; providing reasonable time to remediate before disclosure
+- **No legal action** – We will not pursue legal action against researchers who report vulnerabilities in accordance with this policy
+- **No negative consequences** – Researchers who act in good faith will not be subject to penalties
+- **Good faith defined** – Avoiding privacy violations, data destruction, and service disruption; not accessing or modifying other users' data; providing reasonable time to remediate before disclosure
 
 ---
 
@@ -174,5 +174,5 @@ For any questions about this policy, contact: {{SECURITY_CONTACT}}
 
 | Date | Author | Summary |
 |---|---|---|
-| {{EFFECTIVE_DATE}} | | Initial version — establishes CVD process aligned with ISO 29147 and CRA Art. 13(6) |
+| {{EFFECTIVE_DATE}} | | Initial version – establishes CVD process aligned with ISO 29147 and CRA Art. 13(6) |
 `;

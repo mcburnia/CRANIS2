@@ -1,12 +1,12 @@
 /**
  * Supplier Due Diligence Questionnaire Routes
  *
- * POST /:productId/supplier-questionnaires/generate — Identify risky deps + generate questionnaires
- * GET  /:productId/supplier-questionnaires — List all for product
- * GET  /:productId/supplier-questionnaires/:id — Get single questionnaire
- * PATCH /:productId/supplier-questionnaires/:id/status — Update status
- * GET  /:productId/supplier-questionnaires/export/pdf — PDF export
- * GET  /:productId/supplier-questionnaires/export/csv — CSV export
+ * POST /:productId/supplier-questionnaires/generate – Identify risky deps + generate questionnaires
+ * GET  /:productId/supplier-questionnaires – List all for product
+ * GET  /:productId/supplier-questionnaires/:id – Get single questionnaire
+ * PATCH /:productId/supplier-questionnaires/:id/status – Update status
+ * GET  /:productId/supplier-questionnaires/export/pdf – PDF export
+ * GET  /:productId/supplier-questionnaires/export/csv – CSV export
  *
  * Mount at: app.use('/api/products', supplierDueDiligenceRoutes)
  */
@@ -194,7 +194,7 @@ router.get(
       doc.moveDown(6);
       doc.fontSize(24).fillColor('#6366f1').text('Supplier Due Diligence Report', { align: 'center' });
       doc.moveDown(0.5);
-      doc.fontSize(13).fillColor('#6b7280').text('CRA Art. 13(5) — Third-Party Component Assessment', { align: 'center' });
+      doc.fontSize(13).fillColor('#6b7280').text('CRA Art. 13(5) – Third-Party Component Assessment', { align: 'center' });
       doc.moveDown(2);
       doc.fontSize(12).fillColor('#374151').text(product.name, { align: 'center' });
       doc.moveDown(1);
@@ -248,7 +248,7 @@ router.get(
             if (doc.y > doc.page.height - 100) doc.addPage();
 
             doc.fontSize(9).fillColor('#6366f1').font('Helvetica-Bold').text(
-              `[${question.category.replace(/_/g, ' ').toUpperCase()}]${question.craReference ? ` — ${question.craReference}` : ''}`
+              `[${question.category.replace(/_/g, ' ').toUpperCase()}]${question.craReference ? ` – ${question.craReference}` : ''}`
             );
             doc.font('Helvetica').fontSize(9).fillColor('#111827').text(question.question);
             doc.fontSize(8).fillColor('#6b7280').text(`Rationale: ${question.rationale}`);

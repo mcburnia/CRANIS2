@@ -203,10 +203,10 @@ router.get('/vulnerability-scan/history', requirePlatformAdmin, async (req: Requ
 });
 
 
-// POST /api/admin/vulnerability-db/sync — trigger manual vulnerability database sync
+// POST /api/admin/vulnerability-db/sync – trigger manual vulnerability database sync
 router.post('/vulnerability-db/sync', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
-    // Run async — don't block the response
+    // Run async – don't block the response
     syncVulnDatabases().catch(err => {
       console.error('Manual vuln DB sync failed:', err);
     });
@@ -217,7 +217,7 @@ router.post('/vulnerability-db/sync', requirePlatformAdmin, async (req: Request,
   }
 });
 
-// GET /api/admin/vulnerability-db/status — get sync status per ecosystem
+// GET /api/admin/vulnerability-db/status – get sync status per ecosystem
 router.get('/vulnerability-db/status', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const stats = await getVulnDbStats();

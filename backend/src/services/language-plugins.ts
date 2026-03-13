@@ -1,6 +1,6 @@
 // language-plugins.ts
 // Plugin system for detecting programming languages and extracting import/dependency information for SBOM generation.
-// No external dependencies — all detection and parsing uses regex/string matching.
+// No external dependencies – all detection and parsing uses regex/string matching.
 
 export interface ImportEntry {
   raw: string;
@@ -326,7 +326,7 @@ const phpPlugin: LanguagePlugin = {
     return dedup(entries);
   },
   isStdLib(_module: string): boolean {
-    // PHP has no stdlib imports — all `use` statements are userland namespaces
+    // PHP has no stdlib imports – all `use` statements are userland namespaces
     return false;
   },
   mapToPackage(module: string): DetectedPackage | null {

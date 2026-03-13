@@ -173,7 +173,7 @@ router.post('/login', async (req: Request, res: Response) => {
     );
 
     if (result.rows.length === 0) {
-      // Record failed login attempt (no user found) — use email as identifier
+      // Record failed login attempt (no user found) – use email as identifier
       await recordEvent({
         userId: '00000000-0000-0000-0000-000000000000',
         email: email.toLowerCase(),
@@ -250,7 +250,7 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/auth/me — check current session
+// GET /api/auth/me – check current session
 router.get('/me', async (req: Request, res: Response) => {
   try {
     const authHeader = req.headers.authorization;
@@ -359,7 +359,7 @@ router.get('/verify-email', async (req: Request, res: Response) => {
 });
 
 
-// POST /api/auth/accept-invite — Accept an invitation and set password
+// POST /api/auth/accept-invite – Accept an invitation and set password
 router.post('/accept-invite', async (req: Request, res: Response) => {
   try {
     const { token, password } = req.body;

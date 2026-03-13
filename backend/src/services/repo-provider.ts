@@ -1,4 +1,4 @@
-// Provider dispatcher — thin dispatch layer (no abstract classes, just functions)
+// Provider dispatcher – thin dispatch layer (no abstract classes, just functions)
 // Routes provider-specific calls to github.ts or codeberg.ts (+ self-hosted APIs)
 // PROVIDER_REGISTRY: data-driven provider configuration
 
@@ -8,7 +8,7 @@ import * as codeberg from './codeberg.js';
 export type RepoProvider = 'github' | 'codeberg' | 'gitea' | 'forgejo' | 'gitlab';
 
 // ══════════════════════════════════════════════════════════════════
-// PROVIDER REGISTRY — data-driven, adding a provider = one entry
+// PROVIDER REGISTRY – data-driven, adding a provider = one entry
 // ══════════════════════════════════════════════════════════════════
 
 export interface ProviderConfig {
@@ -215,7 +215,7 @@ async function giteaGet<T>(apiBase: string, path: string, token: string): Promis
   });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Gitea API ${res.status}: ${path} — ${body}`);
+    throw new Error(`Gitea API ${res.status}: ${path} – ${body}`);
   }
   return res.json() as Promise<T>;
 }
@@ -226,7 +226,7 @@ async function gitlabGet<T>(apiBase: string, path: string, token: string): Promi
   });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`GitLab API ${res.status}: ${path} — ${body}`);
+    throw new Error(`GitLab API ${res.status}: ${path} – ${body}`);
   }
   return res.json() as Promise<T>;
 }
@@ -423,7 +423,7 @@ export async function getFileContent(
 ): Promise<string | null> {
   if (prov === 'github') return github.getFileContent(token, owner, repo, branch, filepath);
   if (prov === 'codeberg') return codeberg.getRawFile(token, owner, repo, branch, filepath);
-  // Self-hosted Gitea/Forgejo — use Gitea API
+  // Self-hosted Gitea/Forgejo – use Gitea API
   if (prov === 'gitea' || prov === 'forgejo') {
     if (!instanceUrl) return null;
     const apiBase = `${instanceUrl}/api/v1`;
@@ -594,7 +594,7 @@ export async function createWebhook(
       return codeberg.createWebhook(token, owner, repo, callbackUrl, secret, `${instanceUrl}/api/v1`);
     }
     case 'gitlab':
-      console.warn(`[WEBHOOK] GitLab webhook auto-registration not yet supported — configure manually`);
+      console.warn(`[WEBHOOK] GitLab webhook auto-registration not yet supported – configure manually`);
       return 0;
   }
 }
@@ -682,7 +682,7 @@ export async function getAuthenticatedUser(
 }
 
 // ══════════════════════════════════════════════════════════════════
-// FILE TREE LISTING — needed for Tier 3 import scanning
+// FILE TREE LISTING – needed for Tier 3 import scanning
 // ══════════════════════════════════════════════════════════════════
 
 const MAX_TREE_FILES = 5000;

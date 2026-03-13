@@ -24,7 +24,7 @@ async function requireAuth(req: Request, res: Response, next: Function) {
   next();
 }
 
-// GET /api/audit-log — Get audit events for the user's organisation
+// GET /api/audit-log – Get audit events for the user's organisation
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
 
@@ -43,7 +43,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
     const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
     const offset = parseInt(req.query.offset as string) || 0;
 
-    // Build query — get events for all users in the same org
+    // Build query – get events for all users in the same org
     let query = `
       SELECT
         e.id,

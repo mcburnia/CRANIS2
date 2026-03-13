@@ -71,7 +71,7 @@ export async function generateSBOMFromLockfiles(
 
       // Memory guard
       if (content.length > MAX_LOCKFILE_SIZE) {
-        logger.warn(`[LOCKFILE-SBOM] ${config.filename} is ${(content.length / 1024 / 1024).toFixed(1)} MB — skipping (limit: 10 MB)`);
+        logger.warn(`[LOCKFILE-SBOM] ${config.filename} is ${(content.length / 1024 / 1024).toFixed(1)} MB – skipping (limit: 10 MB)`);
         continue;
       }
 

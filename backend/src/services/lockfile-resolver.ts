@@ -16,7 +16,7 @@ export interface LockfileResult {
  * Must be called BEFORE hash enrichment so newly-versioned
  * deps become eligible for hash fetching.
  * 
- * Never throws — returns partial results on failure.
+ * Never throws – returns partial results on failure.
  */
 export async function resolveLockfileVersions(
   productId: string,

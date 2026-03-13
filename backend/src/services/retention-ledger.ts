@@ -1,5 +1,5 @@
 /**
- * Retention Ledger Service — P8 Phase D
+ * Retention Ledger Service – P8 Phase D
  *
  * Creates ledger entries and funding certificates when compliance
  * archives are generated. Called from snapshot routes after successful
@@ -26,7 +26,7 @@ interface CreateLedgerEntryInput {
  * Also generates and stores a Retention Funding Certificate.
  *
  * This is called after a snapshot is successfully generated and (optionally)
- * uploaded to Glacier. It is non-blocking — failures are logged but do not
+ * uploaded to Glacier. It is non-blocking – failures are logged but do not
  * prevent the snapshot from being usable.
  */
 export async function createLedgerEntry(input: CreateLedgerEntryInput): Promise<string | null> {
@@ -148,11 +148,11 @@ export async function createLedgerEntry(input: CreateLedgerEntryInput): Promise<
  * end date is updated to a date later than the current retention end.
  *
  * CRA Art. 13(10): retention = max(market placement + 10y, support end date).
- * Retention can only be extended, never shortened — once a retention obligation
+ * Retention can only be extended, never shortened – once a retention obligation
  * exists, reducing the support period does not reduce the obligation.
  *
  * Called from the technical file section save handler when `support_period`
- * content changes. Non-blocking — failures are logged but do not affect
+ * content changes. Non-blocking – failures are logged but do not affect
  * the section save.
  */
 export async function extendRetentionForSupportDate(

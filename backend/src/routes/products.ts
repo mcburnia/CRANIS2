@@ -64,13 +64,13 @@ async function cleanupProductPostgres(productId: string, orgId: string): Promise
         console.log(`[CLEANUP] Deleted ${result.rowCount} rows: ${sql.split(' FROM ')[1]?.split(' WHERE')[0]}`);
       }
     } catch (err: any) {
-      // Log but don't block — table might not exist in all environments
-      console.error(`[CLEANUP] Failed: ${sql.slice(0, 60)}... — ${err.message}`);
+      // Log but don't block – table might not exist in all environments
+      console.error(`[CLEANUP] Failed: ${sql.slice(0, 60)}... – ${err.message}`);
     }
   }
 }
 
-// ─── GET /api/products — List products for the user's org ────────────
+// ─── GET /api/products – List products for the user's org ────────────
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId((req as any).userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
@@ -106,7 +106,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 });
 
 
-// ─── GET /api/products/:id/export — Download ZIP data export ─────────
+// ─── GET /api/products/:id/export – Download ZIP data export ─────────
 // IMPORTANT: this route MUST come before /:id to avoid param conflict
 router.get('/:id/export', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
@@ -322,7 +322,7 @@ router.get('/:id/export', requireAuth, async (req: Request, res: Response) => {
 });
 
 
-// ─── GET /api/products/:id — Get single product ─────────────────────
+// ─── GET /api/products/:id – Get single product ─────────────────────
 router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   const orgId = await getUserOrgId((req as any).userId);
   if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
@@ -363,7 +363,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// ─── POST /api/products — Create product ─────────────────────────────
+// ─── POST /api/products – Create product ─────────────────────────────
 router.post('/', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const userEmail = (req as any).email;
@@ -436,7 +436,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       metadata: { productId, productName: name.trim(), productType, craCategory, repoUrl: repoUrl?.trim() || '' },
     });
 
-    // Activity log — product creation
+    // Activity log – product creation
     logProductActivity({
       productId, orgId, userId, userEmail,
       action: 'product_created',
@@ -464,7 +464,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
           [orgId, productId]
         );
 
-        // Fill org-level roles (only where email is currently empty — never overwrite)
+        // Fill org-level roles (only where email is currently empty – never overwrite)
         await pool.query(
           `UPDATE stakeholders SET email = $1, organisation = $2, updated_by = $3, updated_at = NOW()
            WHERE org_id = $4 AND product_id IS NULL AND email = ''`,
@@ -504,7 +504,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// ─── PUT /api/products/:id — Update product ─────────────────────────
+// ─── PUT /api/products/:id – Update product ─────────────────────────
 router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const userEmail = (req as any).email;
@@ -578,7 +578,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    // Activity log — product updates with diff
+    // Activity log – product updates with diff
     if (oldProps) {
       const changes: Record<string, any> = {};
       const oldVals: Record<string, any> = {};
@@ -694,7 +694,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// ─── DELETE /api/products/:id — Delete product with full cleanup ─────
+// ─── DELETE /api/products/:id – Delete product with full cleanup ─────
 router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const userEmail = (req as any).email;

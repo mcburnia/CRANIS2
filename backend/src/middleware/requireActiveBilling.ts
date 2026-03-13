@@ -19,7 +19,7 @@ export async function requireActiveBilling(req: Request, res: Response, next: Fu
     // Peek at the Authorization header to extract userId
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
-      // No auth header — let route-level auth handle the 401
+      // No auth header – let route-level auth handle the 401
       next();
       return;
     }
@@ -30,7 +30,7 @@ export async function requireActiveBilling(req: Request, res: Response, next: Fu
         userId = payload.userId;
       }
     } catch {
-      // Invalid token — let route-level auth handle the 401
+      // Invalid token – let route-level auth handle the 401
       next();
       return;
     }
@@ -77,13 +77,13 @@ export async function requireActiveBilling(req: Request, res: Response, next: Fu
       return;
     }
 
-    // Past due gets a grace period — allow writes during grace
+    // Past due gets a grace period – allow writes during grace
     if (status === 'past_due') {
       next();
       return;
     }
 
-    // Restricted statuses — block write operations
+    // Restricted statuses – block write operations
     if (status === 'read_only') {
       res.status(403).json({
         error: 'billing_restricted',
@@ -111,11 +111,11 @@ export async function requireActiveBilling(req: Request, res: Response, next: Fu
       return;
     }
 
-    // Unknown status — allow (fail open for safety)
+    // Unknown status – allow (fail open for safety)
     next();
   } catch (err) {
     console.error('[BILLING GATE] Error checking billing status:', err);
-    // Fail open — don't block users due to billing check errors
+    // Fail open – don't block users due to billing check errors
     next();
   }
 }

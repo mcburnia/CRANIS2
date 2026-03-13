@@ -1,5 +1,5 @@
 /**
- * Retention Funding Certificate Generator — P8 Phase D
+ * Retention Funding Certificate Generator – P8 Phase D
  *
  * Generates a structured Markdown certificate proving that CRANIS2 has
  * allocated funds in a restricted retention reserve for the long-term
@@ -114,7 +114,7 @@ export async function generateRetentionCertificate(
 | Retention start | ${formatDate(input.retentionStartDate)} |
 | Retention end | ${formatDate(input.retentionEndDate)} |
 | Duration | ${ce.retentionMonths} months |
-| Legal basis | CRA Art. 13(10) — minimum 10 years from market placement |
+| Legal basis | CRA Art. 13(10) – minimum 10 years from market placement |
 
 ## 4. Financial Commitment
 

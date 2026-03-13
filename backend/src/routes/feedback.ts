@@ -25,7 +25,7 @@ async function getOrgId(userId: string): Promise<string | null> {
   return result.rows[0]?.org_id || null;
 }
 
-// POST /api/feedback — Submit feedback or bug report
+// POST /api/feedback – Submit feedback or bug report
 router.post('/', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;

@@ -1,4 +1,4 @@
-export const INCIDENT_RESPONSE_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTION BEFORE FINALISING**
+export const INCIDENT_RESPONSE_TEMPLATE = `> **INSTRUCTIONS – DELETE THIS SECTION BEFORE FINALISING**
 >
 > This is a template document provided by CRANIS2 to help you meet your
 > obligations under EU Cyber Resilience Act Article 14.
@@ -13,7 +13,7 @@ export const INCIDENT_RESPONSE_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECT
 >
 > **Where to store the completed document:**
 > Once finalised, paste the content into your product's **Tech File** in
-> CRANIS2 under the **Art. 14 — Incident Response** section.
+> CRANIS2 under the **Art. 14 – Incident Response** section.
 
 ---
 
@@ -22,7 +22,7 @@ export const INCIDENT_RESPONSE_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECT
 **Document Owner:** {{INCIDENT_RESPONSE_LEAD}}
 **Applicable Product:** {{PRODUCT_NAME}}
 **Organisation:** {{ORG_NAME}}
-**CRA Reference:** Article 14 — Reporting obligations
+**CRA Reference:** Article 14 – Reporting obligations
 **Effective Date:** {{EFFECTIVE_DATE}}
 **Review Cycle:** Annually, or after every major incident
 
@@ -56,10 +56,10 @@ Notification to ENISA is required when:
 
 | Level | Definition | Response |
 |---|---|---|
-| **P1 — Critical** | Actively exploited vulnerability or data breach affecting users | Immediate response; ENISA notification required |
-| **P2 — High** | Severe vulnerability with public exploit available, no confirmed exploitation | Urgent response; assess ENISA notification requirement |
-| **P3 — Medium** | Significant vulnerability without known exploitation | Scheduled response; monitor for escalation |
-| **P4 — Low** | Minor security issue with limited impact | Normal process; document and address |
+| **P1 – Critical** | Actively exploited vulnerability or data breach affecting users | Immediate response; ENISA notification required |
+| **P2 – High** | Severe vulnerability with public exploit available, no confirmed exploitation | Urgent response; assess ENISA notification requirement |
+| **P3 – Medium** | Significant vulnerability without known exploitation | Scheduled response; monitor for escalation |
+| **P4 – Low** | Minor security issue with limited impact | Normal process; document and address |
 
 ---
 
@@ -116,7 +116,7 @@ CRANIS2's AI incident report drafter generates content for each ENISA notificati
 - Linked vulnerability findings and their triage history
 - Content from previous reporting stages (ensuring consistency)
 
-**Human-in-the-loop requirement:** The AI generates a draft. The incident lead must review the content, verify factual accuracy, edit where necessary, and explicitly approve the report before submission to ENISA. The AI draft is a starting point — the incident lead owns the final content.
+**Human-in-the-loop requirement:** The AI generates a draft. The incident lead must review the content, verify factual accuracy, edit where necessary, and explicitly approve the report before submission to ENISA. The AI draft is a starting point. The incident lead owns the final content.
 
 ### 4.3 CSIRT Notification
 
@@ -187,12 +187,12 @@ For P1 and P2 incidents, the Incident Response Lead assumes the role of Incident
 
 Within 14 days of incident resolution, the response team conducts a post-incident review covering:
 
-- Timeline accuracy — was the response timely?
-- ENISA notification compliance — were all deadlines met?
-- Communication effectiveness — were stakeholders informed appropriately?
-- Root cause — what allowed the incident to occur?
-- Process improvements — what should change?
-- Training needs — does the team need additional preparation?
+- Timeline accuracy – was the response timely?
+- ENISA notification compliance – were all deadlines met?
+- Communication effectiveness – were stakeholders informed appropriately?
+- Root cause – what allowed the incident to occur?
+- Process improvements – what should change?
+- Training needs – does the team need additional preparation?
 
 Findings are documented and used to update this plan.
 
@@ -214,5 +214,5 @@ Findings are documented and used to update this plan.
 
 | Date | Author | Summary |
 |---|---|---|
-| {{EFFECTIVE_DATE}} | | Initial version — establishes incident response plan for CRA Art. 14 compliance |
+| {{EFFECTIVE_DATE}} | | Initial version – establishes incident response plan for CRA Art. 14 compliance |
 `;

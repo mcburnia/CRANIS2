@@ -33,7 +33,7 @@ async function getOrgId(userId: string): Promise<string | null> {
   return result.rows[0]?.org_id || null;
 }
 
-// GET /overview — cross-product IP proof summary
+// GET /overview – cross-product IP proof summary
 router.get('/overview', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
@@ -116,7 +116,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /:productId/snapshot — create timestamped snapshot
+// POST /:productId/snapshot – create timestamped snapshot
 router.post('/:productId/snapshot', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
@@ -161,7 +161,7 @@ router.post('/:productId/snapshot', requireAuth, async (req: Request, res: Respo
   }
 });
 
-// GET /:productId/snapshots — list snapshots for a product
+// GET /:productId/snapshots – list snapshots for a product
 router.get('/:productId/snapshots', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
@@ -201,7 +201,7 @@ router.get('/:productId/snapshots', requireAuth, async (req: Request, res: Respo
   }
 });
 
-// GET /snapshot/:id — snapshot detail (static route before :productId)
+// GET /snapshot/:id – snapshot detail (static route before :productId)
 router.get('/snapshot/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
@@ -259,7 +259,7 @@ router.get('/snapshot/:id', requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-// POST /snapshot/:id/verify — re-verify a snapshot
+// POST /snapshot/:id/verify – re-verify a snapshot
 router.post('/snapshot/:id/verify', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
@@ -284,7 +284,7 @@ router.post('/snapshot/:id/verify', requireAuth, async (req: Request, res: Respo
   }
 });
 
-// GET /snapshot/:id/export — download proof package ZIP
+// GET /snapshot/:id/export – download proof package ZIP
 router.get('/snapshot/:id/export', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;

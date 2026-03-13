@@ -5,7 +5,7 @@ import type { RepoProvider } from '../../services/repo-provider.js';
 // In-memory stores with automatic cleanup
 // OAuth state tokens for CSRF protection
 export const pendingStates = new Map<string, { userId: string; expiresAt: number; provider: RepoProvider }>();
-// Connection tokens — short-lived, single-use tokens for initiating OAuth
+// Connection tokens – short-lived, single-use tokens for initiating OAuth
 export const connectionTokens = new Map<string, { userId: string; expiresAt: number; provider: RepoProvider }>();
 
 // Clean up expired tokens every 5 minutes

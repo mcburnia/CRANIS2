@@ -45,7 +45,7 @@ export async function checkCopilotCache(
     const row = result.rows[0];
     const age = Date.now() - new Date(row.created_at).getTime();
     if (age > CACHE_TTL_HOURS * 60 * 60 * 1000) {
-      // Expired — clean up asynchronously
+      // Expired – clean up asynchronously
       pool.query(
         `DELETE FROM copilot_cache WHERE org_id = $1 AND product_id = $2 AND endpoint = $3 AND context_hash = $4`,
         [orgId, productId, endpoint, contextHash]

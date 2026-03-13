@@ -1,5 +1,5 @@
 /**
- * Obligation Engine — shared obligation definitions and derived-status computation.
+ * Obligation Engine – shared obligation definitions and derived-status computation.
  *
  * Extracted from routes/obligations.ts so that dashboard.ts (and other consumers)
  * can compute CRA readiness without duplicating logic.
@@ -178,28 +178,28 @@ export async function computeDerivedStatuses(
     const sections = techFileByProduct[productId] ?? {};
     const ALL_SECTION_KEYS = ['product_description', 'design_development', 'vulnerability_handling', 'risk_assessment', 'support_period', 'standards_applied', 'test_reports', 'declaration_of_conformity'];
 
-    // art_13_11 — SBOM
+    // art_13_11 – SBOM
     const sbom = sbomByProduct[productId];
     if (sbom) {
       if (!sbom.isStale && sbom.packageCount > 0) {
         derived['art_13_11'] = { status: 'met', reason: `SBOM current (${sbom.packageCount} packages)` };
       } else {
-        derived['art_13_11'] = { status: 'in_progress', reason: `SBOM present${sbom.isStale ? ' — update pending' : ''} (${sbom.packageCount} packages)` };
+        derived['art_13_11'] = { status: 'in_progress', reason: `SBOM present${sbom.isStale ? ', update pending' : ''} (${sbom.packageCount} packages)` };
       }
     }
 
-    // art_13_6 — Vulnerability Handling
+    // art_13_6 – Vulnerability Handling
     const scanCount = scanCountByProduct[productId] ?? 0;
     const openFindings = openFindingsByProduct[productId] ?? 0;
     if (scanCount > 0) {
       if (openFindings === 0) {
-        derived['art_13_6'] = { status: 'met', reason: 'Vulnerability scanning active — no open findings' };
+        derived['art_13_6'] = { status: 'met', reason: 'Vulnerability scanning active, no open findings' };
       } else {
-        derived['art_13_6'] = { status: 'in_progress', reason: `Vulnerability scanning active — ${openFindings} open finding${openFindings !== 1 ? 's' : ''}` };
+        derived['art_13_6'] = { status: 'in_progress', reason: `Vulnerability scanning active, ${openFindings} open finding${openFindings !== 1 ? 's' : ''}` };
       }
     }
 
-    // art_13_12 — Technical Documentation
+    // art_13_12 – Technical Documentation
     const sectionStatuses = ALL_SECTION_KEYS.map(k => sections[k]?.status ?? 'not_started');
     const completedCount = sectionStatuses.filter(s => s === 'completed').length;
     const startedCount = sectionStatuses.filter(s => s !== 'not_started').length;
@@ -209,7 +209,7 @@ export async function computeDerivedStatuses(
       derived['art_13_12'] = { status: 'in_progress', reason: `Technical file ${completedCount}/8 sections complete` };
     }
 
-    // art_13_14 — Conformity Assessment (test_reports section)
+    // art_13_14 – Conformity Assessment (test_reports section)
     const testReports = sections['test_reports'];
     if (testReports?.status === 'completed') {
       derived['art_13_14'] = { status: 'met', reason: 'Test reports section complete' };
@@ -217,7 +217,7 @@ export async function computeDerivedStatuses(
       derived['art_13_14'] = { status: 'in_progress', reason: 'Test reports section in progress' };
     }
 
-    // art_13_15 — EU Declaration of Conformity
+    // art_13_15 – EU Declaration of Conformity
     const docSection = sections['declaration_of_conformity'];
     if (docSection?.status === 'completed') {
       derived['art_13_15'] = { status: 'met', reason: 'Declaration of Conformity section complete' };
@@ -225,7 +225,7 @@ export async function computeDerivedStatuses(
       derived['art_13_15'] = { status: 'in_progress', reason: 'Declaration of Conformity section in progress' };
     }
 
-    // annex_i_part_i — Security by Design (risk_assessment section)
+    // annex_i_part_i – Security by Design (risk_assessment section)
     const riskSection = sections['risk_assessment'];
     if (riskSection?.status === 'completed') {
       derived['annex_i_part_i'] = { status: 'met', reason: 'Risk assessment complete' };
@@ -233,7 +233,7 @@ export async function computeDerivedStatuses(
       derived['annex_i_part_i'] = { status: 'in_progress', reason: 'Risk assessment in progress' };
     }
 
-    // annex_i_part_ii — Vulnerability Handling Requirements (CVD policy)
+    // annex_i_part_ii – Vulnerability Handling Requirements (CVD policy)
     const vulnHandling = sections['vulnerability_handling'];
     if (vulnHandling?.status === 'completed') {
       derived['annex_i_part_ii'] = { status: 'met', reason: 'Vulnerability handling section complete' };
@@ -243,7 +243,7 @@ export async function computeDerivedStatuses(
       derived['annex_i_part_ii'] = { status: 'in_progress', reason: 'Vulnerability handling section in progress' };
     }
 
-    // art_32 — Harmonised Standards
+    // art_32 – Harmonised Standards
     const standardsSection = sections['standards_applied'];
     if (standardsSection?.status === 'completed') {
       derived['art_32'] = { status: 'met', reason: 'Standards section complete' };
@@ -251,24 +251,24 @@ export async function computeDerivedStatuses(
       derived['art_32'] = { status: 'in_progress', reason: 'Standards section in progress' };
     }
 
-    // art_32_3 — Third-Party Assessment (notified body in DoC)
+    // art_32_3 – Third-Party Assessment (notified body in DoC)
     if (docSection?.notifiedBody) {
       derived['art_32_3'] = { status: docSection.status === 'completed' ? 'met' : 'in_progress', reason: 'Notified body referenced in DoC' };
     }
 
-    // art_14 — Vulnerability Reporting (ENISA reports)
+    // art_14 – Vulnerability Reporting (ENISA reports)
     const reports = craReportsByProduct[productId] ?? [];
     if (reports.length > 0) {
       const hasFinal = reports.some(s => s === 'final_report_sent' || s === 'closed');
       derived['art_14'] = { status: hasFinal ? 'met' : 'in_progress', reason: hasFinal ? 'ENISA report submitted' : 'ENISA report in progress' };
     }
 
-    // art_13_3 — Component Currency
+    // art_13_3 – Component Currency
     if (sbom) {
       derived['art_13_3'] = { status: 'in_progress', reason: `Component inventory tracked via SBOM (${sbom.packageCount} packages)` };
     }
 
-    // art_13_7 / art_13_8 — Support period awareness
+    // art_13_7 / art_13_8 – Support period awareness
     const spSection = sections['support_period'];
     const supportEndDate = spSection?.supportEndDate;
     if (spSection?.status === 'completed' && supportEndDate) {
@@ -278,38 +278,38 @@ export async function computeDerivedStatuses(
         now.setHours(0, 0, 0, 0);
         endDate.setHours(0, 0, 0, 0);
         if (endDate < now) {
-          derived['art_13_7'] = { status: 'met', reason: 'Support period ended — obligation discharged' };
-          derived['art_13_8'] = { status: 'met', reason: 'Support period ended — obligation discharged' };
+          derived['art_13_7'] = { status: 'met', reason: 'Support period ended. Obligation discharged' };
+          derived['art_13_8'] = { status: 'met', reason: 'Support period ended. Obligation discharged' };
         } else {
           const formattedEnd = supportEndDate.slice(0, 10);
-          derived['art_13_7'] = { status: 'in_progress', reason: `Support active until ${formattedEnd} — automatic updates required` };
-          derived['art_13_8'] = { status: 'in_progress', reason: `Support active until ${formattedEnd} — free patches required` };
+          derived['art_13_7'] = { status: 'in_progress', reason: `Support active until ${formattedEnd}, automatic updates required` };
+          derived['art_13_8'] = { status: 'in_progress', reason: `Support active until ${formattedEnd}, free patches required` };
         }
       }
     }
 
-    // art_13_5 — No Known Exploitable Vulnerabilities at Market Placement
+    // art_13_5 – No Known Exploitable Vulnerabilities at Market Placement
     if (scanCount > 0) {
       if (openFindings === 0) {
-        derived['art_13_5'] = { status: 'met', reason: 'Vulnerability scanning active — no open findings' };
+        derived['art_13_5'] = { status: 'met', reason: 'Vulnerability scanning active, no open findings' };
       } else {
-        derived['art_13_5'] = { status: 'in_progress', reason: `Vulnerability scanning active — ${openFindings} open finding${openFindings !== 1 ? 's' : ''} require remediation` };
+        derived['art_13_5'] = { status: 'in_progress', reason: `Vulnerability scanning active, ${openFindings} open finding${openFindings !== 1 ? 's' : ''} require remediation` };
       }
     }
 
-    // art_16 — EU Declaration of Conformity content (Annex IV)
+    // art_16 – EU Declaration of Conformity content (Annex IV)
     if (docSection?.status === 'completed') {
       derived['art_16'] = { status: 'met', reason: 'EU Declaration of Conformity complete (Annex IV)' };
     } else if (docSection?.status === 'in_progress') {
       derived['art_16'] = { status: 'in_progress', reason: 'EU Declaration of Conformity in progress' };
     }
 
-    // art_20 — EU Market Surveillance Registration (critical products only)
+    // art_20 – EU Market Surveillance Registration (critical products only)
     if (categoryMap[productId] === 'critical') {
-      derived['art_20'] = { status: 'in_progress', reason: 'Critical product — EU market surveillance registration required' };
+      derived['art_20'] = { status: 'in_progress', reason: 'Critical product: EU market surveillance registration required' };
     }
 
-    // art_13 — Overall (derived from all others)
+    // art_13 – Overall (derived from all others)
     const others = Object.entries(derived).filter(([k]) => k !== 'art_13');
     if (others.length > 0) {
       const metCount = others.filter(([, v]) => v.status === 'met').length;

@@ -1,11 +1,11 @@
 /**
- * POST /:productId/category-recommendation — Get AI recommendation
- * GET /:productId/category-recommendation-history — View history
- * POST /:productId/category-recommendation/:recId/action — Accept/override/dismiss
- * Admin: GET /admin/category-rules — View all rules
- * Admin: PUT /admin/category-rules/attributes/:attributeId — Edit attribute
- * Admin: PUT /admin/category-rules/thresholds/:categoryKey — Edit threshold
- * Admin: GET /admin/category-rules-audit — View change history
+ * POST /:productId/category-recommendation – Get AI recommendation
+ * GET /:productId/category-recommendation-history – View history
+ * POST /:productId/category-recommendation/:recId/action – Accept/override/dismiss
+ * Admin: GET /admin/category-rules – View all rules
+ * Admin: PUT /admin/category-rules/attributes/:attributeId – Edit attribute
+ * Admin: PUT /admin/category-rules/thresholds/:categoryKey – Edit threshold
+ * Admin: GET /admin/category-rules-audit – View change history
  *
  * Mount at: app.use('/api/products', categoryRecommendationRoutes)
  * Mount at: app.use('/api/admin', ...admin routes handled by admin.ts)
@@ -105,7 +105,7 @@ router.post(
         deterministic
       );
 
-      // Log AI usage to copilot_usage (category AI uses Opus — more expensive)
+      // Log AI usage to copilot_usage (category AI uses Opus – more expensive)
       if (aiAugmentation) {
         pool.query(
           `INSERT INTO copilot_usage (org_id, user_id, product_id, section_key, type, input_tokens, output_tokens, model)

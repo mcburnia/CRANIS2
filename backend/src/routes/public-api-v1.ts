@@ -1,14 +1,14 @@
 /**
  * Public API v1 Routes (API-key authenticated)
  *
- * GET  /api/v1/products                              — List products
- * GET  /api/v1/products/:id                          — Product detail
- * GET  /api/v1/products/:id/vulnerabilities          — Vulnerability findings
- * GET  /api/v1/products/:id/obligations              — Obligation statuses
- * GET  /api/v1/products/:id/compliance-status        — Pass/fail compliance summary
- * POST /api/v1/products/:id/sync                     — Trigger SBOM sync + vulnerability rescan
- * PUT  /api/v1/products/:id/findings/:fid/resolve    — Mark finding as resolved with evidence
- * GET  /api/v1/products/:id/scans/:scanId            — Poll scan status
+ * GET  /api/v1/products                              – List products
+ * GET  /api/v1/products/:id                          – Product detail
+ * GET  /api/v1/products/:id/vulnerabilities          – Vulnerability findings
+ * GET  /api/v1/products/:id/obligations              – Obligation statuses
+ * GET  /api/v1/products/:id/compliance-status        – Pass/fail compliance summary
+ * POST /api/v1/products/:id/sync                     – Trigger SBOM sync + vulnerability rescan
+ * PUT  /api/v1/products/:id/findings/:fid/resolve    – Mark finding as resolved with evidence
+ * GET  /api/v1/products/:id/scans/:scanId            – Poll scan status
  */
 
 import { Router, Request, Response } from 'express';
@@ -273,7 +273,7 @@ router.get('/products/:id/compliance-status', requireApiKey('read:compliance'), 
   }
 });
 
-// ── POST /api/v1/products/:id/sync — Trigger SBOM sync + vulnerability rescan ──
+// ── POST /api/v1/products/:id/sync – Trigger SBOM sync + vulnerability rescan ──
 router.post('/products/:id/sync', requireApiKey('write:findings'), async (req: Request, res: Response) => {
   try {
     const orgId = (req as any).orgId;
@@ -315,7 +315,7 @@ router.post('/products/:id/sync', requireApiKey('write:findings'), async (req: R
   }
 });
 
-// ── GET /api/v1/products/:id/scans/:scanId — Poll scan status ──
+// ── GET /api/v1/products/:id/scans/:scanId – Poll scan status ──
 router.get('/products/:id/scans/:scanId', requireApiKey('read:vulnerabilities'), async (req: Request, res: Response) => {
   try {
     const orgId = (req as any).orgId;
@@ -344,7 +344,7 @@ router.get('/products/:id/scans/:scanId', requireApiKey('read:vulnerabilities'),
   }
 });
 
-// ── PUT /api/v1/products/:id/findings/:findingId/resolve — Mark finding as resolved ──
+// ── PUT /api/v1/products/:id/findings/:findingId/resolve – Mark finding as resolved ──
 router.put('/products/:id/findings/:findingId/resolve', requireApiKey('write:findings'), async (req: Request, res: Response) => {
   try {
     const orgId = (req as any).orgId;

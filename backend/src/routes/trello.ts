@@ -1,17 +1,17 @@
 /**
  * Trello Integration Routes
  *
- * GET    /api/integrations/trello          — Get org's Trello config
- * PUT    /api/integrations/trello          — Save/update credentials
- * DELETE /api/integrations/trello          — Disconnect Trello
- * PUT    /api/integrations/trello/enabled  — Toggle enabled/disabled
- * GET    /api/integrations/trello/boards   — List user's Trello boards
- * GET    /api/integrations/trello/boards/:boardId/lists — List board's lists
- * POST   /api/integrations/trello/boards/:boardId/create-default-lists — Create default CRANIS2 lists
- * GET    /api/integrations/trello/product-boards       — Get all product board mappings
- * PUT    /api/integrations/trello/product-boards/:productId — Save product board mapping
- * DELETE /api/integrations/trello/product-boards/:productId — Delete product board mapping
- * POST   /api/integrations/trello/test     — Send a test card
+ * GET    /api/integrations/trello          – Get org's Trello config
+ * PUT    /api/integrations/trello          – Save/update credentials
+ * DELETE /api/integrations/trello          – Disconnect Trello
+ * PUT    /api/integrations/trello/enabled  – Toggle enabled/disabled
+ * GET    /api/integrations/trello/boards   – List user's Trello boards
+ * GET    /api/integrations/trello/boards/:boardId/lists – List board's lists
+ * POST   /api/integrations/trello/boards/:boardId/create-default-lists – Create default CRANIS2 lists
+ * GET    /api/integrations/trello/product-boards       – Get all product board mappings
+ * PUT    /api/integrations/trello/product-boards/:productId – Save product board mapping
+ * DELETE /api/integrations/trello/product-boards/:productId – Delete product board mapping
+ * POST   /api/integrations/trello/test     – Send a test card
  */
 
 import { Router, Request, Response } from 'express';
@@ -61,7 +61,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
     const integration = await getIntegration(orgId);
     if (!integration) return res.json({ connected: false });
 
-    // Don't expose full token — mask it
+    // Don't expose full token – mask it
     const maskedToken = integration.apiToken.length > 8
       ? integration.apiToken.slice(0, 4) + '...' + integration.apiToken.slice(-4)
       : '****';
@@ -101,7 +101,7 @@ router.put('/', requireAuth, async (req: Request, res: Response) => {
     try {
       await listBoards(apiKey, apiToken);
     } catch {
-      return res.status(400).json({ error: 'Invalid Trello credentials — could not access your boards' });
+      return res.status(400).json({ error: 'Invalid Trello credentials: could not access your boards' });
     }
 
     await saveIntegration(orgId, apiKey, apiToken);

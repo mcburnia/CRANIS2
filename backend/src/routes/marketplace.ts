@@ -49,15 +49,15 @@ const MARKETPLACE_CATEGORIES = [
 const VALID_CATEGORIES = new Set(MARKETPLACE_CATEGORIES.map(c => c.value));
 
 // ═══════════════════════════════════════════════
-// PUBLIC — No auth required
+// PUBLIC – No auth required
 // ═══════════════════════════════════════════════
 
-// GET /api/marketplace/categories — Must be before /:orgId
+// GET /api/marketplace/categories – Must be before /:orgId
 router.get('/categories', (_req: Request, res: Response) => {
   res.json({ categories: MARKETPLACE_CATEGORIES });
 });
 
-// GET /api/marketplace/listings — Public browse
+// GET /api/marketplace/listings – Public browse
 router.get('/listings', async (req: Request, res: Response) => {
   try {
     const { country, industry, craRole, category, search } = req.query;
@@ -205,7 +205,7 @@ router.get('/listings', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/marketplace/listings/:orgId — Single company detail
+// GET /api/marketplace/listings/:orgId – Single company detail
 router.get('/listings/:orgId', async (req: Request, res: Response) => {
   const { orgId } = req.params;
   try {
@@ -284,10 +284,10 @@ router.get('/listings/:orgId', async (req: Request, res: Response) => {
 });
 
 // ═══════════════════════════════════════════════
-// AUTHENTICATED — Profile management & contact
+// AUTHENTICATED – Profile management & contact
 // ═══════════════════════════════════════════════
 
-// GET /api/marketplace/profile — Current org's marketplace profile
+// GET /api/marketplace/profile – Current org's marketplace profile
 router.get('/profile', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -350,7 +350,7 @@ router.get('/profile', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/marketplace/profile — Upsert listing (org admin only)
+// PUT /api/marketplace/profile – Upsert listing (org admin only)
 router.put('/profile', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -448,7 +448,7 @@ router.put('/profile', requireAuth, requirePlan('pro'), async (req: Request, res
   }
 });
 
-// POST /api/marketplace/contact/:orgId — Send intro email
+// POST /api/marketplace/contact/:orgId – Send intro email
 router.post('/contact/:orgId', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;
@@ -613,7 +613,7 @@ router.post('/contact/:orgId', requireAuth, async (req: Request, res: Response) 
   }
 });
 
-// GET /api/marketplace/contact-history — Contacts sent by current user
+// GET /api/marketplace/contact-history – Contacts sent by current user
 router.get('/contact-history', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -662,7 +662,7 @@ router.get('/contact-history', requireAuth, async (req: Request, res: Response) 
 });
 
 // ═══════════════════════════════════════════════
-// ADMIN — Platform admin marketplace controls
+// ADMIN – Platform admin marketplace controls
 // ═══════════════════════════════════════════════
 
 // GET /api/marketplace/admin/overview
@@ -720,7 +720,7 @@ router.get('/admin/overview', requirePlatformAdmin, async (req: Request, res: Re
   }
 });
 
-// PUT /api/marketplace/admin/:orgId/approve — Toggle listing approval
+// PUT /api/marketplace/admin/:orgId/approve – Toggle listing approval
 router.put('/admin/:orgId/approve', requirePlatformAdmin, async (req: Request, res: Response) => {
   const { orgId } = req.params;
   const { approved } = req.body;

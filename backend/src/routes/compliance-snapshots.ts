@@ -1,11 +1,11 @@
 /**
- * Compliance Snapshots API — P8 #40 + #42
+ * Compliance Snapshots API – P8 #40 + #42
  *
- * POST   /api/products/:productId/compliance-snapshots          — generate a new snapshot
- * GET    /api/products/:productId/compliance-snapshots          — list snapshots
- * GET    /api/products/:productId/compliance-snapshots/:id/download — download ZIP
- * GET    /api/products/:productId/compliance-snapshots/:id/status   — poll generation status
- * DELETE /api/products/:productId/compliance-snapshots/:id      — delete snapshot
+ * POST   /api/products/:productId/compliance-snapshots          – generate a new snapshot
+ * GET    /api/products/:productId/compliance-snapshots          – list snapshots
+ * GET    /api/products/:productId/compliance-snapshots/:id/download – download ZIP
+ * GET    /api/products/:productId/compliance-snapshots/:id/status   – poll generation status
+ * DELETE /api/products/:productId/compliance-snapshots/:id      – delete snapshot
  */
 
 import { Router, Request, Response } from 'express';
@@ -81,7 +81,7 @@ router.post('/:productId/compliance-snapshots', requireAuth, async (req: Request
     const snapshotId = insertResult.rows[0].id;
     const createdAt = insertResult.rows[0].created_at;
 
-    // Return immediately with the snapshot record — generation happens async
+    // Return immediately with the snapshot record – generation happens async
     res.status(202).json({
       id: snapshotId,
       productId,
@@ -110,7 +110,7 @@ router.post('/:productId/compliance-snapshots', requireAuth, async (req: Request
         action: 'compliance_snapshot_generated',
         entityType: 'compliance_snapshot',
         entityId: snapshotId,
-        summary: `Generated compliance snapshot (${(result.sizeBytes / 1024).toFixed(0)} KB)${result.rfc3161Token ? ' — RFC 3161 timestamped' : ''}${result.signature ? ' — CRANIS2 signed' : ''}`,
+        summary: `Generated compliance snapshot (${(result.sizeBytes / 1024).toFixed(0)} KB)${result.rfc3161Token ? ' – RFC 3161 timestamped' : ''}${result.signature ? ' – CRANIS2 signed' : ''}`,
         metadata: { filename: result.filename, sizeBytes: result.sizeBytes, contentHash: result.contentHash, rfc3161: !!result.rfc3161Token, signed: !!result.signature },
       }).catch(() => {});
 
@@ -233,7 +233,7 @@ router.get('/:productId/compliance-snapshots/:snapshotId/download', requireAuth,
       });
     } catch (err: any) {
       if (err.code === 'ENOENT') {
-        // Local file has been purged (24-hour expiry) — archived to cold storage
+        // Local file has been purged (24-hour expiry) – archived to cold storage
         res.status(410).json({
           error: 'Snapshot expired',
           message: 'This snapshot is no longer available for download. Local copies are retained for 24 hours after generation. The archive has been preserved in cold storage for audit purposes. Please generate a new snapshot if needed.',
@@ -340,7 +340,7 @@ router.delete('/:productId/compliance-snapshots/:snapshotId', requireAuth, async
       }
     }
 
-    // Delete local file (best-effort — may already be purged)
+    // Delete local file (best-effort – may already be purged)
     await deleteSnapshotFile(orgId, productId, filename);
 
     // Delete from Glacier if uploaded

@@ -1,4 +1,4 @@
-// Codeberg (Forgejo) API service — mirrors github.ts structure
+// Codeberg (Forgejo) API service – mirrors github.ts structure
 // API docs: https://codeberg.org/api/swagger
 
 const CODEBERG_API = 'https://codeberg.org/api/v1';

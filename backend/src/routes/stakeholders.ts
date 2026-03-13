@@ -203,7 +203,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       },
     });
 
-    // Activity log — stakeholder changes (product-level only)
+    // Activity log – stakeholder changes (product-level only)
     const stakeholderProductId = check.rows[0].product_id;
     if (stakeholderProductId) {
       const roleKey = check.rows[0].role_key;

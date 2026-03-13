@@ -25,7 +25,7 @@ function wrapEmail(title: string, body: string): string {
       ${body}
       <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 2rem 0;" />
       <p style="color: #71717a; font-size: 0.75rem;">
-        CRANIS2 — CRA Compliance Made Simple<br/>
+        CRANIS2 – CRA Compliance Made Simple<br/>
         <a href="${frontendUrl}/notifications" style="color: #a855f7; text-decoration: none;">View All Notifications</a>
       </p>
     </div>
@@ -116,7 +116,7 @@ async function recordAlertSent(orgId: string, alertKey: string, subject: string)
 /* ── Alert email functions ───────────────────────────────────────────── */
 
 /**
- * 1. Vulnerability alert — new critical/high findings detected.
+ * 1. Vulnerability alert – new critical/high findings detected.
  */
 export async function sendVulnerabilityAlertEmail(
   orgId: string,
@@ -166,7 +166,7 @@ export async function sendVulnerabilityAlertEmail(
 }
 
 /**
- * 2. Scan failure — auto-sync or vulnerability scan failed.
+ * 2. Scan failure – auto-sync or vulnerability scan failed.
  */
 export async function sendScanFailedEmail(
   orgId: string,
@@ -205,7 +205,7 @@ export async function sendScanFailedEmail(
 }
 
 /**
- * 3. SBOM stale — repository has changed but SBOM not yet refreshed.
+ * 3. SBOM stale – repository has changed but SBOM not yet refreshed.
  */
 export async function sendSbomStaleEmail(
   orgId: string,
@@ -242,7 +242,7 @@ export async function sendSbomStaleEmail(
 }
 
 /**
- * 4. Compliance gap — significant proportion of dependencies have hash/metadata gaps.
+ * 4. Compliance gap – significant proportion of dependencies have hash/metadata gaps.
  */
 export async function sendComplianceGapEmail(
   orgId: string,
@@ -267,7 +267,7 @@ export async function sendComplianceGapEmail(
     const html = wrapEmail(
       'Compliance Gaps Detected',
       severityBadge(severity) +
-      textParagraph(`<strong>${gapPercentage}%</strong> of the ${totalDeps} dependencies in <strong>${productName}</strong> have compliance gaps — missing versions, unsupported ecosystems, or registry lookup failures.`) +
+      textParagraph(`<strong>${gapPercentage}%</strong> of the ${totalDeps} dependencies in <strong>${productName}</strong> have compliance gaps: missing versions, unsupported ecosystems, or registry lookup failures.`) +
       textParagraph('CRA Article 13 requires complete SBOMs with cryptographic hashes for all components. These gaps should be reviewed and resolved where possible.') +
       actionButton('View Dependencies', `${frontendUrl}/products/${productId}?tab=sbom`) +
       roleFooter(['security_contact', 'compliance_officer'])
@@ -282,7 +282,7 @@ export async function sendComplianceGapEmail(
 }
 
 /**
- * 5. CRA deadline approaching — ENISA report deadline is imminent.
+ * 5. CRA deadline approaching – ENISA report deadline is imminent.
  */
 export async function sendDeadlineAlertEmail(
   orgId: string,
@@ -302,7 +302,7 @@ export async function sendDeadlineAlertEmail(
     const urgency = hoursRemaining <= 1 ? 'critical' : 'high';
     const timeLabel = hoursRemaining <= 1 ? 'less than 1 hour' : `${hoursRemaining} hours`;
     const reportLabel = reportType.replace(/_/g, ' ');
-    const subject = `CRANIS2: CRA deadline in ${timeLabel} — ${reportLabel}`;
+    const subject = `CRANIS2: CRA deadline in ${timeLabel} – ${reportLabel}`;
 
     const html = wrapEmail(
       'CRA Deadline Approaching',
@@ -325,7 +325,7 @@ export async function sendDeadlineAlertEmail(
 }
 
 /**
- * 6. Support period ending/ended — product approaching or past end-of-support.
+ * 6. Support period ending/ended – product approaching or past end-of-support.
  */
 export async function sendSupportEndAlertEmail(
   orgId: string,
@@ -372,7 +372,7 @@ export async function sendSupportEndAlertEmail(
 }
 
 /**
- * 7. CRA milestone approaching — organisation-wide regulatory deadline alert.
+ * 7. CRA milestone approaching – organisation-wide regulatory deadline alert.
  */
 export async function sendCraMilestoneAlertEmail(
   orgId: string,
@@ -390,7 +390,7 @@ export async function sendCraMilestoneAlertEmail(
     if (recipients.length === 0) return;
 
     const severity = daysRemaining <= 30 ? 'high' : daysRemaining <= 60 ? 'medium' : 'info';
-    const subject = `CRANIS2: CRA milestone in ${daysRemaining} days — ${milestoneLabel}`;
+    const subject = `CRANIS2: CRA milestone in ${daysRemaining} days – ${milestoneLabel}`;
 
     const html = wrapEmail(
       'CRA Milestone Approaching',
@@ -413,7 +413,7 @@ export async function sendCraMilestoneAlertEmail(
 }
 
 /**
- * 8. Compliance stall — product compliance progress has stalled for >7 days.
+ * 8. Compliance stall – product compliance progress has stalled for >7 days.
  */
 export async function sendComplianceStallAlertEmail(
   orgId: string,

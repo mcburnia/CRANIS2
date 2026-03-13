@@ -59,7 +59,7 @@ app.use(express.json({
   },
 }));
 
-// Global billing gate — blocks write operations for restricted accounts
+// Global billing gate – blocks write operations for restricted accounts
 // Skips: auth, billing, admin, health, webhooks, and all GET/OPTIONS requests
 const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs', '/api/v1', '/api/conformity-assessment'];
 app.use('/api', (req, res, next) => {

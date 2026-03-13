@@ -44,7 +44,7 @@ async function fetchNpmLicense(name: string, version: string): Promise<string | 
  * - Sequential Neo4j writes (avoids concurrent session conflicts)
  * - 10 per batch, 200ms delay, 10s timeout
  *
- * Never throws — logs warnings and continues on failure.
+ * Never throws – logs warnings and continues on failure.
  */
 export async function enrichDependencyLicenses(
   productId: string,

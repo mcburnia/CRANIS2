@@ -1,4 +1,4 @@
-# CRANIS2 \u2013 Capabilities, Benefits & Safeguards
+# CRANIS2 – Capabilities, Benefits & Safeguards
 
 *A comprehensive overview for due diligence and critical evaluation.*
 
@@ -472,4 +472,4 @@ The regulations are real, the deadlines are fixed, and the penalties are signifi
 
 ---
 
-*CRANIS2 \u2013 Cyber Resilience Act & NIS2 compliance, automated.*
+*CRANIS2 – Cyber Resilience Act & NIS2 compliance, automated.*

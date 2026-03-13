@@ -1,11 +1,11 @@
 /**
- * Retention Costing Service — P8 Phase D
+ * Retention Costing Service – P8 Phase D
  *
  * Calculates the 10-year storage cost for a compliance archive.
  * Uses Scaleway Glacier pricing with a 2x buffer multiplier to
  * cover pricing changes, retrieval costs, and operational overhead.
  *
- * Costing model is versioned for auditability — each ledger entry
+ * Costing model is versioned for auditability – each ledger entry
  * records which model was used.
  */
 

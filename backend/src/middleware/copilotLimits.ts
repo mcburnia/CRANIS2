@@ -88,7 +88,7 @@ export function requireTokenBudget() {
       next();
     } catch (err) {
       console.error('[COPILOT-LIMITS] Budget check error:', err);
-      // Fail open — don't block on query failure
+      // Fail open – don't block on query failure
       next();
     }
   };

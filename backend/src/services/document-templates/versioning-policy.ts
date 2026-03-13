@@ -1,4 +1,4 @@
-export const VERSIONING_POLICY_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTION BEFORE FINALISING**
+export const VERSIONING_POLICY_TEMPLATE = `> **INSTRUCTIONS – DELETE THIS SECTION BEFORE FINALISING**
 >
 > This is a template document provided by CRANIS2 to help you meet your
 > obligations under EU Cyber Resilience Act Article 13(9).
@@ -13,7 +13,7 @@ export const VERSIONING_POLICY_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECT
 >
 > **Where to store the completed document:**
 > Once finalised, paste the content into your product's **Tech File** in
-> CRANIS2 under the **Art. 13 — Security Properties** section. This
+> CRANIS2 under the **Art. 13 – Security Properties** section. This
 > ensures it is included in your CRA compliance evidence package and
 > linked to your product's compliance status.
 >
@@ -21,12 +21,12 @@ export const VERSIONING_POLICY_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECT
 > management system as a controlled policy document.
 >
 > **Placeholders in this template:**
-> - \`{{PRODUCT_NAME}}\` — Your product's name
-> - \`{{ORG_NAME}}\` — Your organisation's name
-> - \`{{EFFECTIVE_DATE}}\` — The date this policy takes effect
-> - \`{{VERSION_FORMAT}}\` — Your versioning scheme (e.g. SemVer, date-based, CalVer)
-> - \`{{SECURITY_SUFFIX}}\` — The suffix you use for security-only releases (e.g. -sec1, .patch1)
-> - \`{{DELIVERY_MODEL}}\` — SaaS, on-premises, hybrid, embedded, etc.
+> - \`{{PRODUCT_NAME}}\` – Your product's name
+> - \`{{ORG_NAME}}\` – Your organisation's name
+> - \`{{EFFECTIVE_DATE}}\` – The date this policy takes effect
+> - \`{{VERSION_FORMAT}}\` – Your versioning scheme (e.g. SemVer, date-based, CalVer)
+> - \`{{SECURITY_SUFFIX}}\` – The suffix you use for security-only releases (e.g. -sec1, .patch1)
+> - \`{{DELIVERY_MODEL}}\` – SaaS, on-premises, hybrid, embedded, etc.
 
 ---
 
@@ -35,7 +35,7 @@ export const VERSIONING_POLICY_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECT
 **Document Owner:** Product & Engineering Lead
 **Applicable Product:** {{PRODUCT_NAME}}
 **Organisation:** {{ORG_NAME}}
-**CRA Reference:** Article 13(9) — Separation of security and functionality updates
+**CRA Reference:** Article 13(9) – Separation of security and functionality updates
 **Effective Date:** {{EFFECTIVE_DATE}}
 **Review Cycle:** Annually, or upon significant change to the release process
 
@@ -77,7 +77,7 @@ This policy applies to:
 | Version | Classification |
 |---|---|
 | \`1.2.0\` | Feature release (may include non-critical security improvements alongside features) |
-| \`1.2.0{{SECURITY_SUFFIX}}\` | Security-only release — contains only vulnerability fixes |
+| \`1.2.0{{SECURITY_SUFFIX}}\` | Security-only release – contains only vulnerability fixes |
 | \`1.3.0\` | Feature release |
 | \`1.3.0{{SECURITY_SUFFIX}}\` | Security hotfix issued against the \`1.3.0\` baseline |
 
@@ -192,8 +192,8 @@ main (always = production, always deployable)
 
 #### Security fix branches
 
-1. Branch from \`main\` (the live production baseline) — name the branch \`sec/<CVE-ID>\` or \`sec/<finding-ref>\`
-2. Apply **only** the security fix — no feature code, no refactoring, no unrelated changes
+1. Branch from \`main\` (the live production baseline). Name the branch \`sec/<CVE-ID>\` or \`sec/<finding-ref>\`
+2. Apply **only** the security fix: no feature code, no refactoring, no unrelated changes
 3. Test against the production baseline (full regression suite)
 4. Merge back to \`main\` via pull request with security-focused review
 5. Tag \`main\` with the security suffix (e.g. \`1.2.0{{SECURITY_SUFFIX}}\`)
@@ -202,11 +202,11 @@ main (always = production, always deployable)
 
 #### Key principles
 
-- **\`main\` is always deployable** — it represents exactly what is live in production
-- **Security fixes never wait for feature work** — they are branched from and merged back to \`main\` independently
-- **Feature branches never block security releases** — the security lane operates in parallel
-- **Feature branches stay current** — after every security merge to \`main\`, open feature branches rebase or merge from \`main\` to pick up the fix
-- **No mixed merges** — a security branch must not include feature commits, and vice versa
+- **\`main\` is always deployable** – it represents exactly what is live in production
+- **Security fixes never wait for feature work** – they are branched from and merged back to \`main\` independently
+- **Feature branches never block security releases** – the security lane operates in parallel
+- **Feature branches stay current** – after every security merge to \`main\`, open feature branches rebase or merge from \`main\` to pick up the fix
+- **No mixed merges** – a security branch must not include feature commits, and vice versa
 
 ---
 
@@ -321,5 +321,5 @@ All revisions are tracked with date, author, and summary of changes.
 
 | Date | Author | Summary |
 |---|---|---|
-| {{EFFECTIVE_DATE}} | | Initial version — establishes versioning scheme, security release process, and Art. 13(9) evidence framework |
+| {{EFFECTIVE_DATE}} | | Initial version – establishes versioning scheme, security release process, and Art. 13(9) evidence framework |
 `;

@@ -41,17 +41,17 @@ const CHECK_INTERVAL_MS = 60 * 60 * 1000;
 // Hour of the day to run auto-sync (0-23, default: 2 AM)
 const AUTO_SYNC_HOUR = 2;
 
-// Hour of the day to run platform-wide vulnerability scan (0-23, default: 3 AM — after SBOM sync)
+// Hour of the day to run platform-wide vulnerability scan (0-23, default: 3 AM – after SBOM sync)
 const VULN_SCAN_HOUR = 3;
 
-// Hour of the day to run billing checks (0-23, default: 4 AM — after other tasks)
+// Hour of the day to run billing checks (0-23, default: 4 AM – after other tasks)
 const BILLING_CHECK_HOUR = 4;
 const ESCROW_DEPOSIT_HOUR = 5;
 
-// Hour of the day to run webhook health checks (0-23, default: 6 AM — after SBOM sync refreshes lastPush)
+// Hour of the day to run webhook health checks (0-23, default: 6 AM – after SBOM sync refreshes lastPush)
 const WEBHOOK_HEALTH_HOUR = 6;
 
-// Hour of the day to sync vulnerability databases (0-23, default: 1 AM — before SBOM sync)
+// Hour of the day to sync vulnerability databases (0-23, default: 1 AM – before SBOM sync)
 const VULN_DB_SYNC_HOUR = 1;
 
 // Hour of the day to check for approaching end-of-support dates (0-23, default: 7 AM)
@@ -63,10 +63,10 @@ const SMART_DEADLINE_HOUR = 8;
 // Hour of the day to run scheduled snapshots (0-23, default: 9 AM)
 const SNAPSHOT_SCHEDULE_HOUR = 9;
 
-// Hour of the day to check retention expiry (0-23, default: 9 AM — runs after scheduled snapshots)
+// Hour of the day to check retention expiry (0-23, default: 9 AM – runs after scheduled snapshots)
 const RETENTION_EXPIRY_HOUR = 9;
 
-// Hour of the day to run monthly reserve sufficiency check (0-23, default: 10 AM — 1st of month only)
+// Hour of the day to run monthly reserve sufficiency check (0-23, default: 10 AM – 1st of month only)
 const RESERVE_SUFFICIENCY_HOUR = 10;
 
 let lastSyncDate = '';
@@ -245,7 +245,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
       }
     );
 
-    // Auto-register push webhook (non-blocking — must not fail the sync)
+    // Auto-register push webhook (non-blocking – must not fail the sync)
     ensureWebhook(syncProvider, auth.token, parsed.owner, parsed.repo, repoUrl, syncInstanceUrl || undefined)
       .catch(err => console.error(`[AUTO-SYNC] Webhook registration failed (non-blocking): ${err.message}`));
 
@@ -253,7 +253,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
     let effectiveSbomData = sbomData;
     let schedulerSbomSource = 'api';
     if (!effectiveSbomData) {
-      logger.info(`[SCHEDULER] No API SBOM for ${parsed.owner}/${parsed.repo} — trying lockfile fallback...`);
+      logger.info(`[SCHEDULER] No API SBOM for ${parsed.owner}/${parsed.repo} – trying lockfile fallback...`);
       const lockfileResult = await generateSBOMFromLockfiles(
         parsed.owner, parsed.repo, repoData.default_branch,
         syncProvider, auth.token, repoUrl, syncInstanceUrl || undefined
@@ -267,7 +267,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
 
     // Tier 3: Source import scanning
     if (!effectiveSbomData) {
-      logger.info(`[SCHEDULER] No lockfile — trying import scan (Tier 3) for ${parsed.owner}/${parsed.repo}...`);
+      logger.info(`[SCHEDULER] No lockfile – trying import scan (Tier 3) for ${parsed.owner}/${parsed.repo}...`);
       try {
         const importResult = await generateSBOMFromImports(
           parsed.owner, parsed.repo, repoData.default_branch,
@@ -276,7 +276,7 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
         if (importResult) {
           effectiveSbomData = { sbom: importResult.sbom } as any;
           schedulerSbomSource = `import-scan:${importResult.languagesDetected.join('+')}`;
-          logger.info(`[SCHEDULER] Import scan: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages`);
+          logger.info(`[SCHEDULER] Import scan: ${importResult.languagesDetected.join(', ')} – ${importResult.totalPackages} packages`);
         }
       } catch (err: any) {
         console.error(`[SCHEDULER] Import scan failed: ${err.message}`);
@@ -635,7 +635,7 @@ async function checkCraDeadlines(): Promise<void> {
       const title = isOverdue
         ? `OVERDUE: ${stageName} for ${productName}`
         : `${stageName} deadline approaching for ${productName}`;
-      const body = `CRA Article 14 ${stageName} ${isOverdue ? 'was due' : 'is due'} — ${timeStr}. ${isOverdue ? 'Submit immediately to remain compliant.' : 'Prepare and submit before the deadline.'}`;
+      const body = `CRA Article 14 ${stageName} ${isOverdue ? 'was due' : 'is due'} – ${timeStr}. ${isOverdue ? 'Submit immediately to remain compliant.' : 'Prepare and submit before the deadline.'}`;
 
       // Send to report creator
       if (row.created_by) {
@@ -773,7 +773,7 @@ async function runDailyWebhookHealthCheck(): Promise<void> {
     const admins = await pool.query('SELECT id, org_id FROM users WHERE is_platform_admin = true');
 
     for (const issue of issues) {
-      const issueLabel = issue.issueType === 'no_webhook' ? 'Webhook not registered' : 'Webhook silent — pushes not received';
+      const issueLabel = issue.issueType === 'no_webhook' ? 'Webhook not registered' : 'Webhook silent – pushes not received';
       logger.debug(`[WEBHOOK-HEALTH]   ${issue.productName}: ${issueLabel} (${issue.repoUrl})`);
 
       // Debounce: skip if unread notification already exists for this product
@@ -794,7 +794,7 @@ async function runDailyWebhookHealthCheck(): Promise<void> {
           type: 'webhook_health_warning',
           severity: 'medium',
           title: `Webhook issue: ${issue.productName}`,
-          body: `Repository ${issue.repoUrl} — ${issueLabel}`,
+          body: `Repository ${issue.repoUrl} – ${issueLabel}`,
           link: '/admin/system',
           metadata: { productId: issue.productId, repoUrl: issue.repoUrl, issueType: issue.issueType },
         });
@@ -869,7 +869,7 @@ async function checkSupportPeriodExpiry(): Promise<void> {
       const info = productInfo[row.product_id];
       if (!info) continue;
 
-      // Check each threshold — trigger if days remaining is at or below the threshold
+      // Check each threshold – trigger if days remaining is at or below the threshold
       for (const threshold of thresholds) {
         if (daysRemaining <= threshold) {
           // Create bell notification (debounced by checking for existing unread)
@@ -911,7 +911,7 @@ async function checkSupportPeriodExpiry(): Promise<void> {
       }
     }
 
-    logger.info(`[SUPPORT-CHECK] Check complete — ${result.rows.length} product(s) checked, ${alertsSent} alert(s) sent`);
+    logger.info(`[SUPPORT-CHECK] Check complete – ${result.rows.length} product(s) checked, ${alertsSent} alert(s) sent`);
   } catch (err: any) {
     console.error('[SUPPORT-CHECK] Error checking support period expiry:', err.message);
   }
@@ -1061,7 +1061,7 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
 
           // Skip products at 100% readiness or with no obligations
           if (readiness >= 100 || total === 0) {
-            // Resolve any existing stall cards — product is now compliant
+            // Resolve any existing stall cards – product is now compliant
             if (readiness >= 100) {
               resolveCardsByPrefix(p.orgId, `stall:${p.id}:`, `Product reached 100% CRA readiness.`).catch(() => {});
             }
@@ -1070,12 +1070,12 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
 
           // Check for stall (>7 days since last update)
           const lastUpdate = lastUpdateMap[p.id];
-          if (!lastUpdate) continue; // No obligations updated yet — don't nag
+          if (!lastUpdate) continue; // No obligations updated yet – don't nag
 
           const daysSinceUpdate = Math.floor((today.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
           if (daysSinceUpdate <= 7) {
-            // Stall cleared — obligations were updated recently, resolve any stall cards
-            resolveCardsByPrefix(p.orgId, `stall:${p.id}:`, `Compliance progress resumed — obligations updated ${daysSinceUpdate} day(s) ago.`).catch(() => {});
+            // Stall cleared – obligations were updated recently, resolve any stall cards
+            resolveCardsByPrefix(p.orgId, `stall:${p.id}:`, `Compliance progress resumed – obligations updated ${daysSinceUpdate} day(s) ago.`).catch(() => {});
             continue;
           }
 
@@ -1108,7 +1108,7 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
       await session.close();
     }
 
-    logger.info(`[SMART-DEADLINE] Check complete — ${milestoneAlertsSent} milestone alert(s), ${stallAlertsSent} stall alert(s) sent`);
+    logger.info(`[SMART-DEADLINE] Check complete – ${milestoneAlertsSent} milestone alert(s), ${stallAlertsSent} stall alert(s) sent`);
   } catch (err: any) {
     console.error('[SMART-DEADLINE] Error during smart deadline check:', err.message);
   }
@@ -1164,7 +1164,7 @@ async function runScheduledSnapshots(): Promise<void> {
         }
 
         if (!productExists) {
-          logger.info(`[SNAPSHOT-SCHEDULE] Product ${schedule.product_id} no longer exists — disabling schedule`);
+          logger.info(`[SNAPSHOT-SCHEDULE] Product ${schedule.product_id} no longer exists – disabling schedule`);
           await pool.query('UPDATE snapshot_schedules SET enabled = FALSE, updated_at = NOW() WHERE id = $1', [schedule.id]);
           continue;
         }
@@ -1233,7 +1233,7 @@ async function runScheduledSnapshots(): Promise<void> {
       } catch (err: any) {
         console.error(`[SNAPSHOT-SCHEDULE] Failed for product ${schedule.product_id}:`, err.message);
         // Mark snapshot as failed if record was created
-        // Don't disable the schedule — will retry next cycle
+        // Don't disable the schedule – will retry next cycle
       }
     }
   } catch (err: any) {
@@ -1424,11 +1424,11 @@ async function cleanupExpiredSnapshots(): Promise<void> {
       const filepath = getSnapshotPath(row.org_id, row.product_id, row.filename);
       try {
         await stat(filepath);
-        // File still exists — delete it
+        // File still exists – delete it
         await deleteSnapshotFile(row.org_id, row.product_id, row.filename);
         cleaned++;
       } catch {
-        // File already gone — nothing to do
+        // File already gone – nothing to do
       }
     }
 
@@ -1441,9 +1441,9 @@ async function cleanupExpiredSnapshots(): Promise<void> {
 }
 
 export function startScheduler(): void {
-  logger.info('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00, scheduled snapshots at ' + SNAPSHOT_SCHEDULE_HOUR + ':00, retention expiry at ' + RETENTION_EXPIRY_HOUR + ':00, reserve sufficiency on 1st at ' + RESERVE_SUFFICIENCY_HOUR + ':00');
+  logger.info('[SCHEDULER] Started – checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00, scheduled snapshots at ' + SNAPSHOT_SCHEDULE_HOUR + ':00, retention expiry at ' + RETENTION_EXPIRY_HOUR + ':00, reserve sufficiency on 1st at ' + RESERVE_SUFFICIENCY_HOUR + ':00');
 
-  // Run check periodically — all three have hour-gating and date-tracking
+  // Run check periodically – all three have hour-gating and date-tracking
   setInterval(() => {
     runDailyVulnDbSync().catch(err => console.error('[SCHEDULER] Uncaught error in DB sync:', err));
     runDailySync().catch(err => console.error('[SCHEDULER] Uncaught error in SBOM sync:', err));

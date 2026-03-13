@@ -62,7 +62,7 @@ function sanitiseName(name: string): string {
 }
 
 function formatDate(d: Date | string | null): string {
-  if (!d) return '—';
+  if (!d) return '–';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -193,7 +193,7 @@ function finalisePdf(doc: PDFKit.PDFDocument, stream: PassThrough, chunks: Buffe
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// REPORT 1 — VULNERABILITY FINDINGS
+// REPORT 1 – VULNERABILITY FINDINGS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const SEVERITY_ORDER: Record<string, number> = { critical: 1, high: 2, medium: 3, low: 4 };
@@ -309,7 +309,7 @@ router.get('/:productId/reports/vulnerabilities', requireAuth, async (req: Reque
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// REPORT 2 — LICENCE COMPLIANCE
+// REPORT 2 – LICENCE COMPLIANCE
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function riskColour(risk: string): string {
@@ -428,7 +428,7 @@ router.get('/:productId/reports/licences', requireAuth, async (req: Request, res
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// REPORT 3 — OBLIGATION STATUS
+// REPORT 3 – OBLIGATION STATUS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function statusColour(status: string): string {
@@ -551,7 +551,7 @@ router.get('/:productId/reports/obligations', requireAuth, async (req: Request, 
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// REPORT 4 — RISK ASSESSMENT (Annex VII §3)
+// REPORT 4 – RISK ASSESSMENT (Annex VII §3)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 router.get('/:productId/reports/risk-assessment', requireAuth, async (req: Request, res: Response) => {
@@ -583,7 +583,7 @@ router.get('/:productId/reports/risk-assessment', requireAuth, async (req: Reque
     const filename = `risk-assessment_${sanitiseName(productInfo.name)}_${isoDate()}`;
 
     if (format === 'csv') {
-      // CSV — Annex I requirements table
+      // CSV – Annex I requirements table
       const headers = ['Ref', 'Title', 'Applicable', 'Justification', 'Evidence'];
       const rows = annexReqs.map((r: any) => [
         r.ref || '',
@@ -609,7 +609,7 @@ router.get('/:productId/reports/risk-assessment', requireAuth, async (req: Reque
       if (fields.methodology) {
         pdf.bodyText(fields.methodology);
       } else {
-        pdf.bodyText('[Not yet documented — complete the risk assessment section in the Technical File.]');
+        pdf.bodyText('[Not yet documented. Complete the risk assessment section in the Technical File.]');
       }
 
       // Section 2: Threat Model
@@ -646,7 +646,7 @@ router.get('/:productId/reports/risk-assessment', requireAuth, async (req: Reque
       }
 
       // Section 4: Annex I Part I Requirements
-      pdf.sectionTitle('4. Annex I Part I — Essential Requirements');
+      pdf.sectionTitle('4. Annex I Part I – Essential Requirements');
       if (annexReqs.length > 0) {
         for (const req of annexReqs) {
           pdf.checkPageBreak(60);

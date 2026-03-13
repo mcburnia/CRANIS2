@@ -5,7 +5,7 @@ import { requirePlatformAdmin } from '../../middleware/requirePlatformAdmin.js';
 
 const router = Router();
 
-// GET /api/admin/dashboard — Platform-wide statistics
+// GET /api/admin/dashboard – Platform-wide statistics
 router.get('/dashboard', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     // --- Postgres: user stats ---

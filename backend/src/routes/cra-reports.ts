@@ -50,7 +50,7 @@ function calculateDeadlines(awarenessAt: Date, reportType: 'vulnerability' | 'in
   return { earlyWarning, notification, finalReport };
 }
 
-/* ── GET /api/cra-reports/overview — Dashboard summary ───── */
+/* ── GET /api/cra-reports/overview – Dashboard summary ───── */
 router.get('/overview', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -119,7 +119,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-/* ── GET /api/cra-reports — List reports ─────────────────── */
+/* ── GET /api/cra-reports – List reports ─────────────────── */
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -196,7 +196,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-/* ── POST /api/cra-reports — Create report ───────────────── */
+/* ── POST /api/cra-reports – Create report ───────────────── */
 router.post('/', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;
@@ -302,7 +302,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-/* ── GET /api/cra-reports/eu-countries — EU Member States ── */
+/* ── GET /api/cra-reports/eu-countries – EU Member States ── */
 router.get('/eu-countries', requireAuth, async (_req: Request, res: Response) => {
   const countries: Record<string, string> = {
     AT: 'Austria', BE: 'Belgium', BG: 'Bulgaria', HR: 'Croatia',
@@ -316,7 +316,7 @@ router.get('/eu-countries', requireAuth, async (_req: Request, res: Response) =>
   res.json({ countries });
 });
 
-/* ── GET /api/cra-reports/:id — Report detail ────────────── */
+/* ── GET /api/cra-reports/:id – Report detail ────────────── */
 router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const reportId = req.params.id as string;
@@ -411,7 +411,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-/* ── PUT /api/cra-reports/:id — Update report draft ──────── */
+/* ── PUT /api/cra-reports/:id – Update report draft ──────── */
 router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const reportId = req.params.id as string;
@@ -420,7 +420,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     const orgId = await getOrgId(userId);
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-    // Build dynamic update — TD-1: added enisaReference
+    // Build dynamic update – TD-1: added enisaReference
     const allowedFields: Record<string, string> = {
       awarenessAt: 'awareness_at',
       csirtCountry: 'csirt_country',
@@ -477,7 +477,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-/* ── POST /api/cra-reports/:id/stages — Submit a stage ───── */
+/* ── POST /api/cra-reports/:id/stages – Submit a stage ───── */
 router.post('/:id/stages', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;
@@ -557,7 +557,7 @@ router.post('/:id/stages', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-/* ── POST /api/cra-reports/:id/close — Close a report ────── */
+/* ── POST /api/cra-reports/:id/close – Close a report ────── */
 router.post('/:id/close', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;
@@ -592,7 +592,7 @@ router.post('/:id/close', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-/* ── DELETE /api/cra-reports/:id — Delete draft only ─────── */
+/* ── DELETE /api/cra-reports/:id – Delete draft only ─────── */
 router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;

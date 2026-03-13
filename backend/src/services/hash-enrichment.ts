@@ -92,7 +92,7 @@ async function fetchPypiHash(name: string, version: string): Promise<RegistryInf
  * Categorises WHY each dependency is missing its hash, storing
  * a hashGapReason on the Neo4j Dependency node for compliance reporting.
  *
- * Never throws — logs warnings and continues on failure.
+ * Never throws – logs warnings and continues on failure.
  */
 export async function enrichDependencyHashes(
   productId: string,
@@ -229,7 +229,7 @@ export async function enrichDependencyHashes(
           continue;
         }
 
-        // Write hash to Neo4j (sequential — no concurrent session conflicts)
+        // Write hash to Neo4j (sequential – no concurrent session conflicts)
         try {
           await neo4jSession.run(
             `MATCH (d:Dependency {purl: $purl})

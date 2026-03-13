@@ -449,7 +449,7 @@ router.post('/:productId/agents', requireAuth, async (req: Request, res: Respons
 
     // Send email to the agent (fire-and-forget)
     if (result.created && result.password) {
-      // New Forgejo user — send full credentials email
+      // New Forgejo user – send full credentials email
       sendEscrowAgentInviteEmail(
         agentEmail,
         result.username,
@@ -463,7 +463,7 @@ router.post('/:productId/agents', requireAuth, async (req: Request, res: Respons
         console.error('[ESCROW] Agent invite email failed:', err.message);
       });
     } else {
-      // Existing Forgejo user — send access notification (no password)
+      // Existing Forgejo user – send access notification (no password)
       sendEscrowAgentAccessEmail(
         agentEmail,
         result.username,

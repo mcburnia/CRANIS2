@@ -163,7 +163,7 @@ router.put('/:productId/:sectionKey', requireAuth, async (req: Request, res: Res
       metadata: { productId, sectionKey, status: status || row.status },
     });
 
-    // Activity log — technical file edits
+    // Activity log – technical file edits
     const newStatus = status || row.status;
     const statusChanged = status !== undefined && status !== oldStatus;
     logProductActivity({
@@ -189,7 +189,7 @@ router.put('/:productId/:sectionKey', requireAuth, async (req: Request, res: Res
               action: 'retention_extended',
               entityType: 'compliance_snapshot',
               entityId: productId,
-              summary: `Retention extended to ${content.fields.end_date} for ${extended} snapshot(s) — support period updated`,
+              summary: `Retention extended to ${content.fields.end_date} for ${extended} snapshot(s), support period updated`,
               metadata: { newSupportEndDate: content.fields.end_date, snapshotsExtended: extended },
             }).catch(() => {});
           }
@@ -273,7 +273,7 @@ router.get('/:productId/suggestions', requireAuth, async (req: Request, res: Res
 
   // ── 1. Product Description ──
   const craLabel = formatCraCategory(productCraCategory);
-  const versionText = productVersion ? `v${productVersion}` : '[version not set — add via product settings]';
+  const versionText = productVersion ? `v${productVersion}` : '[version not set; add via product settings]';
   const purposeText =
     `${productName} is a software product placed on the EU market. ` +
     `It is classified under the Cyber Resilience Act as a ${craLabel} product. ` +
@@ -281,7 +281,7 @@ router.get('/:productId/suggestions', requireAuth, async (req: Request, res: Res
     `Describe the intended purpose here: who uses this product, what problem it solves, and any relevant operational or deployment context.`;
 
   const versionNote =
-    `${versionText} — This is the version (or range of versions) subject to CRA conformity assessment. ` +
+    `${versionText}. This is the version (or range of versions) subject to CRA conformity assessment. ` +
     `List all software versions currently available on the market that are within the scope of this declaration.`;
 
   const availabilityText = repoUrl
@@ -330,12 +330,12 @@ router.get('/:productId/suggestions', requireAuth, async (req: Request, res: Res
   // ── 3. Standards Applied ──
   const standards: { name: string; reference: string; scope: string }[] = [
     {
-      name: 'ETSI EN 303 645 V2.1.1 — Cyber Security for Consumer Internet of Things: Baseline Requirements',
+      name: 'ETSI EN 303 645 V2.1.1 – Cyber Security for Consumer Internet of Things: Baseline Requirements',
       reference: 'ETSI EN 303 645:2021',
       scope: 'Applied where product functionality intersects with internet-connected device requirements.',
     },
     {
-      name: 'EN 18031-1:2024 — Common security requirements for internet-connected radio equipment (general)',
+      name: 'EN 18031-1:2024 – Common security requirements for internet-connected radio equipment (general)',
       reference: 'EN 18031-1:2024',
       scope: 'Baseline CRA internet security requirements for connected software products.',
     },
@@ -343,21 +343,21 @@ router.get('/:productId/suggestions', requireAuth, async (req: Request, res: Res
 
   if (['important_i', 'important_ii', 'critical'].includes(productCraCategory || '')) {
     standards.push({
-      name: 'EN 18031-2:2024 — Security requirements for equipment processing virtual currency or personal data',
+      name: 'EN 18031-2:2024 – Security requirements for equipment processing virtual currency or personal data',
       reference: 'EN 18031-2:2024',
       scope: `Applies as product is classified ${craLabel} (Important Class I or higher).`,
     });
   }
   if (['important_ii', 'critical'].includes(productCraCategory || '')) {
     standards.push({
-      name: 'EN 18031-3:2024 — Security requirements for industrial/professional internet-connected equipment',
+      name: 'EN 18031-3:2024 – Security requirements for industrial/professional internet-connected equipment',
       reference: 'EN 18031-3:2024',
       scope: `Applies as product is classified ${craLabel} (Important Class II or higher).`,
     });
   }
   if (productCraCategory === 'critical') {
     standards.push({
-      name: 'ISO/IEC 15408 — Common Criteria for Information Technology Security Evaluation',
+      name: 'ISO/IEC 15408 – Common Criteria for Information Technology Security Evaluation',
       reference: 'ISO/IEC 15408',
       scope: 'Common Criteria evaluation applicable to critical products requiring third-party conformity assessment.',
     });

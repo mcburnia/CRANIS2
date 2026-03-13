@@ -1,5 +1,5 @@
 /**
- * Cold Storage Service — P8 #42
+ * Cold Storage Service – P8 #42
  *
  * Uploads compliance snapshots to Scaleway Object Storage (Glacier class)
  * for long-term audit retention per CRA Art. 13(10).
@@ -90,7 +90,7 @@ export async function uploadToGlacier(
 ): Promise<void> {
   const client = getClient();
   if (!client) {
-    console.warn('[COLD-STORAGE] Scaleway credentials not configured — skipping upload');
+    console.warn('[COLD-STORAGE] Scaleway credentials not configured – skipping upload');
     return;
   }
 
@@ -148,7 +148,7 @@ export async function deleteFromGlacier(
     }));
     console.log(`[COLD-STORAGE] Deleted ${objectKey}`);
   } catch (err: any) {
-    // Log but don't throw — best-effort cleanup
+    // Log but don't throw – best-effort cleanup
     console.error(`[COLD-STORAGE] Delete failed for ${objectKey}:`, err.message);
   }
 }

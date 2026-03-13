@@ -1,6 +1,6 @@
 /**
  * CRA Category Recommendation System Types
- * ISO 42001 Compliant — Deterministic + Probabilistic with full audit trails
+ * ISO 42001 Compliant – Deterministic + Probabilistic with full audit trails
  */
 
 export interface CategoryRuleAttribute {

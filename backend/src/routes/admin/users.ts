@@ -10,7 +10,7 @@ const router = Router();
 
 const DEV_MODE = process.env.DEV_SKIP_EMAIL === 'true';
 
-// GET /api/admin/users — List all users with org info and activity
+// GET /api/admin/users – List all users with org info and activity
 router.get('/users', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const search = (req.query.search as string || '').toLowerCase();
@@ -103,7 +103,7 @@ router.get('/users', requirePlatformAdmin, async (req: Request, res: Response) =
   }
 });
 
-// PUT /api/admin/users/:userId/platform-admin — Toggle platform admin status
+// PUT /api/admin/users/:userId/platform-admin – Toggle platform admin status
 router.put('/users/:userId/platform-admin', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
@@ -156,7 +156,7 @@ router.put('/users/:userId/platform-admin', requirePlatformAdmin, async (req: Re
 
 
 
-// PUT /api/admin/users/:userId — Edit user details
+// PUT /api/admin/users/:userId – Edit user details
 router.put('/users/:userId', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
@@ -207,7 +207,7 @@ router.put('/users/:userId', requirePlatformAdmin, async (req: Request, res: Res
   }
 });
 
-// PUT /api/admin/users/:userId/suspend — Suspend or unsuspend a user
+// PUT /api/admin/users/:userId/suspend – Suspend or unsuspend a user
 router.put('/users/:userId/suspend', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
@@ -260,7 +260,7 @@ router.put('/users/:userId/suspend', requirePlatformAdmin, async (req: Request, 
   }
 });
 
-// DELETE /api/admin/users/:userId — Delete a user
+// DELETE /api/admin/users/:userId – Delete a user
 router.delete('/users/:userId', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
@@ -302,7 +302,7 @@ router.delete('/users/:userId', requirePlatformAdmin, async (req: Request, res: 
   }
 });
 
-// POST /admin/invite — Invite a new user via email
+// POST /admin/invite – Invite a new user via email
 router.post('/invite', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const { email, orgId, isPlatformAdmin } = req.body;

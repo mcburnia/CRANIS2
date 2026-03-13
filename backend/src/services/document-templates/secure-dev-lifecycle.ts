@@ -1,4 +1,4 @@
-export const SECURE_DEV_LIFECYCLE_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTION BEFORE FINALISING**
+export const SECURE_DEV_LIFECYCLE_TEMPLATE = `> **INSTRUCTIONS – DELETE THIS SECTION BEFORE FINALISING**
 >
 > This is a template document provided by CRANIS2 to help you meet your
 > obligations under EU Cyber Resilience Act Annex I, Part I.
@@ -12,7 +12,7 @@ export const SECURE_DEV_LIFECYCLE_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS S
 >
 > **Where to store the completed document:**
 > Once finalised, paste the content into your product's **Tech File** in
-> CRANIS2 under the **Annex I — Design & Development** section.
+> CRANIS2 under the **Annex I – Design & Development** section.
 
 ---
 
@@ -21,7 +21,7 @@ export const SECURE_DEV_LIFECYCLE_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS S
 **Document Owner:** {{MANUFACTURER_CONTACT}}
 **Applicable Product:** {{PRODUCT_NAME}}
 **Organisation:** {{ORG_NAME}}
-**CRA Reference:** Annex I, Part I — Security requirements relating to properties of products with digital elements
+**CRA Reference:** Annex I, Part I – Security requirements relating to properties of products with digital elements
 **Effective Date:** {{EFFECTIVE_DATE}}
 **Review Cycle:** Annually, or upon significant change to the development process
 
@@ -75,7 +75,7 @@ CRANIS2's AI risk assessment generator can produce an initial threat analysis gr
 
 {{PRODUCT_NAME}} is classified under the CRA product category system, which determines the applicable conformity assessment route and essential requirements.
 
-CRANIS2's AI category recommender assists in classifying products based on functionality, connectivity, data handling, and deployment attributes. **The recommendation is reviewed and confirmed by the compliance officer before it is applied — the AI provides a starting point, not a final decision.**
+CRANIS2's AI category recommender assists in classifying products based on functionality, connectivity, data handling, and deployment attributes. **The recommendation is reviewed and confirmed by the compliance officer before it is applied. The AI provides a starting point, not a final decision.**
 
 ---
 
@@ -155,7 +155,7 @@ CRANIS2's CI/CD compliance gate is integrated into the deployment pipeline. It v
 1. All tests pass (including CI/CD compliance gate)
 2. Code review approved
 3. SBOM regenerated and validated
-4. Release classified (security-only or feature — per Versioning & Security Release Policy)
+4. Release classified (security-only or feature – per Versioning & Security Release Policy)
 5. Deployed to production via automated pipeline
 6. Post-deployment health verification
 
@@ -215,5 +215,5 @@ All detected vulnerabilities are handled per the Vulnerability Handling Process 
 
 | Date | Author | Summary |
 |---|---|---|
-| {{EFFECTIVE_DATE}} | | Initial version — establishes secure development lifecycle for CRA Annex I, Part I compliance |
+| {{EFFECTIVE_DATE}} | | Initial version – establishes secure development lifecycle for CRA Annex I, Part I compliance |
 `;

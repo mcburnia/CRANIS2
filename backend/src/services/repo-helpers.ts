@@ -1,7 +1,7 @@
 /**
  * Shared repository helper functions.
  *
- * Extracted from routes/github.ts — these are service-level functions
+ * Extracted from routes/github.ts – these are service-level functions
  * used by both the route handlers and the scheduler.
  */
 
@@ -136,7 +136,7 @@ export function extractPackageInfo(pkg: SpdxPackage): {
     if (purlMatch) ecosystem = purlMatch[1];
   }
 
-  // Clean up name — SPDX names can include ecosystem prefix
+  // Clean up name – SPDX names can include ecosystem prefix
   if (name.includes(':')) {
     const parts = name.split(':');
     name = parts[parts.length - 1];

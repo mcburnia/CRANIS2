@@ -22,7 +22,7 @@ function wrapEmail(title: string, body: string): string {
       ${body}
       <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 2rem 0;" />
       <p style="color: #71717a; font-size: 0.75rem;">
-        CRANIS2 — CRA Compliance Made Simple<br/>
+        CRANIS2 – CRA Compliance Made Simple<br/>
         <a href="${frontendUrl}/billing" style="color: #a855f7; text-decoration: none;">Manage Billing</a>
       </p>
     </div>

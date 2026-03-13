@@ -1,11 +1,11 @@
 /**
- * Admin Retention Ledger API — P8 Phase D
+ * Admin Retention Ledger API – P8 Phase D
  *
- * GET    /api/admin/retention-ledger          — list all ledger entries (filterable)
- * GET    /api/admin/retention-ledger/summary  — aggregate totals
- * PUT    /api/admin/retention-ledger/:id/wise-ref — record Wise transaction reference
- * PUT    /api/admin/retention-ledger/bulk-fund — bulk-fund multiple allocated entries
- * GET    /api/admin/retention-ledger/:id/certificate — download funding certificate
+ * GET    /api/admin/retention-ledger          – list all ledger entries (filterable)
+ * GET    /api/admin/retention-ledger/summary  – aggregate totals
+ * PUT    /api/admin/retention-ledger/:id/wise-ref – record Wise transaction reference
+ * PUT    /api/admin/retention-ledger/bulk-fund – bulk-fund multiple allocated entries
+ * GET    /api/admin/retention-ledger/:id/certificate – download funding certificate
  */
 
 import { Router, Request, Response } from 'express';

@@ -27,7 +27,7 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
         </p>
         <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 2rem 0;" />
         <p style="color: #8b8d98; font-size: 0.75rem;">
-          CRANIS2 — CRA Compliance Made Simple
+          CRANIS2 – CRA Compliance Made Simple
         </p>
       </div>
     `,
@@ -50,7 +50,7 @@ export async function sendInviteEmail(to: string, token: string, inviterEmail: s
           Welcome to <span style="color: #3b82f6;">CRANIS2</span>
         </h1>
         <p style="color: #8b8d98; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem;">
-          <strong style="color: #e4e4e7;">${inviterEmail}</strong> has invited you to join CRANIS2 — the CRA compliance platform for software organisations.
+          <strong style="color: #e4e4e7;">${inviterEmail}</strong> has invited you to join CRANIS2, the CRA compliance platform for software organisations.
         </p>
         <p style="color: #8b8d98; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
           Click the button below to set up your password and activate your account.
@@ -63,7 +63,7 @@ export async function sendInviteEmail(to: string, token: string, inviterEmail: s
         </p>
         <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 2rem 0;" />
         <p style="color: #8b8d98; font-size: 0.75rem;">
-          CRANIS2 — CRA Compliance Made Simple
+          CRANIS2 – CRA Compliance Made Simple
         </p>
       </div>
     `,
@@ -89,7 +89,7 @@ export async function sendEscrowAgentInviteEmail(
   await resend.emails.send({
     from: `CRANIS2 <${from}>`,
     to,
-    subject: `Escrow access granted — ${productName} (${orgName})`,
+    subject: `Escrow access granted – ${productName} (${orgName})`,
     html: `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 2rem; background: #0a0a0f; color: #e4e4e7;">
         <div style="margin-bottom: 1.5rem;">
@@ -144,7 +144,7 @@ export async function sendEscrowAgentInviteEmail(
         </p>
         <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 2rem 0;" />
         <p style="color: #71717a; font-size: 0.75rem;">
-          CRANIS2 — CRA Compliance Made Simple
+          CRANIS2 – CRA Compliance Made Simple
         </p>
       </div>
     `,
@@ -169,7 +169,7 @@ export async function sendEscrowAgentAccessEmail(
   await resend.emails.send({
     from: `CRANIS2 <${from}>`,
     to,
-    subject: `New escrow access — ${productName} (${orgName})`,
+    subject: `New escrow access – ${productName} (${orgName})`,
     html: `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 2rem; background: #0a0a0f; color: #e4e4e7;">
         <div style="margin-bottom: 1.5rem;">
@@ -209,7 +209,7 @@ export async function sendEscrowAgentAccessEmail(
         </p>
         <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 2rem 0;" />
         <p style="color: #71717a; font-size: 0.75rem;">
-          CRANIS2 — CRA Compliance Made Simple
+          CRANIS2 – CRA Compliance Made Simple
         </p>
       </div>
     `,

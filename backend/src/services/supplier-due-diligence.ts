@@ -614,7 +614,7 @@ const RECOMMENDED_ACTIONS: Record<RiskFlagType, string[]> = {
     'Document any accepted risks and compensating controls in the risk assessment.',
   ],
   high_severity_vuln: [
-    'Prioritise patching or replacing this component — critical/high severity vulnerabilities represent an immediate risk.',
+    'Prioritise patching or replacing this component – critical/high severity vulnerabilities represent an immediate risk.',
     'If no patch is available, implement compensating controls and document the residual risk.',
     'Consider whether this component should be replaced with a more actively maintained alternative.',
     'Report the vulnerability through your coordinated vulnerability disclosure process if not already public.',
@@ -629,7 +629,7 @@ const RECOMMENDED_ACTIONS: Record<RiskFlagType, string[]> = {
 
 /**
  * Generate a deterministic due diligence questionnaire based on risk flag templates.
- * No AI/LLM dependency — questions are derived from CRA regulation text.
+ * No AI/LLM dependency – questions are derived from CRA regulation text.
  */
 export function generateQuestionnaire(
   dep: RiskyDependency,
@@ -663,7 +663,7 @@ export function generateQuestionnaire(
     + `${dep.riskFlags.map(f => f.detail).join('. ')}. `
     + 'These factors must be addressed through supplier engagement or compensating controls before the product can be considered compliant with CRA essential requirements.';
 
-  // Collect questions — flag-specific first, then common
+  // Collect questions – flag-specific first, then common
   const questions: QuestionnaireQuestion[] = [];
   let qIndex = 1;
 

@@ -5,10 +5,10 @@
  * based on the product's CRA category, per Articles 32–33 and Annex VIII.
  *
  * CRA Conformity Assessment Modules:
- *   Module A  — Internal control (self-assessment by manufacturer)
- *   Module B  — EU-type examination (notified body examines type)
- *   Module C  — Conformity to type (manufacturer ensures production matches type)
- *   Module H  — Full quality assurance (notified body approves quality system)
+ *   Module A  – Internal control (self-assessment by manufacturer)
+ *   Module B  – EU-type examination (notified body examines type)
+ *   Module C  – Conformity to type (manufacturer ensures production matches type)
+ *   Module H  – Full quality assurance (notified body approves quality system)
  *
  * Decision rules (CRA Art. 32):
  *   Default       → Module A only
@@ -43,7 +43,7 @@ export interface ConformityAssessmentResult {
 const MODULE_A: ConformityModule = {
   id: 'module_a',
   name: 'Module A',
-  fullName: 'Module A — Internal Control',
+  fullName: 'Module A – Internal Control',
   description: 'The manufacturer carries out an internal assessment of conformity. No notified body involvement required. The manufacturer draws up the technical documentation, ensures the manufacturing process complies, and issues the EU Declaration of Conformity.',
   legalBasis: 'CRA Annex VIII, Part I',
   requiresNotifiedBody: false,
@@ -52,7 +52,7 @@ const MODULE_A: ConformityModule = {
 const MODULE_B: ConformityModule = {
   id: 'module_b',
   name: 'Module B',
-  fullName: 'Module B — EU-Type Examination',
+  fullName: 'Module B – EU-Type Examination',
   description: 'A notified body examines the technical design of the product and verifies it meets the essential cybersecurity requirements. Results in an EU-type examination certificate.',
   legalBasis: 'CRA Annex VIII, Part II',
   requiresNotifiedBody: true,
@@ -61,7 +61,7 @@ const MODULE_B: ConformityModule = {
 const MODULE_C: ConformityModule = {
   id: 'module_c',
   name: 'Module C',
-  fullName: 'Module C — Conformity to Type',
+  fullName: 'Module C – Conformity to Type',
   description: 'The manufacturer ensures that each product conforms to the type described in the EU-type examination certificate. Used in combination with Module B.',
   legalBasis: 'CRA Annex VIII, Part III',
   requiresNotifiedBody: false,
@@ -70,7 +70,7 @@ const MODULE_C: ConformityModule = {
 const MODULE_H: ConformityModule = {
   id: 'module_h',
   name: 'Module H',
-  fullName: 'Module H — Full Quality Assurance',
+  fullName: 'Module H – Full Quality Assurance',
   description: 'A notified body assesses and approves the manufacturer\'s full quality assurance system for design, production, and testing. The most rigorous assessment path.',
   legalBasis: 'CRA Annex VIII, Part IV',
   requiresNotifiedBody: true,
@@ -156,7 +156,7 @@ function buildImportantIResult(harmonisedStandardsApplied: boolean): ConformityA
       categoryLabel: CATEGORY_LABELS.important_i,
       applicableModules: [MODULE_A],
       primaryModule: MODULE_A,
-      condition: 'Harmonised standards fully applied — self-assessment permitted.',
+      condition: 'Harmonised standards fully applied: self-assessment permitted.',
       requirements: [
         'Apply all relevant harmonised standards (EN 18031-1, EN 18031-2, EN 18031-3 where applicable)',
         'Document which standards were applied and how each requirement is met',
@@ -188,7 +188,7 @@ function buildImportantIResult(harmonisedStandardsApplied: boolean): ConformityA
     categoryLabel: CATEGORY_LABELS.important_i,
     applicableModules: [MODULE_B, MODULE_C],
     primaryModule: MODULE_B,
-    condition: 'Harmonised standards NOT fully applied — third-party assessment required.',
+    condition: 'Harmonised standards NOT fully applied: third-party assessment required.',
     requirements: [
       'Engage a notified body for EU-type examination (Module B)',
       'Submit technical documentation to the notified body',
@@ -209,7 +209,7 @@ function buildImportantIResult(harmonisedStandardsApplied: boolean): ConformityA
     regulatoryNotes: [
       'A notified body must examine the product type and issue a certificate.',
       'Alternatively, fully applying harmonised standards would allow Module A (self-assessment).',
-      'The manufacturer should check if relevant harmonised standards exist — this may reduce cost and time.',
+      'The manufacturer should check if relevant harmonised standards exist, as this may reduce cost and time.',
       'Art. 32(2): Important Class I products that do not apply harmonised standards must use Module B+C or Module H.',
     ],
   };
@@ -240,7 +240,7 @@ function buildImportantIIResult(): ConformityAssessmentResult {
     ],
     estimatedTimeline: '4–9 months (notified body examination or quality system approval)',
     regulatoryNotes: [
-      'Third-party assessment is mandatory — self-assessment (Module A) is NOT permitted for Important Class II.',
+      'Third-party assessment is mandatory. Self-assessment (Module A) is NOT permitted for Important Class II.',
       'The manufacturer may choose between Module B+C (type examination) or Module H (full quality assurance).',
       'Module H may be more efficient for manufacturers with multiple product variants.',
       'Applying harmonised standards does NOT exempt Important Class II from third-party assessment.',
@@ -282,7 +282,7 @@ function buildCriticalResult(): ConformityAssessmentResult {
       'The notified body conducts initial assessment AND periodic surveillance of the quality system.',
       'Art. 32(3): A European cybersecurity certification scheme at assurance level "high" may be used as an alternative.',
       'Market surveillance registration (Art. 20) is also required for critical products.',
-      'This is the most rigorous assessment path — plan accordingly.',
+      'This is the most rigorous assessment path. Plan accordingly.',
       'Quality system changes must be notified to the notified body for approval.',
     ],
   };

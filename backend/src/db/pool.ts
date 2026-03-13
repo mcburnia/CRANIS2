@@ -54,7 +54,7 @@ export async function initDb() {
       END $$;
     `);
 
-    // User events table — passive telemetry
+    // User events table – passive telemetry
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_events (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -71,7 +71,7 @@ export async function initDb() {
       );
     `);
 
-    // Repo connections — encrypted OAuth tokens (renamed from github_connections)
+    // Repo connections – encrypted OAuth tokens (renamed from github_connections)
     // Migration: rename table if it still has the old name
     await client.query(`
       DO $$ BEGIN
@@ -131,7 +131,7 @@ export async function initDb() {
     `);
 
 
-    // Product SBOMs — cached SPDX documents from GitHub
+    // Product SBOMs – cached SPDX documents from GitHub
     await client.query(`
       CREATE TABLE IF NOT EXISTS product_sboms (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -146,7 +146,7 @@ export async function initDb() {
     `);
 
 
-    // Technical File sections — CRA Annex VII structured documentation
+    // Technical File sections – CRA Annex VII structured documentation
     await client.query(`
       CREATE TABLE IF NOT EXISTS technical_file_sections (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -170,7 +170,7 @@ export async function initDb() {
     `);
 
 
-    // Product versions — dual versioning (CRANIS2 auto + GitHub releases)
+    // Product versions – dual versioning (CRANIS2 auto + GitHub releases)
     await client.query(`
       CREATE TABLE IF NOT EXISTS product_versions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -220,7 +220,7 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_user_events_ip ON user_events(ip_address);
     `);
 
-    // Stakeholders — CRA/NIS2 compliance contacts
+    // Stakeholders – CRA/NIS2 compliance contacts
     await client.query(`
       CREATE TABLE IF NOT EXISTS stakeholders (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -243,7 +243,7 @@ export async function initDb() {
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_stakeholders_product_role ON stakeholders(org_id, product_id, role_key) WHERE product_id IS NOT NULL`);
 
 
-    // Obligations — CRA/NIS2 compliance tracking per product
+    // Obligations – CRA/NIS2 compliance tracking per product
     await client.query(`
       CREATE TABLE IF NOT EXISTS obligations (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -261,7 +261,7 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_obligations_product ON obligations(product_id)`);
 
 
-    // Vulnerability scans — tracking scan runs per product
+    // Vulnerability scans – tracking scan runs per product
     await client.query(`
       CREATE TABLE IF NOT EXISTS vulnerability_scans (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -282,7 +282,7 @@ export async function initDb() {
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_scans_product ON vulnerability_scans(product_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_scans_org ON vulnerability_scans(org_id)`);
-    // Columns added post-creation — ensure they exist
+    // Columns added post-creation – ensure they exist
     await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS duration_seconds NUMERIC(10,2)`);
     await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS dependency_count INT`);
     await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS osv_duration_ms INT`);
@@ -293,7 +293,7 @@ export async function initDb() {
     await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS nvd_findings INT`);
     await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS triggered_by VARCHAR(255)`);
 
-    // Vulnerability findings — individual CVEs/advisories found per product
+    // Vulnerability findings – individual CVEs/advisories found per product
     await client.query(`
       CREATE TABLE IF NOT EXISTS vulnerability_findings (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -406,7 +406,7 @@ export async function initDb() {
     await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ`);
     await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS resolved_by VARCHAR(255)`);
 
-    // Local vulnerability database — OSV/GHSA advisories cache
+    // Local vulnerability database – OSV/GHSA advisories cache
     await client.query(`
       CREATE TABLE IF NOT EXISTS vuln_db_advisories (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -438,7 +438,7 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_adv_modified ON vuln_db_advisories(modified_at DESC)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_adv_batch ON vuln_db_advisories(ecosystem, sync_batch_id)`);
 
-    // Local vulnerability database — NVD CVE cache
+    // Local vulnerability database – NVD CVE cache
     await client.query(`
       CREATE TABLE IF NOT EXISTS vuln_db_nvd (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -523,7 +523,7 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC)`);
 
-    // CRA Article 14 — vulnerability & incident reports
+    // CRA Article 14 – vulnerability & incident reports
     await client.query(`
       CREATE TABLE IF NOT EXISTS cra_reports (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -550,7 +550,7 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_status ON cra_reports(status)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_deadlines ON cra_reports(early_warning_deadline, notification_deadline, final_report_deadline)`);
 
-    // CRA Article 14 — report stage submissions
+    // CRA Article 14 – report stage submissions
     await client.query(`
       CREATE TABLE IF NOT EXISTS cra_report_stages (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -564,7 +564,7 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_stages_report ON cra_report_stages(report_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_stages_stage ON cra_report_stages(report_id, stage)`);
 
-    // IP Proof — timestamped SBOM snapshots
+    // IP Proof – timestamped SBOM snapshots
     await client.query(`
       CREATE TABLE IF NOT EXISTS ip_proof_snapshots (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -588,7 +588,7 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_ip_proof_hash ON ip_proof_snapshots(content_hash)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_ip_proof_created ON ip_proof_snapshots(created_at DESC)`);
 
-    // License scans — per-product scan runs
+    // License scans – per-product scan runs
     await client.query(`
       CREATE TABLE IF NOT EXISTS license_scans (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -614,7 +614,7 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_license_scans_product ON license_scans(product_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_license_scans_started ON license_scans(started_at DESC)`);
 
-    // License findings — per-dependency license risk
+    // License findings – per-dependency license risk
     await client.query(`
       CREATE TABLE IF NOT EXISTS license_findings (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1055,7 +1055,7 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     await client.query(`CREATE INDEX IF NOT EXISTS idx_supplier_q_org ON supplier_questionnaires(org_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_supplier_q_dep ON supplier_questionnaires(dependency_name, dependency_version)`);
 
-    // Registry supplier cache — shared across all orgs/products
+    // Registry supplier cache – shared across all orgs/products
     await client.query(`
       CREATE TABLE IF NOT EXISTS registry_supplier_cache (
         ecosystem VARCHAR(50) NOT NULL,
@@ -1158,7 +1158,7 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
         INSERT INTO category_rule_attributes 
         (attribute_key, name, description, regulatory_basis, is_locked)
         VALUES 
-        ('dist_scope', 'Distribution Scope', 'How widely is the product distributed', 'CRA Art. 4(1) — wider distribution increases risk', true)
+        ('dist_scope', 'Distribution Scope', 'How widely is the product distributed', 'CRA Art. 4(1) – wider distribution increases risk', true)
       `);
       const distAttr = await client.query(`SELECT id FROM category_rule_attributes WHERE attribute_key = 'dist_scope'`);
       const distAttrId = distAttr.rows[0].id;
@@ -1176,7 +1176,7 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
         INSERT INTO category_rule_attributes 
         (attribute_key, name, description, regulatory_basis, is_locked)
         VALUES 
-        ('data_sensitivity', 'Data Sensitivity', 'Does the product handle sensitive data', 'CRA Art. 4 — sensitive data = higher risk', true)
+        ('data_sensitivity', 'Data Sensitivity', 'Does the product handle sensitive data', 'CRA Art. 4 – sensitive data = higher risk', true)
       `);
       const dataAttr = await client.query(`SELECT id FROM category_rule_attributes WHERE attribute_key = 'data_sensitivity'`);
       const dataAttrId = dataAttr.rows[0].id;
@@ -1194,7 +1194,7 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
         INSERT INTO category_rule_attributes 
         (attribute_key, name, description, regulatory_basis, is_locked)
         VALUES 
-        ('network_connectivity', 'Network Connectivity', 'Is the product connected to networks', 'CRA Art. 4 — network access = higher risk', true)
+        ('network_connectivity', 'Network Connectivity', 'Is the product connected to networks', 'CRA Art. 4 – network access = higher risk', true)
       `);
       const netAttr = await client.query(`SELECT id FROM category_rule_attributes WHERE attribute_key = 'network_connectivity'`);
       const netAttrId = netAttr.rows[0].id;
@@ -1212,7 +1212,7 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
         INSERT INTO category_rule_attributes 
         (attribute_key, name, description, regulatory_basis, is_locked)
         VALUES 
-        ('user_criticality', 'User Criticality', 'Is the product used for critical functions', 'CRA Art. 3 — criticality determines class', true)
+        ('user_criticality', 'User Criticality', 'Is the product used for critical functions', 'CRA Art. 3 – criticality determines class', true)
       `);
       const critAttr = await client.query(`SELECT id FROM category_rule_attributes WHERE attribute_key = 'user_criticality'`);
       const critAttrId = critAttr.rows[0].id;
@@ -1284,54 +1284,54 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
 
       ON CONFLICT (prompt_key) DO NOTHING
     `, [
-      // $1 — quality_standard
+      // $1 – quality_standard
       `You are generating content for a regulated compliance platform (CRANIS2) that produces EU Cyber Resilience Act (CRA) documentation. All output must meet the following quality standards without exception.
 
-Q1 — British English: Use British English spelling throughout (organisation, licence, colour, analyse, defence, behaviour, unauthorised).
+Q1 – British English: Use British English spelling throughout (organisation, licence, colour, analyse, defence, behaviour, unauthorised).
 
-Q2 — Canonical Terminology: Use correct capitalisation and formatting for regulatory references (EU Cyber Resilience Act, NIS2 Directive, ENISA, Annex I/II/IV/VI/VII, Article 13/14/16, CSIRT, CE marking), technical terms (SBOM, SPDX, CycloneDX, CVE, CVSS, EPSS, NVD, OSV), and CRANIS2-specific terms (CRANIS2, Technical File, Declaration of Conformity, CoPilot).
+Q2 – Canonical Terminology: Use correct capitalisation and formatting for regulatory references (EU Cyber Resilience Act, NIS2 Directive, ENISA, Annex I/II/IV/VI/VII, Article 13/14/16, CSIRT, CE marking), technical terms (SBOM, SPDX, CycloneDX, CVE, CVSS, EPSS, NVD, OSV), and CRANIS2-specific terms (CRANIS2, Technical File, Declaration of Conformity, CoPilot).
 
-Q3 — Professional Regulatory Tone: Use clear, declarative language suitable for regulatory auditors, ENISA/CSIRT submissions, and compliance documentation. Avoid marketing phrasing, superlatives, hedging, and sycophantic language. Prefer active voice.
+Q3 – Professional Regulatory Tone: Use clear, declarative language suitable for regulatory auditors, ENISA/CSIRT submissions, and compliance documentation. Avoid marketing phrasing, superlatives, hedging, and sycophantic language. Prefer active voice.
 
-Q4 — Terminology Consistency: Use consistent capitalisation, tense, and abbreviation expansion (first use) within each response. Always use "Article X(Y)" format for CRA references.
+Q4 – Terminology Consistency: Use consistent capitalisation, tense, and abbreviation expansion (first use) within each response. Always use "Article X(Y)" format for CRA references.
 
-Q5 — Substantive Depth: Each field must contain 2-5 sentences of evidence-grade content. Reference actual product data (dependency counts, CVE IDs, vulnerability statistics). Use "[TO COMPLETE: ...]" for insufficient data. Never invent data or generate generic boilerplate.
+Q5 – Substantive Depth: Each field must contain 2-5 sentences of evidence-grade content. Reference actual product data (dependency counts, CVE IDs, vulnerability statistics). Use "[TO COMPLETE: ...]" for insufficient data. Never invent data or generate generic boilerplate.
 
-Q6 — Structured Output: Markdown tables must be valid. JSON must be parseable. Use only permitted enumerated values as specified in the capability prompt.
+Q6 – Structured Output: Markdown tables must be valid. JSON must be parseable. Use only permitted enumerated values as specified in the capability prompt.
 
-Q7 — Guardrails: Never rewrite completed content. Never introduce new regulatory requirements. Flag uncertainty with "[TO COMPLETE: ...]". All output is advisory draft for human review.`,
+Q7 – Guardrails: Never rewrite completed content. Never introduce new regulatory requirements. Flag uncertainty with "[TO COMPLETE: ...]". All output is advisory draft for human review.`,
 
-      // $2 — suggest
+      // $2 – suggest
       `You are a CRA (EU Cyber Resilience Act) compliance expert embedded in the CRANIS2 compliance platform. Your role is to generate draft content for technical file sections and obligation evidence notes.
 
 Rules:
 1. Ground all suggestions in the product's actual data (SBOM, vulnerability findings, repo metadata, obligation statuses).
 2. Write in a professional, factual tone suitable for regulatory documentation and auditors.
-3. Be specific — reference actual dependency counts, vulnerability stats, and product details rather than using generic placeholders.
+3. Be specific – reference actual dependency counts, vulnerability stats, and product details rather than using generic placeholders.
 4. Where the product data is insufficient, note what information the user should add manually.
 5. Use British English spelling throughout.
 6. Never invent data that isn't provided in the context. If data is missing, say so clearly.
-7. Keep content concise but thorough — aim for evidence-grade documentation.`,
+7. Keep content concise but thorough – aim for evidence-grade documentation.`,
 
-      // $3 — vulnerability_triage
+      // $3 – vulnerability_triage
       `You are a CRA (EU Cyber Resilience Act) vulnerability triage expert. Your task is to analyse vulnerability findings for a software product and suggest an appropriate action for each.
 
 For each finding, suggest one of:
 - "dismiss": The vulnerability is not exploitable in the product's context, is a false positive, affects only dev dependencies, or has negligible real-world risk.
-- "acknowledge": The vulnerability is real but low priority — the team should track it but no immediate action is required.
-- "escalate_mitigate": The vulnerability requires urgent attention — a fix, upgrade, or mitigation must be applied.
+- "acknowledge": The vulnerability is real but low priority – the team should track it but no immediate action is required.
+- "escalate_mitigate": The vulnerability requires urgent attention – a fix, upgrade, or mitigation must be applied.
 
 Rules:
-1. Consider the product's CRA category when assessing risk. For "important_i", "important_ii", and "critical" categories, be significantly stricter — escalate more aggressively.
+1. Consider the product's CRA category when assessing risk. For "important_i", "important_ii", and "critical" categories, be significantly stricter – escalate more aggressively.
 2. A fix being available (fixedVersion) should increase urgency to escalate.
 3. Critical/high severity with a high CVSS score should almost always escalate unless clearly not applicable.
 4. Low severity findings in dev-only dependencies are strong dismiss candidates.
-5. Set confidence between 0 and 1. Be conservative — only use confidence >= 0.85 when the decision is clear-cut.
+5. Set confidence between 0 and 1. Be conservative – only use confidence >= 0.85 when the decision is clear-cut.
 6. Set automatable to true ONLY when confidence >= 0.85 AND action is "dismiss".
 7. Provide reasoning of 2-4 sentences explaining your assessment.
 8. If dismissing, include a brief dismissReason suitable for an audit trail.
 9. Use British English.
-10. When the action is "acknowledge" or "escalate_mitigate" and a fix is available, include a mitigationCommand — the exact CLI command to resolve the issue (e.g. "npm install lodash@4.17.21", "pip install requests>=2.31.0", "composer require guzzlehttp/guzzle:^7.8"). Tailor the command to the dependency's ecosystem (npm, pip, maven, composer, cargo, go, nuget, gem, etc.). If no fix version is known, suggest the general upgrade command (e.g. "npm update lodash"). For dismiss actions, omit this field.
+10. When the action is "acknowledge" or "escalate_mitigate" and a fix is available, include a mitigationCommand – the exact CLI command to resolve the issue (e.g. "npm install lodash@4.17.21", "pip install requests>=2.31.0", "composer require guzzlehttp/guzzle:^7.8"). Tailor the command to the dependency's ecosystem (npm, pip, maven, composer, cargo, go, nuget, gem, etc.). If no fix version is known, suggest the general upgrade command (e.g. "npm update lodash"). For dismiss actions, omit this field.
 
 Return a JSON array of objects with these fields:
 - findingId (string)
@@ -1344,7 +1344,7 @@ Return a JSON array of objects with these fields:
 
 Return ONLY the JSON array, no markdown fences, no additional text.`,
 
-      // $4 — risk_assessment
+      // $4 – risk_assessment
       `You are a CRA (EU Cyber Resilience Act) cybersecurity risk assessment expert. Your task is to generate a comprehensive cybersecurity risk assessment for a software product based on its actual data.
 
 You will produce:
@@ -1391,7 +1391,7 @@ Return ONLY a JSON object (no markdown fences, no additional text) with this exa
   ]
 }`,
 
-      // $5 — incident_report_draft
+      // $5 – incident_report_draft
       `You are a CRA (EU Cyber Resilience Act) incident and vulnerability reporting expert embedded in the CRANIS2 compliance platform. Your role is to draft content for ENISA Article 14 report stages.
 
 Background: Under CRA Article 14, manufacturers must report actively exploited vulnerabilities and severe incidents to their designated CSIRT within strict deadlines:
@@ -1402,11 +1402,11 @@ Background: Under CRA Article 14, manufacturers must report actively exploited v
 Rules:
 1. Ground all content in the product's actual data (SBOM, vulnerability findings, linked finding details, repo metadata).
 2. Write in a professional, factual tone suitable for CSIRT/ENISA regulatory submissions.
-3. Be specific — reference actual CVE IDs, dependency names, versions, and statistics when available.
+3. Be specific – reference actual CVE IDs, dependency names, versions, and statistics when available.
 4. Where data is insufficient, note what the user should add manually with "[TO COMPLETE: ...]" placeholders.
 5. Use British English spelling throughout.
 6. Never invent data not provided in the context.
-7. Keep content concise but thorough — these are regulatory submissions, not essays.
+7. Keep content concise but thorough – these are regulatory submissions, not essays.
 8. If previous stages have been submitted, maintain consistency with their content and build upon them.
 9. For the suspectedMalicious field, use only "yes", "no", or "unknown".
 10. For patchStatus, use only "available", "in_progress", or "planned".
@@ -1430,7 +1430,7 @@ What the regulation requires:
 - Reference to user instructions per Annex II
 
 What auditors look for:
-- Clear scope definition — what the product does and does not do
+- Clear scope definition – what the product does and does not do
 - Explicit version identification so the Technical File can be traced to a specific release
 - Distribution model that matches the CRA category classification
 - User documentation reference that is accessible and maintained
@@ -1455,7 +1455,7 @@ What the regulation requires:
 What auditors look for:
 - Architecture diagram or description showing trust boundaries
 - Evidence of security-aware development practices (not just functional testing)
-- Component management process — how dependencies are selected, vetted, and updated
+- Component management process – how dependencies are selected, vetted, and updated
 - Monitoring that can detect security-relevant events in production
 
 Data to reference:
@@ -1504,7 +1504,7 @@ What the regulation requires:
 - Residual risk acceptance with justification
 
 What auditors look for:
-- Named, recognised methodology — not ad hoc risk listing
+- Named, recognised methodology – not ad hoc risk listing
 - Threats derived from actual product architecture and vulnerability data
 - Risk register entries that correspond to real findings, not hypothetical scenarios
 - All 13 Annex I requirements addressed (not skipped) with evidence or gap notes
@@ -1514,7 +1514,7 @@ Data to reference:
 - Vulnerability findings (CVE IDs, severity, affected dependencies) for risk register entries
 - SBOM package count and ecosystem breakdown for attack surface analysis
 - Licence risk findings for supply chain risk entries
-- CRA category — higher categories require stricter risk tolerance
+- CRA category – higher categories require stricter risk tolerance
 
 Note: This section is also served by the dedicated Risk Assessment Generator capability which produces methodology, threat model, risk register, and all 13 Annex I assessments.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
@@ -1555,21 +1555,21 @@ What the regulation requires:
 
 What auditors look for:
 - Standards that are relevant to the product type (not a generic list)
-- Specific section/clause references — not just "ISO 27001" but which controls apply
+- Specific section/clause references – not just "ISO 27001" but which controls apply
 - For important (Class I/II) and critical products: harmonised standards are expected, not optional
 - Certificate numbers or third-party attestation references where applicable
 
 Commonly applicable standards for CRA compliance:
-- ISO/IEC 27001 — Information security management
-- ISO 29147 — Vulnerability disclosure
-- ISO 30111 — Vulnerability handling processes
-- IEC 62443 — Industrial automation and control systems security
-- ETSI EN 303 645 — Cyber security for consumer IoT
-- ISO/IEC 27034 — Application security
-- Common Criteria (ISO/IEC 15408) — for critical products
+- ISO/IEC 27001 – Information security management
+- ISO 29147 – Vulnerability disclosure
+- ISO 30111 – Vulnerability handling processes
+- IEC 62443 – Industrial automation and control systems security
+- ETSI EN 303 645 – Cyber security for consumer IoT
+- ISO/IEC 27034 – Application security
+- Common Criteria (ISO/IEC 15408) – for critical products
 
 Data to reference:
-- CRA category — determines whether harmonised standards are mandatory
+- CRA category – determines whether harmonised standards are mandatory
 - Product type and industry context for standard selection
 - Existing conformity assessment module (A, B+C, or H)', 'claude-sonnet-4-20250514', 2000, 1.0),
 
@@ -1587,7 +1587,7 @@ What the regulation requires:
 
 What auditors look for:
 - Test reports that cover the Annex I Part I requirements (not just functional testing)
-- Evidence that identified issues were remediated — not just found
+- Evidence that identified issues were remediated – not just found
 - Dates of testing aligned with product release timeline (not stale reports)
 - For critical products: third-party assessment evidence is mandatory
 - Traceability from test findings to risk register entries
@@ -1595,7 +1595,7 @@ What auditors look for:
 Data to reference:
 - Vulnerability scan results from CRANIS2 (counts by severity, open vs resolved)
 - SBOM analysis as evidence of software composition analysis (SCA)
-- CRA category — critical products require notified body assessment
+- CRA category – critical products require notified body assessment
 - Conformity assessment module selection from declaration_of_conformity section', 'claude-sonnet-4-20250514', 2000, 1.0),
 
       ('section:declaration_of_conformity', 'section_guidance', 'Declaration of Conformity (Annex VII §7)',
@@ -1614,10 +1614,10 @@ The EU Declaration of Conformity must include:
 8. Authorised signatory: name, function, signature
 
 Assessment module selection:
-- Default products: Module A (internal controls) — self-assessment
+- Default products: Module A (internal controls) – self-assessment
 - Important (Class I): Module A or harmonised standard compliance
-- Important (Class II): Module B+C or H — third-party assessment required
-- Critical: Module B+C or H — notified body assessment mandatory
+- Important (Class II): Module B+C or H – third-party assessment required
+- Critical: Module B+C or H – notified body assessment mandatory
 
 What auditors look for:
 - All 8 mandatory fields completed
@@ -1641,15 +1641,15 @@ Data to reference:
     await client.query(`
       INSERT INTO copilot_prompts (prompt_key, category, title, description, system_prompt, model, max_tokens, temperature)
       VALUES
-      ('obligation:art_13', 'obligation_guidance', 'Art. 13 — Obligations of Manufacturers',
-       'Overall manufacturer obligation — aggregate compliance across all specific obligations.',
+      ('obligation:art_13', 'obligation_guidance', 'Art. 13 – Obligations of Manufacturers',
+       'Overall manufacturer obligation – aggregate compliance across all specific obligations.',
        'Article 13 is the umbrella obligation requiring manufacturers to ensure products comply with ALL essential cybersecurity requirements throughout the product lifecycle.
 
 Evidence focus: This is an aggregate obligation. Evidence should summarise progress across the specific obligations below (Art. 13(3) through Art. 13(15), Art. 14, Annex I). Reference the overall compliance readiness score and highlight which specific obligations are met vs in progress.
 
 Key data: Overall tech file completion percentage, obligation statuses across all 18 specific obligations, CRA category and its implications.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_13_3', 'obligation_guidance', 'Art. 13(3) — Component Currency',
+      ('obligation:art_13_3', 'obligation_guidance', 'Art. 13(3) – Component Currency',
        'Keep all software components free of known exploitable vulnerabilities and up to date throughout the support period.',
        'Article 13(3) requires continuous verification that all dependencies are vulnerability-free and current. Products cannot ship with outdated component versions that have known CVEs.
 
@@ -1661,7 +1661,7 @@ Evidence must demonstrate:
 
 Key data: SBOM package count and staleness, vulnerability findings by severity, open vs resolved findings count, last scan date.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_13_5', 'obligation_guidance', 'Art. 13(5) — No Known Exploitable Vulnerabilities at Market Placement',
+      ('obligation:art_13_5', 'obligation_guidance', 'Art. 13(5) – No Known Exploitable Vulnerabilities at Market Placement',
        'Products must be free of known exploitable vulnerabilities before market placement.',
        'Article 13(5) is a gate requirement: before placing a product on the EU market, the manufacturer must confirm zero open exploitable vulnerabilities through a pre-launch vulnerability assessment.
 
@@ -1673,7 +1673,7 @@ Evidence must demonstrate:
 
 Key data: Vulnerability findings (critical/high counts), remediation timeline, SBOM package versions, last scan date relative to product launch date.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_13_6', 'obligation_guidance', 'Art. 13(6) — Vulnerability Handling',
+      ('obligation:art_13_6', 'obligation_guidance', 'Art. 13(6) – Vulnerability Handling',
        'Identify and document vulnerabilities, provide security updates for at least 5 years.',
        'Article 13(6) requires a documented vulnerability handling process covering the entire support period (minimum 5 years).
 
@@ -1687,7 +1687,7 @@ Evidence must demonstrate:
 
 Key data: Vulnerability findings count and triage status, SBOM scan frequency, CVD policy URL, security contact, open vs resolved finding ratio.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_13_7', 'obligation_guidance', 'Art. 13(7) — Automatic Security Updates',
+      ('obligation:art_13_7', 'obligation_guidance', 'Art. 13(7) – Automatic Security Updates',
        'Ensure security updates are automatically available to users where technically feasible.',
        'Article 13(7) requires manufacturers to provide automatic security update delivery where technically feasible, for the duration of the support period.
 
@@ -1702,9 +1702,9 @@ If automatic updates are not feasible (e.g. air-gapped systems, embedded firmwar
 
 Key data: Product distribution model (SaaS vs on-premise vs embedded), update mechanism description, support period end date.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_13_8', 'obligation_guidance', 'Art. 13(8) — Security Patches Free of Charge',
+      ('obligation:art_13_8', 'obligation_guidance', 'Art. 13(8) – Security Patches Free of Charge',
        'Security patches must be provided at no additional cost for the full support period.',
-       'Article 13(8) requires that all security updates are provided free of charge throughout the support period. This is a non-negotiable requirement — security patches cannot be bundled into paid upgrade tiers.
+       'Article 13(8) requires that all security updates are provided free of charge throughout the support period. This is a non-negotiable requirement – security patches cannot be bundled into paid upgrade tiers.
 
 Evidence must demonstrate:
 - Explicit policy statement that security patches are free
@@ -1714,7 +1714,7 @@ Evidence must demonstrate:
 
 Key data: Product pricing model, support period duration, update policy documentation.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_13_9', 'obligation_guidance', 'Art. 13(9) — Security Updates Separate from Feature Updates',
+      ('obligation:art_13_9', 'obligation_guidance', 'Art. 13(9) – Security Updates Separate from Feature Updates',
        'Security patches must be distributable separately from feature updates.',
        'Article 13(9) requires manufacturers to separate security patches from feature updates, so users can apply critical security fixes without being forced to adopt new functionality.
 
@@ -1726,7 +1726,7 @@ Evidence must demonstrate:
 
 Key data: Product version format, release history (if available), distribution model.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_13_10', 'obligation_guidance', 'Art. 13(10) — Documentation Retention (10 Years)',
+      ('obligation:art_13_10', 'obligation_guidance', 'Art. 13(10) – Documentation Retention (10 Years)',
        'Technical documentation and EU DoC must be retained for at least 10 years.',
        'Article 13(10) requires all technical documentation (Technical File, EU Declaration of Conformity, test reports, risk assessments) to be retained for at least 10 years after market placement, or for the support period if longer.
 
@@ -1739,7 +1739,7 @@ Evidence must demonstrate:
 
 Key data: Product market placement date (if known), support period end date, archive location.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_13_11', 'obligation_guidance', 'Art. 13(11) — SBOM (Software Bill of Materials)',
+      ('obligation:art_13_11', 'obligation_guidance', 'Art. 13(11) – SBOM (Software Bill of Materials)',
        'Identify and document all components in machine-readable SBOM format.',
        'Article 13(11) requires a machine-readable SBOM listing all software components, dependencies, and third-party libraries. The SBOM must be kept current throughout the support period.
 
@@ -1748,13 +1748,13 @@ Evidence must demonstrate:
 - Complete component inventory including direct and transitive dependencies
 - Licence declarations for each dependency
 - SBOM update frequency (should align with each release or dependency change)
-- SBOM is not stale — reflects current product composition
+- SBOM is not stale – reflects current product composition
 
 CRANIS2 automatically generates SBOMs from connected repositories via lockfile parsing. Reference the actual SBOM data.
 
 Key data: SBOM package count, staleness indicator, top dependencies, connected repository, last SBOM sync date.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_13_12', 'obligation_guidance', 'Art. 13(12) — Technical Documentation',
+      ('obligation:art_13_12', 'obligation_guidance', 'Art. 13(12) – Technical Documentation',
        'Draw up complete technical documentation (Technical File) before market placement.',
        'Article 13(12) requires a complete Technical File per Annex VII covering all 8 sections before the product is placed on the EU market.
 
@@ -1767,15 +1767,15 @@ The 8 sections: Product Description (§1), Design & Development (§2a), Vulnerab
 
 Key data: Tech file section completion statuses from CRANIS2, overall completion percentage.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_13_14', 'obligation_guidance', 'Art. 13(14) — Conformity Assessment',
+      ('obligation:art_13_14', 'obligation_guidance', 'Art. 13(14) – Conformity Assessment',
        'Carry out a conformity assessment appropriate to the product CRA category.',
        'Article 13(14) requires a formal conformity assessment using the appropriate module for the product CRA category.
 
 Assessment module by category:
-- Default: Module A (internal controls) — self-assessment
+- Default: Module A (internal controls) – self-assessment
 - Important (Class I): Module A or harmonised standard compliance
-- Important (Class II): Module B+C or H — third-party assessment required
-- Critical: Module B+C or H — notified body assessment mandatory
+- Important (Class II): Module B+C or H – third-party assessment required
+- Critical: Module B+C or H – notified body assessment mandatory
 
 Evidence must demonstrate:
 - Correct assessment module selected for the product CRA category
@@ -1785,7 +1785,7 @@ Evidence must demonstrate:
 
 Key data: CRA category, selected assessment module, test report status, notified body details (if applicable).', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_13_15', 'obligation_guidance', 'Art. 13(15) — EU Declaration of Conformity',
+      ('obligation:art_13_15', 'obligation_guidance', 'Art. 13(15) – EU Declaration of Conformity',
        'Draw up the EU Declaration of Conformity and affix the CE marking.',
        'Article 13(15) requires a formal EU Declaration of Conformity per Annex VI and the application of CE marking.
 
@@ -1797,7 +1797,7 @@ Evidence must demonstrate:
 
 Key data: DoC completion status in Technical File, assessment module, notified body reference, authorised signatory.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_14', 'obligation_guidance', 'Art. 14 — Vulnerability Reporting (ENISA)',
+      ('obligation:art_14', 'obligation_guidance', 'Art. 14 – Vulnerability Reporting (ENISA)',
        'Report actively exploited vulnerabilities and severe incidents to ENISA within 24 hours.',
        'Article 14 requires mandatory reporting to the designated CSIRT with strict deadlines:
 - Early Warning: within 24 hours of becoming aware
@@ -1813,7 +1813,7 @@ Evidence must demonstrate:
 
 Key data: Any CRA reports created in CRANIS2, CSIRT country setting, incident response plan status, linked vulnerability findings.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_16', 'obligation_guidance', 'Art. 16 — EU Declaration of Conformity (Annex IV)',
+      ('obligation:art_16', 'obligation_guidance', 'Art. 16 – EU Declaration of Conformity (Annex IV)',
        'Draw up an EU DoC meeting Annex IV content requirements.',
        'Article 16 specifies the content requirements for the EU Declaration of Conformity per Annex IV.
 
@@ -1830,7 +1830,7 @@ Evidence: Reference the declaration_of_conformity section of the Technical File.
 
 Key data: Organisation details, product identification, standards applied, assessment module, notified body.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_20', 'obligation_guidance', 'Art. 20 — EU Market Surveillance Registration',
+      ('obligation:art_20', 'obligation_guidance', 'Art. 20 – EU Market Surveillance Registration',
        'Critical products require market surveillance authority notification before EU market placement.',
        'Article 20 applies ONLY to products classified as "critical". It requires notification to the relevant EU Member State market surveillance authority before the product is placed on the market.
 
@@ -1844,7 +1844,7 @@ Evidence must demonstrate:
 
 Key data: CRA category (must be "critical"), market surveillance registration status. If the product is not critical, note that this obligation is not applicable.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_32', 'obligation_guidance', 'Art. 32 — Harmonised Standards',
+      ('obligation:art_32', 'obligation_guidance', 'Art. 32 – Harmonised Standards',
        'Reference applicable harmonised standards in conformity assessment.',
        'Article 32 applies to important (Class I/II) and critical products. Where harmonised standards exist, the conformity assessment must reference them.
 
@@ -1856,7 +1856,7 @@ Evidence must demonstrate:
 
 Key data: CRA category, standards_applied section of Technical File, certificate numbers (if third-party certified). This obligation does not apply to default-category products.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:art_32_3', 'obligation_guidance', 'Art. 32(3) — Third-Party Assessment',
+      ('obligation:art_32_3', 'obligation_guidance', 'Art. 32(3) – Third-Party Assessment',
        'Critical and important (Class II) products require third-party conformity assessment.',
        'Article 32(3) applies to important (Class II) and critical products. These products require independent conformity assessment by a notified body.
 
@@ -1868,29 +1868,29 @@ Evidence must demonstrate:
 
 Key data: CRA category (must be important_ii or critical), notified body details from declaration_of_conformity section, assessment module. This obligation does not apply to default or important (Class I) products.', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:annex_i_part_i', 'obligation_guidance', 'Annex I, Part I — Security by Design',
+      ('obligation:annex_i_part_i', 'obligation_guidance', 'Annex I, Part I – Security by Design',
        'Products must be designed with appropriate cybersecurity based on risks, addressing 13 essential requirements.',
        'Annex I Part I requires manufacturers to demonstrate security-by-design across 13 essential cybersecurity requirements:
 
-I(a) No known exploitable vulnerabilities — reference vulnerability scan results
-I(b) Secure-by-default configuration — default settings should be restrictive
-I(c) Security update mechanism — automatic updates where feasible
-I(d) Access control & authentication — role-based access, MFA capability
-I(e) Data confidentiality & encryption — encryption at rest and in transit
-I(f) Data & command integrity — input validation, integrity checking
-I(g) Data minimisation — collect only necessary data, justify retention
-I(h) Availability & resilience — redundancy, failover, DDoS protection
-I(i) Minimise impact on other services — network isolation, resource limits
-I(j) Attack surface limitation — disable unused features, minimise ports
-I(k) Exploitation mitigation — memory safety, sandboxing, exploit detection
-I(l) Security monitoring & logging — audit logs, anomaly detection
-I(m) Secure data erasure & transfer — secure deletion, data portability
+I(a) No known exploitable vulnerabilities – reference vulnerability scan results
+I(b) Secure-by-default configuration – default settings should be restrictive
+I(c) Security update mechanism – automatic updates where feasible
+I(d) Access control & authentication – role-based access, MFA capability
+I(e) Data confidentiality & encryption – encryption at rest and in transit
+I(f) Data & command integrity – input validation, integrity checking
+I(g) Data minimisation – collect only necessary data, justify retention
+I(h) Availability & resilience – redundancy, failover, DDoS protection
+I(i) Minimise impact on other services – network isolation, resource limits
+I(j) Attack surface limitation – disable unused features, minimise ports
+I(k) Exploitation mitigation – memory safety, sandboxing, exploit detection
+I(l) Security monitoring & logging – audit logs, anomaly detection
+I(m) Secure data erasure & transfer – secure deletion, data portability
 
 Evidence should address each requirement with product-specific justification. The dedicated Risk Assessment Generator produces a full 13-point assessment.
 
 Key data: Vulnerability findings for I(a), SBOM for I(a)/I(j), architecture data for I(b)-(I(m).', 'claude-sonnet-4-20250514', 2000, 1.0),
 
-      ('obligation:annex_i_part_ii', 'obligation_guidance', 'Annex I, Part II — Vulnerability Handling Requirements',
+      ('obligation:annex_i_part_ii', 'obligation_guidance', 'Annex I, Part II – Vulnerability Handling Requirements',
        'Implement vulnerability handling processes including coordinated disclosure.',
        'Annex I Part II requires a documented vulnerability handling process covering the complete vulnerability lifecycle.
 
@@ -1949,7 +1949,7 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       );
     `);
 
-    // ── Compliance Snapshots (P8 — 10-Year Compliance Vault) ──
+    // ── Compliance Snapshots (P8 – 10-Year Compliance Vault) ──
     await client.query(`
       CREATE TABLE IF NOT EXISTS compliance_snapshots (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

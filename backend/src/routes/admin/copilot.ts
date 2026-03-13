@@ -5,7 +5,7 @@ import { requirePlatformAdmin } from '../../middleware/requirePlatformAdmin.js';
 
 const router = Router();
 
-// ─── GET /api/admin/copilot-usage — Platform-wide AI copilot usage ──────────
+// ─── GET /api/admin/copilot-usage – Platform-wide AI copilot usage ──────────
 const INPUT_COST_PER_M = 3;
 const OUTPUT_COST_PER_M = 15;
 function estimateCostUsd(inputTokens: number, outputTokens: number): number {

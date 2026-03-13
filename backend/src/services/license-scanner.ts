@@ -42,7 +42,7 @@ function classifySingleLicense(licenseId: string): LicenseClassification {
     return {
       category: 'no_assertion',
       riskLevel: 'warning',
-      reason: 'No license declared — unknown legal obligations'
+      reason: 'No license declared, unknown legal obligations'
     };
   }
 
@@ -50,7 +50,7 @@ function classifySingleLicense(licenseId: string): LicenseClassification {
     return {
       category: 'copyleft_strong',
       riskLevel: 'critical',
-      reason: `${id} requires source code disclosure — incompatible with proprietary distribution`
+      reason: `${id} requires source code disclosure, incompatible with proprietary distribution`
     };
   }
 
@@ -58,7 +58,7 @@ function classifySingleLicense(licenseId: string): LicenseClassification {
     return {
       category: 'copyleft_weak',
       riskLevel: 'warning',
-      reason: `${id} has weak copyleft terms — modifications to this library must be shared`
+      reason: `${id} has weak copyleft terms, modifications to this library must be shared`
     };
   }
 
@@ -66,14 +66,14 @@ function classifySingleLicense(licenseId: string): LicenseClassification {
     return {
       category: 'permissive',
       riskLevel: 'ok',
-      reason: `${id} is permissive — no distribution restrictions`
+      reason: `${id} is permissive, no distribution restrictions`
     };
   }
 
   return {
     category: 'unknown',
     riskLevel: 'warning',
-    reason: `${id} is not in known license database — manual review recommended`
+    reason: `${id} is not in known license database, manual review recommended`
   };
 }
 
@@ -89,7 +89,7 @@ export function classifyLicense(spdxExpression: string | null | undefined): Lice
     return {
       category: 'no_assertion',
       riskLevel: 'warning',
-      reason: 'No license declared — unknown legal obligations'
+      reason: 'No license declared, unknown legal obligations'
     };
   }
 
@@ -123,7 +123,7 @@ export function classifyLicense(spdxExpression: string | null | undefined): Lice
     return {
       category: 'copyleft_strong',
       riskLevel: 'critical',
-      reason: `Contains strong copyleft: ${copyleftIds.join(', ')} — requires source disclosure`
+      reason: `Contains strong copyleft: ${copyleftIds.join(', ')}, requires source disclosure`
     };
   }
 
@@ -132,7 +132,7 @@ export function classifyLicense(spdxExpression: string | null | undefined): Lice
     return {
       category: 'copyleft_weak',
       riskLevel: 'warning',
-      reason: `Contains weak copyleft: ${weakIds.join(', ')} — modifications must be shared`
+      reason: `Contains weak copyleft: ${weakIds.join(', ')}, modifications must be shared`
     };
   }
 
@@ -141,7 +141,7 @@ export function classifyLicense(spdxExpression: string | null | undefined): Lice
     return {
       category: 'unknown',
       riskLevel: 'warning',
-      reason: `Unknown licenses: ${unknownIds.join(', ')} — manual review recommended`
+      reason: `Unknown licenses: ${unknownIds.join(', ')}, manual review recommended`
     };
   }
 
@@ -149,7 +149,7 @@ export function classifyLicense(spdxExpression: string | null | undefined): Lice
     return {
       category: 'no_assertion',
       riskLevel: 'warning',
-      reason: 'No license declared — unknown legal obligations'
+      reason: 'No license declared, unknown legal obligations'
     };
   }
 
@@ -291,7 +291,7 @@ export async function scanProductLicenses(
 
       // Track new incompatible findings
       if (compatVerdict === 'incompatible' && upsertResult.rows[0]?.is_new) {
-        newCriticalFindings.push(`${dep.name}@${dep.version} — incompatible: ${compatReason}`);
+        newCriticalFindings.push(`${dep.name}@${dep.version} – incompatible: ${compatReason}`);
       }
     }
 
@@ -332,7 +332,7 @@ export async function scanProductLicenses(
       });
     }
 
-    console.log(`[License Scanner] Product ${productId}: ${deps.length} deps scanned in ${durationMs}ms — ${directCount} direct, ${transitiveCount} transitive, ${criticalCount} critical, ${copyleftCount} copyleft, ${unknownCount} unknown`);
+    console.log(`[License Scanner] Product ${productId}: ${deps.length} deps scanned in ${durationMs}ms – ${directCount} direct, ${transitiveCount} transitive, ${criticalCount} critical, ${copyleftCount} copyleft, ${unknownCount} unknown`);
 
     return { scanId, totalDeps: deps.length, criticalCount };
   } catch (error) {

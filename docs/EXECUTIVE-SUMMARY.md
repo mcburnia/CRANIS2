@@ -1,4 +1,4 @@
-# CRANIS2 \u2013 Executive Summary
+# CRANIS2 – Executive Summary
 
 ## What Is CRANIS2?
 
@@ -18,7 +18,7 @@ CRANIS2 takes the dependency and component information present in your repositor
 
 - **Intellectual Property Proof.** Creates cryptographically timestamped snapshots of your codebase using RFC 3161, giving you independently verifiable proof of authorship and prior art.
 
-- **CRA Technical File.** Structures the documentation required under CRA Annex VII across eight sections, with inline editing and version tracking. Auto-population suggests content for four key sections based on your platform data (product description, vulnerability handling, applicable standards, and test reports), eliminating 60\u201380% of the documentation effort.
+- **CRA Technical File.** Structures the documentation required under CRA Annex VII across eight sections, with inline editing and version tracking. Auto-population suggests content for four key sections based on your platform data (product description, vulnerability handling, applicable standards, and test reports), eliminating 60–80% of the documentation effort.
 
 - **EU Declaration of Conformity.** Generates a professionally formatted PDF declaration under CRA Article 16, combining your product metadata, organisation details, and applicable standards into a legally compliant document ready for download.
 
@@ -135,4 +135,4 @@ Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerab
 
 ---
 
-*CRANIS2 \u2013 Cyber Resilience Act & NIS2 compliance, automated.*
+*CRANIS2 – Cyber Resilience Act & NIS2 compliance, automated.*

@@ -44,7 +44,7 @@ async function attachOrgId(req: Request, res: Response, next: Function) {
   next();
 }
 
-// GET /api/copilot/status — check if copilot is available for this org
+// GET /api/copilot/status – check if copilot is available for this org
 router.get('/status', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -104,7 +104,7 @@ function estimateCostUsd(inputTokens: number, outputTokens: number): number {
   return (inputTokens * INPUT_COST_PER_M + outputTokens * OUTPUT_COST_PER_M) / 1_000_000;
 }
 
-// GET /api/copilot/usage — detailed usage breakdown for the org
+// GET /api/copilot/usage – detailed usage breakdown for the org
 router.get('/usage', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -208,7 +208,7 @@ router.get('/usage', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/copilot/suggest — generate AI suggestion
+// POST /api/copilot/suggest – generate AI suggestion
 router.post('/suggest', requireAuth, requirePlan('pro'), attachOrgId, requireTokenBudget(), requireCopilotRateLimit('suggest'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const orgId = (req as any).orgId;
@@ -250,9 +250,9 @@ router.post('/suggest', requireAuth, requirePlan('pro'), attachOrgId, requireTok
     // Gather context
     const productContext = await gatherProductContext(productId, orgId);
 
-    // Check cache (only for requests without existing content — those are refinements)
+    // Check cache (only for requests without existing content – those are refinements)
     // Include sectionKey and type in the cache context so each obligation/section
-    // gets its own cache entry — without this, all obligations on the same product
+    // gets its own cache entry – without this, all obligations on the same product
     // would return the same cached response.
     const cacheContext = { ...productContext, _sectionKey: sectionKey, _type: type };
     const useCache = !existingContent;
@@ -295,7 +295,7 @@ router.post('/suggest', requireAuth, requirePlan('pro'), attachOrgId, requireTok
   }
 });
 
-// POST /api/copilot/triage — AI triage vulnerability findings
+// POST /api/copilot/triage – AI triage vulnerability findings
 router.post('/triage', requireAuth, requirePlan('pro'), attachOrgId, requireTokenBudget(), requireCopilotRateLimit('vulnerability_triage'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const orgId = (req as any).orgId;
@@ -417,7 +417,7 @@ router.post('/triage', requireAuth, requirePlan('pro'), attachOrgId, requireToke
   }
 });
 
-// POST /api/copilot/generate-risk-assessment — AI-generated risk assessment
+// POST /api/copilot/generate-risk-assessment – AI-generated risk assessment
 router.post('/generate-risk-assessment', requireAuth, requirePlan('pro'), attachOrgId, requireTokenBudget(), requireCopilotRateLimit('risk_assessment'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const orgId = (req as any).orgId;
@@ -486,7 +486,7 @@ router.post('/generate-risk-assessment', requireAuth, requirePlan('pro'), attach
   }
 });
 
-// POST /api/copilot/draft-incident-report — AI-drafted ENISA report stage
+// POST /api/copilot/draft-incident-report – AI-drafted ENISA report stage
 router.post('/draft-incident-report', requireAuth, requirePlan('pro'), attachOrgId, requireTokenBudget(), requireCopilotRateLimit('incident_report_draft', 'reportId'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const orgId = (req as any).orgId;

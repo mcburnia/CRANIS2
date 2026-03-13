@@ -70,7 +70,7 @@ function parseDateRange(req: Request): { from: Date; to: Date } {
 }
 
 function formatDate(d: Date | string | null): string {
-  if (!d) return '—';
+  if (!d) return '–';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -205,7 +205,7 @@ function buildPdfBase(title: string, subtitle: string, orgName: string, from: Da
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// REPORT A — COMPLIANCE SUMMARY
+// REPORT A – COMPLIANCE SUMMARY
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function fetchComplianceSummaryData(orgId: string, from: Date, to: Date) {
@@ -214,7 +214,7 @@ async function fetchComplianceSummaryData(orgId: string, from: Date, to: Date) {
 
   const productIds = products.map(p => p.id);
 
-  // Obligations per product (current state — not date-filtered)
+  // Obligations per product (current state – not date-filtered)
   const oblResult = await pool.query<{
     product_id: string; total: string; met: string; in_progress: string; not_started: string;
   }>(
@@ -369,9 +369,9 @@ router.get('/compliance-summary/export', requireAuth, async (req: Request, res: 
         p.obligations.total, p.obligations.met, p.obligations.inProgress, p.obligations.notStarted,
         `${p.technicalFile.percentComplete}%`,
         `${p.technicalFile.completeSections}/${p.technicalFile.totalSections}`,
-        p.vulnerabilities?.critical ?? '—', p.vulnerabilities?.high ?? '—',
-        p.vulnerabilities?.medium ?? '—', p.vulnerabilities?.low ?? '—',
-        p.vulnerabilities?.lastScannedAt ? formatDate(p.vulnerabilities.lastScannedAt) : '—',
+        p.vulnerabilities?.critical ?? '–', p.vulnerabilities?.high ?? '–',
+        p.vulnerabilities?.medium ?? '–', p.vulnerabilities?.low ?? '–',
+        p.vulnerabilities?.lastScannedAt ? formatDate(p.vulnerabilities.lastScannedAt) : '–',
         p.craReports.total, p.craReports.draft, p.craReports.submitted,
       ]);
       const csv = rowsToCsv(headers, rows);
@@ -407,7 +407,7 @@ router.get('/compliance-summary/export', requireAuth, async (req: Request, res: 
       const tfText = `${p.technicalFile.percentComplete}%`;
       const vulnText = p.vulnerabilities
         ? `${p.vulnerabilities.critical}C ${p.vulnerabilities.high}H`
-        : '—';
+        : '–';
       const craText = `${p.craReports.total} (${p.craReports.draft} draft)`;
       tableRow(
         [p.name, craLabel(p.craCategory), oblText, tfText, vulnText, craText],
@@ -459,7 +459,7 @@ router.get('/compliance-summary/export', requireAuth, async (req: Request, res: 
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// REPORT B — VULNERABILITY TRENDS
+// REPORT B – VULNERABILITY TRENDS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function fetchVulnTrendsData(orgId: string, from: Date, to: Date, productId?: string) {
@@ -468,7 +468,7 @@ async function fetchVulnTrendsData(orgId: string, from: Date, to: Date, productI
   const findingProductFilter = productId ? `AND vf.product_id = $4` : '';
   if (productId) params.push(productId);
 
-  // Scan history — one row per completed scan
+  // Scan history – one row per completed scan
   const scansResult = await pool.query<{
     id: string; product_id: string; completed_at: Date;
     findings_count: string; critical_count: string; high_count: string; medium_count: string; low_count: string;
@@ -725,7 +725,7 @@ router.get('/vulnerability-trends/export', requireAuth, async (req: Request, res
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// REPORT C — AUDIT TRAIL
+// REPORT C – AUDIT TRAIL
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const CATEGORY_FILTERS: Record<string, string[]> = {
@@ -918,7 +918,7 @@ router.get('/audit-trail/export', requireAuth, async (req: Request, res: Respons
         formatDate(e.createdAt),
         e.userEmail.slice(0, 24),
         e.eventType,
-        e.ipAddress ?? '—',
+        e.ipAddress ?? '–',
       ], evCols, doc.y);
       doc.moveDown(0.5);
     }

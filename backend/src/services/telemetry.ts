@@ -51,7 +51,7 @@ export function extractRequestData(req: Request): {
  * Record a user event in Postgres (structured) and Neo4j (graph relationships)
  */
 export async function recordEvent(data: TelemetryData): Promise<void> {
-  // Fire both in parallel — don't let one failure block the other
+  // Fire both in parallel – don't let one failure block the other
   await Promise.allSettled([
     recordPostgresEvent(data),
     recordNeo4jEvent(data),
@@ -90,7 +90,7 @@ async function recordNeo4jEvent(data: TelemetryData): Promise<void> {
     const browserName = parseBrowserName(data.userAgent || '');
     const osName = parseOsName(data.userAgent || '');
 
-    // MERGE the User node (idempotent — created once, updated on each event)
+    // MERGE the User node (idempotent – created once, updated on each event)
     // MERGE a Location node from the IP (we store IP; geolocation can be enriched later)
     // MERGE a Device node from user agent fingerprint
     // CREATE the Session/Event node (always new)
@@ -123,7 +123,7 @@ async function recordNeo4jEvent(data: TelemetryData): Promise<void> {
       })
       MERGE (u)-[:PERFORMED]->(e)
 
-      // Merge Location node (by IP — enriched later with geo)
+      // Merge Location node (by IP – enriched later with geo)
       WITH u, e
       WHERE $ipAddress IS NOT NULL AND $ipAddress <> 'unknown'
       MERGE (loc:IPAddress {ip: $ipAddress})
@@ -211,7 +211,7 @@ function parseOsName(userAgent: string): string {
 
 function simpleFingerprint(userAgent: string): string {
   // Simple hash-like fingerprint from user agent
-  // Not cryptographic — just groups same browser/OS/device combos
+  // Not cryptographic – just groups same browser/OS/device combos
   const browser = parseBrowserName(userAgent);
   const os = parseOsName(userAgent);
   const device = parseDeviceType(userAgent);

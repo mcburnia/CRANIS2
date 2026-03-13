@@ -133,7 +133,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       }
     );
 
-    // Auto-register push webhook (non-blocking — must not fail the sync)
+    // Auto-register push webhook (non-blocking – must not fail the sync)
     ensureWebhook(detectedProvider, repoToken, parsed.owner, parsed.repo, repoData.html_url, repoInstanceUrl || undefined)
       .catch(err => console.error(`[SYNC] Webhook registration failed (non-blocking): ${err.message}`));
 
@@ -164,7 +164,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
     let effectiveSbomData = sbomData;
     let sbomSource = 'api';
     if (!effectiveSbomData) {
-      logger.info("[SYNC] No API SBOM — trying lockfile fallback...");
+      logger.info("[SYNC] No API SBOM – trying lockfile fallback...");
       const lockfileResult = await generateSBOMFromLockfiles(
         parsed.owner, parsed.repo, repoData.default_branch,
         detectedProvider, repoToken, repoData.html_url, repoInstanceUrl || undefined
@@ -178,7 +178,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
 
     // Tier 3: Source import scanning (if no API SBOM and no lockfile found)
     if (!effectiveSbomData) {
-      logger.info("[SYNC] No lockfile SBOM — trying import scan (Tier 3)...");
+      logger.info("[SYNC] No lockfile SBOM – trying import scan (Tier 3)...");
       try {
         const importResult = await generateSBOMFromImports(
           parsed.owner, parsed.repo, repoData.default_branch,
@@ -187,7 +187,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
         if (importResult) {
           effectiveSbomData = { sbom: importResult.sbom } as any;
           sbomSource = `import-scan:${importResult.languagesDetected.join('+')}`;
-          logger.info(`[SYNC] Import scan SBOM: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages (confidence: ${importResult.confidence})`);
+          logger.info(`[SYNC] Import scan SBOM: ${importResult.languagesDetected.join(', ')} – ${importResult.totalPackages} packages (confidence: ${importResult.confidence})`);
         }
       } catch (err: any) {
         console.error(`[SYNC] Import scan failed: ${err.message}`);
@@ -322,7 +322,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       },
     });
 
-    // Activity log — repo sync
+    // Activity log – repo sync
     logProductActivity({
       productId, orgId, userId, userEmail,
       action: 'repo_synced',
@@ -390,7 +390,7 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
     if (err.message?.includes('404')) {
       res.status(404).json({ error: 'Repository not found. Check the URL and ensure your account has access.' });
     } else if (err.message?.includes('401') || err.message?.includes('403')) {
-      res.status(403).json({ error: 'GitHub access denied. Your token may have expired — try reconnecting.' });
+      res.status(403).json({ error: 'GitHub access denied. Your token may have expired. Try reconnecting.' });
     } else {
       res.status(500).json({ error: 'Failed to sync repository' });
     }
@@ -503,7 +503,7 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
     const defaultBranch = repoNode.records[0]?.get('defaultBranch') || 'main';
     if (!sbomData) {
       // Lockfile fallback: generate SBOM from lockfiles
-      logger.info("[SBOM-REFRESH] No API SBOM — trying lockfile fallback...");
+      logger.info("[SBOM-REFRESH] No API SBOM – trying lockfile fallback...");
       const lockfileResult = await generateSBOMFromLockfiles(
         parsed.owner, parsed.repo, defaultBranch,
         sbomProvider, sbomToken, repoUrl
@@ -516,7 +516,7 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
     }
     // Tier 3: Source import scanning
     if (!sbomData) {
-      logger.info("[SBOM-REFRESH] No lockfile SBOM — trying import scan (Tier 3)...");
+      logger.info("[SBOM-REFRESH] No lockfile SBOM – trying import scan (Tier 3)...");
       try {
         const importResult = await generateSBOMFromImports(
           parsed.owner, parsed.repo, defaultBranch,
@@ -525,7 +525,7 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
         if (importResult) {
           sbomData = { sbom: importResult.sbom } as any;
           refreshSbomSource = `import-scan:${importResult.languagesDetected.join('+')}`;
-          logger.info(`[SBOM-REFRESH] Import scan: ${importResult.languagesDetected.join(', ')} — ${importResult.totalPackages} packages`);
+          logger.info(`[SBOM-REFRESH] Import scan: ${importResult.languagesDetected.join(', ')} – ${importResult.totalPackages} packages`);
         }
       } catch (err: any) {
         console.error(`[SBOM-REFRESH] Import scan failed: ${err.message}`);

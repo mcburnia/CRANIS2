@@ -33,13 +33,13 @@ async function getOrgId(userId: string): Promise<string | null> {
   return result.rows[0]?.org_id || null;
 }
 
-// ─── GET /api/document-templates — list available templates ───────────────────
+// ─── GET /api/document-templates – list available templates ───────────────────
 
 router.get('/', requireAuth, (_req: Request, res: Response) => {
   res.json(TEMPLATE_CATALOGUE);
 });
 
-// ─── GET /api/document-templates/:id/download — download raw template ─────────
+// ─── GET /api/document-templates/:id/download – download raw template ─────────
 
 router.get('/:id/download', requireAuth, (req: Request, res: Response) => {
   const id = req.params.id as string;
@@ -61,7 +61,7 @@ router.get('/:id/download', requireAuth, (req: Request, res: Response) => {
   res.send(content);
 });
 
-// ─── GET /api/document-templates/:id/generate — auto-populated template ───────
+// ─── GET /api/document-templates/:id/generate – auto-populated template ───────
 
 router.get('/:id/generate', requireAuth, async (req: Request, res: Response) => {
   const id = req.params.id as string;

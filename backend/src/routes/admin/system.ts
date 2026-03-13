@@ -8,7 +8,7 @@ import { toISOString } from './utils.js';
 
 const router = Router();
 
-// GET /api/admin/system — System health metrics
+// GET /api/admin/system – System health metrics
 router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     // Total events
@@ -157,7 +157,7 @@ router.get('/system', requirePlatformAdmin, async (req: Request, res: Response) 
   }
 });
 
-// GET /api/admin/feedback — List all feedback submissions
+// GET /api/admin/feedback – List all feedback submissions
 router.get('/feedback', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const status = req.query.status as string | undefined;
@@ -209,7 +209,7 @@ router.get('/feedback', requirePlatformAdmin, async (req: Request, res: Response
   }
 });
 
-// PUT /api/admin/feedback/:id — Update feedback status/notes
+// PUT /api/admin/feedback/:id – Update feedback status/notes
 router.put('/feedback/:id', requirePlatformAdmin, async (req: Request, res: Response) => {
   const feedbackId = req.params.id as string;
   const { status, adminNotes } = req.body;
@@ -251,7 +251,7 @@ router.put('/feedback/:id', requirePlatformAdmin, async (req: Request, res: Resp
 
 const SCHEDULE_INTERVAL_DAYS = 7;
 
-// GET /api/admin/test-results — All suites with aggregated results
+// GET /api/admin/test-results – All suites with aggregated results
 router.get('/test-results', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const testPool = getTestPool();
@@ -395,7 +395,7 @@ router.get('/test-results', requirePlatformAdmin, async (req: Request, res: Resp
   }
 });
 
-// POST /api/admin/test-results/run — Trigger a test run (proxies to test-runner service)
+// POST /api/admin/test-results/run – Trigger a test run (proxies to test-runner service)
 router.post('/test-results/run', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const adminEmail = (req as any).email || 'admin';
@@ -411,7 +411,7 @@ router.post('/test-results/run', requirePlatformAdmin, async (req: Request, res:
   }
 });
 
-// GET /api/admin/test-results/run-status — Poll test run status (proxies to test-runner service)
+// GET /api/admin/test-results/run-status – Poll test run status (proxies to test-runner service)
 router.get('/test-results/run-status', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const upstream = await fetch('http://test-runner:3004/status');
@@ -423,7 +423,7 @@ router.get('/test-results/run-status', requirePlatformAdmin, async (req: Request
   }
 });
 
-// GET /api/admin/test-results/:suiteId — Drill-down into suite's test cases
+// GET /api/admin/test-results/:suiteId – Drill-down into suite's test cases
 router.get('/test-results/:suiteId', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const { suiteId } = req.params;
@@ -482,7 +482,7 @@ router.get('/test-results/:suiteId', requirePlatformAdmin, async (req: Request, 
   }
 });
 
-// GET /api/admin/webhook-health — Webhook pipeline health status
+// GET /api/admin/webhook-health – Webhook pipeline health status
 router.get('/webhook-health', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const driver = getDriver();

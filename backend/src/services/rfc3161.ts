@@ -1,5 +1,5 @@
 /**
- * RFC 3161 Timestamping Service — Shared Module
+ * RFC 3161 Timestamping Service – Shared Module
  *
  * Provides RFC 3161 qualified timestamping via any TSA endpoint.
  * Used by both IP Proof snapshots and compliance vault archives.

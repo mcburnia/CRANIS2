@@ -1,5 +1,5 @@
 /**
- * GRC/Audit Tool Bridge — PARKED (P4 #23)
+ * GRC/Audit Tool Bridge – PARKED (P4 #23)
  * Stub router to prevent build errors. Implementation deferred to post-launch.
  */
 import { Router } from 'express';

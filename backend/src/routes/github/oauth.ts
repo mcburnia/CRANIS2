@@ -11,7 +11,7 @@ import { requireAuth, pendingStates, connectionTokens } from './shared.js';
 
 const router = Router();
 
-// ── GET /providers — available providers for frontend dropdown ────
+// ── GET /providers – available providers for frontend dropdown ────
 router.get('/providers', requireAuth, (_req: Request, res: Response) => {
   const providers = PROVIDER_REGISTRY.map(p => ({
     id: p.id,
@@ -23,7 +23,7 @@ router.get('/providers', requireAuth, (_req: Request, res: Response) => {
   res.json(providers);
 });
 
-// ─── POST /connect-pat — PAT-based connection for self-hosted providers ───
+// ─── POST /connect-pat – PAT-based connection for self-hosted providers ───
 router.post('/connect-pat', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const userEmail = (req as any).email;
@@ -251,7 +251,7 @@ function renderOAuthResultPage(frontendUrl: string, success: boolean, message: s
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CRANIS2 ${success ? `— ${providerLabel} Connected` : '— Connection Failed'}</title>
+  <title>CRANIS2 ${success ? `– ${providerLabel} Connected` : '– Connection Failed'}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -346,7 +346,7 @@ router.delete('/disconnect/{:provider}', requireAuth, async (req: Request, res: 
   const userEmail = (req as any).email;
   const disconnectProvider = (req.params.provider || 'github') as RepoProvider;
 
-  // Retrieve token before deleting connection — needed for webhook cleanup (non-blocking)
+  // Retrieve token before deleting connection – needed for webhook cleanup (non-blocking)
   try {
     const connRow = await pool.query(
       'SELECT access_token_encrypted, instance_url FROM repo_connections WHERE user_id = $1 AND provider = $2',

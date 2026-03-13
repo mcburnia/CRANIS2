@@ -239,7 +239,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       },
     });
 
-    // Activity log — obligation changes with before/after
+    // Activity log – obligation changes with before/after
     const obKey = check.rows[0].obligation_key;
     const productId = check.rows[0].product_id;
     if (status !== undefined && status !== check.rows[0].old_status) {

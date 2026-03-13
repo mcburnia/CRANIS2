@@ -1,5 +1,5 @@
 /**
- * Product Activity Log — audit trail for compliance evidence.
+ * Product Activity Log – audit trail for compliance evidence.
  *
  * Records product-level changes with before/after values.
  * Non-blocking: never throws, always logs failures.
@@ -21,7 +21,7 @@ export interface ActivityLogEntry {
 }
 
 /**
- * Log a product-level activity event. Non-blocking — never throws.
+ * Log a product-level activity event. Non-blocking – never throws.
  */
 export async function logProductActivity(data: ActivityLogEntry): Promise<void> {
   try {

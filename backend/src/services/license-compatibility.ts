@@ -115,7 +115,7 @@ export function checkCompatibility(
   if (licenseCategory === 'permissive') {
     return {
       verdict: 'compatible',
-      reason: `Permissive licence — no distribution restrictions for ${DISTRIBUTION_MODEL_LABELS[distributionModel]} products.`,
+      reason: `Permissive licence – no distribution restrictions for ${DISTRIBUTION_MODEL_LABELS[distributionModel]} products.`,
       rule: 'permissive_always_ok',
     };
   }
@@ -124,7 +124,7 @@ export function checkCompatibility(
   if (distributionModel === 'internal_only') {
     return {
       verdict: 'compatible',
-      reason: `Internal-only use — no external distribution means copyleft obligations are not triggered.`,
+      reason: `Internal-only use – no external distribution means copyleft obligations are not triggered.`,
       rule: 'internal_no_distribution',
     };
   }
@@ -138,10 +138,10 @@ export function checkCompatibility(
         rule: 'saas_network_copyleft',
       };
     }
-    // Regular copyleft (strong or weak) is fine for SaaS — no distribution occurs
+    // Regular copyleft (strong or weak) is fine for SaaS – no distribution occurs
     return {
       verdict: 'compatible',
-      reason: `SaaS/hosted distribution does not trigger copyleft obligations for ${licenseSpdx} — no binary or source is distributed to end users.`,
+      reason: `SaaS/hosted distribution does not trigger copyleft obligations for ${licenseSpdx} – no binary or source is distributed to end users.`,
       rule: 'saas_no_distribution',
     };
   }
@@ -152,13 +152,13 @@ export function checkCompatibility(
     if (hasNetworkCopyleft(licenseSpdx)) {
       return {
         verdict: 'compatible',
-        reason: `Source-available distribution satisfies ${licenseSpdx} requirements — source code is already provided.`,
+        reason: `Source-available distribution satisfies ${licenseSpdx} requirements – source code is already provided.`,
         rule: 'source_available_satisfies_copyleft',
       };
     }
     return {
       verdict: 'compatible',
-      reason: `Source-available distribution satisfies copyleft requirements for ${licenseSpdx} — source code disclosure is already part of your distribution model.`,
+      reason: `Source-available distribution satisfies copyleft requirements for ${licenseSpdx} – source code disclosure is already part of your distribution model.`,
       rule: 'source_available_satisfies_copyleft',
     };
   }
@@ -182,7 +182,7 @@ export function checkCompatibility(
     if (licenseCategory === 'copyleft_weak') {
       return {
         verdict: 'review_needed',
-        reason: `${licenseSpdx} is weak copyleft — compatible if dynamically linked (separate shared library). Static linking or modification of the library would require sharing those modifications.`,
+        reason: `${licenseSpdx} is weak copyleft – compatible if dynamically linked (separate shared library). Static linking or modification of the library would require sharing those modifications.`,
         rule: 'proprietary_weak_copyleft_linking',
       };
     }

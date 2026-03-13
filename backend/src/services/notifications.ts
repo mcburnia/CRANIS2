@@ -14,7 +14,7 @@ export interface CreateNotification {
 
 /**
  * Create a notification record in Postgres.
- * Non-blocking — failures are logged but never thrown.
+ * Non-blocking – failures are logged but never thrown.
  */
 export async function createNotification(data: CreateNotification): Promise<string | null> {
   try {
@@ -63,7 +63,7 @@ export async function getUnreadCount(orgId: string, userId: string): Promise<num
  * - Sends broadcast notification for all org members
  * - Debounces: skips if same gap count within 24 hours
  *
- * Never throws — logs warnings and continues on failure.
+ * Never throws – logs warnings and continues on failure.
  */
 export async function sendComplianceGapNotification(
   productId: string,

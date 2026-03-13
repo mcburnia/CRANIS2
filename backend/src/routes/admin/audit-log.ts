@@ -5,7 +5,7 @@ import { requirePlatformAdmin } from '../../middleware/requirePlatformAdmin.js';
 
 const router = Router();
 
-// GET /api/admin/audit-log — Cross-org audit log with filtering + pagination
+// GET /api/admin/audit-log – Cross-org audit log with filtering + pagination
 router.get('/audit-log', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;

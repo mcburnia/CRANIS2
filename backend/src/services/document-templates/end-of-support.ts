@@ -1,4 +1,4 @@
-export const END_OF_SUPPORT_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTION BEFORE FINALISING**
+export const END_OF_SUPPORT_TEMPLATE = `> **INSTRUCTIONS – DELETE THIS SECTION BEFORE FINALISING**
 >
 > This is a template document provided by CRANIS2 to help you meet your
 > obligations under EU Cyber Resilience Act Article 13(15).
@@ -12,7 +12,7 @@ export const END_OF_SUPPORT_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTION
 >
 > **Where to store the completed document:**
 > Once finalised, paste the content into your product's **Tech File** in
-> CRANIS2 under the **Art. 13 — Support & Maintenance** section.
+> CRANIS2 under the **Art. 13 – Support & Maintenance** section.
 
 ---
 
@@ -21,7 +21,7 @@ export const END_OF_SUPPORT_TEMPLATE = `> **INSTRUCTIONS — DELETE THIS SECTION
 **Document Owner:** {{TECHNICAL_FILE_OWNER}}
 **Applicable Product:** {{PRODUCT_NAME}}
 **Organisation:** {{ORG_NAME}}
-**CRA Reference:** Article 13(15) — Support period and end-of-support obligations
+**CRA Reference:** Article 13(15) – Support period and end-of-support obligations
 **Effective Date:** {{EFFECTIVE_DATE}}
 **Review Cycle:** Annually, or upon change to the support period
 
@@ -184,5 +184,5 @@ Where {{ORG_NAME}} offers a successor product, the end-of-support notification i
 
 | Date | Author | Summary |
 |---|---|---|
-| {{EFFECTIVE_DATE}} | | Initial version — establishes end-of-support policy for CRA Art. 13(15) compliance |
+| {{EFFECTIVE_DATE}} | | Initial version – establishes end-of-support policy for CRA Art. 13(15) compliance |
 `;

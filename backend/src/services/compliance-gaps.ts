@@ -1,9 +1,9 @@
 /**
  * Compliance Gap Narrator Service
- * Deterministic gap analysis — gathers all compliance state for a product
+ * Deterministic gap analysis – gathers all compliance state for a product
  * and generates a prioritised action list showing what needs to be done next.
  *
- * No AI dependency — every gap maps to a specific CRA article and action.
+ * No AI dependency – every gap maps to a specific CRA article and action.
  */
 
 import pool from '../db/pool.js';
@@ -290,7 +290,7 @@ export async function analyseComplianceGaps(
       id: `gap-${gapIndex++}`,
       priority: 'medium',
       category: 'sbom',
-      title: 'SBOM is stale — update required',
+      title: 'SBOM is stale – update required',
       description: `The SBOM (${sbomPackageCount} packages) has not been refreshed recently. Re-sync the repository to ensure the component inventory is current.`,
       action: 'Re-sync repository to refresh the SBOM',
       craReference: 'Art. 13(11)',
@@ -372,13 +372,13 @@ export async function analyseComplianceGaps(
 
   // ── MEDIUM: Unmet obligations (not already covered by specific gaps above) ──
   const coveredObligations = new Set([
-    'art_13_11', // SBOM — covered above
-    'art_13_6',  // Vuln handling — covered by scan gaps
-    'art_13_5',  // No known vulns — covered by vuln gaps
-    'art_13_12', // Tech doc — covered by section gaps
-    'art_13_7',  // Auto updates — covered by support period
-    'art_13_8',  // Free patches — covered by support period
-    'art_13',    // Overall — skip, it's an aggregate
+    'art_13_11', // SBOM – covered above
+    'art_13_6',  // Vuln handling – covered by scan gaps
+    'art_13_5',  // No known vulns – covered by vuln gaps
+    'art_13_12', // Tech doc – covered by section gaps
+    'art_13_7',  // Auto updates – covered by support period
+    'art_13_8',  // Free patches – covered by support period
+    'art_13',    // Overall – skip, it's an aggregate
   ]);
 
   for (const ob of applicable) {
@@ -394,7 +394,7 @@ export async function analyseComplianceGaps(
       id: `gap-${gapIndex++}`,
       priority: effective === 'not_started' ? 'medium' : 'low',
       category: 'obligations',
-      title: `${ob.article}: ${ob.title} — ${effective === 'not_started' ? 'not started' : 'in progress'}`,
+      title: `${ob.article}: ${ob.title} – ${effective === 'not_started' ? 'not started' : 'in progress'}`,
       description: ob.description,
       action: effective === 'not_started'
         ? `Begin work on ${ob.article} (${ob.title})`

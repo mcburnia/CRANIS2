@@ -1,5 +1,5 @@
 /**
- * Document Signing Service — P8 Phase C
+ * Document Signing Service – P8 Phase C
  *
  * Signs compliance archives with CRANIS2's Ed25519 key pair,
  * proving they were issued by the CRANIS2 platform.
@@ -7,7 +7,7 @@
  * Key management:
  *   - Private key: CRANIS2_SIGNING_KEY env var (base64-encoded PEM)
  *   - Public key:  Derived from the private key, served at /.well-known/cranis2-signing-key.pem
- *   - Algorithm:   Ed25519 (EdDSA) — fast, compact 64-byte signatures
+ *   - Algorithm:   Ed25519 (EdDSA) – fast, compact 64-byte signatures
  *
  * Verification:
  *   openssl pkeyutl -verify -pubin -inkey cranis2-signing-key.pem \
@@ -57,7 +57,7 @@ function getPublicKey(): KeyObject | null {
 }
 
 /**
- * Get the key ID — first 8 hex chars of SHA-256(public key PEM).
+ * Get the key ID – first 8 hex chars of SHA-256(public key PEM).
  * Used to identify which key signed a document.
  */
 function getKeyId(): string | null {
@@ -92,7 +92,7 @@ export function getPublicKeyPem(): string | null {
  * Sign a document (Buffer) with CRANIS2's Ed25519 key.
  *
  * @param content - The content to sign (typically a ZIP file or its SHA-256 hash)
- * @returns The signature, algorithm identifier, and key ID — or null if signing is not configured
+ * @returns The signature, algorithm identifier, and key ID – or null if signing is not configured
  */
 export function signDocument(content: Buffer): {
   signature: Buffer;

@@ -1,5 +1,5 @@
 /**
- * import-scanner.ts — Tier 3 SBOM Generation
+ * import-scanner.ts – Tier 3 SBOM Generation
  *
  * Scans source files for import statements when no lockfiles are found.
  * Uses language plugins to detect languages, extract imports, filter stdlib,
@@ -363,7 +363,7 @@ export async function generateSBOMFromImports(
     let confidence: 'high' | 'medium' | 'low' = 'low';
 
     // Check if any lockfile-parsed ecosystem is present (high confidence
-    // would come from lockfiles, but import scanning is Tier 3 — so at
+    // would come from lockfiles, but import scanning is Tier 3 – so at
     // best we can be medium confidence)
     const ecosystems = new Set(packages.map(p => p.ecosystem));
     const hasMultipleLanguages = languagesDetected.length > 1;
@@ -374,12 +374,12 @@ export async function generateSBOMFromImports(
     } else if (hasManyPackages) {
       confidence = 'medium';
     }
-    // 'high' would only come if lockfile data was also present — import
+    // 'high' would only come if lockfile data was also present – import
     // scanning alone stays at medium at best
 
     const durationMs = Date.now() - scanStart;
     logger.info(
-      `[IMPORT-SCAN] Scan complete in ${(durationMs / 1000).toFixed(1)}s — ` +
+      `[IMPORT-SCAN] Scan complete in ${(durationMs / 1000).toFixed(1)}s – ` +
       `${languagesDetected.length} language(s), ${totalImports} imports, ` +
       `${totalPackages} packages, confidence: ${confidence}`
     );

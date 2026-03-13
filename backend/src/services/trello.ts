@@ -326,7 +326,7 @@ async function addCardComment(
 
 /**
  * Resolve a Trello card by event key: add a comment explaining the resolution
- * and mark it as resolved in our log. The card stays on the board — the board
+ * and mark it as resolved in our log. The card stays on the board – the board
  * admin decides when to archive or remove it.
  */
 export async function resolveCard(
@@ -455,7 +455,7 @@ export async function createObligationCard(
       name: `📋 ${article}: ${obligationTitle}`,
       desc: [
         `**Product:** ${productName}`,
-        `**Obligation:** ${article} — ${obligationTitle}`,
+        `**Obligation:** ${article} – ${obligationTitle}`,
         `**Status:** ${newStatus}`,
         '',
         `Work has begun on this CRA obligation. Complete and mark as "met" when done.`,
@@ -491,7 +491,7 @@ export async function createDeadlineCard(
     orgId, board.productId, eventKey, 'cra_deadline',
     integration.apiKey, integration.apiToken,
     {
-      name: `⏰ ${deadlineLabel} — ${daysRemaining} days remaining`,
+      name: `⏰ ${deadlineLabel} – ${daysRemaining} days remaining`,
       desc: [
         `**Deadline:** ${deadlineLabel}`,
         `**Days remaining:** ${daysRemaining}`,
@@ -522,7 +522,7 @@ export async function createComplianceStallCard(
   const board = await getProductBoard(orgId, productId);
   if (!board?.listGaps) return;
 
-  // Weekly dedup — one per product per ISO week
+  // Weekly dedup – one per product per ISO week
   const now = new Date();
   const weekNum = Math.ceil(((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(now.getFullYear(), 0, 1).getDay() + 1) / 7);
   const eventKey = `stall:${productId}:${now.getFullYear()}-W${weekNum}`;
@@ -531,7 +531,7 @@ export async function createComplianceStallCard(
     orgId, productId, eventKey, 'compliance_stall',
     integration.apiKey, integration.apiToken,
     {
-      name: `⚠️ ${productName} — compliance stalled (${readiness}% ready)`,
+      name: `⚠️ ${productName} – compliance stalled (${readiness}% ready)`,
       desc: [
         `**Product:** ${productName}`,
         `**CRA Readiness:** ${readiness}%`,

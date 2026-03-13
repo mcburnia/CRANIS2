@@ -65,7 +65,7 @@ export const DEFAULT_SECTIONS = [
         reporting_contact: '',
         update_distribution_mechanism: '',
         security_update_policy: '',
-        sbom_reference: 'See Dependencies tab — auto-generated from GitHub repository.',
+        sbom_reference: 'See Dependencies tab – auto-generated from GitHub repository.',
       }
     }
   },

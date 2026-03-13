@@ -22,7 +22,7 @@ export function requireApiKey(requiredScope?: string) {
     }
 
     if (requiredScope && !result.scopes.includes(requiredScope)) {
-      return res.status(403).json({ error: `Insufficient scope — requires ${requiredScope}` });
+      return res.status(403).json({ error: `Insufficient scope – requires ${requiredScope}` });
     }
 
     // Belt-and-braces: verify the org still has a Pro plan
@@ -45,7 +45,7 @@ export function requireApiKey(requiredScope?: string) {
       }
     } catch (err) {
       console.error('[REQUIRE-API-KEY] Plan check error:', err);
-      // Fail open — key is valid, don't block on billing query failure
+      // Fail open – key is valid, don't block on billing query failure
     }
 
     (req as any).orgId = result.orgId;

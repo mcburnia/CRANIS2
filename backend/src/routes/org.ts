@@ -27,7 +27,7 @@ async function requireAuth(req: Request, res: Response, next: Function) {
   next();
 }
 
-// POST /api/org — Create organisation
+// POST /api/org – Create organisation
 router.post('/', requireAuth, async (req: Request, res: Response) => {
   const { name, country, companySize, craRole, industry } = req.body;
   const userId = (req as any).userId;
@@ -126,7 +126,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/org — Get current user's organisation
+// GET /api/org – Get current user's organisation
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
 
@@ -180,7 +180,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/org — Update organisation details
+// PUT /api/org – Update organisation details
 router.put('/', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const userEmail = (req as any).email;
@@ -289,7 +289,7 @@ router.put('/', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/org/members — Get all members of the current user's organisation
+// GET /api/org/members – Get all members of the current user's organisation
 router.get('/members', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
 
