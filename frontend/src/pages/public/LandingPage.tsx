@@ -11,8 +11,8 @@ import './LandingPage.css';
 
 const features = [
   { icon: Package, title: 'Automated SBOM & Scanning', desc: "Three-tier dependency detection across 28 lockfile formats and 26 languages. Daily scans against 445,000+ known vulnerabilities. Your software bill of materials, always current." },
-  { icon: Shield, title: 'CRA Technical File', desc: "Eight structured sections matching CRA Annex VII. Auto-populated content for product description, vulnerability handling, standards, and test reports — cutting documentation effort by 60-80%." },
-  { icon: BarChart3, title: 'Obligation Intelligence', desc: "19 CRA and NIS2 obligations mapped to your products. Statuses derived automatically from platform data — SBOMs, scans, technical file progress. Always know your true compliance standing." },
+  { icon: Shield, title: 'CRA Technical File', desc: "Eight structured sections matching CRA Annex VII. Auto-populated content for product description, vulnerability handling, standards, and test reports. Cuts documentation effort by 60\u201380%." },
+  { icon: BarChart3, title: 'Obligation Intelligence', desc: "19 CRA and NIS2 obligations mapped to your products. Statuses derived automatically from platform data, including SBOMs, scans, and technical file progress. Always know your true compliance standing." },
   { icon: Lock, title: 'Evidence Vault & Retention', desc: "Cryptographically signed compliance snapshots with RFC 3161 timestamps and 10-year cold storage retention. Tamper-evident evidence that satisfies CRA Art. 13(10)." },
   { icon: Bell, title: 'ENISA Reporting & Alerts', desc: "24-hour, 72-hour, and 14-day deadline tracking for mandatory vulnerability and incident reporting. Escalating alerts so you never miss a regulatory deadline." },
   { icon: Users, title: 'AI Copilot & Integrations', desc: "AI-powered suggestions for technical files, vulnerability triage, risk assessments, and incident reports. Public API, CI/CD gate, Trello integration, and IDE assistant via MCP." },
@@ -20,9 +20,9 @@ const features = [
 
 const audiences = [
   { title: 'Solo developers & small teams', desc: 'Affordable CRA compliance without hiring consultants. Auto-populated technical files, AI copilot, and a step-by-step action plan get you to conformity faster.' },
-  { title: 'Software product companies', desc: 'End-to-end compliance for every product you sell into the EU. SBOMs, vulnerability monitoring, technical documentation, and regulatory reporting — all automated.' },
+  { title: 'Software product companies', desc: 'End-to-end compliance for every product you sell into the EU. SBOMs, vulnerability monitoring, technical documentation, and regulatory reporting, all automated.' },
   { title: 'B2B software vendors', desc: 'Provide customers with SBOMs, compliance evidence, and escrow coverage. List on the compliance marketplace to demonstrate your posture publicly.' },
-  { title: 'Compliance & legal teams', desc: 'Obligation tracking, deadline alerts, conformity assessments, and a 10-year evidence vault with legal holds — everything auditors expect, without chasing developers.' },
+  { title: 'Compliance & legal teams', desc: 'Obligation tracking, deadline alerts, conformity assessments, and a 10-year evidence vault with legal holds. Everything auditors expect, without chasing developers.' },
 ];
 
 /* ── Regulation section data ── */
@@ -42,7 +42,7 @@ const regulations = [
       'Retention of technical documentation for 10 years after market placement (Art. 13(10))',
     ],
     howSupports: [
-      'Automated SBOM generation from your repositories — 28 lockfile formats, 26 languages',
+      'Automated SBOM generation from your repositories across 28 lockfile formats and 26 languages',
       'Daily scans against 445,000+ vulnerabilities with AI-powered triage and fix commands',
       'CRA Technical File with 8 structured sections and auto-populated content',
       'ENISA reporting workflow with deadline tracking and escalating alerts',
@@ -55,7 +55,7 @@ const regulations = [
     icon: ShieldCheck,
     title: 'NIS2 (Network and Information Security Directive)',
     subtitle: 'EU rules for cybersecurity resilience',
-    intro: "NIS2 requires organisations that provide important services — including software — to demonstrate strong cybersecurity governance. It covers supply-chain risk, incident response, vulnerability handling, and management accountability.",
+    intro: "NIS2 requires organisations that provide important services, including software, to demonstrate strong cybersecurity governance. It covers supply-chain risk, incident response, vulnerability handling, and management accountability.",
     mustDemonstrate: [
       'Risk-based security decisions with documented evidence',
       'Supply-chain risk management for third-party dependencies',
@@ -88,7 +88,7 @@ const regulations = [
       'Vulnerability monitoring ensures known security weaknesses are identified and remediated',
       'Structured compliance evidence demonstrates accountability to regulators',
       'Supply chain visibility through SBOMs and dependency risk analysis',
-      'EU and Swiss hosting — your compliance evidence stays under European jurisdiction',
+      'EU and Swiss hosting. Your compliance evidence stays under European jurisdiction',
     ],
     related: [],
     callout: {
@@ -101,7 +101,7 @@ const regulations = [
     icon: Globe,
     title: 'European Digital Sovereignty',
     subtitle: 'Keeping control of your compliance evidence',
-    intro: "There's a growing concern in Europe about where compliance data is stored and who can access it. If your evidence sits on a US-controlled platform, a foreign government could potentially compel access to it — undermining your compliance position.",
+    intro: "There is growing concern in Europe about where compliance data is stored and who can access it. If your evidence sits on a US-controlled platform, a foreign government could compel access, undermining your compliance position.",
     mustDemonstrate: [
       'You control where your compliance evidence is stored',
       'You understand the risks of foreign authorities accessing your data',
@@ -109,22 +109,22 @@ const regulations = [
     ],
     howSupports: [
       'Built and governed in Europe, by a European company',
-      'Hosting in the EU and Switzerland — your data stays under European law',
+      'Hosting in the EU and Switzerland. Your data stays under European law',
       'No dependency on US-controlled platforms for your compliance evidence',
       'Your audit trail and compliance artefacts remain under European jurisdiction',
     ],
     related: [],
     callout: {
       type: 'highlight' as const,
-      text: "For the CRA and NIS2, where your evidence is stored — and who can access it — is becoming just as important as the evidence itself.",
+      text: "For the CRA and NIS2, where your evidence is stored, and who can access it, is becoming just as important as the evidence itself.",
     },
   },
 ];
 
 const isoStandards = [
-  'ISO 27001 — Information Security Management',
-  'ISO 27002 — Security Controls',
-  'ISO 27005 — Risk Management',
+  'ISO 27001 \u2013 Information Security Management',
+  'ISO 27002 \u2013 Security Controls',
+  'ISO 27005 \u2013 Risk Management',
   'Secure software development best practices',
 ];
 
@@ -149,15 +149,15 @@ const dogfoodingWhy = [
 ];
 
 const isItems = [
-  'An end-to-end CRA and NIS2 compliance platform — SBOMs, vulnerability monitoring, technical documentation, and regulatory reporting',
+  'An end-to-end CRA and NIS2 compliance platform covering SBOMs, vulnerability monitoring, technical documentation, and regulatory reporting',
   'A compliance evidence vault with cryptographic timestamps, digital signatures, and 10-year retention',
   'A European alternative to expensive consultants and heavyweight governance software',
 ];
 
 const isNotItems = [
-  'A legal certification body — we help you gather and retain evidence, not issue certificates',
-  'A guarantee of compliance — that responsibility remains with your organisation',
-  'A source code analysis tool — we read import statements and dependency files, never your business logic',
+  'A legal certification body. We help you gather and retain evidence, not issue certificates',
+  'A guarantee of compliance. That responsibility remains with your organisation',
+  'A source code analysis tool. We read import statements and dependency files, never your business logic',
 ];
 
 export default function LandingPage() {
@@ -186,7 +186,7 @@ export default function LandingPage() {
       {/* ── Hero ── */}
       <section className="hero">
         <h1>Compliance<br /><span>without the chaos</span></h1>
-        <p>Automated SBOMs, vulnerability monitoring, technical documentation, and regulatory reporting for the EU Cyber Resilience Act and NIS2. Affordable at any scale.</p>
+        <p>Automated SBOMs, vulnerability monitoring, technical documentation, and regulatory reporting for the EU Cyber Resilience Act and NIS2.</p>
         <div className="hero-actions">
           <Link to="/signup" className="btn btn-primary btn-lg">Try CRANIS2 Free</Link>
           <a href="#features" className="btn btn-outline btn-lg">See How It Works</a>
@@ -226,7 +226,7 @@ export default function LandingPage() {
 
       <section id="compliance" className="compliance-intro">
         <h2>Regulation by regulation</h2>
-        <p>New EU rules are changing what's expected of software companies. Here's what they mean for you — and how CRANIS2 helps.</p>
+        <p>New EU rules are changing what is expected of software companies. Here is what they mean for you, and how CRANIS2 helps.</p>
       </section>
 
       {/* §0: Dogfooding — FIRST, before regulations */}
@@ -261,7 +261,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="reg-callout reg-callout-highlight">
-            This isn't marketing theatre. It's dogfooding at regulatory depth — the same tool, the same rules, the same scrutiny.
+            This is not marketing theatre. We run the same platform, under the same rules, with the same scrutiny we ask of our customers.
           </div>
         </div>
       </section>
@@ -327,11 +327,11 @@ export default function LandingPage() {
             <Award size={32} className="reg-icon" />
             <div>
               <h2>International Standards Alignment</h2>
-              <p className="reg-subtitle">Supporting — not certifying</p>
+              <p className="reg-subtitle">Supporting, not certifying</p>
             </div>
           </div>
           <p className="reg-intro">
-            CRANIS2 doesn't certify you against any standard, but it helps you build the kind of evidence that auditors and assessors expect to see, including for:
+            CRANIS2 does not certify you against any standard, but it helps you build the kind of evidence that auditors and assessors expect to see.
           </p>
           <div className="reg-columns">
             <div className="reg-col">
@@ -411,7 +411,7 @@ export default function LandingPage() {
 
       {/* ── Footer ── */}
       <footer className="landing-footer">
-        CRANIS2 &copy; 2026 — Software Compliance &amp; Governance Platform — EU hosted, customer-owned evidence
+        CRANIS2 &copy; 2026 &middot; Software Compliance &amp; Governance Platform &middot; EU hosted, customer-owned evidence
       </footer>
     </div>
   );

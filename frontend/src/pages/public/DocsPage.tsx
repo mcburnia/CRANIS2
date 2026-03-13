@@ -220,8 +220,8 @@ export default function DocsPage() {
 
       {/* Footer */}
       <footer className="doc-footer">
-        CRANIS2 &copy; 2026 &mdash; Software Compliance &amp; Governance Platform
-        &mdash; EU hosted, customer-owned evidence
+        CRANIS2 &copy; 2026 &middot; Software Compliance &amp; Governance Platform
+        &middot; EU hosted, customer-owned evidence
       </footer>
     </div>
   );

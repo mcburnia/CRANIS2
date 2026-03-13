@@ -1,50 +1,50 @@
-# CRANIS2 — Executive Summary
+# CRANIS2 \u2013 Executive Summary
 
 ## What Is CRANIS2?
 
 CRANIS2 is a compliance platform that helps software companies meet the requirements of two major pieces of EU legislation: the **Cyber Resilience Act (CRA)** and the **NIS2 Directive**.
 
-It connects to your existing source code repositories — GitHub, Codeberg, Gitea, Forgejo, or GitLab — and automatically builds the compliance evidence that regulators expect to see. No manual spreadsheets, no expensive consultants, no guesswork.
+It connects to your existing source code repositories (GitHub, Codeberg, Gitea, Forgejo, and GitLab) and automatically builds the compliance evidence that regulators expect to see. No spreadsheets, no consultants, no guesswork.
 
 ## What Does It Actually Do?
 
 CRANIS2 takes the dependency and component information present in your repositories and turns it into a structured compliance programme:
 
-- **Software Bill of Materials (SBOM)** — Automatically captures and maintains an up-to-date inventory of every software component in your products, in the formats regulators expect (CycloneDX, SPDX). Uses a three-tier approach: repository API, lockfile parsing (28 formats), and source import scanning (26 languages).
+- **Software Bill of Materials (SBOM).** Automatically captures and maintains an up-to-date inventory of every software component in your products, in the formats regulators expect (CycloneDX, SPDX). Uses a three-tier approach: repository API, lockfile parsing (28 formats), and source import scanning (26 languages).
 
-- **Vulnerability Monitoring** — Continuously scans your dependency tree against a local database of 445,000+ known vulnerabilities (OSV, GitHub Advisory, NVD) which is updated daily. Alerts are targeted to the right stakeholders, not dumped into a generic inbox.
+- **Vulnerability Monitoring.** Continuously scans your dependency tree against a local database of 445,000+ known vulnerabilities (OSV, GitHub Advisory, NVD) which is updated daily. Alerts are targeted to the right stakeholders, not dumped into a generic inbox.
 
-- **License Compliance** — Classifies every dependency by licence type, flags copyleft and unknown licences, and tracks waivers. Provides a clear picture of your open-source obligations.
+- **Licence Compliance.** Classifies every dependency by licence type, flags copyleft and unknown licences, and tracks waivers. Provides a clear picture of your open-source obligations.
 
-- **Intellectual Property Proof** — Creates cryptographically timestamped snapshots of your codebase using RFC 3161, giving you independently verifiable proof of authorship and prior art.
+- **Intellectual Property Proof.** Creates cryptographically timestamped snapshots of your codebase using RFC 3161, giving you independently verifiable proof of authorship and prior art.
 
-- **CRA Technical File** — Structures the documentation required under CRA Annex VII across eight sections, with inline editing and version tracking. Auto-population suggests content for four key sections based on your platform data — product description, vulnerability handling, applicable standards, and test reports — eliminating 60–80% of the documentation effort.
+- **CRA Technical File.** Structures the documentation required under CRA Annex VII across eight sections, with inline editing and version tracking. Auto-population suggests content for four key sections based on your platform data (product description, vulnerability handling, applicable standards, and test reports), eliminating 60\u201380% of the documentation effort.
 
-- **EU Declaration of Conformity** — Generates a professionally formatted PDF declaration under CRA Article 16, combining your product metadata, organisation details, and applicable standards into a legally compliant document ready for download.
+- **EU Declaration of Conformity.** Generates a professionally formatted PDF declaration under CRA Article 16, combining your product metadata, organisation details, and applicable standards into a legally compliant document ready for download.
 
-- **ENISA Reporting** — Manages the mandatory incident and vulnerability reporting workflow under CRA Article 14, with deadline tracking (24-hour early warning, 72-hour notification, 14-day final report).
+- **ENISA Reporting.** Manages the mandatory incident and vulnerability reporting workflow under CRA Article 14, with deadline tracking (24-hour early warning, 72-hour notification, 14-day final report).
 
-- **Obligations Tracking** — Maps 19 CRA and NIS2 requirements to your products, with auto-intelligence that derives obligation statuses from platform data (SBOMs, scans, technical file progress). You always see your true compliance standing without manual data entry — and manual overrides are preserved.
+- **Obligations Tracking.** Maps 19 CRA and NIS2 requirements to your products, with auto-intelligence that derives obligation statuses from platform data (SBOMs, scans, technical file progress). You always see your true compliance standing without manual data entry, and manual overrides are preserved.
 
-- **Compliance Checklist** — A 7-step getting-started guide for each product that breaks CRA conformity into concrete, actionable steps. Progress is tracked in real time so you always know what to do next and how far along you are.
+- **Compliance Checklist.** A 7-step getting-started guide for each product that breaks CRA conformity into concrete, actionable steps. Progress is tracked in real time so you always know what to do next and how far along you are.
 
-- **AI Copilot (Pro Plan)** — AI-powered compliance assistance across the platform. Contextual suggestions for technical file sections and obligation evidence notes, AI auto-triage of vulnerability findings with ecosystem-specific fix commands, risk assessment generation with Annex I mappings (exportable as PDF), incident report drafting for ENISA Article 14 stages, and CRA category recommendation with deterministic scoring plus AI augmentation. Powered by Claude (Anthropic). Source code is never sent to the AI — only compliance metadata.
+- **AI Copilot (Pro Plan).** AI-powered compliance assistance across the platform. Contextual suggestions for technical file sections and obligation evidence notes, AI auto-triage of vulnerability findings with ecosystem-specific fix commands, risk assessment generation with Annex I mappings (exportable as PDF), incident report drafting for ENISA Article 14 stages, and CRA category recommendation with deterministic scoring plus AI augmentation. Powered by Claude (Anthropic). Source code is never sent to the AI; only compliance metadata.
 
-- **Supplier Due Diligence** — Template-based questionnaires for third-party dependency risk management, with automatic enrichment from npm, PyPI, and crates.io registries. PDF and CSV export. Available on all plans (no AI).
+- **Supplier Due Diligence.** Template-based questionnaires for third-party dependency risk management, with automatic enrichment from npm, PyPI, and crates.io registries. PDF and CSV export. Available on all plans (no AI).
 
-- **Compliance Gap Narrator** — A deterministic "Next Steps" card on each product's overview showing prioritised compliance actions, derived from obligations, technical file progress, scan coverage, and SBOM freshness. Available on all plans (no AI).
+- **Compliance Gap Narrator.** A deterministic "Next Steps" card on each product's overview showing prioritised compliance actions, derived from obligations, technical file progress, scan coverage, and SBOM freshness. Available on all plans (no AI).
 
-- **Public API & Integrations (Pro Plan)** — REST API with API key authentication for programmatic access. CI/CD compliance gate for blocking non-compliant deployments (GitHub Actions, GitLab CI, generic bash). Trello integration for automated card creation on compliance events. MCP server for IDE AI assistants (VS Code, Cursor, Claude Desktop, Claude Code) to query vulnerabilities, get fix commands, and verify fixes — all from the editor.
+- **Public API & Integrations (Pro Plan).** REST API with API key authentication for programmatic access. CI/CD compliance gate for blocking non-compliant deployments (GitHub Actions, GitLab CI, generic bash). Trello integration for automated card creation on compliance events. MCP server for IDE AI assistants (VS Code, Cursor, Claude Desktop, Claude Code) to query vulnerabilities, get fix commands, and verify fixes directly from the editor.
 
-- **Source Code Escrow** — Protects your clients against business continuity risk. When setting up a product in CRANIS2, you can configure escrow coverage so that if your company ceases to operate, your clients are not left without the software they depend on. Source code is deposited to a self-hosted Forgejo instance within the CRANIS2 infrastructure, hosted in Switzerland (European data sovereignty). You choose the release model: either the source code is published as open source, or specific clients you designate receive private copies. Daily automated deposits ensure the escrow is always current.
+- **Source Code Escrow.** Protects your clients against business continuity risk. When setting up a product in CRANIS2, you can configure escrow coverage so that if your company ceases to operate, your clients are not left without the software they depend on. Source code is deposited to a self-hosted Forgejo instance within the CRANIS2 infrastructure, hosted in Switzerland (European data sovereignty). You choose the release model: either the source code is published as open source, or specific clients you designate receive private copies. Daily automated deposits ensure the escrow is always current.
 
-- **Compliance Evidence Vault** — Generates cryptographically signed compliance snapshots that bundle the complete state of a product's compliance evidence (SBOM, vulnerability scan results, licence findings, technical file, obligations) into a tamper-evident archive. Each snapshot is RFC 3161 timestamped for legal admissibility and Ed25519 signed for integrity verification. Archives are uploaded to Scaleway Glacier cold storage for 10-year retention per CRA Art. 13(10). A retention reserve ledger tracks funding with quarterly Wise transfers, cost forecasting, legal holds, and bulk funding workflows. Snapshots can be generated manually, on release, or on an automated schedule (weekly/monthly/quarterly). Retention dates automatically extend when a product's support period is updated beyond the default 10-year window.
+- **Compliance Evidence Vault.** Generates cryptographically signed compliance snapshots that bundle the complete state of a product's compliance evidence (SBOM, vulnerability scan results, licence findings, technical file, obligations) into a tamper-evident archive. Each snapshot is RFC 3161 timestamped for legal admissibility and Ed25519 signed for integrity verification. Archives are uploaded to Scaleway Glacier cold storage for 10-year retention per CRA Art. 13(10). A retention reserve ledger tracks funding with quarterly Wise transfers, cost forecasting, legal holds, and bulk funding workflows. Snapshots can be generated manually, on release, or on an automated schedule (weekly/monthly/quarterly). Retention dates automatically extend when a product's support period is updated beyond the default 10-year window.
 
-- **Document Templates** — A library of pre-built CRA compliance document templates that auto-populate with your product data. Templates cover security policies, vulnerability disclosure procedures, incident response plans, and more — reducing the documentation burden from days to minutes.
+- **Document Templates.** A library of pre-built CRA compliance document templates that auto-populate with your product data. Templates cover security policies, vulnerability disclosure procedures, and incident response plans, reducing the documentation burden from days to minutes.
 
-- **Conformity Assessments** — Self-assessment tools for both CRA and NIS2 compliance. Each assessment walks through the regulatory requirements with guidance text, evidence linking, and progress tracking. A public assessment landing page allows prospective customers to understand your compliance posture before engaging.
+- **Conformity Assessments.** Self-assessment tools for both CRA and NIS2 compliance. Each assessment walks through the regulatory requirements with guidance text, evidence linking, and progress tracking. A public assessment landing page allows prospective customers to understand your compliance posture before engaging.
 
-- **Product Lifecycle Management** — Tracks products through their lifecycle stages: pre-production, on-market, and end-of-life. Market placement dates drive retention calculations and obligation timelines. End-of-support dates are linked to technical file sections with automatic retention extension when updated.
+- **Product Lifecycle Management.** Tracks products through their lifecycle stages: pre-production, on-market, and end-of-life. Market placement dates drive retention calculations and obligation timelines. End-of-support dates are linked to technical file sections with automatic retention extension when updated.
 
 ## Why Now?
 
@@ -59,7 +59,7 @@ The NIS2 Directive is already being transposed into national law across EU membe
 
 These are not optional guidelines. The CRA carries penalties of up to **EUR 15 million or 2.5% of global turnover** for non-compliance. Products that do not meet the requirements cannot carry a CE mark and cannot legally be sold in the EU single market.
 
-Companies that start now have time to build compliance into their workflow. Companies that wait will face a scramble — and potentially lose market access.
+Companies that start now have time to build compliance into their workflow. Companies that wait will face a scramble and risk losing market access.
 
 ## Who Is It For?
 
@@ -80,9 +80,9 @@ This is the most common question we hear, and the answer is clear. Here is exact
 1. You connect your source code repository. For GitHub and Codeberg, this is via OAuth (the same mechanism used by CI/CD tools and developer platforms). For Gitea, Forgejo, and GitLab (including self-hosted instances), you provide a Personal Access Token (PAT) which is encrypted at rest using AES-256-GCM.
 
 2. CRANIS2 identifies your dependencies using a three-tier approach:
-   - **Tier 1 (API):** For GitHub, it calls the Dependency Graph API — returning package names and versions as structured metadata
+   - **Tier 1 (API):** For GitHub, it calls the Dependency Graph API, returning package names and versions as structured metadata
    - **Tier 2 (Lockfiles):** It fetches lockfiles (e.g. `package-lock.json`, `yarn.lock`, `Cargo.lock`) and parses them to extract dependency information. 28 lockfile formats are supported.
-   - **Tier 3 (Import Scanning):** It reads source files to detect import and require statements, identifying dependencies that may not appear in lockfiles. 26 language plugins are supported. **The source files are read, scanned for import statements, and immediately discarded — nothing is stored.**
+   - **Tier 3 (Import Scanning):** It reads source files to detect import and require statements, identifying dependencies that may not appear in lockfiles. 26 language plugins are supported. **The source files are read, scanned for import statements, and immediately discarded. Nothing is stored.**
 
 3. The dependency list is what we work with. We scan it against vulnerability databases, classify licences, and track changes over time.
 
@@ -101,23 +101,23 @@ This is the most common question we hear, and the answer is clear. Here is exact
 
 The architecture is analogous to a pharmacist reading the ingredients list on a medicine bottle and checking each one against a safety database. They can see what goes into it. They cannot see the manufacturing process, the proprietary formula, or the factory floor.
 
-Your code stays in your repository. We read the labels — and in some cases glance at the import lines — but your source code is never stored, analysed or modified in any way.
+Your code stays in your repository. We read the labels, and in some cases glance at the import lines, but your source code is never stored, analysed or modified in any way.
 
 ## How It Works Day-to-Day
 
 Once connected, CRANIS2 runs largely on autopilot:
 
-- **Daily at 1 AM** — Vulnerability database sync (OSV + NVD)
-- **Daily at 2 AM** — SBOMs are automatically refreshed for any products with changes
-- **Daily at 3 AM** — Vulnerability scans run against the updated dependency data
-- **Daily at 4 AM** — Billing checks (trial expiry, payment grace)
-- **Daily at 5 AM** — Escrow deposits are updated for all enabled products
-- **Daily at 6 AM** — Webhook health checks ensure push event pipelines are working
-- **Daily at 9 AM** — Scheduled compliance snapshots are generated (weekly/monthly/quarterly per product configuration)
-- **Hourly** — CRA reporting deadlines are checked, with escalating alerts as they approach
-- **On every sync** — Licence compliance is re-scanned and IP proof snapshots are created
-- **On release** — Compliance snapshot automatically generated with full evidence bundle
-- **On first product creation** — All stakeholder contact roles can be auto-populated with the creating user's details
+- **Daily at 1 AM:** Vulnerability database sync (OSV + NVD)
+- **Daily at 2 AM:** SBOMs are automatically refreshed for any products with changes
+- **Daily at 3 AM:** Vulnerability scans run against the updated dependency data
+- **Daily at 4 AM:** Billing checks (trial expiry, payment grace)
+- **Daily at 5 AM:** Escrow deposits are updated for all enabled products
+- **Daily at 6 AM:** Webhook health checks ensure push event pipelines are working
+- **Daily at 9 AM:** Scheduled compliance snapshots are generated (weekly/monthly/quarterly per product configuration)
+- **Hourly:** CRA reporting deadlines are checked, with escalating alerts as they approach
+- **On every sync:** Licence compliance is re-scanned and IP proof snapshots are created
+- **On release:** Compliance snapshot automatically generated with full evidence bundle
+- **On first product creation:** All stakeholder contact roles can be auto-populated with the creating user's details
 
 Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerability finding, updating a compliance obligation, or submitting an ENISA report. The rest happens in the background.
 
@@ -125,7 +125,7 @@ Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerab
 
 | | |
 |---|---|
-| **Problem** | EU legislation (CRA + NIS2) requires software companies to demonstrate cybersecurity compliance — most have no tooling for this |
+| **Problem** | EU legislation (CRA + NIS2) requires software companies to demonstrate cybersecurity compliance. Most have no tooling for this |
 | **Solution** | CRANIS2 automates SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, regulatory reporting, source code escrow, compliance evidence vault with 10-year retention, document templates, conformity assessments, AI-powered compliance intelligence, supplier due diligence, and external integrations (API, CI/CD, Trello, IDE) |
 | **Timing** | CRA reporting obligations begin Sept 2026; full compliance required Dec 2027 |
 | **Audience** | Software product companies selling into the EU, especially SMEs without dedicated compliance teams |
@@ -135,4 +135,4 @@ Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerab
 
 ---
 
-*CRANIS2 — Cyber Resilience Act & NIS2 compliance, automated.*
+*CRANIS2 \u2013 Cyber Resilience Act & NIS2 compliance, automated.*

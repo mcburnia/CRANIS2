@@ -54,13 +54,13 @@ export function usePageMeta(options?: UsePageMetaOptions): void {
     /* ── Title ── */
     let title: string;
     if (options?.title) {
-      title = `${options.title} — ${SITE_NAME}`;
+      title = `${options.title} – ${SITE_NAME}`;
     } else if (routeMeta) {
       title = routeMeta.title;
     } else if (adminTitle) {
-      title = `${adminTitle} — ${SITE_NAME}`;
+      title = `${adminTitle} – ${SITE_NAME}`;
     } else if (authTitle) {
-      title = `${authTitle} — ${SITE_NAME}`;
+      title = `${authTitle} – ${SITE_NAME}`;
     } else {
       title = SITE_NAME;
     }

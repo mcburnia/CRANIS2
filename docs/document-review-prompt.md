@@ -1,4 +1,4 @@
-# CRANIS2 — Document Quality Review Prompt
+# CRANIS2 – Document Quality Review Prompt
 
 **Author:** Andi McBurnie
 
@@ -83,7 +83,7 @@ Clearly indicate:
 - The recommended explanatory text to be added beneath it
 - The page and section reference (if detectable)
 
-Do not rewrite or replace the bullet point itself — only propose the supplementary explanatory content.
+Do not rewrite or replace the bullet point itself. Only propose the supplementary explanatory content.
 
 ### 6. Output Format
 

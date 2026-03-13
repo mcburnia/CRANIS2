@@ -7,9 +7,9 @@
 
 ## Pricing Philosophy
 
-- Per-contributor pricing — simple, transparent, scales with team size
-- Consumer Duty Act compliant — cancellation must be as easy as sign-up across all tiers
-- No lock-in — all SaaS subscriptions easy to enter, easy to exit
+- Per-contributor pricing: simple, transparent, scales with team size
+- Consumer Duty Act compliant: cancellation must be as easy as sign-up across all tiers
+- No lock-in: all SaaS subscriptions easy to enter, easy to exit
 - Customer data treated with respect even after cancellation
 
 ---
@@ -24,7 +24,7 @@
 | **Duration** | 3 months (default, configurable per org by platform admin) |
 | **Contributors** | 1 (single contributor / one-man-band) |
 | **Products** | Unlimited |
-| **Card required** | No — explicit upgrade action required after trial |
+| **Card required** | No. Explicit upgrade action required after trial |
 | **Purpose** | Let solo developers / micro-companies get started and evaluate the platform |
 
 **Admin controls:**
@@ -35,7 +35,7 @@
 **Trial contributor limit:**
 - Contributors counted using 90-day activity window
 - Known bots auto-excluded from count
-- If active contributor count exceeds 1, show warning and prompt upgrade — do not block
+- If active contributor count exceeds 1, show warning and prompt upgrade. Do not block
 
 **Anti-gaming:**
 - On product creation / repo connection: verify the GitHub repo is NOT already registered to another organisation
@@ -59,7 +59,7 @@
 **Contributor counting rules:**
 - A contributor is anyone identified in the git repository contributions for products belonging to that organisation
 - **90-day activity window**: only contributors with commits in the last 90 days are billable
-- Contributors can work on any number of products within the same organisation — still counted once
+- Contributors can work on any number of products within the same organisation; still counted once
 - If the same person contributes to products across **multiple** organisations, **each organisation is charged separately** for that contributor
 - Contributor identity is determined by git contribution data (GitHub login / commit author)
 - **Snapshot on billing date**: count is taken on the day the invoice is generated
@@ -67,7 +67,7 @@
 - **Inactive contributors**: no commits in 90+ days = not billed. Automatically excluded.
 
 **Contributor disputes:**
-- Org admins can self-service mark a contributor as "departed" — immediate billing removal
+- Org admins can self-service mark a contributor as "departed", with immediate billing removal
 - All departures logged in audit trail
 - Platform admins can review departures and override if needed
 - Suspicious patterns flagged (e.g. 10 departures right before billing day)
@@ -91,11 +91,11 @@
 | **Billing units** | Two line items: product price + contributor price |
 
 **What Pro adds over Standard:**
-- AI Copilot — contextual suggestions for technical file sections and obligation evidence
-- AI auto-triage — dismiss/acknowledge/escalate recommendations with confidence scores and CLI fix commands
-- AI risk assessment generator — methodology, threat model, risk register, Annex I mappings, PDF export
-- AI incident report drafter — ENISA Article 14 stage content from product data
-- CRA category recommender — deterministic scoring + AI augmentation
+- AI Copilot: contextual suggestions for technical file sections and obligation evidence
+- AI auto-triage: dismiss/acknowledge/escalate recommendations with confidence scores and CLI fix commands
+- AI risk assessment generator: methodology, threat model, risk register, Annex I mappings, PDF export
+- AI incident report drafter: ENISA Article 14 stage content from product data
+- CRA category recommender: deterministic scoring + AI augmentation
 - Public API with API key authentication
 - CI/CD compliance gate
 - Trello integration
@@ -104,9 +104,9 @@
 **Upgrade/downgrade:**
 - Upgrade: takes effect immediately with prorated billing. Stripe `subscriptionItems.create()` adds the product line item.
 - Downgrade: takes effect at end of current billing period. Stripe `subscriptionItems.del()` removes the product line item.
-- Pro-only features are gated by `requirePlan('pro')` middleware — returns 403 with upgrade prompt on Standard.
+- Pro-only features are gated by `requirePlan('pro')` middleware, which returns 403 with upgrade prompt on Standard.
 
-**AI cost protection (three layers):**
+**AI cost protection:**
 1. **Token budget:** Per-organisation monthly token limit (default 500K, stored in `platform_settings`). Per-org override via `org_billing.copilot_token_limit`. `requireTokenBudget()` middleware returns 429 when exceeded.
 2. **Rate limits:** Per-endpoint limits stored in Postgres (`copilot_usage` table). Varies by endpoint (e.g. suggest 20/product/hr, triage 5/product/hr, risk_assessment 3/product/day).
 3. **Response cache:** SHA-256 of context → cached response in `copilot_cache` table. 24-hour TTL. Returns `cached: true, tokensUsed: 0`.
@@ -116,7 +116,7 @@
 - Product price ID and contributor price ID stored in `platform_settings`
 - Multi-line-item checkout: Standard = 1 item, Pro = 2 items
 - Plan detection: `session.metadata.plan` on checkout, line item count on subscription update
-- Admin-configurable pricing via GET/PUT `/api/billing/admin/pricing` — creates new Stripe prices if amounts change
+- Admin-configurable pricing via GET/PUT `/api/billing/admin/pricing`. Creates new Stripe prices if amounts change
 
 ---
 
@@ -149,10 +149,10 @@ Separate from billing, a security-focused view of all contributors for CRA/NIS2 
 | Category | Icon | Description |
 |----------|------|-------------|
 | **Active** | ✅ | Human, commits in last 90 days |
-| **Inactive** | ⚠️ | Human, no commits in 90+ days, still has repo access — flag for access review |
+| **Inactive** | ⚠️ | Human, no commits in 90+ days, still has repo access. Flag for access review |
 | **Departed** | ❌ | Human, marked as departed by org admin, access should be revoked |
-| **Bot — monitored** | 🤖 | Automated account, tracked but not billed |
-| **Shared/Generic — compliance risk** | 🔴 | Suspected shared account, CRA/NIS2 requires individual attribution |
+| **Bot (monitored)** | 🤖 | Automated account, tracked but not billed |
+| **Shared/Generic (compliance risk)** | 🔴 | Suspected shared account, CRA/NIS2 requires individual attribution |
 
 **Shared account detection (v1):**
 - Generic naming heuristics (admin, developer, deploy, team, shared, etc.)
@@ -161,7 +161,7 @@ Separate from billing, a security-focused view of all contributors for CRA/NIS2 
 
 **Compliance notifications:**
 - "Shared account detected: CRA/NIS2 requires individual attribution of code changes"
-- "3 contributors inactive 90+ days but still have repo access — review recommended"
+- "3 contributors inactive 90+ days but still have repo access. Review recommended"
 
 ---
 
@@ -173,7 +173,7 @@ All tiers (except Enterprise, which is contract-based) must adhere to:
 - **Clear communication**: Upcoming charges, trial expiry, and plan changes communicated via email and in-app notification
 - **No dark patterns**: No pre-checked upsells, no hidden fees, no confusing cancellation paths
 - **Transparent pricing**: Total monthly cost always visible on the billing page based on current contributor count
-- **No card upfront for trial**: Explicit upgrade action required — nobody charged unexpectedly
+- **No card upfront for trial**: Explicit upgrade action required. Nobody charged unexpectedly
 - **Cancellation at period end**: Cancelled subscriptions retain access until the end of the paid period
 - **Data respect**: 12-month retention after cancellation, full archive provided before deletion
 
@@ -208,9 +208,9 @@ All tiers (except Enterprise, which is contract-based) must adhere to:
 
 **Hardship / extenuating circumstances:**
 - Contact route (email or in-app) for orgs needing more time
-- Platform admin can apply a **payment pause** — extends grace period for 30/60/90 days
+- Platform admin can apply a **payment pause**, extending the grace period for 30/60/90 days
 - Reason logged in audit trail
-- Covers: holiday, hospitalisation, bereavement, company restructuring, bank issues, parental leave, force majeure
+- Covers: holiday, hospitalisation, bereavement, company restructuring, bank issues, parental leave, and force majeure
 
 **Dunning:**
 - Stripe Smart Retries: enabled (automatic, ML-optimised retry timing)
@@ -271,7 +271,7 @@ All tiers (except Enterprise, which is contract-based) must adhere to:
 **Collected during upgrade flow:**
 - Company name
 - Billing address (street, city, postcode, country)
-- VAT number (optional — enables reverse charge)
+- VAT number (optional; enables reverse charge)
 - Billing email
 
 ---
@@ -280,7 +280,7 @@ All tiers (except Enterprise, which is contract-based) must adhere to:
 
 ### Sanctions checking (v1):
 - Stripe screens all customers against global sanctions lists (OFAC, EU, UK, UN)
-- Application-level blocked country list — registration blocked from comprehensively sanctioned jurisdictions
+- Application-level blocked country list. Registration blocked from comprehensively sanctioned jurisdictions
 - Country collected at sign-up (also used for VAT)
 
 ### AML:
@@ -300,8 +300,8 @@ All tiers (except Enterprise, which is contract-based) must adhere to:
 
 | Component | Decision |
 |-----------|----------|
-| **Checkout** | Stripe Checkout (hosted) — never handle card data |
-| **Customer portal** | Stripe Customer Portal (hosted) — invoices, payment method, cancellation |
+| **Checkout** | Stripe Checkout (hosted). Never handle card data |
+| **Customer portal** | Stripe Customer Portal (hosted). Invoices, payment method, cancellation |
 | **Webhook URL** | Configurable via `APP_BASE_URL` env var. Dev: `https://dev.cranis2.dev/api/billing/webhook` |
 | **Webhook security** | Stripe signature verification (HMAC), no auth middleware on webhook endpoint |
 | **Idempotency** | Webhook handler must handle duplicate events safely |
@@ -311,10 +311,10 @@ All tiers (except Enterprise, which is contract-based) must adhere to:
 | **Dunning emails** | Disabled (using Resend instead) |
 
 **Environment variables:**
-- `STRIPE_SECRET_KEY` — sk_test_... (test) / sk_live_... (production)
-- `STRIPE_PUBLISHABLE_KEY` — pk_test_... (test) / pk_live_... (production)
-- `STRIPE_WEBHOOK_SECRET` — whsec_...
-- `APP_BASE_URL` — https://dev.cranis2.dev (configurable for production)
+- `STRIPE_SECRET_KEY`: sk_test_... (test) / sk_live_... (production)
+- `STRIPE_PUBLISHABLE_KEY`: pk_test_... (test) / pk_live_... (production)
+- `STRIPE_WEBHOOK_SECRET`: whsec_...
+- `APP_BASE_URL`: https://dev.cranis2.dev (configurable for production)
 
 ---
 
@@ -329,16 +329,16 @@ All tiers (except Enterprise, which is contract-based) must adhere to:
 ### Payment events:
 - First payment successful (welcome email)
 - Payment failed (to org admins only)
-- Payment failed urgent reminder — day 5 (to org admins only)
+- Payment failed urgent reminder, day 5 (to org admins only)
 - Access restricted due to non-payment (to all org users)
 
 ### Subscription changes:
-- Subscription cancelled — access continues until [date]
+- Subscription cancelled. Access continues until [date]
 - 7 days before paid period ends post-cancellation
 
 ### Account lifecycle:
-- 11 months post-cancellation — data archive warning
-- 12 months post-cancellation — data archive download link
+- 11 months post-cancellation: data archive warning
+- 12 months post-cancellation: data archive download link
 
 ### NOT emailed (in-app only):
 - Recurring monthly payment successful (Stripe sends invoice receipt)
@@ -348,20 +348,20 @@ All tiers (except Enterprise, which is contract-based) must adhere to:
 
 ## In-App Notifications
 
-### Info (blue) — visible to org admins only:
+### Info (blue), visible to org admins only:
 - Monthly invoice paid
 - Subscription confirmed
 - Contributor count changed
 
-### Warning (amber) — visible to org admins only:
+### Warning (amber), visible to org admins only:
 - 14 days until trial expiry
 - 7 days until trial expiry
 - Payment failed
 - Subscription cancelled
 
-### Critical (red) — visible to ALL org users:
-- Trial expired — upgrade required
-- Payment failed — 2 days until restriction
+### Critical (red), visible to ALL org users:
+- Trial expired. Upgrade required
+- Payment failed. 2 days until restriction
 - Account restricted due to non-payment
 - Data archive and deletion imminent
 
@@ -394,6 +394,6 @@ All admin actions logged in audit trail with who, when, and why.
 ### Standard Priority:
 - [ ] Annual billing option (discount TBD, with pro-rata and contributor true-up logic)
 - [ ] Multi-currency pricing (GBP, USD alongside EUR)
-- [ ] Enterprise enquiry — Calendly / external scheduling link integration
+- [ ] Enterprise enquiry: Calendly / external scheduling link integration
 - [ ] Advanced shared account detection (commit style variance analysis)
 - [ ] Chargeback protection (Stripe add-on evaluation)

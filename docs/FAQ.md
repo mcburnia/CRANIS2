@@ -16,7 +16,7 @@
 7. [SBOM and Dependencies](#sbom-and-dependencies)
 8. [Vulnerabilities and Risk Findings](#vulnerabilities-and-risk-findings)
 9. [ENISA Reporting](#enisa-reporting)
-10. [License Compliance](#license-compliance)
+10. [Licence Compliance](#licence-compliance)
 11. [IP Proof](#ip-proof)
 12. [Due Diligence Export](#due-diligence-export)
 13. [Escrow](#escrow)
@@ -35,7 +35,7 @@
 
 ### Q: What is CRANIS2?
 
-CRANIS2 is a compliance platform that helps software companies meet the requirements of the EU Cyber Resilience Act (CRA) and the NIS2 Directive. It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see. The platform automates seven compliance functions: SBOM management, vulnerability monitoring, license compliance, intellectual property proof, CRA technical documentation, ENISA reporting, and source code escrow. CRANIS2 reads dependency metadata from your repositories but never stores, analyses, or modifies your source code.
+CRANIS2 is a compliance platform that helps software companies meet the requirements of the EU Cyber Resilience Act (CRA) and the NIS2 Directive. It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see. The platform automates seven compliance functions: SBOM management, vulnerability monitoring, licence compliance, intellectual property proof, CRA technical documentation, ENISA reporting, and source code escrow. CRANIS2 reads dependency metadata from your repositories but never stores, analyses, or modifies your source code.
 
 See the User Guide, Section 1: Introduction for a full overview.
 
@@ -47,16 +47,16 @@ CRANIS2 stands for **C**yber **R**esilience **A**ct and **NIS2**. The name refle
 
 CRANIS2 is designed for four audiences:
 
-- **Organisation Admins** -- users who set up and manage their company's CRANIS2 account, configure products, and oversee compliance activities.
-- **Organisation Members** -- team members who work within the platform day-to-day, reviewing findings, updating technical files, and filing reports.
-- **Platform Admins** -- users with platform-level access who manage organisations, monitor system health, and administer the vulnerability database.
-- **Evaluators and Auditors** -- individuals assessing whether CRANIS2 meets their organisation's compliance needs, or reviewing the compliance evidence it produces.
+- **Organisation Admins**: users who set up and manage their company's CRANIS2 account, configure products, and oversee compliance activities.
+- **Organisation Members**: team members who work within the platform day-to-day, reviewing findings, updating technical files, and filing reports.
+- **Platform Admins**: users with platform-level access who manage organisations, monitor system health, and administer the vulnerability database.
+- **Evaluators and Auditors**: individuals assessing whether CRANIS2 meets their organisation's compliance needs, or reviewing the compliance evidence it produces.
 
 In practice, any company that manufactures, imports, or distributes software products with digital elements in the EU market will benefit from the platform. See the User Guide, Section 1: Introduction.
 
 ### Q: Is CRANIS2 only for EU-based companies?
 
-No. The CRA applies to any product with digital elements placed on the EU single market, regardless of where the manufacturer is based. If your company sells software to customers in the EU -- even if your headquarters are in the United States, United Kingdom, or elsewhere -- you are subject to CRA requirements and CRANIS2 can help you meet them. Companies based outside the EU may also need to designate an authorised representative within the EU.
+No. The CRA applies to any product with digital elements placed on the EU single market, regardless of where the manufacturer is based. If your company sells software to customers in the EU, even if your headquarters are in the United States, United Kingdom, or elsewhere, you are subject to CRA requirements and CRANIS2 can help you meet them. Companies based outside the EU may also need to designate an authorised representative within the EU.
 
 See the User Guide, Section 2: Regulatory Context.
 
@@ -84,7 +84,7 @@ See the User Guide, Section 18: Billing.
 
 ### Q: What is the Cyber Resilience Act (CRA)?
 
-The CRA is an EU regulation that entered into force in December 2024. It applies to any product with digital elements placed on the EU single market and imposes cybersecurity requirements across the entire product lifecycle -- from design through end-of-support. The regulation affects manufacturers, importers, distributors, and open source stewards. Penalties for non-compliance can reach up to EUR 15 million or 2.5% of worldwide annual turnover, whichever is higher.
+The CRA is an EU regulation that entered into force in December 2024. It applies to any product with digital elements placed on the EU single market and imposes cybersecurity requirements across the entire product lifecycle, from design through end-of-support. The regulation affects manufacturers, importers, distributors, and open source stewards. Penalties for non-compliance can reach up to EUR 15 million or 2.5% of worldwide annual turnover, whichever is higher.
 
 See the User Guide, Section 2: Regulatory Context.
 
@@ -92,9 +92,9 @@ See the User Guide, Section 2: Regulatory Context.
 
 The CRA follows a phased timeline:
 
-- **December 2024** -- The CRA entered into force.
-- **September 2026** -- Reporting obligations begin (Article 14). Manufacturers must report actively exploited vulnerabilities and severe incidents to ENISA.
-- **December 2027** -- Full compliance required. All products must meet the complete set of CRA requirements.
+- **December 2024**: the CRA entered into force.
+- **September 2026**: reporting obligations begin (Article 14). Manufacturers must report actively exploited vulnerabilities and severe incidents to ENISA.
+- **December 2027**: full compliance required. All products must meet the complete set of CRA requirements.
 
 Organisations should begin preparing now, particularly for the September 2026 reporting deadline. See the User Guide, Section 2: Regulatory Context.
 
@@ -118,14 +118,14 @@ See the User Guide, Section 9: Technical Files.
 
 The eight Annex VII sections are:
 
-1. **Product Description** (Annex VII S1) -- general description, purpose, hardware/software versions
-2. **Design and Development** (Annex VII S2a) -- security-by-design practices, development tools, testing
-3. **Vulnerability Handling** (Annex VII S2b) -- processes for identifying and addressing vulnerabilities
-4. **Risk Assessment** (Annex VII S2c) -- threats, attack surfaces, and mitigations
-5. **Support Period** (Annex VII S3) -- product lifetime and security update commitment
-6. **Standards Applied** (Annex VII S4) -- harmonised standards and certification schemes
-7. **Test Reports** (Annex VII S5) -- testing evidence and methodology
-8. **Declaration of Conformity** (Annex VII S6) -- formal EU Declaration of Conformity
+1. **Product Description** (Annex VII S1): general description, purpose, hardware/software versions
+2. **Design and Development** (Annex VII S2a): security-by-design practices, development tools, testing
+3. **Vulnerability Handling** (Annex VII S2b): processes for identifying and addressing vulnerabilities
+4. **Risk Assessment** (Annex VII S2c): threats, attack surfaces, and mitigations
+5. **Support Period** (Annex VII S3): product lifetime and security update commitment
+6. **Standards Applied** (Annex VII S4): harmonised standards and certification schemes
+7. **Test Reports** (Annex VII S5): testing evidence and methodology
+8. **Declaration of Conformity** (Annex VII S6): formal EU Declaration of Conformity
 
 Each section has a content editor, internal notes field, and status indicator. See the User Guide, Section 9: Technical Files.
 
@@ -133,15 +133,15 @@ Each section has a content editor, internal notes field, and status indicator. S
 
 The CRA classifies products into three categories based on cybersecurity risk:
 
-- **Default** -- self-assessment by the manufacturer. This applies to the vast majority of software products (most SaaS, internal tools, business applications).
-- **Class I (Important)** -- requires application of a harmonised standard or third-party assessment. Applies to products with higher cybersecurity significance (identity management, VPNs, firewalls, intrusion detection).
-- **Class II (Critical)** -- mandatory EU-level certification by a notified body. Applies to products critical to EU cybersecurity (operating systems, hypervisors, hardware security modules).
+- **Default**: self-assessment by the manufacturer. This applies to the vast majority of software products (most SaaS, internal tools, business applications).
+- **Class I (Important)**: requires application of a harmonised standard or third-party assessment. Applies to products with higher cybersecurity significance (identity management, VPNs, firewalls, intrusion detection).
+- **Class II (Critical)**: mandatory EU-level certification by a notified body. Applies to products critical to EU cybersecurity (operating systems, hypervisors, hardware security modules).
 
 See the User Guide, Section 2: Regulatory Context.
 
 ### Q: How does NIS2 relate to the CRA?
 
-The CRA and NIS2 are complementary. The CRA focuses on **product security** -- requiring that software products meet cybersecurity standards. NIS2 focuses on **organisational security** -- imposing obligations on entities operating critical infrastructure (energy, transport, banking, health, digital infrastructure, and more). If your organisation falls under NIS2 and you also manufacture software products, both sets of obligations apply. CRANIS2 tracks obligations from both frameworks in a unified view.
+The CRA and NIS2 are complementary. The CRA focuses on **product security**, requiring that software products meet cybersecurity standards. NIS2 focuses on **organisational security**, imposing obligations on entities operating critical infrastructure (energy, transport, banking, health, digital infrastructure, and more). If your organisation falls under NIS2 and you also manufacture software products, both sets of obligations apply. CRANIS2 tracks obligations from both frameworks in a unified view.
 
 See the User Guide, Section 2: Regulatory Context.
 
@@ -177,7 +177,7 @@ These deadlines are legally binding from September 2026. CRANIS2 calculates all 
 
 ### Q: What is an SBOM and why does the CRA require it?
 
-An SBOM (Software Bill of Materials) is a machine-readable inventory of all software components in a product -- including direct dependencies, transitive dependencies, their versions, ecosystems, and licenses. CRA Article 13 requires manufacturers to maintain an SBOM for every product with digital elements. The SBOM enables vulnerability tracking (which components are affected by known CVEs), license compliance verification (are all licenses compatible with your distribution model), and supply chain transparency (what exactly is in your product). CRANIS2 generates and maintains SBOMs automatically from your connected repositories.
+An SBOM (Software Bill of Materials) is a machine-readable inventory of all software components in a product, including direct dependencies, transitive dependencies, their versions, ecosystems, and licences. CRA Article 13 requires manufacturers to maintain an SBOM for every product with digital elements. The SBOM enables vulnerability tracking (which components are affected by known CVEs), licence compliance verification (are all licences compatible with your distribution model), and supply chain transparency (what exactly is in your product). CRANIS2 generates and maintains SBOMs automatically from your connected repositories.
 
 See the User Guide, Section 14: Repository Management and Section 16: Dependencies.
 
@@ -193,7 +193,7 @@ See the User Guide, Section 3: Getting Started.
 
 ### Q: I did not receive my verification email. What should I do?
 
-First, check your spam or junk folder -- the email comes from `info@poste.cranis2.com` and may be filtered by your email provider. If the email does not arrive within a few minutes, try signing up again with the same email address. Until your email is verified, you will not be able to log in or access the platform. If problems persist, submit a support request describing the issue.
+First, check your spam or junk folder. The email comes from `info@poste.cranis2.com` and may be filtered by your email provider. If the email does not arrive within a few minutes, try signing up again with the same email address. Until your email is verified, you cannot log in or access the platform. If problems persist, submit a support request describing the issue.
 
 See the User Guide, Section 3: Getting Started.
 
@@ -217,7 +217,7 @@ See the User Guide, Section 20: Stakeholders.
 
 ### Q: What is the difference between an admin and a member?
 
-An **admin** has full control over the organisation, including managing members, configuring products, accessing billing settings, and modifying organisation-level configuration. A **member** can work within the platform -- reviewing findings, updating technical files, filing reports, and managing product-level data -- but cannot manage organisation settings, billing, or user access. The person who creates the organisation is automatically assigned the admin role.
+An **admin** has full control over the organisation, including managing members, configuring products, accessing billing settings, and modifying organisation-level configuration. A **member** can work within the platform (reviewing findings, updating technical files, filing reports, and managing product-level data) but cannot manage organisation settings, billing, or user access. The person who creates the organisation is automatically assigned the admin role.
 
 See the User Guide, Section 20: Stakeholders.
 
@@ -239,18 +239,18 @@ See the User Guide, Section 2: Regulatory Context.
 
 ### Q: What product types does CRANIS2 support?
 
-CRANIS2 supports eight product types: Firmware, SaaS, Library, Desktop App, Mobile App, IoT, Embedded, and Other. The product type helps categorise your portfolio and is informational. Your **distribution model** (a separate field) has a more direct impact on compliance analysis, particularly for license compatibility.
+CRANIS2 supports eight product types: Firmware, SaaS, Library, Desktop App, Mobile App, IoT, Embedded, and Other. The product type helps categorise your portfolio and is informational. Your **distribution model** (a separate field) has a more direct impact on compliance analysis, particularly for licence compatibility.
 
 See the User Guide, Section 5: Products.
 
 ### Q: What are the available distribution models?
 
-There are five distribution models, each affecting license compatibility analysis differently:
+There are five distribution models, each affecting licence compatibility analysis differently:
 
 | Model | Description |
 |-------|-------------|
 | **Proprietary Binary** | Distributed as compiled binary without source code |
-| **SaaS Hosted** | Hosted as a service -- users do not receive a copy |
+| **SaaS Hosted** | Hosted as a service; users do not receive a copy |
 | **Source Available** | Source code available under restrictive terms |
 | **Library Component** | Distributed as a library for integration by others |
 | **Internal Only** | Used internally, not distributed to third parties |
@@ -259,25 +259,25 @@ See the User Guide, Section 5: Products.
 
 ### Q: How do I connect a repository to a product?
 
-From the product detail page, click **Connect Repository**. For GitHub and Codeberg, an OAuth popup flow handles authentication -- you authorise CRANIS2 and select your repository. For self-hosted Gitea, Forgejo, or GitLab instances, you first establish a PAT connection on the Repos page, then connect individual products to repositories on that instance. The first SBOM sync begins automatically after connection.
+From the product detail page, click **Connect Repository**. For GitHub and Codeberg, an OAuth popup flow handles authentication. You authorise CRANIS2 and select your repository. For self-hosted Gitea, Forgejo, or GitLab instances, you first establish a PAT connection on the Repos page, then connect individual products to repositories on that instance. The first SBOM sync begins automatically after connection.
 
 See the User Guide, Section 14: Repository Management.
 
 ### Q: Can I register a product without connecting a repository?
 
-Yes. You can create a product and work on its Technical File, obligations, and other compliance documentation without ever connecting a repository. However, the automated compliance features -- SBOM generation, vulnerability scanning, license compliance analysis, and IP proof -- all depend on a connected repository. Products without a repository will require manual compliance evidence.
+Yes. You can create a product and work on its Technical File, obligations, and other compliance documentation without ever connecting a repository. However, the automated compliance features (SBOM generation, vulnerability scanning, licence compliance analysis, and IP proof) all depend on a connected repository. Products without a repository will require manual compliance evidence.
 
 See the User Guide, Section 5: Products.
 
 ### Q: How do I edit a product?
 
-Product details including name, description, version, type, CRA category, and distribution model can all be edited from the product detail page. Navigate to the product and update the fields as needed. Note that changing the distribution model may affect license compatibility verdicts for existing dependencies.
+Product details including name, description, version, type, CRA category, and distribution model can all be edited from the product detail page. Navigate to the product and update the fields as needed. Note that changing the distribution model may affect licence compatibility verdicts for existing dependencies.
 
 See the User Guide, Section 5: Products.
 
 ### Q: What happens when I delete a product?
 
-When you delete a product, CRANIS2 generates a **data exit package** -- a ZIP file containing all compliance data associated with that product. This includes the SBOM, vulnerability findings, technical file content, reports, and other evidence. The data exit ensures you retain your compliance evidence even after removing the product. If the product had escrow enabled, the Forgejo repository is **preserved** even after deletion, in accordance with legal retention requirements.
+When you delete a product, CRANIS2 generates a **data exit package**, a ZIP file containing all compliance data associated with that product. This includes the SBOM, vulnerability findings, technical file content, reports, and other evidence. The data exit ensures you retain your compliance evidence even after removing the product. If the product had escrow enabled, the Forgejo repository is **preserved** even after deletion, in accordance with legal retention requirements.
 
 See the User Guide, Section 5: Products.
 
@@ -295,10 +295,10 @@ See the User Guide, Section 14: Repository Management.
 
 CRANIS2 stores the following from your repository:
 
-- **Dependency metadata** -- package names, versions, ecosystems, and licenses
-- **Contributor information** -- usernames and contribution counts (from the provider's API)
-- **Repository statistics** -- stars, forks, open issues, and language breakdown
-- **Release and tag information** -- version tags and release dates
+- **Dependency metadata**: package names, versions, ecosystems, and licences
+- **Contributor information**: usernames and contribution counts (from the provider's API)
+- **Repository statistics**: stars, forks, open issues, and language breakdown
+- **Release and tag information**: version tags and release dates
 
 It does **not** store source code files, commit diffs, file contents, or any proprietary business logic. See the User Guide, Section 14: Repository Management and Section 16: Dependencies.
 
@@ -316,7 +316,7 @@ See the User Guide, Section 14: Repository Management.
 
 ### Q: Can I disconnect my repository at any time?
 
-Yes. Disconnecting a repository is immediate and removes the live connection. All previously generated compliance data is preserved -- the existing SBOM, vulnerability findings, license scan results, and IP proof snapshots remain intact and continue to be available. Only future automatic syncs are stopped. You can reconnect the same repository or connect a different one at any time.
+Yes. Disconnecting a repository is immediate and removes the live connection. All previously generated compliance data is preserved. The existing SBOM, vulnerability findings, licence scan results, and IP proof snapshots remain intact and continue to be available. Only future automatic syncs are stopped. You can reconnect the same repository or connect a different one at any time.
 
 See the User Guide, Section 14: Repository Management.
 
@@ -368,15 +368,15 @@ Yes. Once you have established an OAuth connection (GitHub, Codeberg) or a PAT c
 
 CRANIS2 uses a three-tier fallback approach. It attempts each tier in order and uses the first successful result:
 
-1. **Tier 1: API SBOM** (GitHub only) -- retrieves the SBOM from GitHub's built-in dependency graph API.
-2. **Tier 2: Lockfile Parsing** -- scans the repository for lockfiles and parses them directly, supporting 28 formats.
-3. **Tier 3: Import Scanning** -- analyses source code import statements across 26 languages to identify dependencies.
+1. **Tier 1: API SBOM** (GitHub only): retrieves the SBOM from GitHub's built-in dependency graph API.
+2. **Tier 2: Lockfile Parsing**: scans the repository for lockfiles and parses them directly, supporting 28 formats.
+3. **Tier 3: Import Scanning**: analyses source code import statements across 26 languages to identify dependencies.
 
 See the User Guide, Section 14: Repository Management.
 
 ### Q: What are the differences between the three SBOM tiers?
 
-**Tier 1 (API SBOM)** is the fastest and relies on GitHub's own analysis, but is only available for GitHub-hosted repositories. **Tier 2 (Lockfile Parsing)** produces the most precise SBOMs because lockfiles contain exact, resolved dependency versions including all transitive dependencies. **Tier 3 (Import Scanning)** is a best-effort approach -- it identifies dependencies from import statements but cannot determine exact versions or capture dependencies that are not explicitly imported in source code.
+**Tier 1 (API SBOM)** is the fastest and relies on GitHub's own analysis, but is only available for GitHub-hosted repositories. **Tier 2 (Lockfile Parsing)** produces the most precise SBOMs because lockfiles contain exact, resolved dependency versions including all transitive dependencies. **Tier 3 (Import Scanning)** is a best-effort approach. It identifies dependencies from import statements but cannot determine exact versions or capture dependencies that are not explicitly imported in source code.
 
 See the User Guide, Section 14: Repository Management.
 
@@ -415,10 +415,10 @@ For the most accurate results, commit your lockfiles to the repository. See the 
 
 SBOMs can be updated in two ways:
 
-- **Manual sync** -- click the sync button on the product detail page or the Repos page to trigger an immediate regeneration.
-- **Automatic nightly sync** -- the platform scheduler runs at 2 AM UTC and syncs all stale SBOMs. Only repositories that have received changes since the last sync are processed.
+- **Manual sync**: click the sync button on the product detail page or the Repos page to trigger an immediate regeneration.
+- **Automatic nightly sync**: the platform scheduler runs at 2 AM UTC and syncs all stale SBOMs. Only repositories that have received changes since the last sync are processed.
 
-After SBOM sync, license scanning and IP proof generation are triggered automatically. See the User Guide, Section 14: Repository Management.
+After SBOM sync, licence scanning and IP proof generation are triggered automatically. See the User Guide, Section 14: Repository Management.
 
 ### Q: What makes an SBOM stale?
 
@@ -430,8 +430,8 @@ See the User Guide, Section 14: Repository Management.
 
 Yes. CRANIS2 supports exporting SBOMs in two industry-standard formats:
 
-- **CycloneDX 1.6** (JSON) -- an OWASP standard widely used in security tooling and supply chain management.
-- **SPDX 2.3** (JSON) -- a Linux Foundation standard commonly used in license compliance and regulatory contexts.
+- **CycloneDX 1.6** (JSON): an OWASP standard widely used in security tooling and supply chain management.
+- **SPDX 2.3** (JSON): a Linux Foundation standard commonly used in licence compliance and regulatory contexts.
 
 Exports are available from the product detail page and are also included in the Due Diligence export package. See the User Guide, Appendix E: SBOM Export Formats.
 
@@ -441,7 +441,7 @@ Exports are available from the product detail page and are also included in the 
 
 ### Q: How does vulnerability scanning work?
 
-CRANIS2 evaluates every dependency in a product's SBOM against a local vulnerability database. The database is built from two authoritative sources -- OSV (covering 263,000+ advisories) and NVD (covering 182,000+ CVEs). The local database deduplicates across both sources and uses CPE matching combined with ecosystem-specific filtering to minimise false positives. When a match is found, a finding is created with the vulnerability details, severity, affected package, and fix version (if available).
+CRANIS2 evaluates every dependency in a product's SBOM against a local vulnerability database. The database is built from two authoritative sources: OSV (covering 263,000+ advisories) and NVD (covering 182,000+ CVEs). The local database deduplicates across both sources and uses CPE matching combined with ecosystem-specific filtering to minimise false positives. When a match is found, a finding is created with the vulnerability details, severity, affected package, and fix version (if available).
 
 See the User Guide, Section 17: Risk Findings.
 
@@ -449,8 +449,8 @@ See the User Guide, Section 17: Risk Findings.
 
 CRANIS2 uses two complementary sources:
 
-- **OSV (Open Source Vulnerabilities)** -- a distributed database covering all major open-source ecosystems with 263,000+ advisories. It uses ecosystem-specific identifiers (GHSA, PYSEC, RUSTSEC, etc.) for precise package matching.
-- **NVD (National Vulnerability Database)** -- the US government repository with 182,000+ CVEs. It uses CPE identifiers for matching.
+- **OSV (Open Source Vulnerabilities)**: a distributed database covering all major open-source ecosystems with 263,000+ advisories. It uses ecosystem-specific identifiers (GHSA, PYSEC, RUSTSEC, etc.) for precise package matching.
+- **NVD (National Vulnerability Database)**: the US government repository with 182,000+ CVEs. It uses CPE identifiers for matching.
 
 Both databases are synchronised nightly at 1 AM UTC. See the User Guide, Section 17: Risk Findings.
 
@@ -466,10 +466,10 @@ Findings use four severity levels derived from CVSS (Common Vulnerability Scorin
 
 | Severity | CVSS Range | Platform Colour |
 |----------|-----------|-----------------|
-| **Critical** | 9.0 -- 10.0 | Red |
-| **High** | 7.0 -- 8.9 | Red |
-| **Medium** | 4.0 -- 6.9 | Amber |
-| **Low** | 0.1 -- 3.9 | Green |
+| **Critical** | 9.0–10.0 | Red |
+| **High** | 7.0–8.9 | Red |
+| **Medium** | 4.0–6.9 | Amber |
+| **Low** | 0.1–3.9 | Green |
 
 See the User Guide, Section 17: Risk Findings.
 
@@ -493,7 +493,7 @@ See the User Guide, Section 17: Risk Findings.
 
 ### Q: Can I create an ENISA report directly from a vulnerability finding?
 
-Yes. If a vulnerability finding represents an actively exploited vulnerability, you can create an ENISA report directly from the Risk Findings page. The report creation form will be pre-populated with data from the finding -- affected dependency, severity, CVSS score, and description -- saving you time during a time-sensitive reporting process.
+Yes. If a vulnerability finding represents an actively exploited vulnerability, you can create an ENISA report directly from the Risk Findings page. The report creation form will be pre-populated with data from the finding (affected dependency, severity, CVSS score, and description), saving you time during a time-sensitive reporting process.
 
 See the User Guide, Section 17: Risk Findings and Section 10: ENISA Reporting.
 
@@ -505,7 +505,7 @@ See the User Guide, Section 17: Risk Findings and Section 10: ENISA Reporting.
 
 You must file an ENISA report when you become aware of either:
 
-- An **actively exploited vulnerability** in one of your products -- a vulnerability that is being used in real attacks.
+- An **actively exploited vulnerability** in one of your products, meaning a vulnerability that is being used in real attacks.
 - A **severe security incident** that has a significant impact on the security of a product with digital elements.
 
 If in doubt, err on the side of filing. Late reporting carries regulatory consequences; over-reporting does not. These obligations become legally binding in September 2026. See the User Guide, Section 10: ENISA Reporting.
@@ -520,9 +520,9 @@ See the User Guide, Section 10: ENISA Reporting.
 
 Once a report is created with an awareness date, CRANIS2 automatically calculates three deadlines:
 
-1. **Early Warning** (24 hours) -- summary of the issue, whether malicious action is suspected, initial assessment of affected member states.
-2. **Notification** (72 hours) -- detailed description, corrective measures taken or planned, patch status, affected components.
-3. **Final Report** (14 days for vulnerabilities, 1 month for incidents) -- root cause analysis, severity assessment, preventive measures, user notification status.
+1. **Early Warning** (24 hours): summary of the issue, whether malicious action is suspected, initial assessment of affected member states.
+2. **Notification** (72 hours): detailed description, corrective measures taken or planned, patch status, affected components.
+3. **Final Report** (14 days for vulnerabilities, 1 month for incidents): root cause analysis, severity assessment, preventive measures, user notification status.
 
 The report detail page shows the timeline visually with submitted stages marked as complete and upcoming deadlines displayed as countdowns. See the User Guide, Section 10: ENISA Reporting.
 
@@ -546,49 +546,49 @@ See the User Guide, Section 10: ENISA Reporting.
 
 ---
 
-## License Compliance
+## Licence Compliance
 
-### Q: How does license scanning work?
+### Q: How does licence scanning work?
 
-CRANIS2 classifies every dependency's license into three categories: **Permissive** (MIT, Apache-2.0, BSD, ISC), **Copyleft** (GPL, LGPL, AGPL, MPL, SSPL), and **Unknown/NOASSERTION** (no declared license). A rules engine then evaluates each license against your product's distribution model to produce a compatibility verdict: Compatible, Incompatible, or Review Needed. The engine also detects 14 known cross-license incompatibilities where two licenses in the same dependency tree conflict.
+CRANIS2 classifies every dependency's licence into three categories: **Permissive** (MIT, Apache-2.0, BSD, ISC), **Copyleft** (GPL, LGPL, AGPL, MPL, SSPL), and **Unknown/NOASSERTION** (no declared licence). A rules engine then evaluates each licence against your product's distribution model to produce a compatibility verdict: Compatible, Incompatible, or Review Needed. The engine also detects 14 known cross-licence incompatibilities where two licences in the same dependency tree conflict.
 
-See the User Guide, Section 11: License Compliance.
+See the User Guide, Section 11: Licence Compliance.
 
-### Q: What is the difference between permissive and copyleft licenses?
+### Q: What is the difference between permissive and copyleft licences?
 
-**Permissive licenses** (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Unlicense) allow unrestricted use, including in proprietary products, with minimal obligations (typically just attribution). **Copyleft licenses** (GPL-2.0, GPL-3.0, LGPL, AGPL-3.0, MPL-2.0, SSPL-1.0) require derivative works to be distributed under the same or compatible terms. The practical impact of copyleft depends on your distribution model and how the dependency is linked.
+**Permissive licences** (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Unlicense) allow unrestricted use, including in proprietary products, with minimal obligations (typically just attribution). **Copyleft licences** (GPL-2.0, GPL-3.0, LGPL, AGPL-3.0, MPL-2.0, SSPL-1.0) require derivative works to be distributed under the same or compatible terms. The practical impact of copyleft depends on your distribution model and how the dependency is linked.
 
-See the User Guide, Section 11: License Compliance.
+See the User Guide, Section 11: Licence Compliance.
 
 ### Q: What does NOASSERTION mean?
 
-NOASSERTION means the dependency has no declared license or uses a license identifier that CRANIS2 does not recognise. Dependencies with NOASSERTION require manual review because the absence of a declared license may carry legal risk -- you could be using code with no legal permission to do so. Investigate the dependency's actual licensing terms on its project page before distributing your product.
+NOASSERTION means the dependency has no declared licence or uses a licence identifier that CRANIS2 does not recognise. Dependencies with NOASSERTION require manual review because the absence of a declared licence may carry legal risk. You could be using code with no legal permission to do so. Investigate the dependency's actual licensing terms on its project page before distributing your product.
 
-See the User Guide, Section 11: License Compliance.
+See the User Guide, Section 11: Licence Compliance.
 
 ### Q: How does the compatibility matrix work?
 
-The compatibility engine evaluates every dependency's license against your product's distribution model and produces one of three verdicts: **Compatible** (safe to use), **Incompatible** (action required), or **Review Needed** (ambiguous, manual review recommended). The engine also detects 14 known cross-license incompatibilities based on FSF guidance, where two licenses in the same dependency tree conflict with each other regardless of your distribution model.
+The compatibility engine evaluates every dependency's licence against your product's distribution model and produces one of three verdicts: **Compatible** (safe to use), **Incompatible** (action required), or **Review Needed** (ambiguous, manual review recommended). The engine also detects 14 known cross-licence incompatibilities based on FSF guidance, where two licences in the same dependency tree conflict with each other regardless of your distribution model.
 
-See the User Guide, Section 11: License Compliance.
+See the User Guide, Section 11: Licence Compliance.
 
-### Q: How does my distribution model affect license compatibility?
+### Q: How does my distribution model affect licence compatibility?
 
 Your distribution model has a direct and significant impact:
 
-- **Proprietary Binary** -- incompatible with GPL-licensed dependencies (unless dynamically linked under LGPL exception).
-- **SaaS Hosted** -- triggers network copyleft obligations under AGPL and SSPL, which extend copyleft to software accessed over a network.
-- **Internal Only** -- generally has no distribution-related license obligations.
-- **Library Component** -- must consider the downstream consumer's distribution model.
-- **Source Available** -- depends on the specific terms of your source-available license.
+- **Proprietary Binary**: incompatible with GPL-licensed dependencies (unless dynamically linked under LGPL exception).
+- **SaaS Hosted**: triggers network copyleft obligations under AGPL and SSPL, which extend copyleft to software accessed over a network.
+- **Internal Only**: has no distribution-related licence obligations in most cases.
+- **Library Component**: must consider the downstream consumer's distribution model.
+- **Source Available**: depends on the specific terms of your source-available licence.
 
-See the User Guide, Section 11: License Compliance.
+See the User Guide, Section 11: Licence Compliance.
 
-### Q: Can I waive a license finding?
+### Q: Can I waive a licence finding?
 
-Yes. If a license finding does not apply to your situation (for example, a test-only dependency not included in the distributed product, or a build tool not bundled with the output), you can **waive** the finding and record your reasoning. Waived findings are retained in the audit trail for accountability but are excluded from active compliance counts and dashboards.
+Yes. If a licence finding does not apply to your situation (for example, a test-only dependency not included in the distributed product, or a build tool not bundled with the output), you can **waive** the finding and record your reasoning. Waived findings are retained in the audit trail for accountability but are excluded from active compliance counts and dashboards.
 
-See the User Guide, Section 11: License Compliance.
+See the User Guide, Section 11: Licence Compliance.
 
 ---
 
@@ -596,19 +596,19 @@ See the User Guide, Section 11: License Compliance.
 
 ### Q: What is IP Proof?
 
-IP Proof is CRANIS2's implementation of cryptographic timestamping for compliance evidence. It creates independently verifiable proof that a specific set of data -- your product's software composition -- existed at a specific point in time. This is valuable for establishing prior art against patent claims, demonstrating compliance as of a particular date for auditors, and verifying the integrity of escrow deposits.
+IP Proof is CRANIS2's implementation of cryptographic timestamping for compliance evidence. It creates independently verifiable proof that a specific set of data (your product's software composition) existed at a specific point in time. This is valuable for establishing prior art against patent claims, demonstrating compliance as of a particular date for auditors, and verifying the integrity of escrow deposits.
 
 See the User Guide, Section 12: IP Proof.
 
 ### Q: What is RFC 3161 timestamping?
 
-RFC 3161 defines a protocol for trusted timestamping. CRANIS2 generates a SHA-256 hash of your product's composition data, sends this hash to a Time Stamping Authority (FreeTSA.org), and receives back a signed timestamp token. The TSA signs the hash together with the current time, creating proof that the data existed at that moment. Critically, the TSA never sees your source code or dependency data -- only the cryptographic hash. The resulting timestamp is recognised under the EU eIDAS Regulation (910/2014) as legally admissible evidence.
+RFC 3161 defines a protocol for trusted timestamping. CRANIS2 generates a SHA-256 hash of your product's composition data, sends this hash to a Time Stamping Authority (FreeTSA.org), and receives back a signed timestamp token. The TSA signs the hash together with the current time, creating proof that the data existed at that moment. The TSA never sees your source code or dependency data; it receives only the cryptographic hash. The resulting timestamp is recognised under the EU eIDAS Regulation (910/2014) as legally admissible evidence.
 
 See the User Guide, Section 12: IP Proof.
 
 ### Q: How are IP Proof snapshots created?
 
-Snapshots are created **automatically** after every SBOM sync. The nightly auto-sync at 2 AM UTC triggers a license scan, and the license scan triggers IP proof creation. This means your IP proof stays current without any manual action. Each snapshot records the SHA-256 content hash, verification status, and creation date. You can view all snapshots on the IP Proof page.
+Snapshots are created **automatically** after every SBOM sync. The nightly auto-sync at 2 AM UTC triggers a licence scan, and the licence scan triggers IP proof creation. This means your IP proof stays current without any manual action. Each snapshot records the SHA-256 content hash, verification status, and creation date. You can view all snapshots on the IP Proof page.
 
 See the User Guide, Section 12: IP Proof.
 
@@ -636,9 +636,9 @@ The ZIP file contains five items:
 |------|--------|----------|
 | Due Diligence Report | PDF | Executive summary of compliance posture |
 | Software Bill of Materials | CycloneDX 1.6 JSON | Complete dependency inventory |
-| License Findings | CSV | All dependencies with compliance verdicts |
+| Licence Findings | CSV | All dependencies with compliance verdicts |
 | Vulnerability Summary | JSON | All findings with severities and CVEs |
-| Full License Texts | Text files | Complete text for each non-permissive license |
+| Full Licence Texts | Text files | Complete text for each non-permissive licence |
 
 See the User Guide, Section 13: Due Diligence Export.
 
@@ -660,13 +660,13 @@ See the User Guide, Section 7: Escrow.
 
 ### Q: How does escrow work in CRANIS2?
 
-CRANIS2 uses a self-hosted **Forgejo** instance (a lightweight, open-source Git forge) for escrow deposits. Escrow is opt-in and configured per product. When enabled, your repository is mirrored to the Forgejo instance. You can also configure which artifact types to include alongside the source code: SBOM, vulnerability reports, license audit, IP proof, CRA documentation, and compliance timeline. You choose a release model (open source or designated recipients) to control what happens if the deposit needs to be released.
+CRANIS2 uses a self-hosted **Forgejo** instance (a lightweight, open-source Git forge) for escrow deposits. Escrow is opt-in and configured per product. When enabled, your repository is mirrored to the Forgejo instance. You can also configure which artifact types to include alongside the source code: SBOM, vulnerability reports, licence audit, IP proof, CRA documentation, and compliance timeline. You choose a release model (open source or designated recipients) to control what happens if the deposit needs to be released.
 
 See the User Guide, Section 7: Escrow.
 
 ### Q: Where is the escrow data stored?
 
-The Forgejo instance is hosted in **Switzerland**, ensuring European data sovereignty. It runs within the CRANIS2 infrastructure and is separate from your production repository -- it functions purely as a deposit. The escrow data never leaves European jurisdiction.
+The Forgejo instance is hosted in **Switzerland**, ensuring European data sovereignty. It runs within the CRANIS2 infrastructure and is separate from your production repository; it functions purely as a deposit. The escrow data never leaves European jurisdiction.
 
 See the User Guide, Section 7: Escrow.
 
@@ -706,7 +706,7 @@ See the User Guide, Section 9: Technical Files and Section 2: Regulatory Context
 
 ### Q: What are CRA obligations and what statuses can they have?
 
-CRA obligations are specific requirements derived from CRA articles and mapped to each product based on its CRA category. They cover product security (Annex I), vulnerability handling (Article 13), security updates, SBOM maintenance, technical documentation (Annex VII), conformity assessment (Articles 24--28), CE marking (Article 22), authority reporting (Article 14), and market surveillance cooperation (Article 43). Each obligation has one of three statuses: **Not Started**, **In Progress**, or **Met**. Statuses can be changed inline from the obligations table.
+CRA obligations are specific requirements derived from CRA articles and mapped to each product based on its CRA category. They cover product security (Annex I), vulnerability handling (Article 13), security updates, SBOM maintenance, technical documentation (Annex VII), conformity assessment (Articles 24–28), CE marking (Article 22), authority reporting (Article 14), and market surveillance cooperation (Article 43). Each obligation has one of three statuses: **Not Started**, **In Progress**, or **Met**. Statuses can be changed inline from the obligations table.
 
 See the User Guide, Section 8: Obligations Tracking.
 
@@ -724,17 +724,17 @@ See the User Guide, Section 18: Billing.
 
 The trial follows a defined lifecycle:
 
-1. **90-day trial** -- full access to all features.
-2. **7-day grace period** -- full access continues, with a warning banner prompting subscription.
-3. **Read-only mode** -- all write operations blocked; viewing and exporting remain available.
-4. **Suspension** (60 days after read-only) -- limited access.
-5. **Cancellation** -- account is cancelled.
+1. **90-day trial**: full access to all features.
+2. **7-day grace period**: full access continues, with a warning banner prompting subscription.
+3. **Read-only mode**: all write operations blocked; viewing and exporting remain available.
+4. **Suspension** (60 days after read-only): limited access.
+5. **Cancellation**: account is cancelled.
 
 You can subscribe at any point to restore full access. See the User Guide, Section 18: Billing.
 
 ### Q: What is the billing gate?
 
-The billing gate is a global middleware that activates when an organisation enters read-only, suspended, or cancelled status. It intercepts all write operations -- creating products, updating obligations, filing reports, syncing SBOMs, editing technical files -- and returns a billing error. You can still view all your data, read reports, export SBOMs and due diligence packages, and access the billing page to resolve the payment issue.
+The billing gate is a global middleware that activates when an organisation enters read-only, suspended, or cancelled status. It intercepts all write operations (creating products, updating obligations, filing reports, syncing SBOMs, editing technical files) and returns a billing error. You can still view all your data, read reports, export SBOMs and due diligence packages, and access the billing page to resolve the payment issue.
 
 See the User Guide, Section 18: Billing.
 
@@ -823,7 +823,7 @@ See the User Guide, Section 22: Audit Log.
 
 ### Q: I cannot create, edit, or delete anything. What is wrong?
 
-This almost certainly means the **billing gate** is active. Your organisation may have entered read-only mode due to an expired trial (after the 7-day grace period), a failed payment, or account suspension. Navigate to the Billing page to check your current billing status and take the appropriate action -- either subscribing for the first time or resolving a payment failure.
+This almost certainly means the **billing gate** is active. Your organisation may have entered read-only mode due to an expired trial (after the 7-day grace period), a failed payment, or account suspension. Navigate to the Billing page to check your current billing status and take the appropriate action, whether subscribing for the first time or resolving a payment failure.
 
 See the User Guide, Section 18: Billing.
 
@@ -841,13 +841,13 @@ See the User Guide, Section 14: Repository Management.
 
 ### Q: A vulnerability scan returned no results. Does that mean my product is secure?
 
-Not necessarily. A scan with no results means no known vulnerabilities were found in the current SBOM against the databases available at scan time. New vulnerabilities are published daily, and the databases are synchronised nightly at 1 AM UTC, so future scans may discover issues. Also confirm that your SBOM is not empty -- a scan against an empty SBOM will naturally return zero findings. Finally, remember that vulnerability databases may not cover all ecosystems equally.
+Not necessarily. A scan with no results means no known vulnerabilities were found in the current SBOM against the databases available at scan time. New vulnerabilities are published daily, and the databases are synchronised nightly at 1 AM UTC, so future scans may discover issues. Also confirm that your SBOM is not empty; a scan against an empty SBOM will naturally return zero findings. Vulnerability databases may not cover all ecosystems equally.
 
 See the User Guide, Section 17: Risk Findings.
 
 ### Q: I see "Invalid Date" displayed on a page. What does this mean?
 
-This is a display formatting issue that can occur when date values from the database are not in the expected format. If you encounter this, try refreshing the page first. If the issue persists, submit a bug report using the **Feedback** button at the bottom of the sidebar -- select the "bug" category and the page URL will be captured automatically. This helps the development team identify and resolve the formatting issue.
+This is a display formatting issue that can occur when date values from the database are not in the expected format. If you encounter this, try refreshing the page first. If the issue persists, submit a bug report using the **Feedback** button at the bottom of the sidebar. Select the "bug" category and the page URL will be captured automatically. This helps the development team identify and resolve the formatting issue.
 
 See the User Guide, Section 23: Feedback System.
 
@@ -869,7 +869,7 @@ See the User Guide, Section 24: Platform Administration.
 
 ### Q: What is the AI Copilot?
 
-The AI Copilot is a set of AI-powered features available on the Pro plan that help you write compliance documentation faster. It uses Claude (Anthropic) to generate contextual suggestions for technical file sections, obligation evidence notes, vulnerability triage decisions, risk assessments, and incident report drafts. The AI only sees compliance metadata (product details, dependencies, scan results) -- it never has access to your source code.
+The AI Copilot is a set of AI-powered features available on the Pro plan that help you write compliance documentation faster. It uses Claude (Anthropic) to generate contextual suggestions for technical file sections, obligation evidence notes, vulnerability triage decisions, risk assessments, and incident report drafts. The AI only sees compliance metadata (product details, dependencies, scan results). It never has access to your source code.
 
 See the User Guide, Section 26: AI Copilot.
 
@@ -891,7 +891,7 @@ See the User Guide, Section 28: AI Risk Assessment.
 
 ### Q: What is the AI incident report drafter?
 
-When filing an ENISA Article 14 report, the AI can draft content for each of the three stages (early warning, notification, final report). It uses your product's vulnerability data, linked findings, and any previously submitted stages to generate contextually appropriate content. The draft is merged non-destructively -- existing content is never overwritten.
+When filing an ENISA Article 14 report, the AI can draft content for each of the three stages (early warning, notification, final report). It uses your product's vulnerability data, linked findings, and any previously submitted stages to generate contextually appropriate content. The draft is merged non-destructively; existing content is never overwritten.
 
 See the User Guide, Section 29: AI Incident Report Drafter.
 
@@ -909,7 +909,7 @@ See the User Guide, Section 36: Copilot Usage & Cost Protection.
 
 ### Q: What is supplier due diligence?
 
-Supplier due diligence generates template-based questionnaires for your product's dependencies, assessing their security practices, licence compliance, and maintenance cadence. It does not use AI -- the questionnaires are derived from CRA requirements using deterministic templates. Dependencies from npm, PyPI, and crates.io are automatically enriched with maintainer and registry metadata. Results can be exported as PDF or CSV.
+Supplier due diligence generates template-based questionnaires for your product's dependencies, assessing their security practices, licence compliance, and maintenance cadence. It does not use AI. The questionnaires are derived from CRA requirements using deterministic templates. Dependencies from npm, PyPI, and crates.io are automatically enriched with maintainer and registry metadata. Results can be exported as PDF or CSV.
 
 See the User Guide, Section 31: Supplier Due Diligence.
 
@@ -943,7 +943,7 @@ See the User Guide, Section 35: Integrations.
 
 ### Q: What is the MCP server?
 
-The MCP (Model Context Protocol) server allows IDE AI assistants -- Claude Desktop, VS Code with GitHub Copilot, Cursor, and Claude Code -- to query your CRANIS2 compliance data directly from the editor. It provides five tools: list products, get vulnerabilities, get mitigation commands, verify fixes, and check compliance status.
+The MCP (Model Context Protocol) server allows IDE AI assistants (Claude Desktop, VS Code with GitHub Copilot, Cursor, and Claude Code) to query your CRANIS2 compliance data directly from the editor. It provides five tools: list products, get vulnerabilities, get mitigation commands, verify fixes, and check compliance status.
 
 See the User Guide, Section 35: Integrations.
 

@@ -1,8 +1,8 @@
 # Versioning & Security Release Policy
 
 **Document Owner:** Product & Engineering Lead
-**Applicable Product:** CRANIS2 — EU Cyber Resilience Act Compliance Platform
-**CRA Reference:** Article 13(9) — Separation of security and functionality updates
+**Applicable Product:** CRANIS2 – EU Cyber Resilience Act Compliance Platform
+**CRA Reference:** Article 13(9) – Separation of security and functionality updates
 **Effective Date:** 2026-03-08
 **Review Cycle:** Annually, or upon significant change to the release process
 
@@ -45,7 +45,7 @@ YYYY.MM.DD.NNNN[-secN]
 | Version | Classification |
 |---|---|
 | `2026.03.08.0001` | Feature release (may include non-critical security improvements alongside features) |
-| `2026.03.08.0002-sec1` | Security-only release — contains only vulnerability fixes |
+| `2026.03.08.0002-sec1` | Security-only release containing only vulnerability fixes |
 | `2026.03.09.0001` | Feature release |
 | `2026.03.09.0001-sec1` | Security hotfix issued against the `2026.03.09.0001` baseline |
 
@@ -158,8 +158,8 @@ main (always = production, always deployable)
 
 #### Security fix branches
 
-1. Branch from `main` (the live production baseline) — name the branch `sec/<CVE-ID>` or `sec/<finding-ref>`
-2. Apply **only** the security fix — no feature code, no refactoring, no unrelated changes
+1. Branch from `main` (the live production baseline). Name the branch `sec/<CVE-ID>` or `sec/<finding-ref>`
+2. Apply **only** the security fix. No feature code, no refactoring, no unrelated changes
 3. Test against the production baseline (full regression suite)
 4. Merge back to `main` via pull request with security-focused review
 5. Tag `main` with the `-secN` suffix (e.g. `2026.03.10.0001-sec1`)
@@ -168,11 +168,11 @@ main (always = production, always deployable)
 
 #### Key principles
 
-- **`main` is always deployable** — it represents exactly what is live in production
-- **Security fixes never wait for feature work** — they are branched from and merged back to `main` independently
-- **Feature branches never block security releases** — the security lane operates in parallel
-- **Feature branches stay current** — after every security merge to `main`, open feature branches rebase or merge from `main` to pick up the fix
-- **No mixed merges** — a security branch must not include feature commits, and vice versa
+- **`main` is always deployable.** It represents exactly what is live in production
+- **Security fixes never wait for feature work.** They are branched from and merged back to `main` independently
+- **Feature branches never block security releases.** The security lane operates in parallel
+- **Feature branches stay current.** After every security merge to `main`, open feature branches rebase or merge from `main` to pick up the fix
+- **No mixed merges.** A security branch must not include feature commits, and vice versa
 
 ---
 
@@ -209,8 +209,8 @@ Security-only releases are identified through:
 
 CRANIS2 is delivered as a Software-as-a-Service platform. Users do not manually apply updates; all releases are deployed centrally by the CRANIS2 operations team. This means:
 
-- Users are **never forced to accept feature changes** in order to receive a security fix — security-only releases are deployed independently
-- Users are **always on the latest secure version** — there is no delay between release and user protection
+- Users are **never forced to accept feature changes** in order to receive a security fix. Security-only releases are deployed independently
+- Users are **always on the latest secure version.** There is no delay between release and user protection
 - The separation obligation under Art. 13(9) is met by maintaining independent release pipelines and ensuring security fixes are never gated behind feature rollouts
 
 ---
@@ -281,4 +281,4 @@ All revisions are tracked with date, author, and summary of changes.
 
 | Date | Author | Summary |
 |---|---|---|
-| 2026-03-08 | Product & Engineering | Initial version — establishes versioning scheme, security release process, and Art. 13(9) evidence framework |
+| 2026-03-08 | Product & Engineering | Initial version. Establishes versioning scheme, security release process, and Art. 13(9) evidence framework |

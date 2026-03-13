@@ -1,4 +1,4 @@
-# CRANIS2 AI CoPilot — Prompt Inventory
+# CRANIS2 AI CoPilot – Prompt Inventory
 
 Last updated: 2026-03-11 (session 38)
 
@@ -8,11 +8,11 @@ Last updated: 2026-03-11 (session 38)
 
 Every CoPilot prompt is constructed from three layers:
 
-1. **Layer 1 — Quality Standard** (shared): Output quality rules from `copilot-quality-standard.md` — British English, canonical terminology, professional tone, consistency, substantive depth, structured output, guardrails. Injected as a preamble into every system prompt.
+1. **Layer 1 – Quality Standard** (shared): Output quality rules from `copilot-quality-standard.md`, covering British English, canonical terminology, professional tone, consistency, substantive depth, and guardrails. Injected as a preamble into every system prompt.
 
-2. **Layer 2 — Regulatory Context** (per capability): The specific CRA articles, Annex requirements, and regulatory evidence standards that apply to this capability. Tells the AI *what the regulation requires*.
+2. **Layer 2 – Regulatory Context** (per capability): The specific CRA articles, Annex requirements, and regulatory evidence standards that apply to this capability. Tells the AI *what the regulation requires*.
 
-3. **Layer 3 — Capability Prompt** (per capability): The operational instructions — what to generate, in what format, with what constraints. Tells the AI *what to produce*.
+3. **Layer 3 – Capability Prompt** (per capability): The operational instructions, covering what to generate, in what format, and with what constraints. Tells the AI *what to produce*.
 
 All three layers are stored in the `copilot_prompts` database table and editable from **System Admin → AI CoPilot**.
 
@@ -23,11 +23,11 @@ All three layers are stored in the `copilot_prompts` database table and editable
 **Prompt Key:** `suggest`
 **Goal:** Generate draft content for CRA Technical File sections (8 sections) and obligation evidence notes (19 obligations), grounded in real product data.
 
-**Rationale:** Manufacturers often stare at blank compliance fields. AI drafts give them a starting point grounded in their actual SBOM, vulnerabilities, and product metadata — saving hours of manual writing while keeping the human in the loop for review.
+**Rationale:** Manufacturers often stare at blank compliance fields. AI drafts give them a starting point grounded in their actual SBOM, vulnerabilities, and product metadata, saving hours of manual writing while keeping the human in the loop for review.
 
 **Acceptance Criteria:**
 - Generated text references actual product data (dependency counts, CVE IDs, vulnerability statistics)
-- Never invents data — missing information is flagged with "[TO COMPLETE: ...]" markers
+- Never invents data. Missing information is flagged with "[TO COMPLETE: ...]" markers
 - Output is professional, auditor-grade language
 - British English throughout
 - Each field is 2–5 sentences of substantive content
@@ -38,21 +38,21 @@ All three layers are stored in the `copilot_prompts` database table and editable
 **Rate Limit:** 20 per product per hour
 **Estimated Cost:** ~$0.01–0.03 per call (small context)
 
-### Layer 2 — Regulatory Context
+### Layer 2 – Regulatory Context
 
 | CRA Article | Requirement | What Must Be Produced |
 |---|---|---|
 | Art. 13(12) | Draw up technical documentation before market placement | Complete Technical File per Annex VII (8 sections) |
-| Annex VII §1 | Product description — intended purpose, versions, market availability | Product description with cybersecurity scope |
-| Annex VII §2(a) | Design & development — architecture, SDLC, component integration | System architecture, SDLC documentation |
-| Annex VII §2(b) | Vulnerability handling — CVD policy, SBOM reference, update distribution | CVD policy, reporting contact, update mechanism |
-| Annex VII §3 | Risk assessment — methodology, threat model, Annex I assessment | Risk assessment (see Capability 3) |
-| Annex VII §4 | Support period — minimum 5 years, rationale, communication plan | Support period definition and justification |
-| Annex VII §5 | Standards applied — harmonised standards, common specifications | Standards list with parts applied |
-| Annex VII §6 | Test reports — penetration testing, static/dynamic analysis, audits | Test report summaries |
-| Annex VII §7 | Declaration of Conformity — per Article 28 and Annex VI | DoC with assessment module, notified body |
+| Annex VII §1 | Product description: intended purpose, versions, market availability | Product description with cybersecurity scope |
+| Annex VII §2(a) | Design & development: architecture, SDLC, component integration | System architecture, SDLC documentation |
+| Annex VII §2(b) | Vulnerability handling: CVD policy, SBOM reference, update distribution | CVD policy, reporting contact, update mechanism |
+| Annex VII §3 | Risk assessment: methodology, threat model, Annex I assessment | Risk assessment (see Capability 3) |
+| Annex VII §4 | Support period: minimum 5 years, rationale, communication plan | Support period definition and justification |
+| Annex VII §5 | Standards applied: harmonised standards, common specifications | Standards list with parts applied |
+| Annex VII §6 | Test reports: penetration testing, static/dynamic analysis, audits | Test report summaries |
+| Annex VII §7 | Declaration of Conformity: per Article 28 and Annex VI | DoC with assessment module, notified body |
 
-**Per-obligation regulatory mapping** (19 obligations — each has specific Article text and evidence requirements):
+**Per-obligation regulatory mapping** (19 obligations, each with specific Article text and evidence requirements):
 
 | Obligation | CRA Article | Evidence Required |
 |---|---|---|
@@ -76,7 +76,7 @@ All three layers are stored in the `copilot_prompts` database table and editable
 | Security by Design | Annex I, Part I | 13-requirement assessment with evidence |
 | Vulnerability Handling (Process) | Annex I, Part II | CVD policy, severity methodology, SLAs |
 
-### Layer 3 — System Prompt (current)
+### Layer 3 – System Prompt (current)
 
 ```
 You are a CRA (EU Cyber Resilience Act) compliance expert embedded in the CRANIS2
@@ -88,14 +88,14 @@ Rules:
    findings, repo metadata, obligation statuses).
 2. Write in a professional, factual tone suitable for regulatory documentation
    and auditors.
-3. Be specific — reference actual dependency counts, vulnerability stats, and
+3. Be specific; reference actual dependency counts, vulnerability stats, and
    product details rather than using generic placeholders.
 4. Where the product data is insufficient, note what information the user should
    add manually.
 5. Use British English spelling throughout.
 6. Never invent data that isn't provided in the context. If data is missing, say
    so clearly.
-7. Keep content concise but thorough — aim for evidence-grade documentation.
+7. Keep content concise but thorough. Aim for evidence-grade documentation.
 ```
 
 **User Prompt (tech file sections):**
@@ -119,7 +119,7 @@ Each field value should be a string of 2-5 sentences of substantive content.
 ```
 Generate evidence/compliance notes for the following CRA obligation:
 
-Obligation: {article} — {title}
+Obligation: {article} – {title}
 Description: {description}
 
 Product context: [same as above]
@@ -131,27 +131,27 @@ Write 3-6 sentences of evidence notes. Return plain text (not JSON).
 
 | Gap | Description | Impact |
 |---|---|---|
-| **Generic system prompt** | Same prompt for all 8 tech file sections — "vulnerability_handling" gets identical treatment to "standards_applied" | Lower quality, generic output |
-| **No obligation-specific depth** | Same prompt for all 19 obligations — art_13 (general) treated same as art_14 (incident reporting) | Misses obligation-specific nuances |
+| **Generic system prompt** | Same prompt for all 8 tech file sections, so "vulnerability_handling" gets identical treatment to "standards_applied" | Lower quality, generic output |
+| **No obligation-specific depth** | Same prompt for all 19 obligations; art_13 (general) treated same as art_14 (incident reporting) | Misses obligation-specific nuances |
 | **No industry awareness** | No product-type context (IoT, SaaS, embedded, library, medical) | Generic risk language |
-| **No structured output options** | Always prose — no checklists, action items, or structured formats | Less actionable for users |
-| **No section guidance enrichment** | Section guidance strings are brief — no regulatory detail on what auditors actually look for | Shallow output |
+| **No structured output options** | Always prose, with no checklists or structured formats | Less actionable for users |
+| **No section guidance enrichment** | Section guidance strings are brief, with no regulatory detail on what auditors look for | Shallow output |
 
 ---
 
 ## 2. Vulnerability Triage
 
 **Prompt Key:** `vulnerability_triage`
-**Goal:** Analyse open vulnerability findings and suggest dismiss/acknowledge/escalate actions with confidence scores, reasoning, and ecosystem-specific mitigation commands.
+**Goal:** Analyse open vulnerability findings and suggest dismiss/acknowledge/escalate actions with confidence scores, reasoning, and package-manager-specific mitigation commands.
 
-**Rationale:** A typical product has 50–200+ vulnerability findings. Manual triage is time-consuming and requires security expertise. AI triage prioritises what matters, auto-dismisses clear false positives (confidence ≥85%), and provides copy-paste fix commands.
+**Rationale:** A typical product has 50–200+ vulnerability findings. Manual triage is time-consuming and requires security expertise. AI triage prioritises findings by risk, auto-dismisses clear false positives (confidence >=85%), and provides copy-paste fix commands.
 
 **Acceptance Criteria:**
 - Each finding gets: action, confidence (0–1), reasoning (2–4 sentences)
 - Dismissed findings include audit-trail reason
 - Acknowledge/escalate findings include mitigation command (npm/pip/cargo/go/etc.)
 - CRA category affects strictness (important_i/ii/critical = stricter)
-- Auto-dismiss only when confidence ≥0.85 AND action is "dismiss"
+- Auto-dismiss only when confidence >=0.85 AND action is "dismiss"
 - Batched (20 findings per API call) for large finding sets
 
 **Model:** `claude-sonnet-4-20250514`
@@ -160,7 +160,7 @@ Write 3-6 sentences of evidence notes. Return plain text (not JSON).
 **Batch Size:** 20 findings per API call
 **Estimated Cost:** ~$0.02–0.05 per batch (medium context)
 
-### Layer 2 — Regulatory Context
+### Layer 2 – Regulatory Context
 
 | CRA Article | Requirement | How Triage Supports It |
 |---|---|---|
@@ -171,12 +171,12 @@ Write 3-6 sentences of evidence notes. Return plain text (not JSON).
 | Annex I, Part II | Implement vulnerability handling processes including coordinated disclosure | Triage automates the severity assessment and prioritisation step |
 
 **CRA category strictness mapping:**
-- `default`: Standard triage — dismiss low-severity dev-only findings freely
-- `important_i`: Stricter — escalate medium-severity findings more aggressively
-- `important_ii`: Strict — almost all findings with available fixes should escalate
-- `critical`: Maximum strictness — only dismiss with very high confidence (≥0.95)
+- `default`: Standard triage; dismiss low-severity dev-only findings freely
+- `important_i`: Stricter; escalate medium-severity findings more aggressively
+- `important_ii`: Strict; almost all findings with available fixes should escalate
+- `critical`: Maximum strictness; only dismiss with very high confidence (>=0.95)
 
-### Layer 3 — System Prompt (current)
+### Layer 3 – System Prompt (current)
 
 ```
 You are a CRA (EU Cyber Resilience Act) vulnerability triage expert. Your task is
@@ -185,8 +185,8 @@ action for each.
 
 For each finding, suggest one of:
 - "dismiss": Not exploitable in context, false positive, dev-only, negligible risk.
-- "acknowledge": Real but low priority — track but no immediate action.
-- "escalate_mitigate": Urgent attention required — fix, upgrade, or mitigate.
+- "acknowledge": Real but low priority; track but no immediate action.
+- "escalate_mitigate": Urgent attention required. Fix, upgrade, or mitigate.
 
 Rules:
 1. Consider the product's CRA category. For "important_i", "important_ii", and
@@ -195,8 +195,8 @@ Rules:
 3. Critical/high severity with high CVSS should almost always escalate unless
    clearly not applicable.
 4. Low severity in dev-only dependencies are strong dismiss candidates.
-5. Confidence between 0 and 1. Conservative — only ≥0.85 when clear-cut.
-6. Automatable = true ONLY when confidence ≥0.85 AND action is "dismiss".
+5. Confidence between 0 and 1. Conservative; only >=0.85 when clear-cut.
+6. Automatable = true ONLY when confidence >=0.85 AND action is "dismiss".
 7. Reasoning of 2-4 sentences.
 8. Include dismissReason (for audit trail) when dismissing.
 9. British English.
@@ -213,9 +213,9 @@ Return ONLY a JSON array of objects:
 | Gap | Description | Impact |
 |---|---|---|
 | **No direct vs transitive awareness** | Cannot distinguish direct dependencies (user controls) from transitive (harder to fix) | Mitigation commands may be impractical for transitive deps |
-| **No EPSS consideration** | Does not factor exploit prediction scores — real-world exploitation likelihood | May over-escalate vulns with no known exploit |
+| **No EPSS consideration** | Does not factor exploit prediction scores, so real-world exploitation likelihood is ignored | May over-escalate vulns with no known exploit |
 | **No reachability analysis** | Cannot determine whether vulnerable code paths are actually invoked | Higher false positive rate in dismiss decisions |
-| **Confidence calibration untested** | 85% threshold chosen heuristically — no validation against actual outcomes | May auto-dismiss findings that should have been reviewed |
+| **Confidence calibration untested** | 85% threshold chosen heuristically, with no validation against actual outcomes | May auto-dismiss findings that should have been reviewed |
 
 ---
 
@@ -224,14 +224,14 @@ Return ONLY a JSON array of objects:
 **Prompt Key:** `risk_assessment`
 **Goal:** Generate a comprehensive Annex VII §3 cybersecurity risk assessment including methodology, threat model, risk register, and all 13 Annex I Part I requirement assessments.
 
-**Rationale:** A full CRA risk assessment is one of the most complex compliance documents. It requires security expertise most small/medium manufacturers don't have. AI generates a structured first draft grounded in real vulnerability and dependency data.
+**Rationale:** A full CRA risk assessment is one of the most complex compliance documents. It requires security expertise most small/medium manufacturers lack. AI generates a structured first draft grounded in real vulnerability and dependency data.
 
 **Acceptance Criteria:**
 - Methodology section (2–4 paragraphs)
 - Threat model (2–4 paragraphs) referencing actual vulnerabilities and dependencies
 - Risk register as Markdown table (threat, likelihood, impact, risk level, mitigation, status)
 - All 13 Annex I Part I requirements assessed (applicable, justification, evidence)
-- Real CVE IDs and dependency names referenced — nothing invented
+- Real CVE IDs and dependency names referenced; nothing invented
 - Professional tone for regulatory auditors
 
 **Model:** `claude-sonnet-4-20250514`
@@ -239,7 +239,7 @@ Return ONLY a JSON array of objects:
 **Rate Limit:** 3 per product per day
 **Estimated Cost:** ~$0.05–0.15 per call (large context + output)
 
-### Layer 2 — Regulatory Context
+### Layer 2 – Regulatory Context
 
 | CRA Article | Requirement | What the Risk Assessment Must Demonstrate |
 |---|---|---|
@@ -265,7 +265,7 @@ Return ONLY a JSON array of objects:
 | I(l) | Security monitoring & logging | Audit logging; anomaly detection; log retention; alerting |
 | I(m) | Secure data erasure & transfer | Secure deletion; data portability; migration tools |
 
-### Layer 3 — System Prompt (current)
+### Layer 3 – System Prompt (current)
 
 ```
 You are a CRA (EU Cyber Resilience Act) cybersecurity risk assessment expert.
@@ -306,9 +306,9 @@ Return JSON: { "fields": { "methodology", "threat_model", "risk_register" },
 | Gap | Description | Impact |
 |---|---|---|
 | **No product-type differentiation** | IoT device, cloud SaaS, embedded firmware, and npm library all get identical treatment | Generic threat models miss domain-specific threats |
-| **No methodology framework option** | No STRIDE, DREAD, FAIR, or OWASP alignment — methodology is ad hoc | Less credible for auditors who expect named frameworks |
-| **No industry threat catalogues** | Threats are derived only from vulnerability data — no ENISA threat landscape reference | Incomplete threat coverage |
-| **Shallow Annex I evidence** | Evidence relies solely on SBOM/vuln data — many requirements (I(d)–I(m)) need architecture info not available in product context | "Insufficient data" for most requirements |
+| **No methodology framework option** | No STRIDE, DREAD, FAIR, or OWASP alignment, so methodology is ad hoc | Less credible for auditors who expect named frameworks |
+| **No industry threat catalogues** | Threats are derived only from vulnerability data, with no ENISA threat landscape reference | Incomplete threat coverage |
+| **Shallow Annex I evidence** | Evidence relies solely on SBOM/vuln data; many requirements (I(d)–I(m)) need architecture info not available in product context | "Insufficient data" for most requirements |
 
 ---
 
@@ -331,7 +331,7 @@ Return JSON: { "fields": { "methodology", "threat_model", "risk_register" },
 **Rate Limit:** 5 per report per day
 **Estimated Cost:** ~$0.02–0.05 per call
 
-### Layer 2 — Regulatory Context
+### Layer 2 – Regulatory Context
 
 | CRA Article | Requirement | Deadline | What Must Be Reported |
 |---|---|---|---|
@@ -352,7 +352,7 @@ Return JSON: { "fields": { "methodology", "threat_model", "risk_register" },
 - `patchStatus`: "available" | "in_progress" | "planned"
 - `userNotificationStatus`: "informed" | "pending" | "not_required"
 
-### Layer 3 — System Prompt (current)
+### Layer 3 – System Prompt (current)
 
 ```
 You are a CRA (EU Cyber Resilience Act) incident and vulnerability reporting expert
@@ -372,7 +372,7 @@ Rules:
 4. Insufficient data → "[TO COMPLETE: ...]" placeholders.
 5. British English.
 6. Never invent data.
-7. Concise but thorough — regulatory submissions, not essays.
+7. Concise but thorough. These are regulatory submissions, not essays.
 8. Maintain consistency with previous stages.
 9. suspectedMalicious: "yes", "no", or "unknown" only.
 10. patchStatus: "available", "in_progress", or "planned" only.
@@ -386,9 +386,9 @@ Return JSON object with requested fields as keys and string values.
 | Gap | Description | Impact |
 |---|---|---|
 | **No CSIRT-specific awareness** | Different EU member state CSIRTs may have additional requirements beyond base Article 14 | May miss country-specific fields |
-| **No vulnerability vs incident differentiation** | Same system prompt for both report types — only field differences | Different tone and urgency needed |
-| **No cross-stage content linking** | Consistency instruction is vague — no mechanism to reference previous stage content | May contradict earlier submissions |
-| **No TLP classification guidance** | TLP sensitivity (WHITE/GREEN/AMBER/RED) affects what can be shared — not reflected in drafting | Content may be too detailed for chosen TLP level |
+| **No vulnerability vs incident differentiation** | Same system prompt for both report types, with only field differences | Different tone and urgency needed |
+| **No cross-stage content linking** | Consistency instruction is vague, with no mechanism to reference previous stage content | May contradict earlier submissions |
+| **No TLP classification guidance** | TLP sensitivity (WHITE/GREEN/AMBER/RED) affects what can be shared but is not reflected in drafting | Content may be too detailed for chosen TLP level |
 
 ---
 
@@ -404,7 +404,7 @@ Return JSON object with requested fields as keys and string values.
 - Confidence score (0.0–1.0)
 - Clear explanation of reasoning
 - Suggests new category only if adjustment is significant
-- Conservative — small adjustments preferred
+- Small adjustments preferred
 
 **Model:** `claude-opus-4-1` (higher capability for nuanced assessment)
 **Max Tokens:** 500
@@ -412,21 +412,21 @@ Return JSON object with requested fields as keys and string values.
 **Rate Limit:** 5 per product per day
 **Estimated Cost:** ~$0.03–0.08 per call (Opus, but small context)
 
-### Layer 2 — Regulatory Context
+### Layer 2 – Regulatory Context
 
 | CRA Article | Requirement | How Category Recommendation Supports It |
 |---|---|---|
-| Art. 3(1)–(3) | Product categorisation — default, important (Class I/II), critical | Ensures products are correctly classified based on risk profile |
+| Art. 3(1)–(3) | Product categorisation: default, important (Class I/II), critical | Ensures products are correctly classified based on risk profile |
 | Art. 6 | Important products with digital elements (Annex III) | Validates whether product matches Annex III Class I/II criteria |
 | Art. 7 | Critical products with digital elements (Annex IV) | Validates whether product matches Annex IV critical criteria |
 
 **CRA category thresholds:**
-- 0.0–0.33: **default** — baseline CRA obligations (Art. 13, self-assessment module A)
-- 0.33–0.66: **important (Class I)** — intensified obligations, self-assessment or harmonised standard
-- 0.66–0.85: **important (Class II)** — third-party assessment required (Art. 32(3))
-- 0.85+: **critical** — maximum obligations, market surveillance registration (Art. 20)
+- 0.0–0.33: **default** – baseline CRA obligations (Art. 13, self-assessment module A)
+- 0.33–0.66: **important (Class I)** – intensified obligations, self-assessment or harmonised standard
+- 0.66–0.85: **important (Class II)** – third-party assessment required (Art. 32(3))
+- 0.85+: **critical** – maximum obligations, market surveillance registration (Art. 20)
 
-### Layer 3 — User Prompt (current, no system prompt)
+### Layer 3 – User Prompt (current, no system prompt)
 
 ```
 You are a CRA compliance expert. A product has been scored {score} / 1.0,
@@ -440,7 +440,7 @@ Deterministic factors: {attributeScores}
 
 Assess:
 1. Does the description reveal risk factors NOT captured by deterministic attributes?
-2. Should the score be adjusted UP or DOWN? By how much (±0.0 to ±0.2)?
+2. Should the score be adjusted UP or DOWN? By how much (+-0.0 to +-0.2)?
 3. What is your confidence (0.0–1.0)?
 
 Respond JSON: { "adjustmentApplied", "explainedReason", "confidence",
@@ -451,7 +451,7 @@ Respond JSON: { "adjustmentApplied", "explainedReason", "confidence",
 
 | Gap | Description | Impact |
 |---|---|---|
-| **No system prompt** | Only user prompt — misses quality standard injection point | Inconsistent tone and terminology |
+| **No system prompt** | Only user prompt, so quality standard injection point is missed | Inconsistent tone and terminology |
 | **No Annex III/IV reference** | Does not reference the specific product types listed in CRA Annexes III and IV | May miss regulatory classification triggers |
 | **No industry keyword matching** | Relies entirely on free-text description analysis | May miss implicit risk factors |
 
@@ -476,7 +476,7 @@ Respond JSON: { "adjustmentApplied", "explainedReason", "confidence",
 **Rate Limit:** (part of category recommendation limit)
 **Estimated Cost:** ~$0.03–0.08 per call
 
-### Layer 2 — Regulatory Context
+### Layer 2 – Regulatory Context
 
 | CRA Article | Requirement | How Validation Supports It |
 |---|---|---|
@@ -485,7 +485,7 @@ Respond JSON: { "adjustmentApplied", "explainedReason", "confidence",
 | Annex III | List of important product categories (Class I & II) | Reference for what products MUST be classified as important |
 | Annex IV | List of critical product categories | Reference for what products MUST be classified as critical |
 
-### Layer 3 — User Prompt (current, no system prompt)
+### Layer 3 – User Prompt (current, no system prompt)
 
 ```
 You are a CRA compliance expert reviewing an administrative change to risk rules.
@@ -507,7 +507,7 @@ Respond JSON: { "regulatoryAlignment", "reasoning", "suggestedCorrections",
 
 | Gap | Description | Impact |
 |---|---|---|
-| **No system prompt** | Only user prompt — misses quality standard injection | Inconsistent output |
+| **No system prompt** | Only user prompt, so quality standard injection is missed | Inconsistent output |
 | **No Annex III/IV product lists** | Doesn't reference statutory product classification lists | May approve changes that miscategorise listed products |
 
 ---
@@ -527,21 +527,21 @@ Respond JSON: { "regulatoryAlignment", "reasoning", "suggestedCorrections",
 
 ---
 
-## Gap Analysis Summary — P7 #38 & #39
+## Gap Analysis Summary – P7 #38 & #39
 
-### #38 — Prompt Engineering Topic Focus
+### #38 – Prompt Engineering Topic Focus
 
 | Gap | Description | Impact | Phase |
 |---|---|---|---|
 | **No quality standard preamble** | Each prompt independently specifies tone, language, and format rules | Inconsistent output quality | Phase 1 (this work) |
-| **Generic tech file prompt** | Same prompt for all 8 sections — no section-specific regulatory depth | Lower quality, generic output | Phase 2 |
-| **No obligation-specific depth** | Same prompt for all 19 obligations — no obligation-specific nuances | Misses regulatory detail | Phase 2 |
+| **Generic tech file prompt** | Same prompt for all 8 sections, with no section-specific regulatory depth | Lower quality, generic output | Phase 2 |
+| **No obligation-specific depth** | Same prompt for all 19 obligations, with no obligation-specific nuances | Misses regulatory detail | Phase 2 |
 | **No industry awareness** | No product-type context (IoT, SaaS, embedded, library, medical) | Generic risk language | Phase 3 |
-| **No structured output options** | Always prose — no checklists, action items, or structured formats | Less actionable | Phase 3 |
-| **No refinement/follow-up** | Each call is one-shot — no iterative improvement | Users can't refine output | Phase 3 |
+| **No structured output options** | Always prose, with no checklists or structured formats | Less actionable | Phase 3 |
+| **No refinement/follow-up** | Each call is one-shot, with no iterative improvement | Users can't refine output | Phase 3 |
 | **No EPSS/reachability in triage** | Missing exploit prediction and code reachability analysis | Higher false positive rate | Phase 3 |
 
-### #39 — Automation Wizards
+### #39 – Automation Wizards
 
 | Gap | Description | Impact | Phase |
 |---|---|---|---|

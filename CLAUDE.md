@@ -10,6 +10,8 @@ CRANIS2 is a SaaS platform that helps software organisations achieve and maintai
 
 **Full project context:** See `RESTART.md` for architecture, completed features, known issues, and current status.
 
+**Editorial standard:** All content (product copy, UI text, documentation, compliance content, generated summaries, Copilot output) must follow the rules in `docs/EDITORIAL-STANDARD.md`. This is a persistent standard, not a one-off guideline.
+
 ---
 
 ## Operating Protocol

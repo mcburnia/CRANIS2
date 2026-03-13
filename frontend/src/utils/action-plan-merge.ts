@@ -140,7 +140,7 @@ function getAdvisorySteps(craCategory: string): { afterStep: string; step: Omit<
       phase: 1,
       type: 'advisory',
       title: 'Consider penetration testing',
-      description: 'Independent security testing strengthens your risk assessment and provides evidence of due diligence under Annex I. This is performed externally — engage a qualified testing provider.',
+      description: 'Independent security testing strengthens your risk assessment and provides evidence of due diligence under Annex I. This is performed externally. Engage a qualified testing provider.',
       whyItMatters: 'Annex I Part I requires demonstrating that the product is designed and developed with an appropriate level of cybersecurity. Penetration testing provides independent evidence.',
       craReference: 'Annex I, Part I',
       complete: false,

@@ -18,7 +18,7 @@
 8. [Obligations Tracking](#8-obligations-tracking)
 9. [Technical Files](#9-technical-files)
 10. [ENISA Reporting](#10-enisa-reporting)
-11. [License Compliance](#11-license-compliance)
+11. [Licence Compliance](#11-licence-compliance)
 12. [IP Proof](#12-ip-proof)
 13. [Due Diligence Export](#13-due-diligence-export)
 14. [Repository Management](#14-repository-management)
@@ -58,7 +58,7 @@
 
 CRANIS2 is a compliance platform that helps software companies meet the requirements of two major pieces of EU legislation: the **Cyber Resilience Act (CRA)** and the **NIS2 Directive**.
 
-It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see. CRANIS2 reads dependency metadata from your repositories but never stores, analyses or modifies your source code. The platform automates seven compliance functions: SBOM management, vulnerability monitoring, license compliance, intellectual property proof, CRA technical documentation, ENISA reporting, and source code escrow.
+It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see. CRANIS2 reads dependency metadata from your repositories but never stores, analyses or modifies your source code. The platform automates seven compliance functions: SBOM management, vulnerability monitoring, licence compliance, intellectual property proof, CRA technical documentation, ENISA reporting, and source code escrow.
 
 ### Who This Guide Is For
 
@@ -258,7 +258,7 @@ The sidebar is organised into five groups:
 | Group | Pages |
 |-------|-------|
 | **Dashboard** | Dashboard |
-| **Compliance** | Products, Obligations, Technical Files, Vulnerability Reports, License Compliance, IP Proof, Due Diligence |
+| **Compliance** | Products, Obligations, Technical Files, Vulnerability Reports, Licence Compliance, IP Proof, Due Diligence |
 | **Source Code** | Repos, Contributors, Dependencies, Risk Findings |
 | **Billing** | Plans & Usage, Reports |
 | **Settings** | Organisation, Stakeholders, Audit Log, Marketplace |
@@ -345,7 +345,7 @@ To create a product, click the create button on the Products page. You will need
 
 ### Distribution Models
 
-The distribution model affects license compatibility analysis (see [Section 11: License Compliance](#11-license-compliance)):
+The distribution model affects licence compatibility analysis (see [Section 11: Licence Compliance](#11-licence-compliance)):
 
 | Model | Description |
 |-------|-------------|
@@ -371,7 +371,7 @@ Clicking on a product opens the detail page (`/products/:productId`), which has 
 
 **Risk Findings** -- Vulnerability findings specific to this product, with severity, affected dependency, and triage controls. Findings can be triaged as open, mitigated, or closed.
 
-**Dependencies** -- The full SBOM package list for this product. Each dependency shows its name, version, ecosystem (npm, PyPI, crates.io, etc.), license, and whether it is a direct or transitive dependency.
+**Dependencies** -- The full SBOM package list for this product. Each dependency shows its name, version, ecosystem (npm, PyPI, crates.io, etc.), licence, and whether it is a direct or transitive dependency.
 
 ### Editing and Deleting Products
 
@@ -392,7 +392,7 @@ Each product has a historical compliance timeline accessible at `/products/:prod
 The timeline provides a chronological view of all compliance-significant events for that product, including:
 
 - Vulnerability scan results (when scans ran, what was found)
-- License scan events
+- Licence scan events
 - Obligation status changes
 - ENISA report submissions
 - Technical file updates
@@ -434,13 +434,13 @@ Key characteristics:
 To configure escrow for a product, navigate to `/products/:productId/escrow`. From this page you can:
 
 - Enable or disable escrow for the product
-- Choose which artifact types to include in deposits:
+- Choose which artefact types to include in deposits:
 
 | Artifact Type | Description |
 |---------------|-------------|
 | SBOM (CycloneDX/SPDX) | The product's software bill of materials |
 | Vulnerability reports | Current vulnerability scan findings |
-| License audit | License compliance scan results |
+| Licence audit | Licence compliance scan results |
 | IP proof | RFC 3161 timestamp snapshots |
 | CRA documentation | Technical file content and obligation status |
 | Compliance timeline | Historical compliance event data |
@@ -624,58 +624,58 @@ If a vulnerability finding from a scan turns out to be actively exploited, you c
 
 ---
 
-## 11. License Compliance
+## 11. Licence Compliance
 
 ### Overview
 
-The License Compliance page (`/license-compliance`) provides a cross-product view of the open-source licenses in your dependency tree and their compatibility with your distribution model.
+The Licence Compliance page (`/license-compliance`) provides a cross-product view of the open-source licences in your dependency tree and their compatibility with your distribution model.
 
-### License Categories
+### Licence Categories
 
-CRANIS2 classifies every dependency's license into one of three categories:
+CRANIS2 classifies every dependency's licence into one of three categories:
 
 | Category | Licences | Implications |
 |----------|---------|-------------|
 | **Permissive** | MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Unlicense | No restrictions on distribution. Compatible with all distribution models. |
 | **Copyleft** | GPL-2.0, GPL-3.0, LGPL-2.1, LGPL-3.0, AGPL-3.0, MPL-2.0, SSPL-1.0 | Requires derivative works to be distributed under the same or compatible terms. Impact depends on distribution model and linking method. |
-| **Unknown / NOASSERTION** | No license declared, unrecognised license identifier | Requires manual review. Dependencies with no declared license may carry legal risk. |
+| **Unknown / NOASSERTION** | No licence declared, unrecognised licence identifier | Requires manual review. Dependencies with no declared licence may carry legal risk. |
 
 ### Distribution Model Impact
 
-Your product's distribution model (set when creating or editing a product -- see [Section 5: Products](#5-products)) directly affects which licenses are compatible. For example:
+Your product's distribution model (set when creating or editing a product -- see [Section 5: Products](#5-products)) directly affects which licences are compatible. For example:
 
 - A **proprietary binary** distribution is incompatible with GPL-licensed dependencies unless the dependency is dynamically linked (LGPL exception)
 - A **SaaS-hosted** product triggers network copyleft obligations under AGPL and SSPL
-- An **internal-only** product generally has no distribution-related license obligations
+- An **internal-only** product generally has no distribution-related licence obligations
 - A **library component** must consider the downstream consumer's distribution model
 
 ### Compatibility Matrix
 
-CRANIS2 includes a rules engine that evaluates every dependency's license against your product's distribution model and produces a verdict:
+CRANIS2 includes a rules engine that evaluates every dependency's licence against your product's distribution model and produces a verdict:
 
 | Verdict | Meaning |
 |---------|---------|
-| **Compatible** | The license is fully compatible with your distribution model |
-| **Incompatible** | The license conflicts with your distribution model -- action required |
+| **Compatible** | The licence is fully compatible with your distribution model |
+| **Incompatible** | The licence conflicts with your distribution model -- action required |
 | **Review Needed** | The compatibility is ambiguous or context-dependent -- manual review recommended |
 
-### Cross-License Conflicts
+### Cross-Licence Conflicts
 
-The compatibility engine also detects **14 known cross-license incompatibilities** based on FSF guidance. These are cases where two licenses in the same dependency tree conflict with each other (e.g. GPL-2.0-only and Apache-2.0 in some configurations).
+The compatibility engine also detects **14 known cross-licence incompatibilities** based on FSF guidance. These are cases where two licences in the same dependency tree conflict with each other (e.g. GPL-2.0-only and Apache-2.0 in some configurations).
 
 ### Network Copyleft Detection
 
-For SaaS products, CRANIS2 specifically checks for AGPL and SSPL licenses. These "network copyleft" licenses extend copyleft obligations to software accessed over a network, not just software that is distributed as a copy. If your product is distributed as `saas_hosted` and includes an AGPL dependency, it will be flagged.
+For SaaS products, CRANIS2 specifically checks for AGPL and SSPL licences. These "network copyleft" licences extend copyleft obligations to software accessed over a network, not just software that is distributed as a copy. If your product is distributed as `saas_hosted` and includes an AGPL dependency, it will be flagged.
 
 ### Waivers
 
-In some cases, you may determine that a license finding does not actually apply to your situation (for example, a test-only dependency that is not included in the distributed product). You can **waive** a finding and record your reasoning. Waived findings are retained in the audit trail but excluded from active compliance counts.
+In some cases, you may determine that a licence finding does not actually apply to your situation (for example, a test-only dependency that is not included in the distributed product). You can **waive** a finding and record your reasoning. Waived findings are retained in the audit trail but excluded from active compliance counts.
 
 ### Rechecking After Changes
 
-If you change a product's distribution model, the license compatibility verdicts may change. Use the recheck function to re-evaluate all findings against the new distribution model without triggering a full SBOM resync.
+If you change a product's distribution model, the licence compatibility verdicts may change. Use the recheck function to re-evaluate all findings against the new distribution model without triggering a full SBOM resync.
 
-A per-product scan trigger is also available to run a fresh license scan on demand.
+A per-product scan trigger is also available to run a fresh licence scan on demand.
 
 ---
 
@@ -714,7 +714,7 @@ The IP Proof page (`/ip-proof`) shows all timestamped snapshots for your product
 
 ### Automatic Creation
 
-IP proof snapshots are created automatically after every SBOM sync. The nightly SBOM auto-sync at 2 AM triggers a license scan, and the license scan triggers IP proof creation. This means your IP proof stays current without any manual action.
+IP proof snapshots are created automatically after every SBOM sync. The nightly SBOM auto-sync at 2 AM triggers a licence scan, and the licence scan triggers IP proof creation. This means your IP proof stays current without any manual action.
 
 ---
 
@@ -728,9 +728,9 @@ The Due Diligence page (`/due-diligence`) lets you generate a comprehensive, inv
 
 Select a product from the dropdown to see a preview of the report contents. The preview includes:
 
-- **Summary stat cards** -- total dependencies (direct and transitive), permissive license percentage, open vulnerability count, and CRA compliance progress
+- **Summary stat cards** -- total dependencies (direct and transitive), permissive licence percentage, open vulnerability count, and CRA compliance progress
 - **Report contents** -- descriptions of each file that will be included in the export
-- **Non-permissive dependencies table** -- a preview of dependencies with copyleft or unknown licenses (up to 20 shown, full list in the export)
+- **Non-permissive dependencies table** -- a preview of dependencies with copyleft or unknown licences (up to 20 shown, full list in the export)
 - **CRA obligations summary** -- a visual overview of obligation statuses (Met, In Progress, Not Started)
 
 ### Export Contents
@@ -739,11 +739,11 @@ Clicking **Download Due Diligence Package** generates a ZIP file containing:
 
 | File | Format | Description |
 |------|--------|-------------|
-| Due Diligence Report | PDF | Executive summary covering product details, dependency inventory, license compliance posture, vulnerability assessment, IP proof status, and CRA compliance progress |
-| Software Bill of Materials | CycloneDX 1.6 JSON | Machine-readable dependency inventory with package hashes, licenses, and supplier data |
-| License Findings | CSV | Complete list of dependencies with their licenses, categories, risk levels, compatibility verdicts, and waiver status |
+| Due Diligence Report | PDF | Executive summary covering product details, dependency inventory, licence compliance posture, vulnerability assessment, IP proof status, and CRA compliance progress |
+| Software Bill of Materials | CycloneDX 1.6 JSON | Machine-readable dependency inventory with package hashes, licences, and supplier data |
+| Licence Findings | CSV | Complete list of dependencies with their licences, categories, risk levels, compatibility verdicts, and waiver status |
 | Vulnerability Summary | JSON | All vulnerability findings with severities, affected packages, CVE identifiers, and fix versions |
-| Full License Texts | Text files | Complete license text for each non-permissive license found in the dependency tree |
+| Full Licence Texts | Text files | Complete licence text for each non-permissive licence found in the dependency tree |
 
 The ZIP filename follows the pattern `due-diligence-{product-name}-{date}.zip`.
 
@@ -832,7 +832,7 @@ CRANIS2 never stores your source code. During SBOM generation, repository conten
 SBOMs can be updated in two ways:
 
 - **Manual sync** -- Click the sync button on the product detail page or the Repos page to trigger an immediate SBOM regeneration.
-- **Automatic daily sync** -- The platform scheduler runs at 2 AM UTC and syncs all stale SBOMs. Only repositories that have received changes since the last sync are processed. After SBOM sync, license scanning and IP proof generation are triggered automatically.
+- **Automatic daily sync** -- The platform scheduler runs at 2 AM UTC and syncs all stale SBOMs. Only repositories that have received changes since the last sync are processed. After SBOM sync, licence scanning and IP proof generation are triggered automatically.
 
 ### Webhook-Driven Staleness
 
@@ -840,7 +840,7 @@ When configured, push events from GitHub, Codeberg, or Forgejo webhooks automati
 
 ### Disconnecting a Repository
 
-Disconnecting a repository from a product removes the live connection but preserves all previously generated compliance data -- the existing SBOM, vulnerability findings, license scan results, and IP proof snapshots remain intact. Only future syncs are stopped.
+Disconnecting a repository from a product removes the live connection but preserves all previously generated compliance data -- the existing SBOM, vulnerability findings, licence scan results, and IP proof snapshots remain intact. Only future syncs are stopped.
 
 ---
 
@@ -903,7 +903,7 @@ Each dependency is tagged as either **direct** (explicitly declared in your proj
 
 The Dependencies page is the foundation for two downstream compliance functions:
 
-- **License scanning** -- every dependency's licence is evaluated for compatibility with your distribution model. See [Section 11: License Compliance](#11-license-compliance).
+- **Licence scanning** -- every dependency's licence is evaluated for compatibility with your distribution model. See [Section 11: Licence Compliance](#11-licence-compliance).
 - **Vulnerability scanning** -- every dependency is checked against vulnerability databases. See [Section 17: Risk Findings](#17-risk-findings-vulnerability-management).
 
 ---
@@ -1202,7 +1202,7 @@ The audit log captures events across all compliance functions, including:
 - Obligation status changes
 - Stakeholder information updates
 - Technical file edits
-- License scan events
+- Licence scan events
 - Login and authentication events
 
 ### Viewing the Audit Log
@@ -1293,10 +1293,10 @@ CRANIS2 runs a set of background jobs on a fixed schedule. These processes maint
 | Time (UTC) | Job | Description |
 |------------|-----|-------------|
 | **1:00 AM** | Vulnerability database sync | Fetches the latest advisories from OSV (263,000+ entries) and CVEs from NVD (182,000+ entries). Updates the local vulnerability database. |
-| **2:00 AM** | SBOM auto-sync | Re-syncs all stale SBOMs (repositories where a push event has been received since the last sync). After sync, triggers license scanning and IP proof generation for affected products. |
+| **2:00 AM** | SBOM auto-sync | Re-syncs all stale SBOMs (repositories where a push event has been received since the last sync). After sync, triggers licence scanning and IP proof generation for affected products. |
 | **3:00 AM** | Platform vulnerability scan | Runs a comprehensive vulnerability scan across all SBOM components on the platform. Deduplicates findings and generates notifications for new discoveries. |
 | **4:00 AM** | Billing checks | Evaluates trial expiry dates and payment grace periods. Transitions organisations between billing states (trial, grace, read-only, suspended, cancelled) as appropriate. |
-| **5:00 AM** | Escrow deposits | Creates or updates escrow deposits for all products with escrow enabled. Pushes selected artifacts (SBOM, findings, compliance data) to the Forgejo escrow instance. |
+| **5:00 AM** | Escrow deposits | Creates or updates escrow deposits for all products with escrow enabled. Pushes selected artefacts (SBOM, findings, compliance data) to the Forgejo escrow instance. |
 | **Hourly** | CRA deadline checks | Monitors all open ENISA reports for approaching or overdue deadlines. Generates notifications at 12 hours, 4 hours, and 1 hour before a deadline, and again when a deadline becomes overdue. |
 
 ### Webhooks
@@ -1766,10 +1766,10 @@ CRANIS2 supports exporting SBOMs in two industry-standard formats:
 
 | Format | Version | Output | Description |
 |--------|---------|--------|-------------|
-| **CycloneDX** | 1.6 | JSON | OWASP standard for software bill of materials. Includes component metadata, licenses, supplier information, and package hashes. Widely adopted by security tooling and compliance frameworks. |
+| **CycloneDX** | 1.6 | JSON | OWASP standard for software bill of materials. Includes component metadata, licences, supplier information, and package hashes. Widely adopted by security tooling and compliance frameworks. |
 | **SPDX** | 2.3 | JSON | Linux Foundation standard for software package data exchange. Includes package identifiers, relationships, licence declarations, and file-level information. Required by several government procurement frameworks. |
 
-Both formats include **SHA-512 hash enrichment** for package integrity verification, enabling downstream consumers to verify that the packages listed in the SBOM match the actual artifacts in use.
+Both formats include **SHA-512 hash enrichment** for package integrity verification, enabling downstream consumers to verify that the packages listed in the SBOM match the actual artefacts in use.
 
 ---
 

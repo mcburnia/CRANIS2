@@ -1,9 +1,9 @@
-# CRANIS2 — Low-Level Design (LLD)
+# CRANIS2 – Low-Level Design (LLD)
 
 **Document Version:** 3.0
 **Last Updated:** 2026-03-07
 **Author:** Andi McBurnie, Loman Cavendish Ltd
-**CRA Reference:** Annex VII Par. 2(a) — System Architecture & Component Design
+**CRA Reference:** Annex VII Par. 2(a), System Architecture & Component Design
 
 > This document replaces the original microservices-based LLD (`OLD/LLD.md`). It describes the **as-built** architecture of CRANIS2 and serves as design documentation for CRA Annex VII compliance. For the development lifecycle, see `docs/SDLC.md`.
 
@@ -101,12 +101,12 @@ Cloudflare Tunnel (HTTPS termination, DDoS protection)
 
 The Express application initialises in this order:
 
-1. **Database connections** — PostgreSQL pool + Neo4j driver
-2. **Global middleware** — CORS, JSON body parser (1MB limit), static file serving
-3. **Billing gate** — Peeks JWT from Authorization header, checks org billing status, blocks write operations (POST/PUT/DELETE) for `read_only`, `suspended`, or `cancelled` organisations
-4. **Route mounting** — Static routes mounted before parameterised (Express 5 requirement)
-5. **Scheduler start** — Cron jobs initialised
-6. **Server listen** — Port 3001
+1. **Database connections.** PostgreSQL pool + Neo4j driver
+2. **Global middleware.** CORS, JSON body parser (1MB limit), static file serving
+3. **Billing gate.** Peeks JWT from Authorization header, checks org billing status, blocks write operations (POST/PUT/DELETE) for `read_only`, `suspended`, or `cancelled` organisations
+4. **Route mounting.** Static routes mounted before parameterised (Express 5 requirement)
+5. **Scheduler start.** Cron jobs initialised
+6. **Server listen.** Port 3001
 
 ### 4.2 Route Files
 
@@ -174,7 +174,7 @@ Layer 4: requireApiKey (middleware/)
   ├── Extracts Bearer token from Authorization header
   ├── SHA-256 hashes token, looks up in api_keys table
   ├── Validates scopes against required scope for endpoint
-  └── Sets req.orgId, req.apiKeyId — used by /api/v1/* routes
+  └── Sets req.orgId, req.apiKeyId; used by /api/v1/* routes
 
 Layer 5: requirePlan (middleware/)
   ├── Checks org_billing.plan against required tier (e.g. 'pro')
@@ -182,27 +182,27 @@ Layer 5: requirePlan (middleware/)
   └── Returns 403 with upgrade prompt if plan insufficient
 
 Layer 6: AI Copilot middleware chain (copilotLimits.ts)
-  ├── requireTokenBudget() — checks org monthly token usage against limit (429 if exceeded)
-  └── requireCopilotRateLimit() — per-endpoint rate limiting via copilot_usage table
+  ├── requireTokenBudget(): checks org monthly token usage against limit (429 if exceeded)
+  └── requireCopilotRateLimit(): per-endpoint rate limiting via copilot_usage table
 ```
 
 ### 4.4 Services
 
 | File | Purpose | Key Exports |
 |------|---------|-------------|
-| `scheduler.ts` | Cron job orchestration | `startScheduler()` — registers all timed jobs |
+| `scheduler.ts` | Cron job orchestration | `startScheduler()`: registers all timed jobs |
 | `repo-provider.ts` | Multi-provider abstraction | `PROVIDER_REGISTRY`, `getRepo()`, `getContributors()`, `getLanguages()`, `getReleases()`, `getTags()`, `validatePAT()`, `generateSBOMFromLockfiles()` |
-| `sbom-service.ts` | SBOM document generation | `generateCycloneDX(orgId, productId)` — builds CycloneDX 1.6 from Neo4j |
-| `hash-enrichment.ts` | Package hash fetching | `enrichDependencyHashes(productId, packages)` — npm/PyPI registry lookups |
+| `sbom-service.ts` | SBOM document generation | `generateCycloneDX(orgId, productId)`: builds CycloneDX 1.6 from Neo4j |
+| `hash-enrichment.ts` | Package hash fetching | `enrichDependencyHashes(productId, packages)`: npm/PyPI registry lookups |
 | `due-diligence.ts` | Export package builder | `gatherReportData()`, `generatePDF()`, `generateFindingsCSV()`, `generateDueDiligenceZIP()` |
 | `vulnerability-scanner.ts` | Platform vuln scanning | Matches SBOM packages against vuln DB, writes findings |
 | `vuln-db-sync.ts` | Vulnerability feed sync | OSV + NVD database synchronisation |
 | `escrow-service.ts` | Source code escrow | Forgejo repository deposits via internal Docker network |
-| `telemetry.ts` | Event recording | `recordEvent()`, `extractRequestData()` — writes to user_events |
+| `telemetry.ts` | Event recording | `recordEvent()`, `extractRequestData()`. Writes to user_events |
 | `email.ts` | Transactional email | Resend API integration, from `info@poste.cranis2.com` |
 | `alert-emails.ts` | Compliance alert emails | 6 alert types (vuln found, scan failed, SBOM stale, compliance gaps, CRA deadline, support expiry) |
 | `billing-emails.ts` | Billing lifecycle emails | Trial expiry, payment failure, subscription change notifications |
-| `obligation-engine.ts` | Auto-intelligence | `computeDerivedStatuses()`, `ensureObligations()` — 19 CRA obligations with derived statuses |
+| `obligation-engine.ts` | Obligation automation | `computeDerivedStatuses()`, `ensureObligations()`. 19 CRA obligations with derived statuses |
 | `copilot.ts` | AI Copilot service | Claude API integration for suggest, triage, risk assessment, incident draft |
 | `copilot-cache.ts` | AI response caching | SHA-256 context hashing, 24h TTL, `copilot_cache` table |
 | `category-recommendation.ts` | CRA category scoring | Deterministic 4-attribute risk scoring for product classification |
@@ -211,7 +211,7 @@ Layer 6: AI Copilot middleware chain (copilotLimits.ts)
 | `supplier-due-diligence.ts` | Supplier DD service | Questionnaire generation, npm/PyPI/crates.io enrichment, PDF/CSV export |
 | `compliance-gaps.ts` | Gap analysis | Deterministic compliance gap computation and prioritised action list |
 | `trello.ts` | Trello integration | Card creation, deduplication, resolution comments, board list management |
-| `webhook.ts` | Webhook management | `ensureWebhook()`, `removeWebhooksForUser()` — auto-register push webhooks |
+| `webhook.ts` | Webhook management | `ensureWebhook()`, `removeWebhooksForUser()`. Auto-registers push webhooks |
 | `license-compatibility.ts` | Licence rules engine | 14 cross-licence incompatibilities, distribution model analysis |
 | `license-scanner.ts` | Licence scanning | SPDX classification, copyleft detection, waiver tracking |
 | `license-enrichment.ts` | Licence metadata | Registry lookups for licence details |
@@ -222,7 +222,7 @@ Layer 6: AI Copilot middleware chain (copilotLimits.ts)
 | `api-keys.ts` | API key service | Key generation, SHA-256 hashing, scope validation |
 | `billing.ts` | Billing service | Stripe integration, plan management, `ensureStripePrices()` |
 
-### 4.5 SBOM Generation — Three-Tier Fallback
+### 4.5 SBOM Generation – Three-Tier Fallback
 
 ```
 Tier 1: API SBOM (GitHub-only)
@@ -243,7 +243,7 @@ Tier 3: Source Import Scanning (all providers)
       └── Inferred dependencies (no version pinning)
 ```
 
-**Provider support:** GitHub, Codeberg, Gitea, Forgejo, GitLab — Tier 2 and 3 work with all providers via `getFileContent()` / `listRepoFiles()` dispatch.
+**Provider support:** GitHub, Codeberg, Gitea, Forgejo, GitLab. Tier 2 and 3 work with all providers via `getFileContent()` / `listRepoFiles()` dispatch.
 
 ### 4.6 Database Layer
 
@@ -266,7 +266,7 @@ Tier 3: Source Import Scanning (all providers)
 
 ### 5.1 Build & Serving
 
-- **Source:** `frontend/src/` — TypeScript + React + CSS
+- **Source:** `frontend/src/`, TypeScript + React + CSS
 - **Build:** `npm run build` → Vite outputs to `frontend/dist/`
 - **Serving:** NGINX container serves `dist/` as static assets
 - **SPA routing:** NGINX `try_files $uri $uri/ /index.html` for client-side routing
@@ -351,7 +351,7 @@ Only one section expanded at a time (`expandedSection` state):
 
 - **Auth:** `useAuth()` context → `{ user, loading, isPlatformAdmin }`
 - **Session:** JWT stored in `localStorage.getItem('session_token')`
-- **Page state:** Component-local `useState` / `useEffect` — no global store
+- **Page state:** Component-local `useState` / `useEffect`. No global store
 - **API calls:** Native `fetch()` with Bearer token header
 
 ### 5.6 CSS Conventions
@@ -386,7 +386,7 @@ Only one section expanded at a time (`expandedSection` state):
 | `users` | User accounts | id (UUID), email, password_hash, org_id (UUID), role, is_platform_admin, language |
 | `user_events` | Telemetry | id, user_id, email, event_type, ip_address, user_agent, metadata (JSONB) |
 | `org_billing` | Billing state | org_id (VARCHAR), stripe_customer_id, plan (standard/pro), status, trial_ends_at, copilot_token_limit |
-| `platform_settings` | Admin config | key (VARCHAR PK), value (TEXT) — pricing, token budgets, Stripe price IDs |
+| `platform_settings` | Admin config | key (VARCHAR PK), value (TEXT). Stores pricing, token budgets, Stripe price IDs |
 | `feedback` | User feedback | id, user_id, category (bug/feature/feedback), subject, body, status, page_url |
 
 **SBOM & Vulnerability tables:**
@@ -438,11 +438,11 @@ Only one section expanded at a time (`expandedSection` state):
 |-------|---------|-------------|
 | `supplier_questionnaires` | DD questionnaires | id, product_id, org_id, dependency_purl, template_key, status, created_at |
 | `supplier_responses` | Questionnaire answers | id, questionnaire_id, question_key, response (TEXT), updated_at |
-| `supplier_enrichment_cache` | Registry metadata | id, purl, ecosystem, metadata (JSONB), fetched_at — 30-day TTL |
+| `supplier_enrichment_cache` | Registry metadata | id, purl, ecosystem, metadata (JSONB), fetched_at. 30-day TTL |
 
 **Key constraints:**
-- `org_billing.org_id` is VARCHAR(255), `users.org_id` is UUID — require `::text` cast in JOINs
-- `user_events` has no `org_id` — join through `users` table
+- `org_billing.org_id` is VARCHAR(255), `users.org_id` is UUID; requires `::text` cast in JOINs
+- `user_events` has no `org_id`; join through `users` table
 - `repo_connections` unique on `(user_id, provider)`
 
 ### 6.2 Neo4j Graph Model
@@ -470,7 +470,7 @@ Only one section expanded at a time (`expandedSection` state):
 - **Internal URL:** `http://forgejo:3000` (Docker network)
 - **External URL:** `https://escrow.cranis2.dev` (port 3003)
 - **Separate Postgres DB:** `forgejo` database, user `forgejo`
-- **Purpose:** European data sovereignty — source code deposits hosted in Switzerland (Infomaniak)
+- **Purpose:** European data sovereignty. Source code deposits hosted in Switzerland (Infomaniak)
 - **Deposit flow:** Scheduler (5 AM UTC) pushes latest product repo content to Forgejo mirror repository
 - **Retention:** Forgejo repos preserved even after product deletion (legal retention)
 
@@ -505,7 +505,7 @@ Only one section expanded at a time (`expandedSection` state):
 
 - **From address:** `info@poste.cranis2.com`
 - **Uses:** Registration verification, invitation emails, notification digests
-- **Environment:** `DEV_SKIP_EMAIL` is OFF on server — real emails sent
+- **Environment:** `DEV_SKIP_EMAIL` is OFF on server. Real emails are sent
 
 ### 7.4 Vulnerability Intelligence
 
@@ -701,4 +701,4 @@ The original LLD (`OLD/LLD.md`) was written before implementation began and desc
 | Auth | OAuth/OIDC + MFA | JWT session tokens + bcrypt |
 | SBOM storage | Metadata + S3 artefacts | PostgreSQL metadata + Neo4j graph |
 
-**Rationale for divergence:** CRANIS2 is developed and operated by a single developer. The monolithic architecture reduces operational complexity while maintaining the same functional capabilities. The microservices approach would have required Kubernetes expertise, service mesh configuration, and distributed tracing — all inappropriate for the current scale and team size. The architecture can be decomposed into services if scale demands it in the future.
+**Rationale for divergence:** CRANIS2 is developed and operated by a single developer. The monolithic architecture reduces operational complexity while maintaining the same functional capabilities. The microservices approach would have required Kubernetes expertise, service mesh configuration, and distributed tracing, none of which suit the current scale and team size. The architecture can be decomposed into services if scale demands it in the future.

@@ -1,9 +1,9 @@
-# CRANIS2 — Software Development Lifecycle (SDLC)
+# CRANIS2 – Software Development Lifecycle (SDLC)
 
 **Document Version:** 1.1
 **Last Updated:** 2026-03-07
 **Author:** Andi McBurnie, Loman Cavendish Ltd
-**CRA Reference:** Annex VII Par. 2(a) — Design & Development Process
+**CRA Reference:** Annex VII Par. 2(a) – Design & Development Process
 
 ---
 
@@ -34,16 +34,16 @@ The development lifecycle prioritises:
 | Reverse Proxy | NGINX | Alpine |
 | Containerisation | Docker + Docker Compose | Latest |
 | Public Access | Cloudflare Tunnel | Latest |
-| Email | Resend API | — |
-| Billing | Stripe API | — |
-| Icons | Lucide React | — |
+| Email | Resend API | – |
+| Billing | Stripe API | – |
+| Icons | Lucide React | – |
 | Charts | Recharts | 3.7 |
 
 ### 2.2 Development Tools
 
 | Tool | Purpose |
 |------|---------|
-| Claude Code (AI) | AI-assisted development — planning, code generation, testing, debugging |
+| Claude Code (AI) | AI-assisted development, including planning, code generation, testing, and debugging |
 | Claude CoWork (AI) | Browser-based UI testing and compliance data entry |
 | Git + GitHub | Version control and remote repository |
 | SSH Tunnel | Secure access to development server |
@@ -83,7 +83,7 @@ The development lifecycle prioritises:
    └─> Browser-based testing via CoWork for UI changes
 
 4. BUILD
-   └─> Frontend: `npm run build` (Vite — content-hashed assets)
+   └─> Frontend: `npm run build` (Vite, content-hashed assets)
    └─> Backend: `tsc` (TypeScript to ESM JavaScript)
 
 5. DEPLOY
@@ -159,12 +159,12 @@ Docker Compose manages 6 production services:
 
 | Service | Image | Memory Limit | Health Check |
 |---------|-------|-------------|-------------|
-| NGINX | nginx:alpine | 64MB | — |
-| Backend | Custom (Node 22) | 256MB | — |
+| NGINX | nginx:alpine | 64MB | – |
+| Backend | Custom (Node 22) | 256MB | – |
 | PostgreSQL | postgres:16-alpine | 512MB | `pg_isready` |
 | Neo4j | neo4j:5-community | 512MB | `wget localhost:7474` |
-| Forgejo | forgejo:10 | 256MB | — |
-| Test Runner | Custom | 512MB | — |
+| Forgejo | forgejo:10 | 256MB | – |
+| Test Runner | Custom | 512MB | – |
 
 All services communicate via the `cranis2_net` Docker bridge network. Backend waits for Postgres and Neo4j health checks before starting.
 
@@ -184,16 +184,16 @@ All services communicate via the `cranis2_net` Docker bridge network. Backend wa
 
 | Category | Files | Tests | Coverage |
 |----------|-------|-------|----------|
-| Route Tests | 33 | 450+ | All API endpoints — CRUD, auth, validation, error handling (including AI Copilot, public API, integrations) |
+| Route Tests | 33 | 450+ | All API endpoints, covering CRUD, auth, validation, and error handling (including AI Copilot, public API, integrations) |
 | Security Tests | 6 | 150+ | XSS injection, SQL injection, CSRF, auth bypass, rate limiting, session expiry |
 | Break/Adversarial Tests | 9 | 188+ | Oversized inputs, rapid double-submit, browser state, empty states, edge cases |
 | Webhook Tests | 3 | 39 | GitHub, Codeberg/Forgejo, Stripe webhook signature verification and processing |
 | Integration Tests | 8 | 120+ | E2E Tier 3 import scanning, PAT auth flows, cross-service workflows, MCP server |
 | **Total** | **65** | **1126+** | |
 
-Additionally:
+Separate test suites run outside Vitest:
 - **SBOM Parser Unit Tests:** 713 tests (236 lockfile + 416 language + 61 SBOM mock)
-- **E2E Tests (Playwright):** ~280 tests — browser-based UI testing
+- **E2E Tests (Playwright):** ~280 tests for browser-based UI testing
 
 ### 5.3 Test Execution
 
@@ -265,11 +265,11 @@ node_modules/.bin/vitest run --config vitest.config.ts
 ### 6.3 Infrastructure as Code
 
 All infrastructure is defined in version-controlled files:
-- `docker-compose.yml` — Container orchestration
-- `backend/Dockerfile` — Backend build
-- `nginx/default.conf` — Reverse proxy configuration
-- `frontend/vite.config.ts` — Frontend build configuration
-- `backend/tsconfig.json` — TypeScript compilation
+- `docker-compose.yml` for container orchestration
+- `backend/Dockerfile` for the backend build
+- `nginx/default.conf` for reverse proxy configuration
+- `frontend/vite.config.ts` for frontend build configuration
+- `backend/tsconfig.json` for TypeScript compilation
 
 Cloudflare Tunnel configuration (`~/.cloudflared/config.yml`) is maintained on the server outside the repository.
 
@@ -311,7 +311,7 @@ The backend scheduler runs automated maintenance tasks:
 | Time (UTC) | Job | Description |
 |-----------|-----|------------|
 | 1:00 AM | Vulnerability DB Sync | Fetches latest CVEs from OSV and NVD databases |
-| 2:00 AM | SBOM Auto-Sync | Re-syncs stale SBOMs, triggers license scan and IP proof |
+| 2:00 AM | SBOM Auto-Sync | Re-syncs stale SBOMs, triggers licence scan and IP proof |
 | 3:00 AM | Platform Vulnerability Scan | Matches dependencies against vulnerability database |
 | 4:00 AM | Billing Checks | Trial expiry warnings and payment grace period enforcement |
 | 5:00 AM | Escrow Deposits | Automated source code deposits to Forgejo for all enabled products |
@@ -390,11 +390,11 @@ CRANIS2 uses date-based semantic versioning: `YYYY.MM.DD.NNNN`
 ### 10.3 Traceability
 
 Every change is traceable through:
-1. **Git commit history** — who, when, what, why
-2. **Audit log** — user actions within the platform (`/audit-log`)
-3. **User events** — all significant API actions recorded in Postgres
-4. **Compliance timeline** — per-product history of compliance events
-5. **Escrow deposits** — daily snapshots of source code in Forgejo
+1. **Git commit history** recording who, when, what, and why
+2. **Audit log** of user actions within the platform (`/audit-log`)
+3. **User events** table recording all significant API actions in Postgres
+4. **Compliance timeline** with per-product history of compliance events
+5. **Escrow deposits** providing daily snapshots of source code in Forgejo
 
 ---
 
@@ -432,14 +432,14 @@ The SDLC is designed to produce the evidence required by the CRA:
 
 | CRA Requirement | SDLC Evidence |
 |----------------|---------------|
-| Annex VII Par. 2(a) — Design & development | This document, HLD.md, architecture in technical files |
-| Annex VII Par. 2(b) — Vulnerability handling | Daily vuln scanning, ENISA reporting workflow, security update policy |
-| Annex VII Par. 3 — Risk assessment | Threat model, 13 Annex I requirements addressed in technical file |
-| Annex VII Par. 6 — Test reports | 1126+ automated tests, 713 parser tests, ~280 E2E tests |
-| Article 13(6) — Vulnerability handling | Automated scanning, security update within 24 hours |
-| Article 13(11) — SBOM | Auto-generated from source repository |
-| Article 13(12) — Technical documentation | Technical file maintained within CRANIS2 platform |
-| Article 14 — Vulnerability reporting | ENISA reporting workflow with 24-hour initial notification |
+| Annex VII Par. 2(a) – Design & development | This document, HLD.md, architecture in technical files |
+| Annex VII Par. 2(b) – Vulnerability handling | Daily vuln scanning, ENISA reporting workflow, security update policy |
+| Annex VII Par. 3 – Risk assessment | Threat model, 13 Annex I requirements addressed in technical file |
+| Annex VII Par. 6 – Test reports | 1126+ automated tests, 713 parser tests, ~280 E2E tests |
+| Article 13(6) – Vulnerability handling | Automated scanning, security update within 24 hours |
+| Article 13(11) – SBOM | Auto-generated from source repository |
+| Article 13(12) – Technical documentation | Technical file maintained within CRANIS2 platform |
+| Article 14 – Vulnerability reporting | ENISA reporting workflow with 24-hour initial notification |
 
 ---
 

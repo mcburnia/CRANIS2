@@ -1,4 +1,4 @@
-# CRANIS2 — Capabilities, Benefits & Safeguards
+# CRANIS2 \u2013 Capabilities, Benefits & Safeguards
 
 *A comprehensive overview for due diligence and critical evaluation.*
 
@@ -8,9 +8,9 @@
 
 Two major pieces of EU legislation are fundamentally changing the software industry:
 
-**The Cyber Resilience Act (CRA)** — Entered into force December 2024. Any product containing digital elements sold in the EU must meet cybersecurity requirements, carry a CE mark, and maintain ongoing compliance. This is not optional. Penalties reach EUR 15 million or 2.5% of global turnover.
+**The Cyber Resilience Act (CRA).** Entered into force December 2024. Any product containing digital elements sold in the EU must meet cybersecurity requirements, carry a CE mark, and maintain ongoing compliance. This is not optional. Penalties reach EUR 15 million or 2.5% of global turnover.
 
-**The NIS2 Directive** — Already being transposed into national law. Organisations operating critical infrastructure must demonstrate security baselines.
+**The NIS2 Directive.** Already being transposed into national law. Organisations operating critical infrastructure must demonstrate security baselines.
 
 The compliance timeline is tight:
 
@@ -19,30 +19,30 @@ The compliance timeline is tight:
 | CRA reporting obligations begin | September 2026 |
 | Full CRA compliance required | December 2027 |
 
-Most software companies — especially SMEs — have no tooling for this. They face a choice between expensive consultants, manual spreadsheets, or non-compliance. CRANIS2 is the tooling answer.
+Most software companies, especially SMEs, have no tooling for this. They face a choice between expensive consultants, manual spreadsheets, or non-compliance. CRANIS2 is the tooling answer.
 
 ---
 
 ## 2. What CRANIS2 Actually Does
 
-CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, Gitea, Forgejo, or GitLab (including self-hosted instances) — and automatically builds compliance evidence from dependency metadata. It reads import statements but never stores, analyses or modifies source code in any way. It automates core compliance functions across three capability tiers:
+CRANIS2 connects to a company's source code repositories (GitHub, Codeberg, Gitea, Forgejo, and GitLab, including self-hosted instances) and automatically builds compliance evidence from dependency metadata. It reads import statements but never stores, analyses or modifies source code in any way. It automates core compliance functions across three capability tiers:
 
 ### 2.1 Software Bill of Materials (SBOM)
 
-**What:** Automatically captures and maintains a complete inventory of every software component in a product — direct dependencies and transitive dependencies (dependencies of dependencies).
+**What:** Automatically captures and maintains a complete inventory of every software component in a product, covering both direct dependencies and transitive dependencies (dependencies of dependencies).
 
 **Why it matters:** The CRA explicitly requires manufacturers to provide SBOMs. Customers and regulators will expect them in standard formats. Creating and maintaining these manually is impractical for any non-trivial codebase.
 
 **How it works:**
 - Three-tier dependency detection with automatic fallback:
-  - **Tier 1 (API):** Calls the repository provider's dependency graph API (GitHub only) — fastest path
-  - **Tier 2 (Lockfile Parsing):** Fetches and parses lockfiles from the repository — 28 lockfile formats supported (package-lock.json, yarn.lock, Cargo.lock, go.sum, Gemfile.lock, poetry.lock, and more)
-  - **Tier 3 (Import Scanning):** Reads source files to detect import/require statements — 26 language plugins (Python, JavaScript/TypeScript, Go, Rust, C/C++, Ruby, Java, PHP, and more). Source files are read transiently and immediately discarded — nothing is stored.
+  - **Tier 1 (API):** Calls the repository provider's dependency graph API (GitHub only). Fastest path.
+  - **Tier 2 (Lockfile Parsing):** Fetches and parses lockfiles from the repository. 28 lockfile formats supported (package-lock.json, yarn.lock, Cargo.lock, go.sum, Gemfile.lock, poetry.lock, and more).
+  - **Tier 3 (Import Scanning):** Reads source files to detect import/require statements. 26 language plugins (Python, JavaScript/TypeScript, Go, Rust, C/C++, Ruby, Java, PHP, and more). Source files are read transiently and immediately discarded. Nothing is stored.
 - Stores dependencies in a graph database (Neo4j) with relationship tracking
 - Enriches each dependency with cryptographic hashes from package registries (npm, PyPI) for integrity verification
-- Exports in both CycloneDX 1.6 and SPDX 2.3 formats — the two industry standards
+- Exports in both CycloneDX 1.6 and SPDX 2.3 formats (the two industry standards)
 - Auto-syncs daily at 2 AM for any products with changes; webhooks from GitHub, Codeberg, and Forgejo flag stale SBOMs in real time
-- Works with all five supported providers — Tiers 2 and 3 are provider-agnostic
+- Works with all five supported providers. Tiers 2 and 3 are provider-agnostic
 
 ### 2.2 Vulnerability Monitoring
 
@@ -78,14 +78,14 @@ CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, G
 
 **What:** Creates cryptographically timestamped snapshots of the codebase composition using RFC 3161, providing independently verifiable proof of authorship and prior art.
 
-**Why it matters:** In IP disputes, patent claims, or escrow release scenarios, you need provable evidence of what your software contained at a specific point in time. A regular backup is not legally sufficient — it can be backdated.
+**Why it matters:** In IP disputes, patent claims, or escrow release scenarios, you need provable evidence of what your software contained at a specific point in time. A regular backup is not legally sufficient; it can be backdated.
 
 **How it works:**
 - Generates a SHA-256 hash of the codebase composition (dependency graph, not source code)
 - Submits the hash to an external Time Stamping Authority (FreeTSA.org) using the RFC 3161 protocol
 - The TSA returns a signed timestamp token that cryptographically binds the hash to a specific moment in time
 - This is recognised under the EU eIDAS Regulation (910/2014) as legally admissible evidence
-- Automatically created after every SBOM sync — no manual action needed
+- Automatically created after every SBOM sync. No manual action needed
 
 ### 2.5 CRA Technical File (Annex VII)
 
@@ -97,10 +97,10 @@ CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, G
 - Eight structured sections corresponding to CRA Annex VII requirements
 - Inline editors for each section with guidance text explaining what is needed
 - **Auto-population** suggests content for four key sections based on platform data:
-  - **Product Description** — pre-fills product name, CRA category, repository URL, and deployment guidance
-  - **Vulnerability Handling** — summarises SBOM status (package count, staleness), scan history, and open findings
-  - **Standards Applied** — suggests harmonised standards (EN 18031-1/2/3, ETSI EN 303 645, ISO/IEC 15408) based on CRA category classification
-  - **Test Reports** — lists all completed vulnerability scans with dates, tools, and finding counts
+  - **Product Description:** pre-fills product name, CRA category, repository URL, and deployment guidance
+  - **Vulnerability Handling:** summarises SBOM status (package count, staleness), scan history, and open findings
+  - **Standards Applied:** suggests harmonised standards (EN 18031-1/2/3, ETSI EN 303 645, ISO/IEC 15408) based on CRA category classification
+  - **Test Reports:** lists all completed vulnerability scans with dates, tools, and finding counts
 - Per-product, versioned documentation with status tracking (not started / in progress / complete)
 - Annex I Part I checklist with 13 essential requirements and evidence fields
 - Cross-product overview dashboard showing completion status
@@ -135,7 +135,7 @@ CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, G
 - EU27 CSIRT country selection for jurisdiction routing
 - Traffic Light Protocol (TLP) classification for information sensitivity
 - Hourly deadline monitoring with escalating alerts (12h, 4h, 1h before, then overdue)
-- Can auto-populate from a vulnerability finding — one click to initiate a report
+- Can auto-populate from a vulnerability finding. One click to initiate a report
 - Stages are submitted individually with audit trail (who submitted, when)
 - Dashboard showing active reports, overdue count, next deadline
 
@@ -149,14 +149,14 @@ CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, G
 - Opt-in, configured per product
 - Source code is deposited to a self-hosted Forgejo instance within the CRANIS2 infrastructure
 - Daily automated deposits at 5 AM UTC ensure the escrow is always current
-- European data sovereignty — hosted in Switzerland (Infomaniak)
+- European data sovereignty, hosted in Switzerland (Infomaniak)
 - Release model is defined by the manufacturer: open-source publication or private copies to designated recipients
 - Escrow deposits are preserved even after product deletion (legal retention)
 - Entirely under the manufacturer's control
 
 ### 2.9 AI Intelligence (Pro Plan)
 
-CRANIS2 includes an AI intelligence layer powered by Claude (Anthropic), available on the Pro plan. The AI only receives compliance metadata — it never has access to source code.
+CRANIS2 includes an AI intelligence layer powered by Claude (Anthropic), available on the Pro plan. The AI only receives compliance metadata; it never has access to source code.
 
 | Capability | Purpose |
 |---|---|
@@ -166,15 +166,15 @@ CRANIS2 includes an AI intelligence layer powered by Claude (Anthropic), availab
 | **AI Incident Report Drafter** | Pre-populates ENISA Article 14 report stages (early warning, notification, final report) with contextually appropriate content. Non-destructive merge preserves existing text. Uses linked findings and prior stages for continuity. |
 | **CRA Category Recommender** | Deterministic 4-attribute risk scoring (network, data sensitivity, privileges, safety) plus AI augmentation for a second opinion. Admin-configurable override rules with audit trail. |
 
-**Cost protection:** Three-layer system — per-organisation monthly token budget (default 500K, admin-configurable), per-endpoint rate limits, and 24-hour response caching. Usage is tracked on the Billing page.
+**Cost protection:** Three-layer system. Per-organisation monthly token budget (default 500K, admin-configurable), per-endpoint rate limits, and 24-hour response caching. Usage is tracked on the Billing page.
 
 ### 2.10 Supplier Due Diligence (All Plans)
 
 | Capability | Purpose |
 |---|---|
-| **Supplier Questionnaires** | Template-based questionnaires for dependency suppliers, derived from CRA requirements. Deterministic — no AI involved. |
+| **Supplier Questionnaires** | Template-based questionnaires for dependency suppliers, derived from CRA requirements. Deterministic; no AI involved. |
 | **Supplier Enrichment** | Automatic metadata enrichment from npm, PyPI, and crates.io registries (maintainer details, licence, download counts, last publish date). Shared 30-day Postgres cache. |
-| **Compliance Gap Narrator** | "Next Steps" card on each product's Overview tab. Prioritised action list derived from obligations, technical file progress, scan coverage, SBOM freshness, and stakeholder completeness. Deterministic — no AI. |
+| **Compliance Gap Narrator** | "Next Steps" card on each product's Overview tab. Prioritised action list derived from obligations, technical file progress, scan coverage, SBOM freshness, and stakeholder completeness. Deterministic; no AI. |
 | **Export** | PDF and CSV export of supplier due diligence data for audit and procurement review. |
 
 ### 2.11 Public API & External Integrations (Pro Plan)
@@ -191,24 +191,24 @@ CRANIS2 includes an AI intelligence layer powered by Claude (Anthropic), availab
 
 **What:** Generates cryptographically signed, tamper-evident compliance snapshots that bundle the complete state of a product's compliance evidence into a single archive, stored in cold storage for CRA-mandated 10-year retention.
 
-**Why it matters:** CRA Art. 13(10) requires technical documentation to be retained for at least 10 years after a product is placed on the market, or for the duration of the support period, whichever is longer. Simply keeping files on a server is not sufficient — regulators expect evidence to be tamper-evident, timestamped, and independently verifiable. The compliance evidence vault provides this with full automation.
+**Why it matters:** CRA Art. 13(10) requires technical documentation to be retained for at least 10 years after a product is placed on the market, or for the duration of the support period, whichever is longer. Simply keeping files on a server is not sufficient. Regulators expect evidence to be tamper-evident, timestamped, and independently verifiable. The compliance evidence vault provides this with full automation.
 
 **How it works:**
-- **Snapshot generation** — bundles SBOM, vulnerability scan results, licence findings, technical file sections, obligations, and metadata into a single compliance archive
-- **RFC 3161 timestamping** — each snapshot is submitted to an external Time Stamping Authority, providing legally admissible proof of when the evidence existed
-- **Ed25519 signing** — each snapshot is digitally signed with a platform key, ensuring integrity verification without relying on a third party
-- **Scaleway Glacier cold storage** — archives are uploaded to European cold storage (Scaleway, Paris region) for long-term preservation
-- **Retention reserve ledger** — tracks the cost of storing each snapshot for its full retention period, with a 2x buffer on Scaleway Glacier rates. Entries move through three states: allocated (cost calculated), funded (Wise transfer recorded), released (retention period ended)
-- **Bulk funding workflow** — a dedicated Funding Run tab allows the CFO to select all unfunded entries and record a single Wise transaction reference, marking them as funded in one operation
-- **Legal holds** — a snapshot under legal hold cannot be deleted regardless of retention status, supporting regulatory investigations and litigation preservation
-- **Cost forecast** — projects quarterly cold storage costs for the next 8 quarters based on current archive sizes and retention periods
-- **Automated scheduling** — snapshots can be generated on a weekly, monthly, or quarterly schedule per product, in addition to manual and release-triggered generation
-- **Retention extension** — when a product's support end date is updated to a date later than the current retention end, all existing snapshots for that product are automatically extended (retention can only be extended, never shortened)
+- **Snapshot generation.** Bundles SBOM, vulnerability scan results, licence findings, technical file sections, obligations, and metadata into a single compliance archive.
+- **RFC 3161 timestamping.** Each snapshot is submitted to an external Time Stamping Authority, providing legally admissible proof of when the evidence existed.
+- **Ed25519 signing.** Each snapshot is digitally signed with a platform key, ensuring integrity verification without relying on a third party.
+- **Scaleway Glacier cold storage.** Archives are uploaded to European cold storage (Scaleway, Paris region) for long-term preservation.
+- **Retention reserve ledger.** Tracks the cost of storing each snapshot for its full retention period, with a 2x buffer on Scaleway Glacier rates. Entries move through three states: allocated (cost calculated), funded (Wise transfer recorded), released (retention period ended).
+- **Bulk funding workflow.** A dedicated Funding Run tab allows the CFO to select all unfunded entries and record a single Wise transaction reference, marking them as funded in one operation.
+- **Legal holds.** A snapshot under legal hold cannot be deleted regardless of retention status, supporting regulatory investigations and litigation preservation.
+- **Cost forecast.** Projects quarterly cold storage costs for the next 8 quarters based on current archive sizes and retention periods.
+- **Automated scheduling.** Snapshots can be generated on a weekly, monthly, or quarterly schedule per product, in addition to manual and release-triggered generation.
+- **Retention extension.** When a product's support end date is updated to a date later than the current retention end, all existing snapshots for that product are automatically extended (retention can only be extended, never shortened).
 
 **Trigger types:**
-- Manual — user-initiated from the product's Compliance Vault tab
-- Release — automatically generated when a product release is created
-- Scheduled — weekly, monthly, or quarterly per product configuration (runs daily at 9 AM)
+- Manual: user-initiated from the product's Compliance Vault tab
+- Release: automatically generated when a product release is created
+- Scheduled: weekly, monthly, or quarterly per product configuration (runs daily at 9 AM)
 
 ### 2.14 Document Templates
 
@@ -246,19 +246,19 @@ CRANIS2 includes an AI intelligence layer powered by Claude (Anthropic), availab
 - Market placement date drives the 10-year retention clock
 - End-of-support date (from the technical file) extends retention if it falls beyond the 10-year window
 - Lifecycle transitions are logged in the activity trail
-- CRA Action Plan — a 7-step compliance checklist per product that breaks conformity into concrete, actionable steps with real-time progress tracking
+- CRA Action Plan: a 7-step compliance checklist per product that breaks conformity into concrete, actionable steps with real-time progress tracking
 
 ### 2.17 Additional Capabilities
 
 | Capability | Purpose |
 |---|---|
-| **Obligations Tracking** | Maps 19 CRA and NIS2 requirements to products with auto-intelligence — obligation statuses are derived from platform data (SBOMs, scans, technical file progress) so users see their true compliance standing without manual data entry. Manual overrides are always preserved. |
+| **Obligations Tracking** | Maps 19 CRA and NIS2 requirements to products with auto-intelligence. Obligation statuses are derived from platform data (SBOMs, scans, technical file progress) so users see their true compliance standing without manual data entry. Manual overrides are always preserved. |
 | **Compliance Checklist** | A 7-step getting-started guide per product that breaks CRA conformity into concrete, actionable steps with real-time progress tracking, completion percentage, and statutory deadlines |
-| **Stakeholders Management** | Records CRA/NIS2 contacts at org and product level (responsible persons, security officers). Auto-assign option during product creation fills all 6 stakeholder roles with the creating user's details — ideal for solo developers and small teams |
+| **Stakeholders Management** | Records CRA/NIS2 contacts at org and product level (responsible persons, security officers). Auto-assign option during product creation fills all 6 stakeholder roles with the creating user's details, ideal for solo developers and small teams |
 | **Due Diligence Export** | Generates a complete compliance package as a ZIP: PDF report, CycloneDX SBOM, licence findings CSV, vulnerability summary JSON, full licence texts |
-| **Compliance Marketplace** | Companies can opt in to list themselves publicly with compliance badges derived from real platform data — not self-declared |
+| **Compliance Marketplace** | Companies can opt in to list themselves publicly with compliance badges derived from real platform data, not self-declared |
 | **Notifications System** | Targeted alerts for vulnerability findings, deadline warnings, sync status, billing events |
-| **Webhook Integration** | Push webhooks are automatically registered when repositories are connected (GitHub, Codeberg, Gitea, Forgejo) — SBOMs are flagged as stale in real time when code is pushed, with admin health monitoring to detect broken pipelines |
+| **Webhook Integration** | Push webhooks are automatically registered when repositories are connected (GitHub, Codeberg, Gitea, Forgejo). SBOMs are flagged as stale in real time when code is pushed, with admin health monitoring to detect broken pipelines |
 | **Audit Logging** | Every significant action is recorded with user, timestamp, IP address, and metadata |
 | **Platform Admin Dashboard** | Organisation management, user management, system health, vulnerability database status, webhook health monitoring, feedback handling |
 
@@ -284,7 +284,7 @@ The most important architectural principle: **CRANIS2 reads import statements bu
 
 - **Tier 1 (API SBOM):** The provider's dependency graph API returns package names and versions as structured metadata. No source code is involved.
 - **Tier 2 (Lockfile Parsing):** Lockfiles (e.g. `package-lock.json`, `Cargo.lock`) are fetched and parsed for dependency information. These are metadata files, not source code.
-- **Tier 3 (Import Scanning):** Source files are read to detect import and require statements. The files are processed transiently in memory — **import lines are extracted and the source content is immediately discarded.** No source code is stored in any database, file system, or cache.
+- **Tier 3 (Import Scanning):** Source files are read to detect import and require statements. The files are processed transiently in memory. **Import lines are extracted and the source content is immediately discarded.** No source code is stored in any database, file system, or cache.
 
 What we receive from Tier 3: `import express from 'express'` → we record "express" as a dependency. The surrounding code, logic, and algorithms are never examined or retained.
 
@@ -293,11 +293,11 @@ What we receive from Tier 3: `import express from 'express'` → we record "expr
 | Layer | Mechanism |
 |---|---|
 | **User authentication** | JWT session tokens, bcrypt password hashing, email verification required |
-| **Repository authentication** | OAuth (GitHub, Codeberg) or encrypted PAT tokens (Gitea, Forgejo, GitLab) — PATs encrypted at rest using AES-256-GCM |
-| **Organisation isolation** | Every database query is scoped to the user's `org_id` — there is no query path that returns another organisation's data |
+| **Repository authentication** | OAuth (GitHub, Codeberg) or encrypted PAT tokens (Gitea, Forgejo, GitLab). PATs encrypted at rest using AES-256-GCM |
+| **Organisation isolation** | Every database query is scoped to the user's `org_id`. There is no query path that returns another organisation's data |
 | **Product ownership** | Neo4j graph relationship verification: a product must have a `BELONGS_TO` relationship to the user's organisation before any operation is permitted |
 | **Role-based access** | Organisation admins vs members; platform admin middleware for system operations |
-| **API route protection** | Every route implements `requireAuth` middleware — no anonymous API access to protected resources |
+| **API route protection** | Every route implements `requireAuth` middleware. No anonymous API access to protected resources |
 
 ### 4.3 Organisation Isolation (Multi-Tenancy)
 
@@ -305,8 +305,8 @@ This is the primary defence against account mimicry and cross-tenant data leakag
 
 - **Every Postgres query** includes a `WHERE org_id = $1` clause. There is no "get all" endpoint that spans organisations.
 - **Every Neo4j query** traverses from the organisation node. You cannot query a product without proving ownership through the graph relationship.
-- **Product operations** require `verifyProductOwnership(orgId, productId)` — a Neo4j query that checks the `BELONGS_TO` relationship exists.
-- **If a resource is not found within your organisation, you get a 404** — not a 403. This prevents attackers from distinguishing "exists but you can't access it" from "doesn't exist," eliminating enumeration attacks.
+- **Product operations** require `verifyProductOwnership(orgId, productId)`, a Neo4j query that checks the `BELONGS_TO` relationship exists.
+- **If a resource is not found within your organisation, you get a 404**, not a 403. This prevents attackers from distinguishing "exists but you can't access it" from "doesn't exist," eliminating enumeration attacks.
 
 ### 4.4 Anti-Abuse Mechanisms
 
@@ -329,7 +329,7 @@ This is the primary defence against account mimicry and cross-tenant data leakag
 - Admin controls: extend trial, toggle billing exemption, payment pause
 
 **Webhook Security:**
-- GitHub and Codeberg webhooks are HMAC-SHA256 verified — the raw body is validated against a shared secret before any processing occurs
+- GitHub and Codeberg webhooks are HMAC-SHA256 verified. The raw body is validated against a shared secret before any processing occurs
 - Stripe webhooks use Stripe's signature verification
 - Malformed or unsigned webhooks are rejected
 
@@ -342,16 +342,16 @@ This is the primary defence against account mimicry and cross-tenant data leakag
 
 **Audit Trail:**
 - Every significant action records: user ID, email, event type, IP address, user agent, metadata, timestamp
-- System events (scheduled tasks) are logged with NULL user_id via LEFT JOIN — distinguishable from human actions
+- System events (scheduled tasks) are logged with NULL user_id via LEFT JOIN, distinguishable from human actions
 - This creates a forensic trail for investigating suspicious activity
 
 ### 4.5 What About Someone Impersonating a Company?
 
 This is a legitimate concern. Here is how CRANIS2 addresses it:
 
-1. **Repository authentication is the identity anchor.** You must authenticate with a real account (via OAuth or PAT) that has access to the repositories you claim. You cannot fabricate dependency data — it comes directly from the provider's API for repositories you control.
+1. **Repository authentication is the identity anchor.** You must authenticate with a real account (via OAuth or PAT) that has access to the repositories you claim. You cannot fabricate dependency data; it comes directly from the provider's API for repositories you control.
 
-2. **Marketplace listings require admin approval.** A company cannot appear in the public marketplace without platform admin review and explicit approval. Compliance badges are computed from real platform data (vulnerability scan results, obligation completion, licence scan coverage) — they cannot be self-declared.
+2. **Marketplace listings require admin approval.** A company cannot appear in the public marketplace without platform admin review and explicit approval. Compliance badges are computed from real platform data (vulnerability scan results, obligation completion, licence scan coverage). They cannot be self-declared.
 
 3. **Organisation data is self-contained.** Even if someone creates an account with a similar company name, they cannot access another organisation's products, findings, or compliance data. The multi-tenancy isolation is absolute.
 
@@ -379,11 +379,11 @@ This is a legitimate concern. Here is how CRANIS2 addresses it:
 Transparency on commercial incentives:
 
 - **Two paid tiers:**
-  - **Standard:** EUR 6/month per active contributor — all core compliance features
-  - **Pro:** EUR 9/month per product + EUR 6/month per contributor — adds AI intelligence (Copilot, auto-triage, risk assessment, incident drafter, category recommender), public API, CI/CD gate, Trello integration, and IDE assistant
+  - **Standard:** EUR 6/month per active contributor. All core compliance features.
+  - **Pro:** EUR 9/month per product + EUR 6/month per contributor. Adds AI intelligence (Copilot, auto-triage, risk assessment, incident drafter, category recommender), public API, CI/CD gate, Trello integration, and IDE assistant.
 - **90-day free trial** with no payment details required upfront (includes all features)
 - **No vendor lock-in on data:** Due diligence export provides all your compliance data in open formats (PDF, CycloneDX, SPDX, CSV, JSON) at any time
-- **Billing is managed through Stripe** — CRANIS2 does not handle payment card data
+- **Billing is managed through Stripe.** CRANIS2 does not handle payment card data
 - **AI cost protection:** Per-organisation token budgets, per-endpoint rate limits, and response caching prevent runaway costs
 
 The pricing model aligns incentives: we succeed when you use the platform actively, not when we lock you into contracts or upsell unnecessary features.
@@ -401,8 +401,8 @@ Once set up, CRANIS2 runs largely on autopilot:
 | 3 AM | Platform-wide vulnerability scan |
 | 4 AM | Billing checks (trial expiry, payment grace) |
 | 5 AM | Escrow deposits for all enabled products |
-| 6 AM | Webhook health checks — detects products with missing or silent webhooks |
-| 9 AM | Scheduled compliance snapshots — generates snapshots for products with weekly/monthly/quarterly schedules |
+| 6 AM | Webhook health checks. Detects products with missing or silent webhooks |
+| 9 AM | Scheduled compliance snapshots. Generates snapshots for products with weekly/monthly/quarterly schedules |
 | Hourly | CRA deadline monitoring with escalating alerts |
 | On push | Push webhooks flag SBOMs as stale in real time |
 | On release | Compliance snapshot automatically generated with full evidence bundle |
@@ -464,7 +464,7 @@ Dec 2027 ──── CRA: Full compliance required
 
 ## 9. Summary
 
-CRANIS2 automates the mechanical burden of EU cybersecurity compliance — SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, EU Declaration of Conformity, regulatory reporting, source code escrow, compliance evidence vault with 10-year retention, document templates, conformity assessments, product lifecycle management, AI-powered compliance intelligence, supplier due diligence, and external integrations — so that software companies can meet CRA and NIS2 requirements without building a dedicated compliance department.
+CRANIS2 automates the mechanical burden of EU cybersecurity compliance so that software companies can meet CRA and NIS2 requirements without building a dedicated compliance department. It covers SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, EU Declaration of Conformity, regulatory reporting, source code escrow, compliance evidence vault with 10-year retention, document templates, conformity assessments, product lifecycle management, AI-powered compliance intelligence, supplier due diligence, and external integrations.
 
 It does this while reading import statements but never storing, analysing or modifying source code in any way, with strict multi-tenant isolation, with billing accountability tied to real development activity, and with all compliance data exportable in open formats at any time.
 
@@ -472,4 +472,4 @@ The regulations are real, the deadlines are fixed, and the penalties are signifi
 
 ---
 
-*CRANIS2 — Cyber Resilience Act & NIS2 compliance, automated.*
+*CRANIS2 \u2013 Cyber Resilience Act & NIS2 compliance, automated.*

@@ -2,7 +2,7 @@
 
 > **Owner:** Andi Burns
 > **Created:** 2026-03-12
-> **Status:** Approved process design — implementation in progress
+> **Status:** Approved process design, implementation in progress
 
 ---
 

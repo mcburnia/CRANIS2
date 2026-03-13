@@ -229,7 +229,7 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
     if (generated > 0) return `${generated} questionnaire${generated > 1 ? 's' : ''} ready to review and send to suppliers`;
     if (sent > 0) return `${sent} questionnaire${sent > 1 ? 's' : ''} awaiting supplier response`;
     if (responded > 0) return `${responded} supplier response${responded > 1 ? 's' : ''} to review`;
-    if (reviewedCount === totalQ) return 'All due diligence reviews complete — evidence ready for your technical file';
+    if (reviewedCount === totalQ) return 'All due diligence reviews complete. Evidence ready for your technical file.';
     return null;
   };
 
@@ -250,7 +250,7 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
           <Shield size={20} />
           <div>
             <h3>Supplier Due Diligence</h3>
-            <p className="sc-subtitle">CRA Art. 13(5) — Third-party component risk assessment</p>
+            <p className="sc-subtitle">CRA Art. 13(5) – Third-party component risk assessment</p>
           </div>
         </div>
         <div className="sc-header-actions">
@@ -327,7 +327,7 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
             </div>
           </div>
           <p className="sc-info-audit">
-            <strong>For auditors:</strong> The exported PDF contains the complete evidence trail — which components were assessed, what risks were identified,
+            <strong>For auditors:</strong> The exported PDF contains the complete evidence trail: which components were assessed, what risks were identified,
             what questions were asked, and how the supplier responded. This demonstrates CRA Art. 13(5) compliance.
           </p>
         </div>
@@ -349,7 +349,7 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
             <span>
               Generated {generateResult.generated} questionnaire(s)
               {generateResult.skipped > 0 && `, skipped ${generateResult.skipped} (already exist)`}
-              {generateResult.generated === 0 && generateResult.skipped === 0 && ' — no risky dependencies found. All components passed the risk check.'}
+              {generateResult.generated === 0 && generateResult.skipped === 0 && '. No risky dependencies found. All components passed the risk check.'}
             </span>
             {generateResult.enrichment && generateResult.enrichment.totalMissing > 0 && (
               <span className="sc-enrichment-note">
@@ -360,7 +360,7 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
                   if (generateResult.enrichment!.fetched > 0) parts.push(`${generateResult.enrichment!.fetched} from registries`);
                   return parts.length > 0 ? ` (${parts.join(', ')})` : '';
                 })()}
-                {generateResult.enrichment.failed > 0 && ` — ${generateResult.enrichment.failed} could not be found`}
+                {generateResult.enrichment.failed > 0 && ` (${generateResult.enrichment.failed} could not be found)`}
               </span>
             )}
           </div>
@@ -438,7 +438,7 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
           </div>
           <p className="sc-empty-note">
             Components are flagged for: copyleft licences, known vulnerabilities, and missing supplier information.
-            Only risky components generate questionnaires — low-risk dependencies are automatically cleared.
+            Only risky components generate questionnaires. Low-risk dependencies are automatically cleared.
           </p>
         </div>
       )}
@@ -578,10 +578,10 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
                           value={q.status}
                           onChange={(e) => handleStatusChange(q.id, e.target.value)}
                         >
-                          <option value="generated">Generated — Ready to review</option>
-                          <option value="sent">Sent — Awaiting supplier response</option>
-                          <option value="responded">Responded — Supplier replied</option>
-                          <option value="reviewed">Reviewed — Due diligence complete</option>
+                          <option value="generated">Generated – Ready to review</option>
+                          <option value="sent">Sent – Awaiting supplier response</option>
+                          <option value="responded">Responded – Supplier replied</option>
+                          <option value="reviewed">Reviewed – Due diligence complete</option>
                         </select>
                       </div>
                       <div className="sc-status-hint">

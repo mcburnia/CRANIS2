@@ -155,56 +155,56 @@ const FAQ_JSON_LD: Record<string, unknown> = {
 
 export const ROUTE_META: Record<string, PageMeta> = {
   '/': {
-    title: 'CRANIS2 — EU Cyber Resilience Act & NIS2 Compliance Platform',
+    title: 'CRANIS2 – EU Cyber Resilience Act & NIS2 Compliance Platform',
     description: DEFAULT_DESCRIPTION,
     canonical: '/',
     jsonLd: [ORG_JSON_LD, SOFTWARE_JSON_LD],
   },
   '/marketplace': {
-    title: 'Marketplace — CRANIS2',
+    title: 'Marketplace – CRANIS2',
     description:
       'Browse EU-compliant software vendors on the CRANIS2 Marketplace. Find companies with verified CRA compliance, SBOMs, vulnerability management, and escrow coverage.',
     canonical: '/marketplace',
   },
   '/docs': {
-    title: 'Documentation — CRANIS2',
+    title: 'Documentation – CRANIS2',
     description:
       'Complete user guide for CRANIS2. Learn how to set up your organisation, register products, generate SBOMs, manage vulnerabilities, file ENISA reports, and achieve CRA compliance.',
     canonical: '/docs',
   },
   '/docs/faq': {
-    title: 'FAQ — CRANIS2',
+    title: 'FAQ – CRANIS2',
     description:
       'Frequently asked questions about CRANIS2, the Cyber Resilience Act, NIS2, SBOMs, vulnerability reporting, license compliance, and pricing.',
     canonical: '/docs/faq',
     jsonLd: FAQ_JSON_LD,
   },
   '/login': {
-    title: 'Log In — CRANIS2',
+    title: 'Log In – CRANIS2',
     description:
       'Log in to your CRANIS2 account to manage CRA compliance, SBOMs, vulnerability reports, and technical documentation.',
     canonical: '/login',
   },
   '/signup': {
-    title: 'Sign Up — CRANIS2',
+    title: 'Sign Up – CRANIS2',
     description:
       'Create a free CRANIS2 account. 90-day trial with full access to automated SBOM generation, vulnerability monitoring, ENISA reporting, and CRA compliance tools.',
     canonical: '/signup',
   },
   '/check-email': {
-    title: 'Check Your Email — CRANIS2',
+    title: 'Check Your Email – CRANIS2',
     description: 'Check your email to verify your CRANIS2 account.',
     canonical: '/check-email',
     noindex: true,
   },
   '/verify-email': {
-    title: 'Verify Email — CRANIS2',
+    title: 'Verify Email – CRANIS2',
     description: 'Email verification for your CRANIS2 account.',
     canonical: '/verify-email',
     noindex: true,
   },
   '/accept-invite': {
-    title: 'Accept Invitation — CRANIS2',
+    title: 'Accept Invitation – CRANIS2',
     description: 'Accept your invitation to join an organisation on CRANIS2.',
     canonical: '/accept-invite',
     noindex: true,
@@ -242,13 +242,13 @@ export const AUTH_PAGE_TITLES: Record<string, string> = {
 export const ADMIN_PAGE_TITLES: Record<string, string> = {
   '/admin': 'Admin Dashboard',
   '/admin/dashboard': 'Admin Dashboard',
-  '/admin/orgs': 'Admin — Organisations',
-  '/admin/users': 'Admin — Users',
-  '/admin/audit-log': 'Admin — Audit Log',
-  '/admin/system': 'Admin — System Health',
-  '/admin/vuln-scan': 'Admin — Vulnerability Scanning',
-  '/admin/vuln-db': 'Admin — Vulnerability Database',
-  '/admin/feedback': 'Admin — User Feedback',
-  '/admin/billing': 'Admin — Billing',
-  '/admin/test-results': 'Admin — Test Results',
+  '/admin/orgs': 'Admin – Organisations',
+  '/admin/users': 'Admin – Users',
+  '/admin/audit-log': 'Admin – Audit Log',
+  '/admin/system': 'Admin – System Health',
+  '/admin/vuln-scan': 'Admin – Vulnerability Scanning',
+  '/admin/vuln-db': 'Admin – Vulnerability Database',
+  '/admin/feedback': 'Admin – User Feedback',
+  '/admin/billing': 'Admin – Billing',
+  '/admin/test-results': 'Admin – Test Results',
 };
