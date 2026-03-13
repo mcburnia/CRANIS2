@@ -1,0 +1,145 @@
+.aretention-page { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+.aretention-loading {
+  display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+  min-height: 300px; color: var(--muted);
+}
+
+/* Warning banner */
+.aretention-warning-banner {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.7rem 1rem; border-radius: 6px; margin-bottom: 1.25rem;
+  background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2);
+  font-size: 0.82rem; color: var(--text);
+}
+.aretention-warning-banner svg { color: #f59e0b; flex-shrink: 0; }
+
+/* Tabs */
+.aretention-tabs {
+  display: flex; gap: 0.25rem; margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border); padding-bottom: 0;
+}
+.aretention-tab {
+  display: flex; align-items: center; gap: 0.3rem;
+  padding: 0.5rem 0.9rem; border: none; background: none;
+  color: var(--muted); font-size: 0.82rem; font-weight: 500;
+  cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.aretention-tab:hover { color: var(--text); }
+.aretention-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Section */
+.aretention-section h3 {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 1rem; margin: 0 0 0.5rem; color: var(--text);
+}
+.aretention-description {
+  font-size: 0.82rem; color: var(--muted); margin: 0 0 1rem; line-height: 1.5;
+}
+
+/* Overview grid */
+.aretention-overview-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem; margin-bottom: 1rem;
+}
+.aretention-overview-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 1rem;
+}
+.aretention-overview-card h4 {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.78rem; color: var(--muted); margin: 0 0 0.5rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.aretention-overview-card h4 svg { color: var(--accent); }
+.aretention-overview-value { font-size: 1.5rem; font-weight: 700; color: var(--text); }
+.aretention-overview-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+
+/* Table */
+.aretention-table-wrap { overflow-x: auto; }
+.aretention-table {
+  width: 100%; border-collapse: collapse; font-size: 0.82rem;
+}
+.aretention-table th {
+  text-align: left; padding: 0.5rem 0.75rem;
+  font-weight: 600; color: var(--muted); font-size: 0.75rem;
+  text-transform: uppercase; letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border);
+}
+.aretention-table td {
+  padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border);
+  color: var(--text); vertical-align: middle;
+}
+.aretention-table tbody tr:hover { background: rgba(99, 102, 241, 0.03); }
+.aretention-mono { font-family: monospace; font-size: 0.78rem; }
+.aretention-empty { text-align: center; color: var(--muted); padding: 2rem !important; }
+
+/* Row states */
+.aretention-row-urgent { background: rgba(239, 68, 68, 0.04); }
+.aretention-row-hold { background: rgba(245, 158, 11, 0.04); }
+
+/* Badges */
+.aretention-badge {
+  display: inline-block; padding: 0.15rem 0.4rem; border-radius: 4px;
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+}
+.aretention-badge-green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.aretention-badge-amber { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.aretention-badge-blue { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+.aretention-badge-muted { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
+
+/* Days badge */
+.aretention-days { font-weight: 600; }
+.aretention-days-urgent { color: #ef4444; }
+
+/* Hold status */
+.aretention-hold-active {
+  display: flex; align-items: center; gap: 0.25rem;
+  color: #f59e0b; font-weight: 600; font-size: 0.78rem;
+}
+
+/* Funded check */
+.aretention-funded-check { color: #10b981; }
+
+/* Small buttons */
+.aretention-btn-sm {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 0.75rem;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.aretention-btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+.aretention-btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
+.aretention-btn-danger { border-color: rgba(239, 68, 68, 0.3); color: #ef4444; }
+.aretention-btn-danger:hover { border-color: #ef4444; }
+
+/* Modal */
+.aretention-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.aretention-modal {
+  background: var(--surface); border-radius: 12px; padding: 1.5rem;
+  width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.aretention-modal h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+.aretention-modal p { font-size: 0.82rem; color: var(--muted); margin: 0 0 1rem; }
+.aretention-input {
+  width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--bg); color: var(--text);
+  font-size: 0.85rem; margin-bottom: 1rem; box-sizing: border-box;
+}
+.aretention-input:focus { outline: none; border-color: var(--accent); }
+.aretention-modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.aretention-btn-cancel {
+  padding: 0.4rem 0.8rem; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); color: var(--muted); cursor: pointer; font-size: 0.82rem;
+}
+.aretention-btn-primary {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.4rem 0.8rem; border: none; border-radius: 6px;
+  background: var(--accent); color: white; cursor: pointer; font-size: 0.82rem;
+  font-weight: 500;
+}
+.aretention-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }

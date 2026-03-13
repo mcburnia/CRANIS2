@@ -177,4 +177,142 @@ router.get('/retention-ledger/:id/certificate', requirePlatformAdmin, async (req
   }
 });
 
+// ─── PUT /api/admin/retention-ledger/:snapshotId/legal-hold ───
+// Toggle legal hold on a compliance snapshot
+router.put('/retention-ledger/:snapshotId/legal-hold', requirePlatformAdmin, async (req: Request, res: Response) => {
+  const { snapshotId } = req.params;
+  const { legal_hold } = req.body;
+
+  if (typeof legal_hold !== 'boolean') {
+    res.status(400).json({ error: 'legal_hold must be a boolean' });
+    return;
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE compliance_snapshots SET legal_hold = $1 WHERE id = $2
+       RETURNING id, product_id, org_id, legal_hold, retention_end_date`,
+      [legal_hold, snapshotId]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Snapshot not found' });
+      return;
+    }
+
+    res.json({ snapshot: result.rows[0] });
+  } catch (err: any) {
+    console.error('[ADMIN-RETENTION] Legal hold error:', err);
+    res.status(500).json({ error: 'Failed to update legal hold' });
+  }
+});
+
+// ─── GET /api/admin/retention-ledger/expiry-warnings ─────────
+// Snapshots with retention ending within 90 days
+router.get('/retention-ledger/expiry-warnings', requirePlatformAdmin, async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT cs.id, cs.product_id, cs.org_id, cs.filename, cs.retention_end_date,
+              cs.legal_hold, cs.cold_storage_status, cs.status, cs.created_at,
+              rl.estimated_cost_eur, rl.funded_amount_eur, rl.status AS ledger_status
+       FROM compliance_snapshots cs
+       LEFT JOIN retention_reserve_ledger rl ON rl.snapshot_id = cs.id
+       WHERE cs.retention_end_date IS NOT NULL
+         AND cs.retention_end_date <= CURRENT_DATE + INTERVAL '90 days'
+         AND cs.retention_end_date >= CURRENT_DATE
+         AND cs.status = 'complete'
+       ORDER BY cs.retention_end_date ASC`
+    );
+
+    res.json({
+      warnings: result.rows.map(row => ({
+        ...row,
+        days_until_expiry: Math.ceil((new Date(row.retention_end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+      })),
+      total: result.rows.length,
+    });
+  } catch (err: any) {
+    console.error('[ADMIN-RETENTION] Expiry warnings error:', err);
+    res.status(500).json({ error: 'Failed to get expiry warnings' });
+  }
+});
+
+// ─── GET /api/admin/retention-ledger/cost-forecast ───────────
+// Projected quarterly costs for the next 2 years
+router.get('/retention-ledger/cost-forecast', requirePlatformAdmin, async (_req: Request, res: Response) => {
+  try {
+    // Get all active ledger entries
+    const entries = await pool.query(
+      `SELECT archive_size_bytes, retention_start_date, retention_end_date, estimated_cost_eur
+       FROM retention_reserve_ledger
+       WHERE status IN ('allocated', 'funded')`
+    );
+
+    // Calculate quarterly costs: how many entries are active in each quarter
+    const now = new Date();
+    const quarters: Array<{ quarter: string; activeEntries: number; totalBytes: number; estimatedCostEur: number }> = [];
+
+    for (let q = 0; q < 8; q++) {
+      const quarterStart = new Date(now);
+      quarterStart.setMonth(quarterStart.getMonth() + q * 3);
+      quarterStart.setDate(1);
+      const quarterEnd = new Date(quarterStart);
+      quarterEnd.setMonth(quarterEnd.getMonth() + 3);
+
+      const quarterLabel = `Q${Math.floor(quarterStart.getMonth() / 3) + 1} ${quarterStart.getFullYear()}`;
+
+      let activeCount = 0;
+      let totalBytes = 0;
+
+      for (const entry of entries.rows) {
+        const start = new Date(entry.retention_start_date || entry.created_at);
+        const end = new Date(entry.retention_end_date);
+        if (start <= quarterEnd && end >= quarterStart) {
+          activeCount++;
+          totalBytes += parseInt(entry.archive_size_bytes);
+        }
+      }
+
+      // Scaleway Glacier rate: €0.00254/GB/month × 3 months × 2x buffer
+      const costPerQuarter = (totalBytes / (1024 * 1024 * 1024)) * 0.00254 * 3 * 2;
+
+      quarters.push({
+        quarter: quarterLabel,
+        activeEntries: activeCount,
+        totalBytes,
+        estimatedCostEur: Math.round(costPerQuarter * 100) / 100,
+      });
+    }
+
+    res.json({ forecast: quarters });
+  } catch (err: any) {
+    console.error('[ADMIN-RETENTION] Cost forecast error:', err);
+    res.status(500).json({ error: 'Failed to get cost forecast' });
+  }
+});
+
+// ─── GET /api/admin/retention-ledger/snapshots ───────────────
+// All snapshots with retention/legal hold info (for dashboard)
+router.get('/retention-ledger/snapshots', requirePlatformAdmin, async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT cs.id, cs.product_id, cs.org_id, cs.filename, cs.size_bytes, cs.status,
+              cs.retention_end_date, cs.legal_hold, cs.cold_storage_status,
+              cs.trigger_type, cs.created_at,
+              rl.estimated_cost_eur, rl.funded_amount_eur, rl.wise_transaction_ref,
+              rl.status AS ledger_status
+       FROM compliance_snapshots cs
+       LEFT JOIN retention_reserve_ledger rl ON rl.snapshot_id = cs.id
+       WHERE cs.status IN ('complete', 'retention_complete')
+       ORDER BY cs.created_at DESC
+       LIMIT 200`
+    );
+
+    res.json({ snapshots: result.rows, total: result.rows.length });
+  } catch (err: any) {
+    console.error('[ADMIN-RETENTION] Snapshots list error:', err);
+    res.status(500).json({ error: 'Failed to list snapshots' });
+  }
+});
+
 export default router;
