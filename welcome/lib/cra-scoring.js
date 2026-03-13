@@ -65,7 +65,7 @@ function determineCategory(answers) {
 function getConformityModule(category) {
   switch (category) {
     case 'critical':
-      return { module: 'Module H', fullName: 'Module H — Full Quality Assurance', needsNB: true,
+      return { module: 'Module H', fullName: 'Module H – Full Quality Assurance', needsNB: true,
         description: 'Your product requires the most rigorous assessment procedure. A notified body must approve your quality assurance system covering design, production, and post-market surveillance, with periodic inspections.' };
     case 'important_ii':
       return { module: 'Module B+C or H', fullName: 'Module B+C (EU-Type Examination) or Module H (Full QA)', needsNB: true,
@@ -74,7 +74,7 @@ function getConformityModule(category) {
       return { module: 'Module A or B+C', fullName: 'Module A (Self-Assessment) or Module B+C', needsNB: false,
         description: 'If you have fully applied relevant harmonised standards (EN 18031), you can self-assess under Module A. Otherwise, you\u2019ll need EU-type examination (Module B+C) from a notified body.' };
     default:
-      return { module: 'Module A', fullName: 'Module A — Internal Control', needsNB: false,
+      return { module: 'Module A', fullName: 'Module A – Internal Control', needsNB: false,
         description: 'Your product qualifies for self-assessment. You perform the conformity assessment internally, prepare your technical documentation and EU Declaration of Conformity, and affix the CE marking yourself. No notified body involvement required.' };
   }
 }

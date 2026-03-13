@@ -33,7 +33,7 @@ router.post('/subscribe', async (req, res) => {
         html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;padding:32px 20px;">
 <div style="font-size:13px;font-weight:700;color:#a855f7;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:16px;">CRANIS2</div>
 <h2 style="font-size:20px;color:#111827;margin-bottom:16px;">You\u2019re on the list</h2>
-<p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:16px;">Thank you for your interest in CRANIS2. We\u2019ll notify you as soon as the platform is ready for launch \u2014 and not before.</p>
+<p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:16px;">Thank you for your interest in CRANIS2. We\u2019ll notify you as soon as the platform is ready for launch \u2013 and not before.</p>
 <p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:16px;">In the meantime, your CRA Readiness Assessment report is available in your inbox if you haven\u2019t already received it.</p>
 <p style="font-size:14px;color:#4b5563;line-height:1.6;margin-bottom:24px;">Learn more about what CRANIS2 can do for your organisation: <a href="https://dev.cranis2.dev/welcome" style="color:#a855f7;font-weight:600;">dev.cranis2.dev/welcome</a></p>
 <div style="background:#f9fafb;border-radius:8px;padding:16px;font-size:13px;color:#6b7280;line-height:1.6;">
@@ -46,7 +46,7 @@ router.post('/subscribe', async (req, res) => {
       await sendEmail({
         from: 'CRANIS2 Launch List <noreply@poste.cranis2.com>',
         to: 'info@cranis2.com',
-        subject: `New launch subscriber \u2014 ${email}`,
+        subject: `New launch subscriber \u2013 ${email}`,
         html: `<p>New subscriber to the CRANIS2 launch notification list:</p><p><strong>${escapeHtml(email)}</strong></p><p>Source: CRA Readiness Assessment</p>`,
       });
     }

@@ -88,7 +88,7 @@ router.post('/contact', async (req, res) => {
     await sendEmail({
       from: 'CRANIS2 Welcome <noreply@poste.cranis2.com>',
       to: 'info@cranis2.com',
-      subject: `New CRANIS2 Enquiry \u2014 ${name} (${position})`,
+      subject: `New CRANIS2 Enquiry \u2013 ${name} (${position})`,
       html: `<h3>New Enquiry from Welcome Page</h3>
 <table style="border-collapse:collapse;">
 <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Name</td><td>${escapeHtml(name)}</td></tr>

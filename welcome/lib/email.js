@@ -2,7 +2,7 @@ const { RESEND_API_KEY } = require('../config');
 
 async function sendEmail({ from, to, subject, html }) {
   if (!RESEND_API_KEY) {
-    console.warn('[WELCOME] RESEND_API_KEY not set — email not sent:', subject);
+    console.warn('[WELCOME] RESEND_API_KEY not set. Email not sent:', subject);
     return { ok: false, reason: 'no_api_key' };
   }
 

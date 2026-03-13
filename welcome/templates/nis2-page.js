@@ -9,7 +9,7 @@ function assessmentPage() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NIS2 Readiness Assessment \u2014 CRANIS2</title>
+<title>NIS2 Readiness Assessment \u2013 CRANIS2</title>
 <meta name="description" content="Free NIS2 readiness assessment. Determine your entity classification, supervision regime, and get a personalised maturity report with recommendations for NIS2 compliance.">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -143,7 +143,7 @@ function assessmentPage() {
   <div id="phase-results" class="hidden animate-in"></div>
 
   <div class="footer">
-    Powered by <a href="https://dev.cranis2.dev/welcome">CRANIS2</a> \u2014 EU Cybersecurity Compliance Platform
+    Powered by <a href="https://dev.cranis2.dev/welcome">CRANIS2</a> \u2013 EU Cybersecurity Compliance Platform
     <br><a href="https://dev.cranis2.dev/cra-conformity-assessment">Also try our CRA Readiness Assessment \u2192</a>
   </div>
 </div>
@@ -451,17 +451,17 @@ function showResults(scores, entityClass) {
   html += '</div>';
   html += '</div>';
 
-  // Coming soon — launch list
+  // Coming soon: launch list
   html += '<div class="card" style="text-align:center;">';
   html += '<h2 style="font-size:18px;margin-bottom:4px;">CRANIS2 Is Coming Soon</h2>';
-  html += '<p style="font-size:13px;color:#6b7280;margin-bottom:16px;">We\\u2019re building a platform that helps you manage every aspect of cybersecurity compliance \\u2014 from NIS2 governance and risk management to CRA product compliance, vulnerability scanning, and supply chain security.</p>';
+  html += '<p style="font-size:13px;color:#6b7280;margin-bottom:16px;">We\\u2019re building a platform that helps you manage every aspect of cybersecurity compliance, from NIS2 governance and risk management to CRA product compliance, vulnerability scanning, and supply chain security.</p>';
   html += '<p style="font-size:13px;color:#6b7280;margin-bottom:16px;">Join our launch list and we\\u2019ll let you know when it\\u2019s ready.</p>';
   html += '<div id="subscribe-msg"></div>';
   html += '<div class="report-form" id="subscribe-form">';
   html += '<input type="email" class="email-input" id="subscribe-email" value="' + escapeHtmlJS(sessionEmail) + '" placeholder="you@company.com">';
   html += '<button class="btn btn-primary" id="subscribe-btn" onclick="subscribeLaunch()">Notify Me at Launch</button>';
   html += '</div>';
-  html += '<p style="font-size:11px;color:#9ca3af;margin-top:12px;line-height:1.5;">We will only use your email to notify you when CRANIS2 launches.<br>No spam, no sharing your information \\u2014 ever.</p>';
+  html += '<p style="font-size:11px;color:#9ca3af;margin-top:12px;line-height:1.5;">We will only use your email to notify you when CRANIS2 launches.<br>No spam, no sharing your information. Ever.</p>';
   html += '</div>';
 
   // Start over
@@ -481,14 +481,14 @@ function getEntityDetails(entityClass) {
         regime: 'Essential entities are subject to the most intensive supervisory regime (Article 32).' };
     case 'essential':
       return { supervision: 'Proactive supervision', penalties: 'Up to \\u20ac10,000,000 or 2% of global annual turnover',
-        description: 'As a large entity in a highly critical sector, your organisation is classified as essential. You will be subject to proactive supervision \\u2014 the competent authority may conduct audits, security scans, and on-site inspections at any time.',
+        description: 'As a large entity in a highly critical sector, your organisation is classified as essential. You will be subject to proactive supervision. The competent authority may conduct audits, security scans, and on-site inspections at any time.',
         regime: 'Essential entities are subject to the most intensive supervisory regime (Article 32).' };
     case 'important':
       return { supervision: 'Reactive supervision (ex-post)', penalties: 'Up to \\u20ac7,000,000 or 1.4% of global annual turnover',
         description: 'Your organisation is classified as an important entity. You are subject to the same cybersecurity obligations as essential entities, but the supervision regime is less intensive.',
         regime: 'Important entities are subject to reactive supervision (Article 33).' };
     default:
-      return { supervision: 'Not directly supervised under NIS2', penalties: 'N/A \\u2014 not in scope',
+      return { supervision: 'Not directly supervised under NIS2', penalties: 'N/A \\u2013 not in scope',
         description: 'Based on your responses, your organisation appears unlikely to fall directly within NIS2 scope. However, you may still be affected indirectly through supply chain requirements.',
         regime: 'Consider voluntary adoption of NIS2 measures, especially if you serve in-scope customers.' };
   }

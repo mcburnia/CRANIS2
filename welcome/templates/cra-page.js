@@ -10,7 +10,7 @@ function conformityAssessmentPage() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CRA Readiness Assessment — CRANIS2</title>
+<title>CRA Readiness Assessment – CRANIS2</title>
 <meta name="description" content="Free CRA readiness assessment. Find out your product's risk category, required conformity assessment module, and get a personalised maturity report with recommendations.">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -176,7 +176,7 @@ function conformityAssessmentPage() {
   </div>
 
   <div class="footer">
-    Powered by <a href="https://dev.cranis2.dev/welcome">CRANIS2</a> \u2014 EU Cybersecurity Compliance Platform
+    Powered by <a href="https://dev.cranis2.dev/welcome">CRANIS2</a> \u2013 EU Cybersecurity Compliance Platform
     <br><a href="https://dev.cranis2.dev/nis2-conformity-assessment">Also try our NIS2 Readiness Assessment \u2192</a>
   </div>
 </div>
@@ -485,17 +485,17 @@ function showResults(scores, category) {
   html += '</div>';
   html += '</div>';
 
-  // Coming soon — launch list
+  // Coming soon: launch list
   html += '<div class="card" style="text-align:center;">';
   html += '<h2 style="font-size:18px;margin-bottom:4px;">CRANIS2 Is Coming Soon</h2>';
-  html += '<p style="font-size:13px;color:#6b7280;margin-bottom:16px;">We\u2019re building a platform that helps you manage every aspect of CRA compliance \u2014 from SBOM management and vulnerability scanning to technical documentation and conformity assessment tracking.</p>';
+  html += '<p style="font-size:13px;color:#6b7280;margin-bottom:16px;">We\u2019re building a platform that helps you manage every aspect of CRA compliance, from SBOM management and vulnerability scanning to technical documentation and conformity assessment tracking.</p>';
   html += '<p style="font-size:13px;color:#6b7280;margin-bottom:16px;">Join our launch list and we\u2019ll let you know when it\u2019s ready.</p>';
   html += '<div id="subscribe-msg"></div>';
   html += '<div class="report-form" id="subscribe-form">';
   html += '<input type="email" class="email-input" id="subscribe-email" value="' + escapeHtmlJS(sessionEmail) + '" placeholder="you@company.com">';
   html += '<button class="btn btn-primary" id="subscribe-btn" onclick="subscribeLaunch()">Notify Me at Launch</button>';
   html += '</div>';
-  html += '<p style="font-size:11px;color:#9ca3af;margin-top:12px;line-height:1.5;">We will only use your email to notify you when CRANIS2 launches.<br>No spam, no sharing your information \u2014 ever.</p>';
+  html += '<p style="font-size:11px;color:#9ca3af;margin-top:12px;line-height:1.5;">We will only use your email to notify you when CRANIS2 launches.<br>No spam, no sharing your information. Ever.</p>';
   html += '</div>';
 
   // Start over
@@ -510,7 +510,7 @@ function showResults(scores, category) {
 function getConformityModule(category) {
   switch (category) {
     case 'critical':
-      return { module: 'Module H', fullName: 'Module H \u2014 Full Quality Assurance', needsNB: true,
+      return { module: 'Module H', fullName: 'Module H \u2013 Full Quality Assurance', needsNB: true,
         description: 'Your product requires the most rigorous assessment procedure. A notified body must approve your quality assurance system covering design, production, and post-market surveillance, with periodic inspections.' };
     case 'important_ii':
       return { module: 'Module B+C or H', fullName: 'Module B+C (EU-Type Examination) or Module H (Full QA)', needsNB: true,
@@ -519,7 +519,7 @@ function getConformityModule(category) {
       return { module: 'Module A or B+C', fullName: 'Module A (Self-Assessment) or Module B+C', needsNB: false,
         description: 'If you have fully applied relevant harmonised standards (EN 18031), you can self-assess under Module A. Otherwise, you\\u2019ll need EU-type examination (Module B+C) from a notified body.' };
     default:
-      return { module: 'Module A', fullName: 'Module A \u2014 Internal Control', needsNB: false,
+      return { module: 'Module A', fullName: 'Module A \u2013 Internal Control', needsNB: false,
         description: 'Your product qualifies for self-assessment. You perform the conformity assessment internally, prepare your technical documentation and EU Declaration of Conformity, and affix the CE marking yourself. No notified body involvement required.' };
   }
 }

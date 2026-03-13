@@ -16,7 +16,7 @@ function determineEntityClass(answers) {
   // Medium entities in Annex I, or large in Annex II → important
   if (sizeScore >= 1 && sectorScore >= 1) return 'important';
 
-  // Small entities in listed sectors — generally not in scope but may be
+  // Small entities in listed sectors; generally not in scope but may be
   return 'not_in_scope';
 }
 
@@ -33,21 +33,21 @@ function getEntityDetails(entityClass) {
       return {
         supervision: 'Proactive supervision',
         penalties: 'Up to €10,000,000 or 2% of global annual turnover (whichever is higher)',
-        description: 'As a large entity in a highly critical sector, your organisation is classified as essential. You will be subject to proactive supervision — the competent authority may conduct audits, security scans, and on-site inspections at any time.',
+        description: 'As a large entity in a highly critical sector, your organisation is classified as essential. You will be subject to proactive supervision. The competent authority may conduct audits, security scans, and on-site inspections at any time.',
         regime: 'Essential entities are subject to the most intensive supervisory regime (Article 32).',
       };
     case 'important':
       return {
         supervision: 'Reactive supervision (ex-post)',
         penalties: 'Up to €7,000,000 or 1.4% of global annual turnover (whichever is higher)',
-        description: 'Your organisation is classified as an important entity. You are subject to the same cybersecurity obligations as essential entities, but the supervision regime is less intensive — authorities will typically investigate only after an incident or when given evidence of non-compliance.',
+        description: 'Your organisation is classified as an important entity. You are subject to the same cybersecurity obligations as essential entities, but the supervision regime is less intensive. Authorities will typically investigate only after an incident or when given evidence of non-compliance.',
         regime: 'Important entities are subject to reactive supervision (Article 33).',
       };
     default:
       return {
         supervision: 'Not directly supervised under NIS2',
-        penalties: 'N/A — not in scope',
-        description: 'Based on your responses, your organisation appears unlikely to fall directly within NIS2 scope. However, you may still be affected indirectly — if your customers are in-scope entities, they may impose NIS2-aligned cybersecurity requirements on you through supply chain provisions. Adopting NIS2 measures voluntarily is considered good practice.',
+        penalties: 'N/A – not in scope',
+        description: 'Based on your responses, your organisation appears unlikely to fall directly within NIS2 scope. However, you may still be affected indirectly. If your customers are in-scope entities, they may impose NIS2-aligned cybersecurity requirements on you through supply chain provisions. Adopting NIS2 measures voluntarily is considered good practice.',
         regime: 'Consider voluntary adoption of NIS2 measures, especially if you serve in-scope customers.',
       };
   }

@@ -5,7 +5,7 @@ let pool = null;
 
 async function initDatabase() {
   if (!DATABASE_URL) {
-    console.warn('[WELCOME] DATABASE_URL not set — assessment persistence disabled');
+    console.warn('[WELCOME] DATABASE_URL not set. Assessment persistence disabled.');
     return;
   }
   pool = new pg.Pool({ connectionString: DATABASE_URL });

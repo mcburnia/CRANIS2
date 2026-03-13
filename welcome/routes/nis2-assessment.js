@@ -110,7 +110,7 @@ router.post('/verify', async (req, res) => {
 
     if (isNewAssessment && isConfigured()) {
       sendLeadNotification({
-        subject: `New NIS2 assessment started \u2014 ${email.toLowerCase()}`,
+        subject: `New NIS2 assessment started \u2013 ${email.toLowerCase()}`,
         html: `<p>A new user has started the NIS2 Readiness Assessment:</p><p><strong>${escapeHtml(email)}</strong></p><p>Assessment ID: ${assessment.id}</p><p>Time: ${new Date().toISOString()}</p>`,
       });
     }
@@ -217,7 +217,7 @@ router.post('/send-report', async (req, res) => {
     const emailRes = await sendEmail({
       from: 'CRANIS2 <noreply@poste.cranis2.com>',
       to: reportEmail,
-      subject: `Your NIS2 Readiness Assessment Report \u2014 ${scores.overallPct}% Ready`,
+      subject: `Your NIS2 Readiness Assessment Report \u2013 ${scores.overallPct}% Ready`,
       html: reportHtml,
     });
 
@@ -229,7 +229,7 @@ router.post('/send-report', async (req, res) => {
     await sendEmail({
       from: 'CRANIS2 Assessment <noreply@poste.cranis2.com>',
       to: 'info@cranis2.com',
-      subject: `NIS2 Assessment Completed \u2014 ${reportEmail} (${scores.overallPct}% ready, ${ENTITY_LABELS[entity_class]})`,
+      subject: `NIS2 Assessment Completed \u2013 ${reportEmail} (${scores.overallPct}% ready, ${ENTITY_LABELS[entity_class]})`,
       html: `<h3>NIS2 Readiness Assessment Completed</h3>
 <table style="border-collapse:collapse;font-family:sans-serif;">
 <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Email</td><td>${escapeHtml(reportEmail)}</td></tr>

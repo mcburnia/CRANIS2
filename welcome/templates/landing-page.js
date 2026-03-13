@@ -6,7 +6,7 @@ function unsubscribePage(success, detail) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${success ? 'Unsubscribed' : 'Error'} — CRANIS2</title>
+<title>${success ? 'Unsubscribed' : 'Error'} – CRANIS2</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
@@ -39,7 +39,7 @@ function loginPage(error) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CRANIS2 — Welcome</title>
+<title>CRANIS2 – Welcome</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -105,7 +105,7 @@ function assessmentLandingPage() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Free Compliance Assessments — CRANIS2</title>
+<title>Free Compliance Assessments – CRANIS2</title>
 <meta name="description" content="Free EU cybersecurity compliance assessments. Check your readiness for the Cyber Resilience Act (CRA) and the Network and Information Security Directive 2 (NIS2).">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -177,7 +177,7 @@ function assessmentLandingPage() {
       <li>Priority recommendations with specific next steps and regulatory references</li>
       <li>A detailed report emailed to you that you can share with your team</li>
     </ul>
-    <p style="margin-top:12px;">Your progress is saved automatically \u2014 you can pause and return at any time. We will never spam you or share your information.</p>
+    <p style="margin-top:12px;">Your progress is saved automatically. You can pause and return at any time. We will never spam you or share your information.</p>
   </div>
 
   <div class="info-box" style="margin-top:16px;">
@@ -186,7 +186,7 @@ function assessmentLandingPage() {
   </div>
 
   <div class="footer">
-    <a href="/welcome">Learn more about CRANIS2</a> \u2014 EU Cybersecurity Compliance Platform
+    <a href="/welcome">Learn more about CRANIS2</a> \u2013 EU Cybersecurity Compliance Platform
   </div>
 </div>
 </body>
