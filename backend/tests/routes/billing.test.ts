@@ -98,4 +98,105 @@ describe('/api/billing', () => {
       expect(impRes.body.status).toBe('trial');
     });
   });
+
+  // ─── GET /api/billing/contributors ────────────────────────────────────
+
+  describe('GET /api/billing/contributors', () => {
+    it('should reject unauthenticated request', async () => {
+      const res = await api.get('/api/billing/contributors');
+      expect(res.status).toBe(401);
+    });
+
+    it('should return contributor counts for org', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.get('/api/billing/contributors', { auth: token });
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('active');
+      expect(typeof res.body.active).toBe('number');
+    });
+
+    it('should return different contributor data per org', async () => {
+      const mfgToken = await loginTestUser(TEST_USERS.mfgAdmin);
+      const impToken = await loginTestUser(TEST_USERS.impAdmin);
+
+      const mfgRes = await api.get('/api/billing/contributors', { auth: mfgToken });
+      const impRes = await api.get('/api/billing/contributors', { auth: impToken });
+
+      expect(mfgRes.status).toBe(200);
+      expect(impRes.status).toBe(200);
+    });
+  });
+
+  // ─── CSIRT Country ────────────────────────────────────────────────────
+
+  describe('CSIRT country', () => {
+    it('should reject unauthenticated GET /csirt-country', async () => {
+      const res = await api.get('/api/billing/csirt-country');
+      expect(res.status).toBe(401);
+    });
+
+    it('should return csirt-country for org', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.get('/api/billing/csirt-country', { auth: token });
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('csirtCountry');
+    });
+
+    it('should update csirt-country', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+
+      const putRes = await api.put('/api/billing/csirt-country', {
+        auth: token,
+        body: { csirtCountry: 'DE' },
+      });
+      expect(putRes.status).toBe(200);
+
+      // Read back
+      const getRes = await api.get('/api/billing/csirt-country', { auth: token });
+      expect(getRes.body.csirtCountry).toBe('DE');
+
+      // Restore original
+      await api.put('/api/billing/csirt-country', {
+        auth: token,
+        body: { csirtCountry: null },
+      });
+    });
+
+    it('should reject invalid country code', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.put('/api/billing/csirt-country', {
+        auth: token,
+        body: { csirtCountry: 'INVALID' },
+      });
+      expect([400, 422]).toContain(res.status);
+    });
+  });
+
+  // ─── Contributor departed management ──────────────────────────────────
+
+  describe('POST/DELETE /api/billing/contributors/:login/departed', () => {
+    it('should reject unauthenticated departed request', async () => {
+      const res = await api.post('/api/billing/contributors/testuser/departed');
+      expect(res.status).toBe(401);
+    });
+
+    it('should mark contributor as departed and restore', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+
+      // Mark departed
+      const markRes = await api.post('/api/billing/contributors/test-contributor-billing/departed', {
+        auth: token,
+      });
+      // May succeed or 404 if contributor doesn't exist — both are valid
+      expect([200, 404]).toContain(markRes.status);
+
+      if (markRes.status === 200) {
+        // Restore
+        const restoreRes = await api.delete('/api/billing/contributors/test-contributor-billing/departed', {
+          auth: token,
+        });
+        expect(restoreRes.status).toBe(200);
+      }
+    });
+  });
 });

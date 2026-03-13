@@ -81,6 +81,86 @@ describe('/api/escrow', () => {
     });
   });
 
+  // ─── GET /:productId/status ──────────────────────────────────────────
+
+  describe('GET /:productId/status', () => {
+    it('should reject unauthenticated request', async () => {
+      const res = await api.get(`/api/escrow/${mfgProductId}/status`);
+      expect(res.status).toBe(401);
+    });
+
+    it('should return escrow status for product', async () => {
+      const res = await api.get(`/api/escrow/${mfgProductId}/status`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('configured');
+      expect(typeof res.body.configured).toBe('boolean');
+    });
+  });
+
+  // ─── GET /:productId/agents ─────────────────────────────────────────
+
+  describe('GET /:productId/agents', () => {
+    it('should reject unauthenticated request', async () => {
+      const res = await api.get(`/api/escrow/${mfgProductId}/agents`);
+      expect(res.status).toBe(401);
+    });
+
+    it('should return agents list for product', async () => {
+      const res = await api.get(`/api/escrow/${mfgProductId}/agents`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('users');
+      expect(Array.isArray(res.body.users)).toBe(true);
+    });
+
+    it('should reject cross-org access to agents', async () => {
+      const res = await api.get(`/api/escrow/${mfgProductId}/agents`, { auth: impToken });
+      expect([403, 404]).toContain(res.status);
+    });
+  });
+
+  // ─── POST /:productId/agents (invite) ───────────────────────────────
+
+  describe('POST /:productId/agents', () => {
+    it('should reject unauthenticated agent invite', async () => {
+      const res = await api.post(`/api/escrow/${mfgProductId}/agents`, {
+        body: { email: 'test@example.com' },
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it('should reject invite without email', async () => {
+      const res = await api.post(`/api/escrow/${mfgProductId}/agents`, {
+        auth: mfgToken,
+        body: {},
+      });
+      expect([400, 422]).toContain(res.status);
+    });
+
+    it('should reject cross-org agent invite', async () => {
+      const res = await api.post(`/api/escrow/${mfgProductId}/agents`, {
+        auth: impToken,
+        body: { email: 'agent@example.com' },
+      });
+      expect([403, 404]).toContain(res.status);
+    });
+  });
+
+  // ─── POST /:productId/setup ─────────────────────────────────────────
+
+  describe('POST /:productId/setup', () => {
+    it('should reject unauthenticated setup', async () => {
+      const res = await api.post(`/api/escrow/${mfgProductId}/setup`);
+      expect(res.status).toBe(401);
+    });
+
+    it('should reject cross-org setup', async () => {
+      const res = await api.post(`/api/escrow/${mfgProductId}/setup`, {
+        auth: impToken,
+      });
+      expect([403, 404]).toContain(res.status);
+    });
+  });
+
   // ─── Cross-org isolation ──────────────────────────────────────────────
 
   describe('Cross-org isolation', () => {

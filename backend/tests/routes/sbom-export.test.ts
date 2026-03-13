@@ -81,6 +81,62 @@ describe('/api/sbom', () => {
     });
   });
 
+  // ─── GET /:productId/export/cyclonedx ─────────────────────────────────
+
+  describe('GET /:productId/export/cyclonedx', () => {
+    it('should reject unauthenticated request', async () => {
+      const res = await api.get(`/api/sbom/${mfgProductId}/export/cyclonedx`);
+      expect(res.status).toBe(401);
+    });
+
+    it('should return CycloneDX JSON or 404 if no SBOM', async () => {
+      const res = await api.get(`/api/sbom/${mfgProductId}/export/cyclonedx`, { auth: mfgToken });
+      if (res.status === 200) {
+        // Should be a JSON download with CycloneDX structure
+        expect(res.body).toHaveProperty('bomFormat');
+        expect(res.body.bomFormat).toBe('CycloneDX');
+        expect(res.body).toHaveProperty('specVersion');
+        expect(res.body).toHaveProperty('components');
+        expect(Array.isArray(res.body.components)).toBe(true);
+      } else {
+        // No SBOM data — 404 is acceptable
+        expect(res.status).toBe(404);
+      }
+    });
+
+    it('should reject cross-org access', async () => {
+      const res = await api.get(`/api/sbom/${mfgProductId}/export/cyclonedx`, { auth: impToken });
+      expect([403, 404]).toContain(res.status);
+    });
+  });
+
+  // ─── GET /:productId/export/spdx ────────────────────────────────────
+
+  describe('GET /:productId/export/spdx', () => {
+    it('should reject unauthenticated request', async () => {
+      const res = await api.get(`/api/sbom/${mfgProductId}/export/spdx`);
+      expect(res.status).toBe(401);
+    });
+
+    it('should return SPDX JSON or 404 if no SBOM', async () => {
+      const res = await api.get(`/api/sbom/${mfgProductId}/export/spdx`, { auth: mfgToken });
+      if (res.status === 200) {
+        // Should be a JSON download with SPDX structure
+        expect(res.body).toHaveProperty('spdxVersion');
+        expect(res.body.spdxVersion).toMatch(/^SPDX-/);
+        expect(res.body).toHaveProperty('packages');
+        expect(Array.isArray(res.body.packages)).toBe(true);
+      } else {
+        expect(res.status).toBe(404);
+      }
+    });
+
+    it('should reject cross-org access', async () => {
+      const res = await api.get(`/api/sbom/${mfgProductId}/export/spdx`, { auth: impToken });
+      expect([403, 404]).toContain(res.status);
+    });
+  });
+
   // ─── Cross-org isolation ──────────────────────────────────────────────
 
   describe('Cross-org isolation', () => {

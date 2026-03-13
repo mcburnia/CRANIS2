@@ -1,13 +1,15 @@
 /**
  * Due Diligence Route Tests — /api/due-diligence
  *
- * Tests: preview data retrieval, auth, cross-org isolation
+ * Tests: preview data retrieval, export download, auth, cross-org isolation,
+ * preview field depth validation
  *
- * API response format (from probing):
+ * API response formats (from probing):
  * - GET /api/due-diligence/:productId/preview returns {
  *     product, organisation, dependencies, licenseScan,
  *     licenseFindings, vulnerabilities, ...
  *   }
+ * - GET /api/due-diligence/:productId/export returns ZIP file download
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -50,7 +52,6 @@ describe('/api/due-diligence', () => {
       });
       expect(res.status).toBe(200);
 
-      // Product object should have identifying info
       expect(res.body.product).toBeTruthy();
       expect(typeof res.body.product).toBe('object');
     });
@@ -61,14 +62,78 @@ describe('/api/due-diligence', () => {
       });
       expect(res.status).toBe(200);
 
-      // Organisation object should be present
       expect(res.body.organisation).toBeTruthy();
       expect(typeof res.body.organisation).toBe('object');
+    });
+
+    it('should include dependency and vulnerability data', async () => {
+      const res = await api.get(`/api/due-diligence/${mfgProductId}/preview`, {
+        auth: mfgToken,
+      });
+      expect(res.status).toBe(200);
+
+      // Dependencies section
+      expect(res.body).toHaveProperty('dependencies');
+
+      // Vulnerabilities section
+      expect(res.body).toHaveProperty('vulnerabilities');
+    });
+
+    it('should include licence scan data', async () => {
+      const res = await api.get(`/api/due-diligence/${mfgProductId}/preview`, {
+        auth: mfgToken,
+      });
+      expect(res.status).toBe(200);
+
+      // Licence-related fields
+      expect(res.body).toHaveProperty('licenseScan');
+      expect(res.body).toHaveProperty('licenseFindings');
     });
 
     it('should return 404 for non-existent product', async () => {
       const fakeId = '00000000-0000-0000-0000-000000000000';
       const res = await api.get(`/api/due-diligence/${fakeId}/preview`, {
+        auth: mfgToken,
+      });
+      expect([403, 404]).toContain(res.status);
+    });
+  });
+
+  // ─── GET /:productId/export ─────────────────────────────────────────
+
+  describe('GET /:productId/export', () => {
+    it('should reject unauthenticated request', async () => {
+      const res = await api.get(`/api/due-diligence/${mfgProductId}/export`);
+      expect(res.status).toBe(401);
+    });
+
+    it('should return a downloadable file for product', async () => {
+      const res = await api.get(`/api/due-diligence/${mfgProductId}/export`, {
+        auth: mfgToken,
+      });
+      // Should succeed with a file download or 404 if no data to export
+      expect([200, 404]).toContain(res.status);
+
+      if (res.status === 200) {
+        // Should have content-type indicating a file download
+        const contentType = res.headers?.get?.('content-type') || '';
+        const isDownload = contentType.includes('zip') ||
+                           contentType.includes('octet-stream') ||
+                           contentType.includes('application/');
+        expect(isDownload).toBe(true);
+      }
+    });
+
+    it('should reject cross-org export access', async () => {
+      const res = await api.get(`/api/due-diligence/${mfgProductId}/export`, {
+        auth: impToken,
+      });
+      expect([403, 404]).toContain(res.status);
+    });
+
+    it('should return 404 for non-existent product export', async () => {
+      const fakeId = '00000000-0000-0000-0000-000000000000';
+      const res = await api.get(`/api/due-diligence/${fakeId}/export`, {
         auth: mfgToken,
       });
       expect([403, 404]).toContain(res.status);
@@ -93,6 +158,14 @@ describe('/api/due-diligence', () => {
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('product');
       expect(res.body).toHaveProperty('organisation');
+    });
+
+    it('should allow impAdmin to export their own product', async () => {
+      const impProductId = TEST_IDS.products.impGithub;
+      const res = await api.get(`/api/due-diligence/${impProductId}/export`, {
+        auth: impToken,
+      });
+      expect([200, 404]).toContain(res.status);
     });
   });
 });
