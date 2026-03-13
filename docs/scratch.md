@@ -83,6 +83,7 @@ Cross-cutting (done)
 -	Flaky risk-findings status filter test fix (open instead of resolved)	DONE
 -	CoPilot quality standard + 3-layer prompt architecture + admin prompt editor	DONE
 -	GRC bridge stub (unblocks Docker build for parked P4 #23)	DONE
+-	Editorial standard (docs/EDITORIAL-STANDARD.md) + full codebase sweep (em dash ban, UK English)	DONE
 
 ---
 
@@ -93,8 +94,10 @@ Cross-cutting (done)
 **P5:** 0/7 – Supplier marketplace not started (post-launch)
 **P6:** ALL DONE (document template library)
 **Bugs:** 3/3 ALL DONE
-
 **P7:** 3/4 DONE (#38 AI copilot prompts, #40 codebase modularity, #41 docs update) – #39 automation wizards TODO
+**P8:** ALL DONE (10-year compliance vault, 7 phases A–G)
+**P9:** ALL DONE (CRA + NIS2 conformity assessments, assessment landing page, launch list subscription)
+**Cross-cutting:** Editorial standard established and applied across entire codebase (frontend, backend, docs, welcome site)
 
 **Immediate next:**
 - P7 #39 – Automation wizards (batch fill, post-scan triage, onboarding wizard)
@@ -103,15 +106,22 @@ Cross-cutting (done)
 
 ---
 
-## P8 – 10-Year Compliance Vault (Art. 13(10)) – 3/5 DONE
+## P8 – 10-Year Compliance Vault (Art. 13(10)) – ALL DONE
 
 | # | Feature | Effort | Status |
 |---|---------|--------|--------|
 | 40 | Compliance snapshot generator | Medium | DONE |
 | 41 | RFC 3161 qualified timestamping | Low | DONE |
 | 42 | Scaleway Glacier cold storage | Medium | DONE |
-| 43 | Automated snapshot scheduling | Low | TODO |
-| 44 | Retention dashboard | Low | TODO |
+| 43 | Automated snapshot scheduling | Low | DONE |
+| 44 | Retention dashboard | Low | DONE |
+
+Additional phases completed beyond original scope:
+- Phase C: Ed25519 document signing for compliance archives
+- Phase D: Retention reserve ledger and funding certificates
+- Phase E: Storage lifecycle controls (grace period, pending deletion)
+- Phase F: Event-triggered snapshots (SBOM update, vuln scan, obligation change)
+- Phase G: Admin retention dashboard with funding run and auto-extend
 
 **Why this matters:** The CRA requires technical documentation + EU DoC retained for at least 10 years after market placement (or support period, whichever is longer). No competitor is solving this. Most manufacturers have no idea how they'll comply. CRANIS2 can make it automatic, legally robust, and essentially free – included in the subscription.
 
@@ -289,9 +299,18 @@ At scale (100 customers, 5 products each = 500 products): **~€1,890 total over
 
 ---
 
-## P9 – Compliance Coverage Gaps & Growth Funnels – NOT STARTED
+## P9 – Public Conformity Assessments & Growth Funnels – ASSESSMENTS DONE, FUNNELS BACKLOG
 
-**Strategy:** Every regulatory gap is a marketing opportunity. Each gap below is both a genuine compliance feature AND a conversion funnel entry point. The pattern: free assessment tool → demonstrates the gap → email capture → nurture → CRANIS2 subscription.
+### Completed (sessions 38–39)
+
+- **CRA Conformity Assessment** — 12-question public assessment at `/cra-conformity-assessment`. Email verification, progress saving, per-section maturity scoring, emailed HTML reports. DONE
+- **NIS2 Readiness Assessment** — 25-question public assessment at `/nis2-conformity-assessment`. Entity classification, supervision regime, penalty levels, per-section maturity. DONE
+- **Assessment landing page** — `/conformity-assessment` with cards for both assessments. DONE
+- **Launch list subscription** — Subscribe/unsubscribe with HMAC-signed tokens. DONE
+
+### Backlog – Growth Funnels (not started)
+
+**Strategy:** Every regulatory gap is a marketing opportunity. Each gap below is both a genuine compliance feature AND a conversion funnel entry point. The pattern: free assessment tool, email capture, nurture, CRANIS2 subscription.
 
 ### Features
 

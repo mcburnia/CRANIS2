@@ -1089,7 +1089,7 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-12 (session 39)
+**Last updated:** 2026-03-13 (session 42)
 
 **Completed:**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
@@ -1323,7 +1323,31 @@ sudo systemctl restart cloudflared
 - **Assessment landing page** — `/conformity-assessment` serves a landing page with cards for both CRA and NIS2 assessments. URL reorganisation: CRA moved to `/cra-conformity-assessment`, NIS2 at `/nis2-conformity-assessment`. Shared subscribe/unsubscribe endpoints kept at original paths for backward compatibility with already-sent emails.
 - **Navigation improvements** — "Returning?" info box on landing page explaining progress restoration. "← All assessments" back link on both assessment pages.
 
+**Session 40 (2026-03-12):**
+- **Codebase modularity refactor (P7 #40)** — Decomposed `backend/src/routes/technical-file.ts` (1,400+ lines) into focused sub-router modules: `sections.ts`, `suggestions.ts`, `cvd-pdf.ts`, `doc-pdf.ts`, `declaration.ts`, `checklist.ts`, `compliance-gaps.ts`, composed via `index.ts` with shared middleware in `shared.ts`. Follows established pattern from `routes/github/` and `routes/admin/`.
+- **Docs update (P7 #41)** — Updated welcome page, USER-GUIDE.md, and FAQ.md to reflect all current platform capabilities including AI Copilot, public API, CI/CD gate, MCP server, IDE assistant, document templates, and Trello integration.
+- **P8 10-Year Compliance Vault (all phases)** — Complete implementation of CRA Art. 13(10) evidence retention:
+  - **Phase A** — Release-triggered evidence capture. `compliance_snapshots` and `retention_obligations` tables. `POST /api/products/:id/compliance-snapshot` assembles ZIP with technical file, obligations, SBOMs, vulnerability history, activity log, SHA-256 manifest, and self-verifying README. Retention deadline computed from market placement + 10 years or support period end.
+  - **Phase B** — RFC 3161 timestamping. SHA-256 of snapshot ZIP submitted to FreeTSA.org, timestamp token (.tsr) stored alongside archive. `POST /api/products/:id/compliance-snapshot/:snapshotId/timestamp`.
+  - **Phase C** — Ed25519 document signing. Platform signing keypair generated on first use (`SIGNING_PRIVATE_KEY`/`SIGNING_PUBLIC_KEY` env vars). Each snapshot signed with detached Ed25519 signature. Verification instructions in archive README.
+  - **Phase D** — Retention reserve ledger. `retention_reserves` and `funding_certificates` tables tracking per-product storage cost reserves (€0.38/product/year). Funding certificate generation with HMAC-SHA256 verification. `GET /api/admin/retention/reserves`, `POST /api/admin/retention/fund`.
+  - **Phase E** — Storage lifecycle controls. Retention status state machine (active → grace_period → pending_deletion → deleted). 90-day grace period on cancellation. `POST /api/admin/retention/:id/extend`, `POST /api/admin/retention/:id/delete`. Lifecycle transition audit logging.
+  - **Phase F** — Automated snapshot scheduling. Quarterly cron job generates snapshots for all active products. Event-triggered snapshots on SBOM update, vulnerability scan, obligation change. SHA-256 deduplication skips unchanged content. Email notification on new archive.
+  - **Phase G** — Retention dashboard for platform admins. `/admin/retention` page with aggregate stats (total obligations, storage estimate, funding status), filterable obligation table with status badges, per-obligation detail panel with snapshot history and lifecycle controls. HelpTip guidance icons throughout.
+  - **Funding Run tab** — Bulk Wise transfer recording for retention reserve funding across multiple products.
+  - **Auto-extend retention** — When a product's support period is updated, retention deadline automatically recalculates.
+
+**Session 41 (2026-03-12):**
+- **Welcome site content update** — Updated all public-facing content on the welcome site for current platform capabilities.
+- **Editorial standard established** — Created `docs/EDITORIAL-STANDARD.md` defining the CRANIS2 foundational editorial prompt. 9 hard linting rules: em dash ban, colon discipline, triadic phrase suppression, hedging removal, transition minimalism, sentence rhythm control, bullet list discipline, consultancy cliche suppression, AI smoothness detection. UK English mandatory. Applied retrospectively to all welcome site content (16 files).
+
+**Session 42 (2026-03-13):**
+- **Full editorial standard sweep** — Applied em dash ban across the entire codebase:
+  - Frontend: 55 files, 203 em dashes removed. Context-sensitive replacements (en dashes for label separators and ranges, full stops/commas/colons for prose clause-joiners).
+  - Backend: 103 files, 692 em dashes removed. Copilot system prompts, obligation engine reason strings, licence scanner output, conformity assessment descriptions, route error messages, alert email content all updated.
+  - Documentation: 28 UML diagram files (43 em dashes), USER-GUIDE.md (~150 edits including double-dash separators), LLD.md (UK English fix), USB-STORAGE-SETUP.md (UK English fixes). Fixed Unicode escape artefacts (`\u2013` literals) in EXECUTIVE-SUMMARY.md and CRANIS2-CAPABILITIES-AND-SAFEGUARDS.md.
+
 **Next Steps:**
-- P7 #39 — Automation wizards
+- P7 #39 — Automation wizards (batch fill, post-scan triage, onboarding wizard)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)

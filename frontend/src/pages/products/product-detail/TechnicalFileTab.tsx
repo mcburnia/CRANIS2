@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
-  Shield, FileText, CheckCircle2, Clock, ChevronRight, Loader2, Download, Save, Info, AlertTriangle, Sparkles,
+  Shield, FileText, CheckCircle2, Clock, ChevronRight, Loader2, Download, Save, Info, AlertTriangle, Sparkles, Wand2,
 } from 'lucide-react';
 import HelpTip from '../../../components/HelpTip';
+import BatchFillWizard from '../../../components/BatchFillWizard';
 import type { TechFileData, TechFileSection } from './shared';
 import { TECHFILE_HELP, timeAgo } from './shared';
 
@@ -23,6 +24,7 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
   const [aiError, setAiError] = useState<string | null>(null);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
   const [generatingRiskAssessment, setGeneratingRiskAssessment] = useState(false);
+  const [showBatchFill, setShowBatchFill] = useState(false);
 
   const statusConfig = {
     completed: { icon: CheckCircle2, color: 'var(--green)', text: 'Complete' },
@@ -470,7 +472,15 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
           <h3>Technical Documentation</h3>
           <p>The technical file must be compiled before placing the product on the EU market (CRA Annex VII, Article 31). Click each section to expand and edit.</p>
         </div>
-        <div className="tf-progress-summary">
+        <div className="tf-progress-summary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            className="btn tf-batch-fill-btn"
+            onClick={() => setShowBatchFill(true)}
+            title="Auto-populate all empty fields from platform data"
+          >
+            <Wand2 size={14} />
+            Batch Fill
+          </button>
           <span className="tf-progress-count">{techFileData.progress.completed}/{techFileData.progress.total} complete</span>
         </div>
       </div>
@@ -653,6 +663,13 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
           );
         })}
       </div>
+      {showBatchFill && (
+        <BatchFillWizard
+          productId={productId}
+          onClose={() => setShowBatchFill(false)}
+          onComplete={onUpdate}
+        />
+      )}
     </div>
   );
 }
