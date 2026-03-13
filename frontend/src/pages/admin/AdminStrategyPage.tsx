@@ -84,8 +84,8 @@ export default function AdminStrategyPage() {
               Europe introduced two major cybersecurity regulations that are fundamentally changing the software industry:
             </p>
             <ul>
-              <li><strong>The Cyber Resilience Act (CRA)</strong> — entered into force December 2024. Any product containing digital elements sold in the EU must meet cybersecurity requirements, carry a CE mark, and maintain ongoing compliance.</li>
-              <li><strong>The NIS2 Directive</strong> — already being transposed into national law. Organisations operating critical infrastructure must demonstrate security baselines.</li>
+              <li><strong>The Cyber Resilience Act (CRA)</strong> – entered into force December 2024. Any product containing digital elements sold in the EU must meet cybersecurity requirements, carry a CE mark, and maintain ongoing compliance.</li>
+              <li><strong>The NIS2 Directive</strong> – already being transposed into national law. Organisations operating critical infrastructure must demonstrate security baselines.</li>
             </ul>
             <p>
               These regulations exist because software supply chains have become a major security risk.
@@ -112,11 +112,11 @@ export default function AdminStrategyPage() {
               </div>
               <div className="ast-timeline-item">
                 <span className="ast-timeline-date">Sep 2026</span>
-                <span className="ast-timeline-desc">CRA reporting obligations begin — companies must report actively exploited vulnerabilities within 24 hours</span>
+                <span className="ast-timeline-desc">CRA reporting obligations begin. Companies must report actively exploited vulnerabilities within 24 hours</span>
               </div>
               <div className="ast-timeline-item">
                 <span className="ast-timeline-date">Dec 2027</span>
-                <span className="ast-timeline-desc">Full CRA compliance required — products without CE mark cannot be sold in the EU</span>
+                <span className="ast-timeline-desc">Full CRA compliance required. Products without CE mark cannot be sold in the EU</span>
               </div>
             </div>
 
@@ -143,11 +143,11 @@ export default function AdminStrategyPage() {
             </div>
             <p>
               This lack of visibility is the problem regulators are trying to solve.
-              When a critical vulnerability is disclosed, companies need to know within hours — not days or weeks —
+              When a critical vulnerability is disclosed, companies need to know within hours, not days or weeks,
               whether they are affected. Without a structured inventory of software components, this is impossible.
             </p>
             <p>
-              The supply chain problem is compounded by transitive dependencies — dependencies of dependencies.
+              The supply chain problem is compounded by transitive dependencies: dependencies of dependencies.
               A typical web application may declare 20 direct dependencies but actually include 200 or more
               transitive packages. Each one is a potential vector for vulnerability, licence conflict, or
               supply chain attack.
@@ -158,7 +158,7 @@ export default function AdminStrategyPage() {
           <section id="compliance-gap" className="ast-section">
             <h2>3. The Compliance Gap</h2>
             <p>
-              Most software companies — especially smaller ones — do not currently maintain:
+              Most software companies, especially smaller ones, do not currently maintain:
             </p>
             <ul>
               <li>Software bills of materials (SBOMs)</li>
@@ -188,23 +188,23 @@ export default function AdminStrategyPage() {
             </p>
             <p>It provides:</p>
             <ul>
-              <li><strong>Dependency discovery</strong> — three-tier detection across 28 lockfile formats and 26 languages</li>
-              <li><strong>SBOM generation</strong> — in CycloneDX 1.6 and SPDX 2.3 formats</li>
-              <li><strong>Vulnerability monitoring</strong> — local database of 445,000+ known vulnerabilities updated daily, scanned in sub-second time</li>
-              <li><strong>Licence tracking</strong> — SPDX classification, copyleft detection, cross-licence incompatibility analysis</li>
-              <li><strong>Technical documentation</strong> — CRA Annex VII technical file with auto-population from platform data</li>
-              <li><strong>EU Declaration of Conformity</strong> — professionally formatted PDF generation</li>
-              <li><strong>Regulatory reporting</strong> — ENISA Article 14 reporting with deadline tracking</li>
-              <li><strong>Intellectual property proof</strong> — RFC 3161 cryptographic timestamps</li>
-              <li><strong>Source code escrow</strong> — self-hosted Forgejo deposits with European data sovereignty</li>
+              <li><strong>Dependency discovery</strong> – three-tier detection across 28 lockfile formats and 26 languages</li>
+              <li><strong>SBOM generation</strong> – in CycloneDX 1.6 and SPDX 2.3 formats</li>
+              <li><strong>Vulnerability monitoring</strong> – local database of 445,000+ known vulnerabilities updated daily, scanned in sub-second time</li>
+              <li><strong>Licence tracking</strong> – SPDX classification, copyleft detection, cross-licence incompatibility analysis</li>
+              <li><strong>Technical documentation</strong> – CRA Annex VII technical file with auto-population from platform data</li>
+              <li><strong>EU Declaration of Conformity</strong> – professionally formatted PDF generation</li>
+              <li><strong>Regulatory reporting</strong> – ENISA Article 14 reporting with deadline tracking</li>
+              <li><strong>Intellectual property proof</strong> – RFC 3161 cryptographic timestamps</li>
+              <li><strong>Source code escrow</strong> – self-hosted Forgejo deposits with European data sovereignty</li>
             </ul>
             <p>
               Rather than creating a compliance department inside a small company, CRANIS2 allows compliance
               to become an automated system that runs alongside development.
             </p>
             <div className="ast-callout">
-              The platform turns engineering activity that is already happening — writing code, managing dependencies,
-              running builds — into structured compliance evidence.
+              The platform turns engineering activity that is already happening, such as writing code, managing dependencies,
+              and running builds, into structured compliance evidence.
             </div>
           </section>
 
@@ -239,8 +239,8 @@ export default function AdminStrategyPage() {
             </ul>
             <p>
               CRANIS2 therefore complements development platforms by adding a governance and compliance layer
-              on top of existing engineering workflows. It connects to GitHub, Codeberg, Gitea, Forgejo, and GitLab —
-              including self-hosted instances — and converts the development activity already happening into
+              on top of existing engineering workflows. It connects to GitHub, Codeberg, Gitea, Forgejo, and GitLab,
+              including self-hosted instances, and converts the development activity already happening into
               compliance evidence.
             </p>
             <div className="ast-callout">
@@ -278,14 +278,14 @@ export default function AdminStrategyPage() {
               dependency scanners do not support.
             </p>
             <p>
-              CRANIS2 currently supports modern ecosystems — 26 languages via import scanning
-              and 28 lockfile formats — including C and C++ header detection. The legacy and embedded
+              CRANIS2 currently supports modern ecosystems: 26 languages via import scanning
+              and 28 lockfile formats, including C and C++ header detection. The legacy and embedded
               environments listed above represent significant expansion opportunities as the CRA compliance
               deadline approaches and these sectors begin looking for tooling.
             </p>
             <div className="ast-callout">
-              The sectors with the most complex dependency challenges — healthcare, energy, transport,
-              industrial automation — are also the sectors most directly regulated by NIS2. This alignment
+              The sectors with the most complex dependency challenges, such as healthcare, energy, transport, and
+              industrial automation, are also the sectors most directly regulated by NIS2. This alignment
               between market need and regulatory pressure represents an important strategic opportunity.
             </div>
           </section>
@@ -300,19 +300,19 @@ export default function AdminStrategyPage() {
             <p>
               The marketplace allows organisations to publish software products that meet compliance expectations.
               Other organisations can discover and evaluate these products. Compliance badges displayed on
-              marketplace listings are computed from real platform data — vulnerability scan results,
-              obligation completion, licence scan coverage — and cannot be self-declared.
+              marketplace listings are computed from real platform data, including vulnerability scan results,
+              obligation completion, and licence scan coverage, and cannot be self-declared.
             </p>
             <p>The marketplace connects:</p>
             <ul>
-              <li><strong>Software vendors</strong> — who want to demonstrate that their products are compliant and trustworthy</li>
-              <li><strong>Enterprises and NIS2 organisations</strong> — who need to evaluate the security posture of their suppliers</li>
-              <li><strong>Investors</strong> — who want visibility into software governance before committing capital</li>
-              <li><strong>Insurers</strong> — who need to assess cyber risk exposure</li>
-              <li><strong>Regulators</strong> — who may reference compliance evidence during market surveillance</li>
+              <li><strong>Software vendors</strong> – who want to demonstrate that their products are compliant and trustworthy</li>
+              <li><strong>Enterprises and NIS2 organisations</strong> – who need to evaluate the security posture of their suppliers</li>
+              <li><strong>Investors</strong> – who want visibility into software governance before committing capital</li>
+              <li><strong>Insurers</strong> – who need to assess cyber risk exposure</li>
+              <li><strong>Regulators</strong> – who may reference compliance evidence during market surveillance</li>
             </ul>
             <p>
-              This creates a trusted discovery environment for software suppliers — a place where compliance
+              This creates a trusted discovery environment for software suppliers: a place where compliance
               is demonstrable rather than declarative.
             </p>
             <p>
@@ -337,8 +337,8 @@ export default function AdminStrategyPage() {
             </ul>
             <p>
               This creates strong network effects. More vendors attract more buyers and evaluators,
-              which attracts more vendors. The compliance evidence generated on the platform — SBOMs,
-              vulnerability scan histories, obligation completion records — accumulates over time and
+              which attracts more vendors. The compliance evidence generated on the platform, such as SBOMs,
+              vulnerability scan histories, and obligation completion records, accumulates over time and
               becomes increasingly valuable.
             </p>
             <div className="ast-callout">
@@ -363,7 +363,7 @@ export default function AdminStrategyPage() {
               </div>
               <div className="ast-layer ast-layer-base">
                 <strong>Development Platforms</strong>
-                <span>GitHub, GitLab, Codeberg, Gitea, Forgejo — source code, CI/CD, collaboration</span>
+                <span>GitHub, GitLab, Codeberg, Gitea, Forgejo – source code, CI/CD, collaboration</span>
               </div>
             </div>
             <p>
@@ -397,8 +397,8 @@ export default function AdminStrategyPage() {
               <div className="ast-use-case">
                 <h3>Professional Indemnity Insurance</h3>
                 <p>
-                  Insurers assessing cyber risk exposure can use security posture evidence —
-                  vulnerability scan histories, obligation completion, dependency governance — to
+                  Insurers assessing cyber risk exposure can use security posture evidence,
+                  including vulnerability scan histories, obligation completion, and dependency governance, to
                   make more informed underwriting decisions. Companies with demonstrable governance
                   may qualify for lower premiums.
                 </p>
@@ -406,8 +406,8 @@ export default function AdminStrategyPage() {
               <div className="ast-use-case">
                 <h3>R&D Tax Credit Claims</h3>
                 <p>
-                  Development activity records — repository sync histories, dependency analyses,
-                  technical documentation — can support tax relief documentation by demonstrating
+                  Development activity records, including repository sync histories, dependency analyses,
+                  and technical documentation, can support tax relief documentation by demonstrating
                   systematic R&D activity and technological advancement.
                 </p>
               </div>
@@ -438,8 +438,8 @@ export default function AdminStrategyPage() {
             </div>
 
             <div className="ast-callout">
-              CRANIS2 becomes part of the broader financial ecosystem surrounding software companies —
-              not just a compliance checkbox, but a source of structured evidence that multiple
+              CRANIS2 becomes part of the broader financial ecosystem surrounding software companies.
+              It is not just a compliance checkbox, but a source of structured evidence that multiple
               stakeholders can use for decision-making.
             </div>
           </section>
@@ -453,16 +453,16 @@ export default function AdminStrategyPage() {
             </p>
             <p>The platform connects:</p>
             <ul>
-              <li><strong>Software developers</strong> — who need to demonstrate compliance without disrupting workflows</li>
-              <li><strong>Regulators</strong> — who need evidence that products meet CRA and NIS2 requirements</li>
-              <li><strong>Enterprises</strong> — who need to evaluate their software supply chain security</li>
-              <li><strong>Insurers</strong> — who need to quantify cyber risk</li>
-              <li><strong>Investors</strong> — who need governance visibility before committing capital</li>
-              <li><strong>Financial institutions</strong> — who need to evaluate software companies as creditworthy businesses</li>
+              <li><strong>Software developers</strong> – who need to demonstrate compliance without disrupting workflows</li>
+              <li><strong>Regulators</strong> – who need evidence that products meet CRA and NIS2 requirements</li>
+              <li><strong>Enterprises</strong> – who need to evaluate their software supply chain security</li>
+              <li><strong>Insurers</strong> – who need to quantify cyber risk</li>
+              <li><strong>Investors</strong> – who need governance visibility before committing capital</li>
+              <li><strong>Financial institutions</strong> – who need to evaluate software companies as creditworthy businesses</li>
             </ul>
             <p>
               Its role is to transform software engineering activity into verifiable trust signals.
-              Every SBOM generated, every vulnerability scan completed, every obligation met — these are
+              Every SBOM generated, every vulnerability scan completed, every obligation met: these are
               data points that contribute to a picture of trustworthiness that multiple stakeholders
               can rely on.
             </p>
