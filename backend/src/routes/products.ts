@@ -7,6 +7,8 @@ import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { logProductActivity } from '../services/activity-log.js';
 import { cleanupProductEscrow } from '../services/escrow-service.js';
+import { ensureObligations, computeDerivedStatuses } from '../services/obligation-engine.js';
+import { ensureSections } from './technical-file/shared.js';
 import { generateCycloneDX } from '../services/sbom-service.js';
 import { generateComplianceSnapshot } from '../services/compliance-snapshot.js';
 import { uploadToGlacier } from '../services/cold-storage.js';
@@ -756,6 +758,121 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
     res.json({ message: 'Product deleted' });
   } finally {
     await session.close();
+  }
+});
+
+// POST /api/products/:productId/onboard – One-click compliance setup wizard
+// Provisions obligations, tech file sections, and stakeholder roles in one pass.
+// The frontend wizard chains batch-fill and batch-evidence calls separately.
+router.post('/:productId/onboard', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const userEmail = (req as any).email;
+  const productId = req.params.productId as string;
+
+  try {
+    const orgId = await getUserOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    // Verify product + get metadata
+    const session = getDriver().session();
+    let productName: string;
+    let craCategory: string | null;
+    try {
+      const result = await session.run(
+        `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
+         RETURN p.name AS name, p.craCategory AS craCategory`,
+        { orgId, productId }
+      );
+      if (result.records.length === 0) {
+        res.status(404).json({ error: 'Product not found' });
+        return;
+      }
+      productName = result.records[0].get('name') || productId;
+      craCategory = result.records[0].get('craCategory') || null;
+    } finally {
+      await session.close();
+    }
+
+    const provisioned: { step: string; action: string; detail?: string }[] = [];
+
+    // 1. Ensure obligations
+    await ensureObligations(orgId, productId, craCategory);
+    const obCount = await pool.query(
+      'SELECT COUNT(*)::int AS cnt FROM obligations WHERE org_id = $1 AND product_id = $2',
+      [orgId, productId]
+    );
+    provisioned.push({ step: 'obligations', action: 'ensured', detail: `${obCount.rows[0].cnt} obligations` });
+
+    // 2. Ensure tech file sections
+    await ensureSections(productId);
+    const secCount = await pool.query(
+      'SELECT COUNT(*)::int AS cnt FROM technical_file_sections WHERE product_id = $1',
+      [productId]
+    );
+    provisioned.push({ step: 'technical_file', action: 'ensured', detail: `${secCount.rows[0].cnt} sections` });
+
+    // 3. Ensure stakeholder roles
+    const orgSession = getDriver().session();
+    let orgName = '';
+    try {
+      const orgResult = await orgSession.run('MATCH (o:Organisation {id: $orgId}) RETURN o.name AS name', { orgId });
+      orgName = orgResult.records[0]?.get('name') || '';
+    } finally {
+      await orgSession.close();
+    }
+    await pool.query(
+      `INSERT INTO stakeholders (org_id, product_id, role_key) VALUES
+       ($1, NULL, 'manufacturer_contact'), ($1, NULL, 'authorised_representative'), ($1, NULL, 'compliance_officer'),
+       ($1, $2, 'security_contact'), ($1, $2, 'technical_file_owner'), ($1, $2, 'incident_response_lead')
+       ON CONFLICT DO NOTHING`,
+      [orgId, productId]
+    );
+    await pool.query(
+      `UPDATE stakeholders SET email = $1, organisation = $2, updated_by = $3, updated_at = NOW()
+       WHERE org_id = $4 AND product_id IS NULL AND (email IS NULL OR email = '')`,
+      [userEmail, orgName, userEmail, orgId]
+    );
+    await pool.query(
+      `UPDATE stakeholders SET email = $1, organisation = $2, updated_by = $3, updated_at = NOW()
+       WHERE org_id = $4 AND product_id = $5 AND (email IS NULL OR email = '')`,
+      [userEmail, orgName, userEmail, orgId, productId]
+    );
+    provisioned.push({ step: 'stakeholders', action: 'ensured', detail: '6 roles (3 org + 3 product)' });
+
+    // 4. Compute derived obligation statuses
+    const categoryMap: Record<string, string | null> = { [productId]: craCategory || 'default' };
+    await computeDerivedStatuses([productId], orgId, categoryMap);
+    provisioned.push({ step: 'derived_statuses', action: 'computed' });
+
+    // Activity log
+    logProductActivity({
+      productId, orgId, userId, userEmail,
+      action: 'product_onboarded',
+      entityType: 'product',
+      entityId: productId,
+      summary: `Onboarding wizard completed for "${productName}"`,
+      metadata: { steps: provisioned.length },
+    }).catch(() => {});
+
+    const reqData = extractRequestData(req);
+    recordEvent({
+      userId, email: userEmail,
+      eventType: 'product_onboarded',
+      ...reqData,
+      metadata: { productId, stepsCompleted: provisioned.length },
+    }).catch(() => {});
+
+    res.json({
+      provisioned,
+      summary: {
+        stepsCompleted: provisioned.length,
+        obligations: obCount.rows[0].cnt,
+        sections: secCount.rows[0].cnt,
+      },
+    });
+  } catch (err) {
+    console.error('[ONBOARD] Failed:', err);
+    res.status(500).json({ error: 'Failed to complete onboarding' });
   }
 });
 

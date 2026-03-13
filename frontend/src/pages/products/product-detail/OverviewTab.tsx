@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import {
   Package, Shield, AlertTriangle, GitBranch,
   CheckCircle2, Circle, Clock, ChevronRight, ExternalLink, Star,
-  GitFork, Eye, RefreshCw, Unplug, Loader2, Sparkles, Activity, ArrowRight,
+  GitFork, Eye, RefreshCw, Unplug, Loader2, Sparkles, Activity, ArrowRight, Rocket,
 } from 'lucide-react';
+import OnboardingWizard from '../../../components/OnboardingWizard';
 import ConformityAssessmentCard from '../../../components/ConformityAssessmentCard';
 import type {
   Product, GitHubStatus, GitHubData, SBOMData, VersionEntry, SyncHistoryEntry,
@@ -54,6 +55,7 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
   const [checklist, setChecklist] = useState<ProductChecklistPD | null>(null);
   const [copilotUsage, setCopilotUsage] = useState<any>(null);
   const [complianceGaps, setComplianceGaps] = useState<any>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('session_token');
@@ -380,7 +382,14 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
           <CheckCircle2 size={18} />
           <h3>CRA Compliance Checklist</h3>
           {checklist && (
-            <span className="pd-cl-count">{checklist.stepsComplete}/{checklist.stepsTotal}</span>
+            <>
+              <span className="pd-cl-count">{checklist.stepsComplete}/{checklist.stepsTotal}</span>
+              {!checklist.complete && (
+                <button className="ob-setup-btn" onClick={() => setShowOnboarding(true)}>
+                  <Rocket size={13} /> Quick Setup
+                </button>
+              )}
+            </>
           )}
         </div>
 
@@ -554,6 +563,20 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
             and no open vulnerability findings remain. This product is CRA-ready.
           </p>
         </div>
+      )}
+      {showOnboarding && (
+        <OnboardingWizard
+          productId={product.id}
+          productName={product.name}
+          onClose={() => setShowOnboarding(false)}
+          onComplete={() => {
+            // Refresh checklist
+            const token = localStorage.getItem('session_token');
+            fetch(`/api/products/${product.id}/compliance-checklist`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }).then(r => r.json()).then(d => setChecklist(d)).catch(() => {});
+          }}
+        />
       )}
     </div>
   );

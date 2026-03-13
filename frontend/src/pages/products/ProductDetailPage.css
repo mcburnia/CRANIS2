@@ -1775,3 +1775,51 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
 .pst-result-row:last-child { border-bottom: none; }
 .pst-result-action { font-weight: 500; text-transform: capitalize; min-width: 80px; }
 .pst-result-id { color: var(--muted); font-family: monospace; font-size: 0.72rem; }
+
+/* ─── Onboarding Wizard ───────────────────────────────── */
+.ob-setup-btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.25rem 0.6rem; border-radius: 5px; font-size: 0.72rem; font-weight: 500;
+  border: 1px solid var(--green); background: rgba(76, 175, 80, 0.1); color: var(--green);
+  cursor: pointer; transition: all 0.15s; margin-left: auto;
+}
+.ob-setup-btn:hover { background: rgba(76, 175, 80, 0.18); }
+
+.ob-modal { max-width: 560px; }
+
+.ob-intro { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.5; }
+
+.ob-steps-preview { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; }
+.ob-step-item {
+  display: flex; gap: 0.6rem; align-items: flex-start;
+  padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 6px;
+}
+.ob-step-title { font-size: 0.82rem; font-weight: 500; color: var(--text); }
+.ob-step-desc { font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; line-height: 1.4; }
+
+.ob-options {
+  display: flex; flex-direction: column; gap: 0.4rem;
+  padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;
+  background: rgba(100, 149, 237, 0.04);
+}
+.ob-option {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.82rem; color: var(--text); cursor: pointer;
+}
+.ob-option input[type="checkbox"] { margin: 0; }
+
+.ob-done-header {
+  text-align: center; margin-bottom: 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+}
+.ob-done-header h4 { margin: 0; font-size: 1rem; color: var(--text); }
+
+.ob-done-grid { display: flex; flex-direction: column; gap: 0.35rem; }
+.ob-done-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 0.6rem; font-size: 0.82rem;
+  border-bottom: 1px solid var(--border);
+}
+.ob-done-item:last-child { border-bottom: none; }
+.ob-done-step { font-weight: 500; color: var(--text); }
+.ob-done-detail { color: var(--muted); font-size: 0.75rem; margin-left: auto; }
