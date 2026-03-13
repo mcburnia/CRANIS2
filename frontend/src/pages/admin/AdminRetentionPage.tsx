@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Archive, Shield, AlertTriangle, DollarSign, Lock, Unlock,
   Loader2, Building2, Package, TrendingUp, CreditCard, CheckCircle,
+  Banknote, CheckSquare, Square,
 } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
@@ -79,7 +80,7 @@ interface CostForecast {
   estimatedCostEur: number;
 }
 
-type TabId = 'overview' | 'ledger' | 'snapshots' | 'forecast';
+type TabId = 'overview' | 'ledger' | 'funding' | 'snapshots' | 'forecast';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -109,6 +110,10 @@ export default function AdminRetentionPage() {
   const [wiseRef, setWiseRef] = useState('');
   const [wiseSaving, setWiseSaving] = useState(false);
   const [holdSaving, setHoldSaving] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkModal, setBulkModal] = useState(false);
+  const [bulkRef, setBulkRef] = useState('');
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   const token = localStorage.getItem('session_token');
 
@@ -173,6 +178,50 @@ export default function AdminRetentionPage() {
     }
   }
 
+  const allocatedEntries = ledger.filter(e => e.status === 'allocated');
+
+  function toggleSelected(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === allocatedEntries.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allocatedEntries.map(e => e.id)));
+    }
+  }
+
+  async function handleBulkFund() {
+    if (!bulkRef.trim() || selectedIds.size === 0) return;
+    setBulkSaving(true);
+    try {
+      const res = await fetch('/api/admin/retention-ledger/bulk-fund', {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_ids: Array.from(selectedIds), wise_transaction_ref: bulkRef }),
+      });
+      if (res.ok) {
+        setBulkModal(false);
+        setBulkRef('');
+        setSelectedIds(new Set());
+        fetchData();
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
+  const selectedTotal = allocatedEntries
+    .filter(e => selectedIds.has(e.id))
+    .reduce((sum, e) => sum + parseFloat(e.funded_amount_eur), 0);
+
   if (loading) {
     return (
       <div className="aretention-loading">
@@ -224,6 +273,7 @@ export default function AdminRetentionPage() {
         {([
           { id: 'overview' as TabId, label: 'Overview', icon: Archive },
           { id: 'ledger' as TabId, label: 'Reserve Ledger', icon: DollarSign },
+          { id: 'funding' as TabId, label: 'Funding Run', icon: Banknote },
           { id: 'snapshots' as TabId, label: 'Snapshots & Holds', icon: Shield },
           { id: 'forecast' as TabId, label: 'Cost Forecast', icon: TrendingUp },
         ]).map(tab => (
@@ -370,6 +420,94 @@ export default function AdminRetentionPage() {
         </div>
       )}
 
+      {activeTab === 'funding' && (
+        <div className="aretention-section">
+          <h3><Banknote size={16} /> Funding Run</h3>
+          <p className="aretention-description">
+            Select allocated entries to mark as funded after completing a Wise transfer.
+            Use "Select All" to fund everything in one go, or pick individual entries.
+          </p>
+
+          {allocatedEntries.length === 0 ? (
+            <div className="aretention-funding-empty">
+              <CheckCircle size={32} />
+              <p>All entries are funded. Nothing to transfer.</p>
+            </div>
+          ) : (
+            <>
+              <div className="aretention-funding-toolbar">
+                <button className="aretention-btn-sm" onClick={toggleSelectAll}>
+                  {selectedIds.size === allocatedEntries.length ? <CheckSquare size={14} /> : <Square size={14} />}
+                  {selectedIds.size === allocatedEntries.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <span className="aretention-funding-count">
+                  {selectedIds.size} of {allocatedEntries.length} selected
+                  {selectedIds.size > 0 && <> · <strong>{formatEur(selectedTotal)}</strong> to transfer</>}
+                </span>
+              </div>
+
+              <div className="aretention-table-wrap">
+                <table className="aretention-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 40 }}></th>
+                      <th>Snapshot</th>
+                      <th>Product</th>
+                      <th>Size</th>
+                      <th>Amount <HelpTip text="The funded amount for this snapshot's full retention period." /></th>
+                      <th>Retention <HelpTip text="Start and end dates for the 10-year CRA retention period." /></th>
+                      <th>Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allocatedEntries.map(entry => (
+                      <tr
+                        key={entry.id}
+                        className={selectedIds.has(entry.id) ? 'aretention-row-selected' : ''}
+                        onClick={() => toggleSelected(entry.id)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <td>
+                          {selectedIds.has(entry.id)
+                            ? <CheckSquare size={16} className="aretention-check-active" />
+                            : <Square size={16} className="aretention-check-idle" />}
+                        </td>
+                        <td className="aretention-mono">{entry.snapshot_filename || entry.snapshot_id.slice(0, 8)}</td>
+                        <td className="aretention-mono">{entry.product_id.slice(0, 12)}...</td>
+                        <td>{formatBytes(parseInt(entry.archive_size_bytes))}</td>
+                        <td><strong>{formatEur(parseFloat(entry.funded_amount_eur))}</strong></td>
+                        <td>
+                          {entry.retention_start_date && entry.retention_end_date
+                            ? `${formatDate(entry.retention_start_date)} — ${formatDate(entry.retention_end_date)}`
+                            : '—'}
+                        </td>
+                        <td>{formatDate(entry.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Sticky action bar */}
+              {selectedIds.size > 0 && (
+                <div className="aretention-funding-bar">
+                  <span>
+                    <strong>{selectedIds.size}</strong> {selectedIds.size === 1 ? 'entry' : 'entries'} selected
+                    · Total: <strong>{formatEur(selectedTotal)}</strong>
+                  </span>
+                  <button
+                    className="aretention-btn-primary"
+                    onClick={() => { setBulkModal(true); setBulkRef(''); }}
+                  >
+                    <CreditCard size={14} /> Record Transfer
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {activeTab === 'snapshots' && (
         <div className="aretention-section">
           <h3>Snapshots &amp; Legal Holds</h3>
@@ -486,6 +624,37 @@ export default function AdminRetentionPage() {
                 disabled={!wiseRef.trim() || wiseSaving}
               >
                 {wiseSaving ? <Loader2 size={14} className="spin" /> : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Bulk fund modal */}
+      {bulkModal && (
+        <div className="aretention-modal-overlay" onClick={() => setBulkModal(false)}>
+          <div className="aretention-modal" onClick={e => e.stopPropagation()}>
+            <h3>Record Bulk Transfer</h3>
+            <p>
+              Enter the Wise transaction reference for this transfer.
+              This will mark <strong>{selectedIds.size}</strong> {selectedIds.size === 1 ? 'entry' : 'entries'} as
+              funded, totalling <strong>{formatEur(selectedTotal)}</strong>.
+            </p>
+            <input
+              className="aretention-input"
+              type="text"
+              placeholder="e.g. TRANSFER-12345678"
+              value={bulkRef}
+              onChange={e => setBulkRef(e.target.value)}
+              autoFocus
+            />
+            <div className="aretention-modal-actions">
+              <button className="aretention-btn-cancel" onClick={() => setBulkModal(false)}>Cancel</button>
+              <button
+                className="aretention-btn-primary"
+                onClick={handleBulkFund}
+                disabled={!bulkRef.trim() || bulkSaving}
+              >
+                {bulkSaving ? <Loader2 size={14} className="spin" /> : <><CheckCircle size={14} /> Confirm</>}
               </button>
             </div>
           </div>

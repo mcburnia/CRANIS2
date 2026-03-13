@@ -4,6 +4,7 @@
  * GET    /api/admin/retention-ledger          — list all ledger entries (filterable)
  * GET    /api/admin/retention-ledger/summary  — aggregate totals
  * PUT    /api/admin/retention-ledger/:id/wise-ref — record Wise transaction reference
+ * PUT    /api/admin/retention-ledger/bulk-fund — bulk-fund multiple allocated entries
  * GET    /api/admin/retention-ledger/:id/certificate — download funding certificate
  */
 
@@ -121,6 +122,52 @@ router.put('/retention-ledger/:id/wise-ref', requirePlatformAdmin, async (req: R
   } catch (err: any) {
     console.error('[ADMIN-RETENTION] Update wise ref error:', err);
     res.status(500).json({ error: 'Failed to update Wise reference' });
+  }
+});
+
+// ─── PUT /api/admin/retention-ledger/bulk-fund ────────────────
+// Bulk-fund multiple allocated entries with a single Wise transaction reference
+router.put('/retention-ledger/bulk-fund', requirePlatformAdmin, async (req: Request, res: Response) => {
+  const { entry_ids, wise_transaction_ref } = req.body;
+
+  if (!wise_transaction_ref || typeof wise_transaction_ref !== 'string' || !wise_transaction_ref.trim()) {
+    res.status(400).json({ error: 'wise_transaction_ref is required' });
+    return;
+  }
+  if (!Array.isArray(entry_ids) || entry_ids.length === 0) {
+    res.status(400).json({ error: 'entry_ids must be a non-empty array' });
+    return;
+  }
+  if (entry_ids.length > 500) {
+    res.status(400).json({ error: 'Maximum 500 entries per bulk operation' });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const result = await client.query(
+      `UPDATE retention_reserve_ledger
+       SET wise_transaction_ref = $1, status = 'funded', updated_at = NOW()
+       WHERE id = ANY($2::uuid[]) AND status = 'allocated'
+       RETURNING id`,
+      [wise_transaction_ref.trim(), entry_ids]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      funded: result.rows.length,
+      requested: entry_ids.length,
+      wise_transaction_ref: wise_transaction_ref.trim(),
+    });
+  } catch (err: any) {
+    await client.query('ROLLBACK');
+    console.error('[ADMIN-RETENTION] Bulk fund error:', err);
+    res.status(500).json({ error: 'Failed to bulk-fund entries' });
+  } finally {
+    client.release();
   }
 });
 
