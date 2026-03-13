@@ -165,7 +165,47 @@
   text-align: center;
   padding: 4rem 2rem;
   margin: 2rem auto;
-  max-width: 700px;
+  max-width: 800px;
+}
+.pricing-tiers {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin: 2rem 0 0;
+}
+.pricing-tier {
+  flex: 1;
+  max-width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: left;
+}
+.pricing-tier h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.pricing-tier-pro {
+  border-color: var(--accent);
+}
+.pricing-amount {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--green);
+  margin-bottom: 0.75rem;
+}
+.pricing-amount span {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+.pricing-tier p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
 }
 .cta-section h2 {
   font-size: 2rem;
@@ -436,6 +476,8 @@
   .audience h2 { font-size: 1.5rem; }
   .cta-section h2 { font-size: 1.5rem; }
   .cta-buttons { flex-direction: column; align-items: center; }
+  .pricing-tiers { flex-direction: column; align-items: center; }
+  .pricing-tier { max-width: 100%; }
   .landing-nav { padding: 1rem 1.5rem; }
 
   .mobile-menu-btn { display: flex; }

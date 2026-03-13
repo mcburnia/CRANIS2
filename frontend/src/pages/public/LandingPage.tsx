@@ -10,19 +10,19 @@ import './LandingPage.css';
 /* ── Feature + audience data ── */
 
 const features = [
-  { icon: Users, title: 'Contributor Tracking', desc: "See exactly who has access to your code repositories, every day. Dormant accounts are flagged automatically so nothing slips through the cracks." },
-  { icon: Package, title: 'Automated Risk Scanning', desc: "Every code change triggers a check of your software dependencies against known vulnerability databases — daily, with zero manual effort." },
-  { icon: Shield, title: 'Obligation Management', desc: "Understand what the regulations require of your products, track your progress, and build your compliance file — step by step." },
-  { icon: BarChart3, title: 'Outsourcing Governance', desc: "Independent evidence of who's actually working on your code — not just what the supplier invoice says." },
-  { icon: Bell, title: 'Smart Notifications', desc: "Finance sees billing. Compliance sees obligations. Tech leads see access changes. Everyone gets exactly what they need, nothing more." },
-  { icon: Lock, title: 'Immutable Audit Trail', desc: "Every snapshot, every change, every action — preserved as your evidence trail, ready for when auditors come knocking." },
+  { icon: Package, title: 'Automated SBOM & Scanning', desc: "Three-tier dependency detection across 28 lockfile formats and 26 languages. Daily scans against 445,000+ known vulnerabilities. Your software bill of materials, always current." },
+  { icon: Shield, title: 'CRA Technical File', desc: "Eight structured sections matching CRA Annex VII. Auto-populated content for product description, vulnerability handling, standards, and test reports — cutting documentation effort by 60-80%." },
+  { icon: BarChart3, title: 'Obligation Intelligence', desc: "19 CRA and NIS2 obligations mapped to your products. Statuses derived automatically from platform data — SBOMs, scans, technical file progress. Always know your true compliance standing." },
+  { icon: Lock, title: 'Evidence Vault & Retention', desc: "Cryptographically signed compliance snapshots with RFC 3161 timestamps and 10-year cold storage retention. Tamper-evident evidence that satisfies CRA Art. 13(10)." },
+  { icon: Bell, title: 'ENISA Reporting & Alerts', desc: "24-hour, 72-hour, and 14-day deadline tracking for mandatory vulnerability and incident reporting. Escalating alerts so you never miss a regulatory deadline." },
+  { icon: Users, title: 'AI Copilot & Integrations', desc: "AI-powered suggestions for technical files, vulnerability triage, risk assessments, and incident reports. Public API, CI/CD gate, Trello integration, and IDE assistant via MCP." },
 ];
 
 const audiences = [
-  { title: 'Solo developers & small teams', desc: 'Affordable compliance for independent software makers who need to meet EU requirements without a big budget.' },
-  { title: 'Software agencies', desc: 'Auditable evidence of good practice that you can share with clients who ask tough questions about security.' },
-  { title: 'Enterprise development teams', desc: 'Access governance and compliance reporting across internal teams and external contractors, all in one place.' },
-  { title: 'Compliance & legal teams', desc: 'Obligation tracking, deadline alerts, and compliance file completeness visible at a glance — no chasing developers.' },
+  { title: 'Solo developers & small teams', desc: 'Affordable CRA compliance without hiring consultants. Auto-populated technical files, AI copilot, and a step-by-step action plan get you to conformity faster.' },
+  { title: 'Software product companies', desc: 'End-to-end compliance for every product you sell into the EU. SBOMs, vulnerability monitoring, technical documentation, and regulatory reporting — all automated.' },
+  { title: 'B2B software vendors', desc: 'Provide customers with SBOMs, compliance evidence, and escrow coverage. List on the compliance marketplace to demonstrate your posture publicly.' },
+  { title: 'Compliance & legal teams', desc: 'Obligation tracking, deadline alerts, conformity assessments, and a 10-year evidence vault with legal holds — everything auditors expect, without chasing developers.' },
 ];
 
 /* ── Regulation section data ── */
@@ -33,44 +33,44 @@ const regulations = [
     icon: Shield,
     title: 'CRA (Cyber Resilience Act)',
     subtitle: 'EU regulation for secure software products',
-    intro: "From late 2027, if you sell or distribute software in the EU, it must meet mandatory cybersecurity standards. That means proving your software is built securely, vulnerabilities are handled properly, and you know exactly who contributed to the code.",
+    intro: "From late 2027, if you sell or distribute software in the EU, it must meet mandatory cybersecurity standards. That means maintaining an SBOM, monitoring vulnerabilities, retaining technical documentation for 10 years, and reporting incidents to ENISA within strict deadlines.",
     mustDemonstrate: [
-      'Your software is designed and built with security in mind from the start',
-      'You actively monitor and fix vulnerabilities in your code and its dependencies',
-      'You report serious security incidents and exploited vulnerabilities promptly',
-      'You manage the risks from third-party code and libraries in your supply chain',
-      'You can show who had access to the code and when changes were made',
+      'A Software Bill of Materials (SBOM) for every product with digital elements',
+      'Active vulnerability monitoring and timely remediation of known CVEs',
+      'A technical file covering risk assessment, design, testing, and standards (Annex VII)',
+      'Mandatory incident and vulnerability reporting to ENISA within 24/72 hours',
+      'Retention of technical documentation for 10 years after market placement (Art. 13(10))',
     ],
     howSupports: [
-      'Shows you exactly who has access to and modifies your code, across all projects',
-      'Tracks every change across your repositories with a clear paper trail',
-      'Automatically builds evidence of how you handle vulnerability decisions',
-      'Provides time-boxed workflows that match the reporting deadlines',
-      'Makes your software supply chain visible, including outsourced work',
+      'Automated SBOM generation from your repositories — 28 lockfile formats, 26 languages',
+      'Daily scans against 445,000+ vulnerabilities with AI-powered triage and fix commands',
+      'CRA Technical File with 8 structured sections and auto-populated content',
+      'ENISA reporting workflow with deadline tracking and escalating alerts',
+      'Compliance Evidence Vault with RFC 3161 timestamps, digital signing, and 10-year cold storage',
     ],
-    related: ['Secure development evidence', 'Supply-chain accountability', 'Audit-ready decision logs'],
+    related: ['EU Declaration of Conformity', 'CRA Action Plan', 'Conformity assessments'],
   },
   {
     id: 'nis2',
     icon: ShieldCheck,
     title: 'NIS2 (Network and Information Security Directive)',
     subtitle: 'EU rules for cybersecurity resilience',
-    intro: "NIS2 requires organisations that provide important services — including software — to demonstrate strong cybersecurity governance. It's particularly focused on access control, supply-chain risk, and being ready to respond to incidents.",
+    intro: "NIS2 requires organisations that provide important services — including software — to demonstrate strong cybersecurity governance. It covers supply-chain risk, incident response, vulnerability handling, and management accountability.",
     mustDemonstrate: [
-      'Security decisions are made based on actual risk, not guesswork',
-      'You control and review who has access to your systems',
-      'You understand the cybersecurity risks from your suppliers and partners',
-      'You can detect, respond to, and report security incidents',
-      'Your leadership team is accountable for cybersecurity',
+      'Risk-based security decisions with documented evidence',
+      'Supply-chain risk management for third-party dependencies',
+      'Incident detection, response, and reporting capabilities',
+      'Vulnerability handling procedures and timely remediation',
+      'Management accountability for cybersecurity measures',
     ],
     howSupports: [
-      'Gives you ongoing visibility of everyone with access — not just the active ones',
-      'Encourages good habits like off-boarding people who no longer need access',
-      'Maps the connection between your contributors, your products, and your risk exposure',
-      'Provides evidence that access is regularly reviewed and managed over time',
-      'Produces lightweight audit evidence that works for small and medium businesses',
+      'Dependency-level risk visibility across your entire software supply chain',
+      'Supplier due diligence questionnaires with automatic registry enrichment',
+      'AI-powered risk assessments with Annex I mappings, exportable as PDF',
+      'Licence compliance scanning with copyleft detection and compatibility analysis',
+      'Audit trail of every compliance action with timestamps and user attribution',
     ],
-    related: ['Access control governance', 'Supply-chain risk management', 'Incident preparedness evidence'],
+    related: ['Supply-chain risk management', 'Incident response', 'Conformity assessments'],
   },
   {
     id: 'gdpr',
@@ -79,16 +79,16 @@ const regulations = [
     subtitle: 'Protecting personal data in the EU',
     intro: "If your software processes personal data, GDPR requires you to control who can access it, minimise unnecessary access, and demonstrate accountability. CRANIS2 helps you build that evidence.",
     mustDemonstrate: [
-      'Only the right people have access to systems that handle personal data',
-      'You can show who has access and why',
-      'You have appropriate security measures in place',
-      'Privacy is considered from the design stage, not bolted on afterwards',
+      'Appropriate technical and organisational security measures',
+      'Data protection by design and by default',
+      'Accountability and evidence of compliance',
+      'Security of processing, including supply chain oversight',
     ],
     howSupports: [
-      'Shows clearly who has access to repositories and systems that may handle personal data',
-      'Provides evidence that you actively manage and review access permissions',
-      'Helps reduce unnecessary or forgotten access — supporting the principle of data minimisation',
-      'EU and Swiss hosting options to keep your compliance evidence in the right jurisdiction',
+      'Vulnerability monitoring ensures known security weaknesses are identified and remediated',
+      'Structured compliance evidence demonstrates accountability to regulators',
+      'Supply chain visibility through SBOMs and dependency risk analysis',
+      'EU and Swiss hosting — your compliance evidence stays under European jurisdiction',
     ],
     related: [],
     callout: {
@@ -129,35 +129,35 @@ const isoStandards = [
 ];
 
 const isoHelps = [
-  'Traceable records of who accessed and changed your code',
-  'Audit-friendly evidence you can hand to assessors',
-  'Clear governance over your software supply chain',
+  'Structured technical documentation aligned with CRA Annex VII',
+  'Tamper-evident compliance snapshots with cryptographic timestamps',
+  'Audit-friendly evidence vault with 10-year retention',
 ];
 
 const dogfoodingBullets = [
-  'We monitor our own repositories and contributors using CRANIS2',
-  'The same access governance rules apply to our team and our contractors',
-  'Our compliance workflows are tested in real conditions, not simulations',
+  'We track our own products, SBOMs, and vulnerabilities using CRANIS2',
+  'Our CRA technical files and obligation statuses are managed on the platform',
+  'Our compliance evidence is stored in the same vault we offer to customers',
   'Improvements come from real regulatory pressure, not theoretical exercises',
 ];
 
 const dogfoodingWhy = [
-  'We face the same compliance challenges as our customers',
+  'We face the same CRA compliance challenges as our customers',
   'The product is shaped by our own experience, not just theory',
   'There is no separate internal tool or shortcut for our own team',
   'What we recommend to you is exactly what we rely on ourselves',
 ];
 
 const isItems = [
-  'A platform that helps you understand and evidence your compliance obligations',
-  'A tool for tracking who has access to your code and what risks exist',
-  'A European alternative to expensive, heavyweight governance software',
+  'An end-to-end CRA and NIS2 compliance platform — SBOMs, vulnerability monitoring, technical documentation, and regulatory reporting',
+  'A compliance evidence vault with cryptographic timestamps, digital signatures, and 10-year retention',
+  'A European alternative to expensive consultants and heavyweight governance software',
 ];
 
 const isNotItems = [
-  'A legal certification — we help you gather evidence, not issue certificates',
+  'A legal certification body — we help you gather and retain evidence, not issue certificates',
   'A guarantee of compliance — that responsibility remains with your organisation',
-  'A replacement for good security practices — we help you prove you have them',
+  'A source code analysis tool — we read import statements and dependency files, never your business logic',
 ];
 
 export default function LandingPage() {
@@ -186,12 +186,12 @@ export default function LandingPage() {
       {/* ── Hero ── */}
       <section className="hero">
         <h1>Compliance<br /><span>without the chaos</span></h1>
-        <p>Know who's building your software, what's in it, and whether it meets EU requirements. Affordable at any scale.</p>
+        <p>Automated SBOMs, vulnerability monitoring, technical documentation, and regulatory reporting for the EU Cyber Resilience Act and NIS2. Affordable at any scale.</p>
         <div className="hero-actions">
           <Link to="/signup" className="btn btn-primary btn-lg">Try CRANIS2 Free</Link>
           <a href="#features" className="btn btn-outline btn-lg">See How It Works</a>
         </div>
-        <div className="price-badge">From <strong>&euro;6</strong> / contributor / month</div>
+        <div className="price-badge">Standard <strong>&euro;6</strong>/contributor/month &middot; Pro <strong>&euro;9</strong>/product + &euro;6/contributor</div>
       </section>
 
       {/* ── Features ── */}
@@ -389,7 +389,19 @@ export default function LandingPage() {
       {/* ── CTA ── */}
       <section id="pricing" className="cta-section">
         <h2>Simple, transparent pricing</h2>
-        <p>&euro;6 per contributor per month. A contributor is anyone with write access to a registered code repository. No hidden fees. No per-project charges. One invoice per organisation.</p>
+        <div className="pricing-tiers">
+          <div className="pricing-tier">
+            <h3>Standard</h3>
+            <div className="pricing-amount">&euro;6 <span>/ contributor / month</span></div>
+            <p>SBOMs, vulnerability monitoring, licence compliance, obligation tracking, technical file, ENISA reporting, evidence vault, document templates, and conformity assessments.</p>
+          </div>
+          <div className="pricing-tier pricing-tier-pro">
+            <h3>Pro</h3>
+            <div className="pricing-amount">&euro;9 <span>/ product / month</span> + &euro;6 <span>/ contributor</span></div>
+            <p>Everything in Standard plus AI copilot, public API, CI/CD compliance gate, Trello integration, and IDE assistant via MCP.</p>
+          </div>
+        </div>
+        <p style={{ marginTop: '1.5rem', opacity: 0.8 }}>A contributor is anyone with write access to a registered code repository. No hidden fees. One invoice per organisation.</p>
         <div className="cta-buttons">
           <Link to="/signup" className="btn btn-primary btn-lg">Start Your Free Trial</Link>
           <Link to="/login" className="btn btn-outline btn-lg">Log In</Link>

@@ -38,6 +38,14 @@ CRANIS2 takes the dependency and component information present in your repositor
 
 - **Source Code Escrow** — Protects your clients against business continuity risk. When setting up a product in CRANIS2, you can configure escrow coverage so that if your company ceases to operate, your clients are not left without the software they depend on. Source code is deposited to a self-hosted Forgejo instance within the CRANIS2 infrastructure, hosted in Switzerland (European data sovereignty). You choose the release model: either the source code is published as open source, or specific clients you designate receive private copies. Daily automated deposits ensure the escrow is always current.
 
+- **Compliance Evidence Vault** — Generates cryptographically signed compliance snapshots that bundle the complete state of a product's compliance evidence (SBOM, vulnerability scan results, licence findings, technical file, obligations) into a tamper-evident archive. Each snapshot is RFC 3161 timestamped for legal admissibility and Ed25519 signed for integrity verification. Archives are uploaded to Scaleway Glacier cold storage for 10-year retention per CRA Art. 13(10). A retention reserve ledger tracks funding with quarterly Wise transfers, cost forecasting, legal holds, and bulk funding workflows. Snapshots can be generated manually, on release, or on an automated schedule (weekly/monthly/quarterly). Retention dates automatically extend when a product's support period is updated beyond the default 10-year window.
+
+- **Document Templates** — A library of pre-built CRA compliance document templates that auto-populate with your product data. Templates cover security policies, vulnerability disclosure procedures, incident response plans, and more — reducing the documentation burden from days to minutes.
+
+- **Conformity Assessments** — Self-assessment tools for both CRA and NIS2 compliance. Each assessment walks through the regulatory requirements with guidance text, evidence linking, and progress tracking. A public assessment landing page allows prospective customers to understand your compliance posture before engaging.
+
+- **Product Lifecycle Management** — Tracks products through their lifecycle stages: pre-production, on-market, and end-of-life. Market placement dates drive retention calculations and obligation timelines. End-of-support dates are linked to technical file sections with automatic retention extension when updated.
+
 ## Why Now?
 
 The Cyber Resilience Act entered into force in December 2024. Its requirements are phasing in on a strict timeline:
@@ -105,8 +113,10 @@ Once connected, CRANIS2 runs largely on autopilot:
 - **Daily at 4 AM** — Billing checks (trial expiry, payment grace)
 - **Daily at 5 AM** — Escrow deposits are updated for all enabled products
 - **Daily at 6 AM** — Webhook health checks ensure push event pipelines are working
+- **Daily at 9 AM** — Scheduled compliance snapshots are generated (weekly/monthly/quarterly per product configuration)
 - **Hourly** — CRA reporting deadlines are checked, with escalating alerts as they approach
 - **On every sync** — Licence compliance is re-scanned and IP proof snapshots are created
+- **On release** — Compliance snapshot automatically generated with full evidence bundle
 - **On first product creation** — All stakeholder contact roles can be auto-populated with the creating user's details
 
 Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerability finding, updating a compliance obligation, or submitting an ENISA report. The rest happens in the background.
@@ -116,7 +126,7 @@ Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerab
 | | |
 |---|---|
 | **Problem** | EU legislation (CRA + NIS2) requires software companies to demonstrate cybersecurity compliance — most have no tooling for this |
-| **Solution** | CRANIS2 automates SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, regulatory reporting, source code escrow, AI-powered compliance intelligence, supplier due diligence, and external integrations (API, CI/CD, Trello, IDE) |
+| **Solution** | CRANIS2 automates SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, regulatory reporting, source code escrow, compliance evidence vault with 10-year retention, document templates, conformity assessments, AI-powered compliance intelligence, supplier due diligence, and external integrations (API, CI/CD, Trello, IDE) |
 | **Timing** | CRA reporting obligations begin Sept 2026; full compliance required Dec 2027 |
 | **Audience** | Software product companies selling into the EU, especially SMEs without dedicated compliance teams |
 | **Source code** | Import statements are read but source code is never stored, analysed or modified |

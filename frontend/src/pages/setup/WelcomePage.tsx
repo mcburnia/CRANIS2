@@ -1,7 +1,19 @@
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CheckCircle, ArrowRight } from 'lucide-react';
+import {
+  CheckCircle, ArrowRight, Package, Shield, BarChart3,
+  Lock, Bell, Users,
+} from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
+
+const highlights = [
+  { icon: Package, label: 'Automated SBOMs', desc: '28 lockfile formats, 26 languages' },
+  { icon: Shield, label: 'CRA Technical File', desc: 'Auto-populated Annex VII documentation' },
+  { icon: BarChart3, label: 'Obligation Tracking', desc: '19 CRA & NIS2 requirements mapped' },
+  { icon: Lock, label: 'Evidence Vault', desc: 'RFC 3161 timestamps, 10-year retention' },
+  { icon: Bell, label: 'ENISA Reporting', desc: '24h / 72h / 14-day deadline alerts' },
+  { icon: Users, label: 'AI Copilot', desc: 'Suggestions, triage, risk assessments' },
+];
 
 export default function WelcomePage() {
   usePageMeta();
@@ -18,7 +30,7 @@ export default function WelcomePage() {
 
   return (
     <div className="auth-page">
-      <div className="auth-container" style={{ textAlign: 'center', maxWidth: '540px' }}>
+      <div className="auth-container" style={{ textAlign: 'center', maxWidth: '600px' }}>
         <div className="logo" style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '2rem' }}>
           CRANIS<span style={{ color: 'var(--accent)' }}>2</span>
         </div>
@@ -32,11 +44,37 @@ export default function WelcomePage() {
             Welcome to CRANIS2!
           </h1>
 
-          <p style={{ color: 'var(--muted)', fontSize: '0.95rem', lineHeight: 1.7, marginBottom: '2rem' }}>
+          <p style={{ color: 'var(--muted)', fontSize: '0.95rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>
             Your email has been verified and your account is ready.
-            Let's get your organisation set up so you can start tracking
-            CRA compliance across your software products.
+            Set up your organisation to start building CRA and NIS2
+            compliance evidence across your software products.
           </p>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '0.75rem',
+            marginBottom: '2rem',
+            textAlign: 'left',
+          }}>
+            {highlights.map((h) => (
+              <div key={h.label} style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.6rem',
+                padding: '0.6rem 0.75rem',
+                background: 'var(--bg)',
+                borderRadius: '8px',
+                border: '1px solid var(--border)',
+              }}>
+                <h.icon size={16} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>{h.label}</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--muted)', lineHeight: 1.4 }}>{h.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
 
           <Link
             to="/setup/org"

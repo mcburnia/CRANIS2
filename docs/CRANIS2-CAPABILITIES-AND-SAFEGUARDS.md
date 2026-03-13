@@ -187,7 +187,68 @@ CRANIS2 includes an AI intelligence layer powered by Claude (Anthropic), availab
 | **MCP Server** | Model Context Protocol server for IDE AI assistants (VS Code, Cursor, Claude Desktop, Claude Code). 5 tools: list products, get vulnerabilities, get mitigation commands, verify fixes, check compliance status. |
 | **IDE Compliance Assistant** | In-app setup wizard on the Integrations page with auto-generated JSON config snippets for each supported IDE. |
 
-### 2.12 Additional Capabilities
+### 2.13 Compliance Evidence Vault
+
+**What:** Generates cryptographically signed, tamper-evident compliance snapshots that bundle the complete state of a product's compliance evidence into a single archive, stored in cold storage for CRA-mandated 10-year retention.
+
+**Why it matters:** CRA Art. 13(10) requires technical documentation to be retained for at least 10 years after a product is placed on the market, or for the duration of the support period, whichever is longer. Simply keeping files on a server is not sufficient — regulators expect evidence to be tamper-evident, timestamped, and independently verifiable. The compliance evidence vault provides this with full automation.
+
+**How it works:**
+- **Snapshot generation** — bundles SBOM, vulnerability scan results, licence findings, technical file sections, obligations, and metadata into a single compliance archive
+- **RFC 3161 timestamping** — each snapshot is submitted to an external Time Stamping Authority, providing legally admissible proof of when the evidence existed
+- **Ed25519 signing** — each snapshot is digitally signed with a platform key, ensuring integrity verification without relying on a third party
+- **Scaleway Glacier cold storage** — archives are uploaded to European cold storage (Scaleway, Paris region) for long-term preservation
+- **Retention reserve ledger** — tracks the cost of storing each snapshot for its full retention period, with a 2x buffer on Scaleway Glacier rates. Entries move through three states: allocated (cost calculated), funded (Wise transfer recorded), released (retention period ended)
+- **Bulk funding workflow** — a dedicated Funding Run tab allows the CFO to select all unfunded entries and record a single Wise transaction reference, marking them as funded in one operation
+- **Legal holds** — a snapshot under legal hold cannot be deleted regardless of retention status, supporting regulatory investigations and litigation preservation
+- **Cost forecast** — projects quarterly cold storage costs for the next 8 quarters based on current archive sizes and retention periods
+- **Automated scheduling** — snapshots can be generated on a weekly, monthly, or quarterly schedule per product, in addition to manual and release-triggered generation
+- **Retention extension** — when a product's support end date is updated to a date later than the current retention end, all existing snapshots for that product are automatically extended (retention can only be extended, never shortened)
+
+**Trigger types:**
+- Manual — user-initiated from the product's Compliance Vault tab
+- Release — automatically generated when a product release is created
+- Scheduled — weekly, monthly, or quarterly per product configuration (runs daily at 9 AM)
+
+### 2.14 Document Templates
+
+**What:** A library of pre-built CRA compliance document templates that auto-populate with product data from the platform.
+
+**Why it matters:** Writing compliance documents from scratch is time-consuming and error-prone. Templates provide a starting point grounded in regulatory requirements, pre-filled with your actual product data.
+
+**How it works:**
+- Templates cover security policies, vulnerability disclosure procedures, incident response plans, end-of-support notices, and more
+- Auto-population pulls product metadata, organisation details, scan results, and obligation statuses into template fields
+- Documents can be customised after generation
+- Available on all plans
+
+### 2.15 Conformity Assessments
+
+**What:** Self-assessment tools for CRA and NIS2 compliance, with a public-facing assessment landing page.
+
+**Why it matters:** Before engaging with a new software vendor, procurement teams and regulators want to understand the vendor's compliance posture. Conformity assessments provide a structured way to demonstrate readiness.
+
+**How it works:**
+- CRA and NIS2 assessment questionnaires with requirement-by-requirement guidance
+- Evidence linking to platform data (obligations, technical file sections, scan results)
+- Progress tracking with completion percentages
+- Public assessment landing page for prospective customers
+- Launch-readiness subscription for organisations preparing for CRA enforcement
+
+### 2.16 Product Lifecycle Management
+
+**What:** Tracks products through their lifecycle stages with dates that drive retention and obligation timelines.
+
+**Why it matters:** CRA obligations and retention periods are tied to when a product is placed on the market and when support ends. Lifecycle management ensures these dates are captured and propagated correctly across the platform.
+
+**How it works:**
+- Three lifecycle stages: pre-production, on-market, end-of-life
+- Market placement date drives the 10-year retention clock
+- End-of-support date (from the technical file) extends retention if it falls beyond the 10-year window
+- Lifecycle transitions are logged in the activity trail
+- CRA Action Plan — a 7-step compliance checklist per product that breaks conformity into concrete, actionable steps with real-time progress tracking
+
+### 2.17 Additional Capabilities
 
 | Capability | Purpose |
 |---|---|
@@ -341,8 +402,10 @@ Once set up, CRANIS2 runs largely on autopilot:
 | 4 AM | Billing checks (trial expiry, payment grace) |
 | 5 AM | Escrow deposits for all enabled products |
 | 6 AM | Webhook health checks — detects products with missing or silent webhooks |
+| 9 AM | Scheduled compliance snapshots — generates snapshots for products with weekly/monthly/quarterly schedules |
 | Hourly | CRA deadline monitoring with escalating alerts |
 | On push | Push webhooks flag SBOMs as stale in real time |
+| On release | Compliance snapshot automatically generated with full evidence bundle |
 
 Human interaction is needed when:
 - A new vulnerability finding requires triage
@@ -401,7 +464,7 @@ Dec 2027 ──── CRA: Full compliance required
 
 ## 9. Summary
 
-CRANIS2 automates the mechanical burden of EU cybersecurity compliance — SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, EU Declaration of Conformity, regulatory reporting, source code escrow, AI-powered compliance intelligence, supplier due diligence, and external integrations — so that software companies can meet CRA and NIS2 requirements without building a dedicated compliance department.
+CRANIS2 automates the mechanical burden of EU cybersecurity compliance — SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, EU Declaration of Conformity, regulatory reporting, source code escrow, compliance evidence vault with 10-year retention, document templates, conformity assessments, product lifecycle management, AI-powered compliance intelligence, supplier due diligence, and external integrations — so that software companies can meet CRA and NIS2 requirements without building a dedicated compliance department.
 
 It does this while reading import statements but never storing, analysing or modifying source code in any way, with strict multi-tenant isolation, with billing accountability tied to real development activity, and with all compliance data exportable in open formats at any time.
 
