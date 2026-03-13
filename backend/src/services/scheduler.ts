@@ -60,7 +60,10 @@ const SUPPORT_CHECK_HOUR = 7;
 // Hour of the day to check CRA milestone + compliance stall alerts (0-23, default: 8 AM)
 const SMART_DEADLINE_HOUR = 8;
 
-// Hour of the day to check retention expiry (0-23, default: 9 AM)
+// Hour of the day to run scheduled snapshots (0-23, default: 9 AM)
+const SNAPSHOT_SCHEDULE_HOUR = 9;
+
+// Hour of the day to check retention expiry (0-23, default: 9 AM — runs after scheduled snapshots)
 const RETENTION_EXPIRY_HOUR = 9;
 
 // Hour of the day to run monthly reserve sufficiency check (0-23, default: 10 AM — 1st of month only)
@@ -74,6 +77,7 @@ let lastEscrowDepositDate = '';
 let lastWebhookHealthDate = '';
 let lastSupportCheckDate = '';
 let lastSmartDeadlineDate = '';
+let lastSnapshotScheduleDate = '';
 let lastRetentionExpiryDate = '';
 let lastReserveSufficiencyMonth = '';
 
@@ -1110,6 +1114,133 @@ async function checkSmartDeadlineAlerts(): Promise<void> {
   }
 }
 
+// ── F1: Run scheduled compliance snapshots ───────────────────────
+async function runScheduledSnapshots(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (lastSnapshotScheduleDate === todayStr) return;
+
+  const now = new Date();
+  if (now.getUTCHours() < SNAPSHOT_SCHEDULE_HOUR) return;
+
+  lastSnapshotScheduleDate = todayStr;
+  logger.info('[SNAPSHOT-SCHEDULE] Checking for due scheduled snapshots...');
+
+  try {
+    const { generateComplianceSnapshot } = await import('../services/compliance-snapshot.js');
+    const { uploadToGlacier } = await import('../services/cold-storage.js');
+    const { createLedgerEntry } = await import('../services/retention-ledger.js');
+    const { calculateNextRunDate } = await import('../routes/compliance-snapshots.js');
+
+    // Find all enabled schedules where next_run_date <= today
+    const due = await pool.query(
+      `SELECT ss.*, u.email AS creator_email
+       FROM snapshot_schedules ss
+       LEFT JOIN users u ON u.id = ss.created_by
+       WHERE ss.enabled = TRUE AND ss.next_run_date <= $1`,
+      [todayStr]
+    );
+
+    if (due.rows.length === 0) {
+      logger.info('[SNAPSHOT-SCHEDULE] No scheduled snapshots due today');
+      return;
+    }
+
+    logger.info(`[SNAPSHOT-SCHEDULE] ${due.rows.length} scheduled snapshot(s) due`);
+
+    for (const schedule of due.rows) {
+      try {
+        // Verify product still exists
+        const driver = getDriver();
+        const session = driver.session();
+        let productExists = false;
+        try {
+          const check = await session.run(
+            'MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId}) RETURN p.id',
+            { orgId: schedule.org_id, productId: schedule.product_id }
+          );
+          productExists = check.records.length > 0;
+        } finally {
+          await session.close();
+        }
+
+        if (!productExists) {
+          logger.info(`[SNAPSHOT-SCHEDULE] Product ${schedule.product_id} no longer exists — disabling schedule`);
+          await pool.query('UPDATE snapshot_schedules SET enabled = FALSE, updated_at = NOW() WHERE id = $1', [schedule.id]);
+          continue;
+        }
+
+        // Create snapshot record
+        const insertResult = await pool.query(
+          `INSERT INTO compliance_snapshots (org_id, product_id, created_by, filename, status, trigger_type)
+           VALUES ($1, $2, $3, 'pending', 'generating', 'scheduled')
+           RETURNING id`,
+          [schedule.org_id, schedule.product_id, schedule.created_by]
+        );
+        const snapshotId = insertResult.rows[0].id;
+
+        // Generate snapshot
+        const result = await generateComplianceSnapshot(
+          schedule.org_id, schedule.product_id, schedule.created_by || null, snapshotId
+        );
+
+        await pool.query(
+          `UPDATE compliance_snapshots
+           SET filename = $1, size_bytes = $2, content_hash = $3, status = 'complete', metadata = $4,
+               rfc3161_token = $6, rfc3161_tsa_url = $7, rfc3161_timestamp = CASE WHEN $6 IS NOT NULL THEN NOW() ELSE NULL END,
+               signature = $8, signature_algorithm = $9, signature_key_id = $10
+           WHERE id = $5`,
+          [result.filename, result.sizeBytes, result.contentHash, JSON.stringify(result.metadata), snapshotId,
+           result.rfc3161Token, result.rfc3161TsaUrl,
+           result.signature, result.signatureAlgorithm, result.signatureKeyId]
+        );
+
+        // Update schedule: advance next_run_date, record last run
+        const nextDate = calculateNextRunDate(schedule.schedule_type);
+        await pool.query(
+          `UPDATE snapshot_schedules
+           SET last_run_at = NOW(), last_snapshot_id = $1, next_run_date = $2, updated_at = NOW()
+           WHERE id = $3`,
+          [snapshotId, nextDate, schedule.id]
+        );
+
+        // Activity log
+        const { logProductActivity } = await import('../services/activity-log.js');
+        logProductActivity({
+          productId: schedule.product_id,
+          orgId: schedule.org_id,
+          userId: schedule.created_by,
+          userEmail: schedule.creator_email || 'system',
+          action: 'compliance_snapshot_generated',
+          entityType: 'compliance_snapshot',
+          entityId: snapshotId,
+          summary: `Scheduled ${schedule.schedule_type} compliance snapshot generated (${(result.sizeBytes / 1024).toFixed(0)} KB)`,
+          metadata: { filename: result.filename, sizeBytes: result.sizeBytes, triggerType: 'scheduled', scheduleType: schedule.schedule_type },
+        }).catch(() => {});
+
+        // Upload to cold storage (non-blocking)
+        uploadToGlacier(schedule.org_id, schedule.product_id, result.filename, result.filepath, snapshotId)
+          .catch(err => console.error('[SNAPSHOT-SCHEDULE] Glacier upload failed:', err));
+
+        // Create retention ledger entry (non-blocking)
+        createLedgerEntry({
+          orgId: schedule.org_id, productId: schedule.product_id, snapshotId,
+          archiveHash: result.contentHash, archiveSizeBytes: result.sizeBytes,
+          releaseVersion: null,
+          coldStorageKey: `${schedule.org_id}/${schedule.product_id}/${result.filename}`,
+        }).catch(err => console.error('[SNAPSHOT-SCHEDULE] Ledger entry failed:', err));
+
+        logger.info(`[SNAPSHOT-SCHEDULE] Generated snapshot for product ${schedule.product_id} (${schedule.schedule_type})`);
+      } catch (err: any) {
+        console.error(`[SNAPSHOT-SCHEDULE] Failed for product ${schedule.product_id}:`, err.message);
+        // Mark snapshot as failed if record was created
+        // Don't disable the schedule — will retry next cycle
+      }
+    }
+  } catch (err: any) {
+    console.error('[SNAPSHOT-SCHEDULE] Error:', err.message);
+  }
+}
+
 // ── Snapshot local file cleanup (24-hour expiry) ─────────────────────────
 // ── E3: Check for snapshots past retention end date ──────────────
 async function checkRetentionExpiry(): Promise<void> {
@@ -1310,7 +1441,7 @@ async function cleanupExpiredSnapshots(): Promise<void> {
 }
 
 export function startScheduler(): void {
-  logger.info('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00, retention expiry at ' + RETENTION_EXPIRY_HOUR + ':00, reserve sufficiency on 1st at ' + RESERVE_SUFFICIENCY_HOUR + ':00');
+  logger.info('[SCHEDULER] Started — checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00, scheduled snapshots at ' + SNAPSHOT_SCHEDULE_HOUR + ':00, retention expiry at ' + RETENTION_EXPIRY_HOUR + ':00, reserve sufficiency on 1st at ' + RESERVE_SUFFICIENCY_HOUR + ':00');
 
   // Run check periodically — all three have hour-gating and date-tracking
   setInterval(() => {
@@ -1324,6 +1455,7 @@ export function startScheduler(): void {
     checkSupportPeriodExpiry().catch(err => console.error('[SCHEDULER] Uncaught error in support period check:', err));
     checkSmartDeadlineAlerts().catch(err => console.error('[SCHEDULER] Uncaught error in smart deadline check:', err));
     cleanupExpiredSnapshots().catch(err => console.error('[SCHEDULER] Uncaught error in snapshot cleanup:', err));
+    runScheduledSnapshots().catch(err => console.error('[SCHEDULER] Uncaught error in scheduled snapshots:', err));
     checkRetentionExpiry().catch(err => console.error('[SCHEDULER] Uncaught error in retention expiry check:', err));
     checkReserveSufficiency().catch(err => console.error('[SCHEDULER] Uncaught error in reserve sufficiency check:', err));
   }, CHECK_INTERVAL_MS);

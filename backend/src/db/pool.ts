@@ -2040,6 +2040,25 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       ALTER TABLE compliance_snapshots ADD COLUMN IF NOT EXISTS legal_hold BOOLEAN DEFAULT FALSE;
     `);
 
+    // ── Phase F: Snapshot scheduling (P8 #43) ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS snapshot_schedules (
+        id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id            UUID NOT NULL,
+        product_id        VARCHAR(255) NOT NULL,
+        schedule_type     VARCHAR(30) NOT NULL DEFAULT 'quarterly',
+        enabled           BOOLEAN NOT NULL DEFAULT TRUE,
+        next_run_date     DATE,
+        last_run_at       TIMESTAMPTZ,
+        last_snapshot_id  UUID REFERENCES compliance_snapshots(id) ON DELETE SET NULL,
+        created_by        UUID REFERENCES users(id),
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(org_id, product_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_snapshot_schedules_next ON snapshot_schedules(next_run_date) WHERE enabled = TRUE;
+    `);
+
   } finally {
     client.release();
   }

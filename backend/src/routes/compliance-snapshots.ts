@@ -18,6 +18,7 @@ import { generateComplianceSnapshot, deleteSnapshotFile, getSnapshotPath } from 
 import { uploadToGlacier, deleteFromGlacier } from '../services/cold-storage.js';
 import { logProductActivity } from '../services/activity-log.js';
 import { createLedgerEntry } from '../services/retention-ledger.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -366,5 +367,149 @@ router.delete('/:productId/compliance-snapshots/:snapshotId', requireAuth, async
     res.status(500).json({ error: 'Failed to delete snapshot' });
   }
 });
+
+// ─── GET /api/products/:productId/snapshot-schedule ──────────
+// Get the snapshot schedule for a product
+router.get('/:productId/snapshot-schedule', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const productId = req.params.productId as string;
+
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    const productName = await verifyProductOwnership(orgId, productId);
+    if (!productName) { res.status(404).json({ error: 'Product not found' }); return; }
+
+    const result = await pool.query(
+      `SELECT id, schedule_type, enabled, next_run_date, last_run_at, last_snapshot_id, created_at, updated_at
+       FROM snapshot_schedules
+       WHERE org_id = $1 AND product_id = $2`,
+      [orgId, productId]
+    );
+
+    res.json({ schedule: result.rows[0] || null });
+  } catch (err: any) {
+    console.error('[SNAPSHOT-SCHEDULE] Get error:', err);
+    res.status(500).json({ error: 'Failed to get snapshot schedule' });
+  }
+});
+
+// ─── PUT /api/products/:productId/snapshot-schedule ──────────
+// Create or update the snapshot schedule for a product
+router.put('/:productId/snapshot-schedule', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const productId = req.params.productId as string;
+  const { schedule_type, enabled } = req.body;
+
+  const validTypes = ['quarterly', 'monthly', 'weekly'];
+  if (schedule_type && !validTypes.includes(schedule_type)) {
+    res.status(400).json({ error: `Invalid schedule_type. Must be one of: ${validTypes.join(', ')}` });
+    return;
+  }
+
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    const productName = await verifyProductOwnership(orgId, productId);
+    if (!productName) { res.status(404).json({ error: 'Product not found' }); return; }
+
+    const type = schedule_type || 'quarterly';
+    const isEnabled = enabled !== false;
+    const nextRunDate = calculateNextRunDate(type);
+
+    const result = await pool.query(
+      `INSERT INTO snapshot_schedules (org_id, product_id, schedule_type, enabled, next_run_date, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (org_id, product_id) DO UPDATE
+       SET schedule_type = $3, enabled = $4,
+           next_run_date = CASE WHEN EXCLUDED.enabled THEN $5 ELSE snapshot_schedules.next_run_date END,
+           updated_at = NOW()
+       RETURNING id, schedule_type, enabled, next_run_date, last_run_at, last_snapshot_id, created_at, updated_at`,
+      [orgId, productId, type, isEnabled, nextRunDate, userId]
+    );
+
+    logProductActivity({
+      productId, orgId, userId, userEmail: (req as any).email || '',
+      action: 'snapshot_schedule_updated',
+      entityType: 'snapshot_schedule',
+      entityId: result.rows[0].id,
+      summary: `${isEnabled ? 'Enabled' : 'Disabled'} ${type} compliance snapshot schedule`,
+      metadata: { scheduleType: type, enabled: isEnabled, nextRunDate },
+    }).catch(() => {});
+
+    res.json({ schedule: result.rows[0] });
+  } catch (err: any) {
+    console.error('[SNAPSHOT-SCHEDULE] Update error:', err);
+    res.status(500).json({ error: 'Failed to update snapshot schedule' });
+  }
+});
+
+// ─── DELETE /api/products/:productId/snapshot-schedule ────────
+// Remove the snapshot schedule for a product
+router.delete('/:productId/snapshot-schedule', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const productId = req.params.productId as string;
+
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    const productName = await verifyProductOwnership(orgId, productId);
+    if (!productName) { res.status(404).json({ error: 'Product not found' }); return; }
+
+    const result = await pool.query(
+      'DELETE FROM snapshot_schedules WHERE org_id = $1 AND product_id = $2 RETURNING id',
+      [orgId, productId]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'No schedule found' });
+      return;
+    }
+
+    logProductActivity({
+      productId, orgId, userId, userEmail: (req as any).email || '',
+      action: 'snapshot_schedule_deleted',
+      entityType: 'snapshot_schedule',
+      entityId: result.rows[0].id,
+      summary: 'Removed compliance snapshot schedule',
+    }).catch(() => {});
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('[SNAPSHOT-SCHEDULE] Delete error:', err);
+    res.status(500).json({ error: 'Failed to delete snapshot schedule' });
+  }
+});
+
+/** Calculate the next run date for a given schedule type */
+function calculateNextRunDate(scheduleType: string): string {
+  const now = new Date();
+  switch (scheduleType) {
+    case 'weekly': {
+      const next = new Date(now);
+      next.setDate(next.getDate() + 7);
+      return next.toISOString().split('T')[0];
+    }
+    case 'monthly': {
+      const next = new Date(now);
+      next.setMonth(next.getMonth() + 1);
+      next.setDate(1); // 1st of next month
+      return next.toISOString().split('T')[0];
+    }
+    case 'quarterly':
+    default: {
+      const next = new Date(now);
+      const currentQuarter = Math.floor(next.getMonth() / 3);
+      next.setMonth((currentQuarter + 1) * 3); // 1st month of next quarter
+      next.setDate(1);
+      return next.toISOString().split('T')[0];
+    }
+  }
+}
+
+export { calculateNextRunDate };
 
 export default router;

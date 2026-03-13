@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Archive, Download, Trash2, Loader2, CheckCircle, XCircle,
   Clock, FileText, Shield, ShieldCheck, AlertTriangle, Package, CloudOff, Cloud, Stamp, Zap, Lock,
+  CalendarClock, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 
 interface Snapshot {
@@ -35,6 +36,17 @@ interface Snapshot {
   created_by_email: string | null;
 }
 
+interface SnapshotSchedule {
+  id: string;
+  schedule_type: 'quarterly' | 'monthly' | 'weekly';
+  enabled: boolean;
+  next_run_date: string | null;
+  last_run_at: string | null;
+  last_snapshot_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 function formatBytes(bytes: number | null): string {
   if (!bytes) return '—';
   if (bytes < 1024) return `${bytes} B`;
@@ -46,6 +58,12 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function formatShortDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric',
   });
 }
 
@@ -91,6 +109,12 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
   const [error, setError] = useState('');
   const [pollingId, setPollingId] = useState<string | null>(null);
 
+  // Schedule state
+  const [schedule, setSchedule] = useState<SnapshotSchedule | null>(null);
+  const [scheduleLoading, setScheduleLoading] = useState(true);
+  const [scheduleSaving, setScheduleSaving] = useState(false);
+  const [scheduleType, setScheduleType] = useState<string>('quarterly');
+
   const token = localStorage.getItem('session_token');
 
   const fetchSnapshots = useCallback(async () => {
@@ -109,9 +133,29 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
     }
   }, [productId, token]);
 
+  const fetchSchedule = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/products/${productId}/snapshot-schedule`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSchedule(data.schedule);
+        if (data.schedule) {
+          setScheduleType(data.schedule.schedule_type);
+        }
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setScheduleLoading(false);
+    }
+  }, [productId, token]);
+
   useEffect(() => {
     fetchSnapshots();
-  }, [fetchSnapshots]);
+    fetchSchedule();
+  }, [fetchSnapshots, fetchSchedule]);
 
   // Poll for generation status
   useEffect(() => {
@@ -221,6 +265,60 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
     }
   }
 
+  async function handleScheduleToggle() {
+    setScheduleSaving(true);
+    try {
+      if (schedule?.enabled) {
+        // Disable
+        const res = await fetch(`/api/products/${productId}/snapshot-schedule`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ schedule_type: schedule.schedule_type, enabled: false }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSchedule(data.schedule);
+        }
+      } else {
+        // Enable with selected type
+        const res = await fetch(`/api/products/${productId}/snapshot-schedule`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ schedule_type: scheduleType, enabled: true }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSchedule(data.schedule);
+        }
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setScheduleSaving(false);
+    }
+  }
+
+  async function handleScheduleTypeChange(newType: string) {
+    setScheduleType(newType);
+    if (!schedule?.enabled) return; // Only save if currently enabled
+    setScheduleSaving(true);
+    try {
+      const res = await fetch(`/api/products/${productId}/snapshot-schedule`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schedule_type: newType, enabled: true }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSchedule(data.schedule);
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setScheduleSaving(false);
+    }
+  }
+
   const statusIcon = (status: string) => {
     switch (status) {
       case 'complete': return <CheckCircle size={16} className="cv-status-complete" />;
@@ -313,6 +411,50 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
         return null;
       })()}
 
+      {/* Automated scheduling */}
+      {!scheduleLoading && (
+        <div className="cv-schedule-section">
+          <div className="cv-schedule-header">
+            <div className="cv-schedule-title">
+              <CalendarClock size={14} />
+              <strong>Automated Snapshots</strong>
+            </div>
+            <div className="cv-schedule-controls">
+              <select
+                className="cv-schedule-select"
+                value={scheduleType}
+                onChange={(e) => handleScheduleTypeChange(e.target.value)}
+                disabled={scheduleSaving}
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+              </select>
+              <button
+                className={`cv-schedule-toggle ${schedule?.enabled ? 'cv-schedule-active' : ''}`}
+                onClick={handleScheduleToggle}
+                disabled={scheduleSaving}
+                title={schedule?.enabled ? 'Disable automated snapshots' : 'Enable automated snapshots'}
+              >
+                {scheduleSaving ? (
+                  <Loader2 size={16} className="spin" />
+                ) : schedule?.enabled ? (
+                  <><ToggleRight size={16} /> Enabled</>
+                ) : (
+                  <><ToggleLeft size={16} /> Disabled</>
+                )}
+              </button>
+            </div>
+          </div>
+          {schedule?.enabled && schedule.next_run_date && (
+            <div className="cv-schedule-info">
+              Next snapshot: <strong>{formatShortDate(schedule.next_run_date)}</strong>
+              {schedule.last_run_at && <> · Last run: {formatDate(schedule.last_run_at)}</>}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Snapshots list */}
       {snapshots.length === 0 ? (
         <div className="cv-empty">
@@ -391,6 +533,11 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
                 {snapshot.trigger_type === 'lifecycle_on_market' && (
                   <span className="cv-cold-badge cv-trigger-badge">
                     <Zap size={12} /> Market release
+                  </span>
+                )}
+                {snapshot.trigger_type === 'scheduled' && (
+                  <span className="cv-cold-badge cv-trigger-badge">
+                    <CalendarClock size={12} /> Scheduled
                   </span>
                 )}
                 {snapshot.release_version && (
