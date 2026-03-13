@@ -1361,7 +1361,17 @@ sudo systemctl restart cloudflared
   - Dependency: Removed `pdfkit` and `@types/pdfkit` from package.json (~2MB saved).
   - Files affected: `technical-file/cvd-pdf.ts`, `technical-file/doc-pdf.ts`, `product-reports.ts`, `reports.ts`, `supplier-due-diligence.ts`, `services/due-diligence.ts` (backend); `ComplianceSummaryReport`, `VulnerabilityTrendsReport`, `AuditTrailReport`, `ObligationsTab`, `RiskFindingsTab`, `LicenseCompliancePage`, `TechnicalFilesPage`, `TechnicalFileTab`, `SupplyChainTab` (frontend).
 
+**Session 45 (2026-03-13):**
+- **OSCAL export layer / GRC bridge (#23)** — Built four OSCAL 1.1.2 compliant endpoints on the public API, enabling any OSCAL-compatible GRC tool (ServiceNow, Vanta, Drata, OneTrust) to pull CRA compliance data.
+  - `GET /api/v1/oscal/catalog` — 19 CRA obligations as OSCAL controls, grouped by article. Static endpoint, no product context.
+  - `GET /api/v1/products/:id/oscal/profile` — Category-filtered control selection (default/important_i/important_ii/critical).
+  - `GET /api/v1/products/:id/oscal/assessment-results` — Full obligation assessment with manual + derived statuses as OSCAL findings (satisfied/not-satisfied), vulnerability posture observations, and product metadata.
+  - `GET /api/v1/products/:id/oscal/component-definition` — Product metadata, SBOM availability, dependency summary (up to 500), and control implementations.
+  - New service: `backend/src/services/oscal.ts` with deterministic UUID v5 generation for cacheable responses.
+  - All endpoints use `requireApiKey` middleware with `read:compliance` scope. Pro plan required.
+  - Frontend: GRC/OSCAL integration card added to Integrations page with endpoint table, curl quick-test, and 3-step GRC tool setup guide.
+  - Tests: 20 new tests in `oscal.test.ts` — auth, cross-org isolation, structure validation, control counts, finding states, observations, version consistency.
+
 **Next Steps:**
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
-- P9 — Growth funnels (conformity assessment selector, NIS2 classifier, importer workflows)

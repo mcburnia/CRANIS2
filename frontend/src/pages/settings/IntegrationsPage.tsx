@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import PageHeader from '../../components/PageHeader';
-import { Plug, Trash2, Check, AlertTriangle, Plus, X, Send, Loader2, Key, Copy, Terminal, ChevronDown, ChevronUp, Info, Sparkles, Monitor } from 'lucide-react';
+import { Plug, Trash2, Check, AlertTriangle, Plus, X, Send, Loader2, Key, Copy, Terminal, ChevronDown, ChevronUp, Info, Sparkles, Monitor, Share2 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { useAuth } from '../../context/AuthContext';
 import './IntegrationsPage.css';
@@ -335,6 +335,7 @@ export default function IntegrationsPage() {
   // CI/CD Gate
   const [cicdTab, setCicdTab] = useState<'github' | 'gitlab' | 'bash'>('github');
   const [cicdExpanded, setCicdExpanded] = useState(false);
+  const [grcExpanded, setGrcExpanded] = useState(false);
 
   // IDE Assistant
   const [ideTab, setIdeTab] = useState<'vscode' | 'cursor' | 'claude-desktop' | 'claude-code'>('vscode');
@@ -870,6 +871,103 @@ fi`;
         apiKeys={apiKeys}
         copyToClipboard={copyToClipboard}
       />
+
+      {/* GRC / OSCAL Bridge Card */}
+      <div className="int-card">
+        <div className="int-card-header">
+          <div className="int-card-title">
+            <Share2 size={18} />
+            <span>GRC / OSCAL Bridge</span>
+            {!isPro && <span className="int-badge int-badge-muted">Pro</span>}
+            {isPro && <span className="int-badge int-badge-green">Ready</span>}
+          </div>
+          {isPro && (
+            <button className="int-btn-ghost" onClick={() => setGrcExpanded(!grcExpanded)}>
+              {grcExpanded ? <><ChevronUp size={14} /> Collapse</> : <><ChevronDown size={14} /> Setup Guide</>}
+            </button>
+          )}
+        </div>
+
+        <p className="int-desc">
+          Export CRA compliance data in OSCAL 1.1.2 (NIST standard) format. Any OSCAL-compatible GRC tool — ServiceNow, Vanta, Drata, OneTrust — can pull assessment results, obligation statuses, and product metadata via your authenticated API.
+        </p>
+
+        {!isPro && (
+          <div className="ai-upgrade-banner">
+            <Info size={14} />
+            <span>OSCAL export requires the <strong>Pro</strong> plan. <a href="/billing"><Sparkles size={12} style={{ verticalAlign: 'middle' }} /> Upgrade now</a></span>
+          </div>
+        )}
+
+        {isPro && grcExpanded && (
+          <>
+            <div className="int-section">
+              <h3>OSCAL Endpoints</h3>
+              <p className="int-hint">All endpoints require an API key with <code>read:compliance</code> scope. Pass it via the <code>X-API-Key</code> header.</p>
+              <table className="int-cicd-table">
+                <thead>
+                  <tr>
+                    <th>Endpoint</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>GET /api/v1/oscal/catalog</code></td>
+                    <td>19 CRA obligations as OSCAL controls, grouped by article</td>
+                  </tr>
+                  <tr>
+                    <td><code>GET /api/v1/products/:id/oscal/profile</code></td>
+                    <td>Which controls apply based on product CRA category</td>
+                  </tr>
+                  <tr>
+                    <td><code>GET /api/v1/products/:id/oscal/assessment-results</code></td>
+                    <td>Obligation findings (satisfied/not-satisfied), vulnerability posture</td>
+                  </tr>
+                  <tr>
+                    <td><code>GET /api/v1/products/:id/oscal/component-definition</code></td>
+                    <td>Product metadata, SBOM summary, dependency inventory</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="int-section">
+              <h3>Quick Test</h3>
+              <p className="int-hint">Replace <code>YOUR_API_KEY</code> with an active key from the API Keys section above.</p>
+              <pre className="int-cicd-code">{`curl -s -H "X-API-Key: YOUR_API_KEY" \\
+  ${window.location.origin}/api/v1/oscal/catalog | python3 -m json.tool`}</pre>
+            </div>
+
+            <div className="int-section">
+              <h3>GRC Tool Setup</h3>
+              <div className="int-ide-workflow">
+                <div className="int-ide-workflow-step">
+                  <div className="int-ide-workflow-num">1</div>
+                  <div>
+                    <strong>Create an API key</strong>
+                    <p>In the API Keys card above, create a key. It will have <code>read:compliance</code> scope by default.</p>
+                  </div>
+                </div>
+                <div className="int-ide-workflow-step">
+                  <div className="int-ide-workflow-num">2</div>
+                  <div>
+                    <strong>Configure your GRC tool</strong>
+                    <p>Set up a scheduled HTTP pull (e.g. daily) from your GRC tool to the assessment-results endpoint. Use the <code>X-API-Key</code> header for authentication.</p>
+                  </div>
+                </div>
+                <div className="int-ide-workflow-step">
+                  <div className="int-ide-workflow-num">3</div>
+                  <div>
+                    <strong>Map OSCAL controls to your framework</strong>
+                    <p>Each control ID follows the pattern <code>cra-art-13-6</code>. Map these to your GRC tool's control framework to track CRA compliance alongside other standards.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Trello Card */}
       <div className="int-card">
