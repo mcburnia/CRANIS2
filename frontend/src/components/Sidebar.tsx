@@ -71,7 +71,7 @@ const navSections = [
   },
 ];
 
-// Feedback is a modal trigger, not a nav link — handled separately
+// Feedback is a modal trigger, not a nav link – handled separately
 
 export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
   const { user, logout } = useAuth();

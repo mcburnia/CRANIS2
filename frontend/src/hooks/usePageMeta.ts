@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════
-   usePageMeta — dynamic document title + meta tags
+   usePageMeta – dynamic document title + meta tags
    Sets title, description, robots, canonical, OG, and Twitter Card tags.
    For public pages, supplements the static meta injected at build time.
    For auth/admin pages, provides dynamic titles (all noindex).

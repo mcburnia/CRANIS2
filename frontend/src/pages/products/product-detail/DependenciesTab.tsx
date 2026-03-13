@@ -201,9 +201,9 @@ export default function DependenciesTab({ ghData, sbomData, sbomLoading, onConne
                 {sbomData.packages.map((pkg, i) => (
                   <tr key={i}>
                     <td className="sbom-pkg-name">{pkg.name}</td>
-                    <td className="sbom-pkg-version">{pkg.version || '—'}</td>
+                    <td className="sbom-pkg-version">{pkg.version || '–'}</td>
                     <td><span className={`sbom-ecosystem sbom-eco-${pkg.ecosystem}`}>{pkg.ecosystem}</span></td>
-                    <td className="sbom-pkg-license">{pkg.license === 'NOASSERTION' ? '—' : pkg.license}</td>
+                    <td className="sbom-pkg-license">{pkg.license === 'NOASSERTION' ? '–' : pkg.license}</td>
                   </tr>
                 ))}
               </tbody>

@@ -83,7 +83,7 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
   }, [product.id]);
   return (
     <div className="pd-overview-grid">
-      {/* GitHub Repo Card — only if synced */}
+      {/* GitHub Repo Card – only if synced */}
       {ghData.synced && ghData.repo && (
         <div className="pd-card pd-card-github">
           <div className="pd-card-header">
@@ -141,7 +141,7 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
         </div>
       )}
 
-      {/* Repo Connect Card — if not connected and has repoUrl */}
+      {/* Repo Connect Card – if not connected and has repoUrl */}
       {!isProviderConnected && product.repoUrl && (
         <div className="pd-card pd-card-connect">
           <div className="pd-card-header">
@@ -152,11 +152,11 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
           <button className="btn btn-primary gh-connect-btn" onClick={() => onConnect(repoProvider)}>
             <ProviderIcon provider={repoProvider} size={16} /> Connect {pLabel}
           </button>
-          <p className="gh-connect-note">Read-only access — CRANIS2 will never write to your repositories.</p>
+          <p className="gh-connect-note">Read-only access. CRANIS2 will never write to your repositories.</p>
         </div>
       )}
 
-      {/* Repo Sync Prompt — if connected but not synced */}
+      {/* Repo Sync Prompt – if connected but not synced */}
       {isProviderConnected && !ghData.synced && product.repoUrl && (
         <div className="pd-card pd-card-connect">
           <div className="pd-card-header">
@@ -318,7 +318,7 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
           </div>
           <div className="pd-detail-row">
             <span className="pd-detail-label">Version</span>
-            <span className="pd-detail-value">{product.version || '—'}</span>
+            <span className="pd-detail-value">{product.version || '–'}</span>
           </div>
           <div className="pd-detail-row">
             <span className="pd-detail-label">Repository</span>
@@ -327,7 +327,7 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
                 <a href={product.repoUrl} target="_blank" rel="noopener noreferrer" className="pd-repo-detail-link">
                   {product.repoUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\.git$/, '')} <ExternalLink size={10} />
                 </a>
-              ) : '—'}
+              ) : '–'}
             </span>
           </div>
           <div className="pd-detail-row">
@@ -466,7 +466,7 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
         onSwitchTab={onSwitchTab}
       />
 
-      {/* Compliance Gap Narrator — Next Steps */}
+      {/* Compliance Gap Narrator – Next Steps */}
       {complianceGaps && complianceGaps.gaps.length > 0 && (
         <div className="pd-card pd-card-gaps">
           <div className="pd-card-header">
@@ -506,7 +506,7 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
             )}
           </div>
 
-          {/* Gap items — show top 8, collapse the rest */}
+          {/* Gap items – show top 8, collapse the rest */}
           <div className="pd-gaps-list">
             {complianceGaps.gaps.slice(0, 8).map((gap: any) => (
               <div key={gap.id} className={`pd-gap-item pd-gap-${gap.priority}`}>
@@ -536,7 +536,7 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
             ))}
             {complianceGaps.gaps.length > 8 && (
               <div className="pd-gaps-more">
-                + {complianceGaps.gaps.length - 8} more action{complianceGaps.gaps.length - 8 !== 1 ? 's' : ''} — view the Obligations tab for the full list
+                + {complianceGaps.gaps.length - 8} more action{complianceGaps.gaps.length - 8 !== 1 ? 's' : ''}. View the Obligations tab for the full list
               </div>
             )}
           </div>

@@ -101,7 +101,7 @@ export default function AdminTestResultsPage() {
       const data = await res.json();
       setSuiteCases(prev => ({ ...prev, [suiteId]: data.cases }));
     } catch {
-      // Silently fail — user can retry
+      // Silently fail – user can retry
     } finally {
       setLoadingCases(null);
     }
@@ -121,7 +121,7 @@ export default function AdminTestResultsPage() {
         setShowOutput(true);
       }
     } catch {
-      // Ignore — test runner may not be available yet
+      // Ignore – test runner may not be available yet
     }
   }
 
@@ -330,13 +330,13 @@ export default function AdminTestResultsPage() {
                   <td className="atr-suite-name">{suite.name}</td>
                   <td><span className={`atr-badge atr-badge-${suite.category}`}>{suite.category}</span></td>
                   <td>{suite.totalCases}</td>
-                  <td className="atr-date">{suite.firstRunAt ? formatDate(suite.firstRunAt) : '—'}</td>
+                  <td className="atr-date">{suite.firstRunAt ? formatDate(suite.firstRunAt) : '–'}</td>
                   <td className="atr-date">
                     {suite.lastRunAt ? (
                       <span title={new Date(suite.lastRunAt).toLocaleString()}>
                         {timeAgo(suite.lastRunAt)}
                       </span>
-                    ) : '—'}
+                    ) : '–'}
                   </td>
                   <td><StatusBadge status={suite.status} /></td>
                   <td>
@@ -344,12 +344,12 @@ export default function AdminTestResultsPage() {
                       <span className={`atr-pass-rate ${getPassRateColor(suite.passRate)}`}>
                         {suite.passRate}%
                       </span>
-                    ) : '—'}
+                    ) : '–'}
                   </td>
                   <td className="atr-date">
                     {suite.nextDueAt ? (
                       <DueBadge date={suite.nextDueAt} />
-                    ) : '—'}
+                    ) : '–'}
                   </td>
                 </tr>
                 {expandedSuite === suite.id && (
@@ -447,9 +447,9 @@ function SuiteDetail({ cases, loading }: { cases: TestCase[]; loading: boolean }
               <td className="atr-case-name">{c.name}</td>
               <td><span className={`atr-priority atr-priority-${c.priority}`}>{c.priority}</span></td>
               <td><CaseStatusBadge status={c.lastStatus} /></td>
-              <td>{c.lastDurationMs != null ? `${c.lastDurationMs}ms` : '—'}</td>
-              <td className="atr-date">{c.lastRunAt ? timeAgo(c.lastRunAt) : '—'}</td>
-              <td className="atr-error-cell">{c.errorMessage || '—'}</td>
+              <td>{c.lastDurationMs != null ? `${c.lastDurationMs}ms` : '–'}</td>
+              <td className="atr-date">{c.lastRunAt ? timeAgo(c.lastRunAt) : '–'}</td>
+              <td className="atr-error-cell">{c.errorMessage || '–'}</td>
             </tr>
             {expandedCase === c.id && (
               <tr key={`${c.id}-explain`} className="atr-case-explain-row">

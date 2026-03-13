@@ -200,7 +200,7 @@ export default function ActionPlanPage() {
                     <div className="ap-wizard-why">
                       <strong>Why it matters: </strong>{step.whyItMatters}
                       {step.craReference && (
-                        <span className="ap-wizard-ref"> — {step.craReference}</span>
+                        <span className="ap-wizard-ref"> – {step.craReference}</span>
                       )}
                     </div>
                   </div>
@@ -211,7 +211,7 @@ export default function ActionPlanPage() {
                   <div className="ap-wizard-why">
                     <strong>Why it matters: </strong>{step.whyItMatters}
                     {step.craReference && (
-                      <span className="ap-wizard-ref"> — {step.craReference}</span>
+                      <span className="ap-wizard-ref"> – {step.craReference}</span>
                     )}
                   </div>
                   {!step.complete && step.actionLabel && (
@@ -257,7 +257,7 @@ export default function ActionPlanPage() {
           <div className="ap-pct">{readinessPct}%</div>
         </div>
         <div className="ap-header-info">
-          <h2>CRA Action Plan — {checklist.productName}</h2>
+          <h2>CRA Action Plan – {checklist.productName}</h2>
           <p className="ap-header-sub">
             {getReadinessLabel(readinessPct, lifecycleStatus)}
             <span className={`badge ${getLifecycleColour(lifecycleStatus)}`} style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem', marginLeft: '0.6rem', verticalAlign: 'middle' }}>
@@ -287,7 +287,7 @@ export default function ActionPlanPage() {
       {/* Phase 2: Detail Work */}
       {phase2Steps.length > 0 && (
         <>
-          <div className="ap-phase-label">Detail Work — address remaining gaps</div>
+          <div className="ap-phase-label">Detail Work – address remaining gaps</div>
           <div className="ap-pipeline">
             {visiblePhase2.map(renderStepNode)}
           </div>

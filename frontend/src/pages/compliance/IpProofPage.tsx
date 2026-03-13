@@ -155,12 +155,12 @@ export default function IpProofPage() {
   }
 
   function formatDate(d: string | null): string {
-    if (!d) return '—';
+    if (!d) return '–';
     return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   function formatDateTime(d: string | null): string {
-    if (!d) return '—';
+    if (!d) return '–';
     return new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
@@ -183,7 +183,7 @@ export default function IpProofPage() {
       <div className="ipp-info-banner">
         <Fingerprint size={18} />
         <div>
-          <strong>Ownership Timestamping</strong> — Creates cryptographically signed, legally recognised (EU eIDAS) proof that your software composition existed at a specific point in time. Each snapshot captures your full SBOM and gets timestamped by a trusted third-party authority (FreeTSA.org). Use this to prove prior art in IP disputes.
+          <strong>Ownership Timestamping</strong> – Creates cryptographically signed, legally recognised (EU eIDAS) proof that your software composition existed at a specific point in time. Each snapshot captures your full SBOM and gets timestamped by a trusted third-party authority (FreeTSA.org). Use this to prove prior art in IP disputes.
         </div>
       </div>
 
@@ -221,10 +221,10 @@ export default function IpProofPage() {
                       {expandedProduct === p.productId ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </td>
                     <td className="ipp-product-name">{p.productName}</td>
-                    <td>{p.totalSnapshots || '—'}</td>
+                    <td>{p.totalSnapshots || '–'}</td>
                     <td className="ipp-cell-muted">{formatDate(p.latestSnapshot)}</td>
                     <td>{p.hasRfc3161 ? <CheckCircle2 size={16} className="ipp-icon-green" /> : <XCircle size={16} className="ipp-icon-muted" />}</td>
-                    <td>{p.otsConfirmed ? <CheckCircle2 size={16} className="ipp-icon-green" /> : <span className="ipp-cell-muted">—</span>}</td>
+                    <td>{p.otsConfirmed ? <CheckCircle2 size={16} className="ipp-icon-green" /> : <span className="ipp-cell-muted">–</span>}</td>
                     <td>
                       <button
                         className="ipp-create-btn"
@@ -240,7 +240,7 @@ export default function IpProofPage() {
                     <tr key={`${p.productId}-detail`}>
                       <td colSpan={7} className="ipp-snapshots-cell">
                         <div className="ipp-snapshots-panel">
-                          <h4>Proof History — {p.productName}</h4>
+                          <h4>Proof History – {p.productName}</h4>
 
                           {snapshotsLoading ? (
                             <div className="ipp-loading">Loading snapshots...</div>

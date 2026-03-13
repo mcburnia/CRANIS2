@@ -1,4 +1,4 @@
-/* Escrow Page — prefix: esc- */
+/* Escrow Page – prefix: esc- */
 
 .esc-back-link {
   display: inline-flex;
@@ -638,7 +638,7 @@
   color: var(--muted);
 }
 
-/* Agent credentials banner — subtle variant */
+/* Agent credentials banner – subtle variant */
 .esc-credentials-agent {
   border-color: var(--purple);
 }

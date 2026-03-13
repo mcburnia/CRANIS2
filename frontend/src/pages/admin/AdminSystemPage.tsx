@@ -239,7 +239,7 @@ export default function AdminSystemPage() {
                     <span className="as-status-run"><Clock size={13} /> Running</span>
                   )}
                 </span>
-                <span className="as-scan-duration">{scan.durationSeconds != null ? `${scan.durationSeconds}s` : '—'}</span>
+                <span className="as-scan-duration">{scan.durationSeconds != null ? `${scan.durationSeconds}s` : '–'}</span>
                 <span className="as-scan-findings">
                   {scan.findingsCount > 0 ? (
                     <span className="as-findings-badge"><AlertTriangle size={12} /> {scan.findingsCount}</span>
@@ -248,7 +248,7 @@ export default function AdminSystemPage() {
                 <span className="as-scan-localdb">
                   {scan.localDbDurationMs != null ? (
                     <span className="as-localdb-value">{scan.localDbDurationMs}ms</span>
-                  ) : '—'}
+                  ) : '–'}
                 </span>
                 <span className="as-scan-sources">
                   {scan.osvFindings != null && <span>OSV:{scan.osvFindings}</span>}

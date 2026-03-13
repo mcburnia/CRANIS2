@@ -221,7 +221,7 @@ export function mergeActionPlan(
   // A gap is "covered" if it maps to an incomplete checklist step
   // (the checklist step already guides the user to fix it)
   // A gap is "surfaced" if it maps to a completed checklist step
-  // (it's a refinement — e.g. "SBOM stale" when repo is connected)
+  // (it's a refinement – e.g. "SBOM stale" when repo is connected)
   for (const gap of gapData.gaps) {
     const mappedChecklistId = GAP_TO_CHECKLIST[gap.category];
 

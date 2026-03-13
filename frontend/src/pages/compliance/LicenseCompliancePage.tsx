@@ -246,13 +246,13 @@ export default function LicenseCompliancePage() {
   }
 
   function depthBadge(depth: string | null) {
-    if (!depth || depth === 'unknown') return <span className="lc-depth lc-depth-unknown">—</span>;
+    if (!depth || depth === 'unknown') return <span className="lc-depth lc-depth-unknown">–</span>;
     if (depth === 'direct') return <span className="lc-depth lc-depth-direct">Direct</span>;
     return <span className="lc-depth lc-depth-transitive">Transitive</span>;
   }
 
   function verdictBadge(verdict: string | null, reason?: string | null) {
-    if (!verdict) return <span className="lc-verdict lc-verdict-none">—</span>;
+    if (!verdict) return <span className="lc-verdict lc-verdict-none">–</span>;
     const map: Record<string, { label: string; className: string }> = {
       compatible: { label: 'Compatible', className: 'lc-verdict lc-verdict-ok' },
       incompatible: { label: 'Incompatible', className: 'lc-verdict lc-verdict-bad' },
@@ -271,7 +271,7 @@ export default function LicenseCompliancePage() {
       <div className="lc-info-banner">
         <Scale size={18} />
         <div>
-          <strong>Dependency License Scanning</strong> — Analyses SPDX license declarations from your SBOM to detect copyleft licenses (GPL, AGPL) that could require source code disclosure, and flags undeclared licenses for review.
+          <strong>Dependency License Scanning</strong> – Analyses SPDX license declarations from your SBOM to detect copyleft licenses (GPL, AGPL) that could require source code disclosure, and flags undeclared licenses for review.
         </div>
       </div>
 
@@ -373,15 +373,15 @@ export default function LicenseCompliancePage() {
                       {expandedProduct === p.productId ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </td>
                     <td className="lc-product-name">{p.productName}{p.distributionModel && <span className="lc-dist-badge">{DIST_MODEL_LABELS[p.distributionModel] || p.distributionModel}</span>}</td>
-                    <td>{p.totalDeps || '—'}</td>
-                    <td className="lc-cell-blue">{p.directCount || '—'}</td>
-                    <td className="lc-cell-muted">{p.transitiveCount || '—'}</td>
-                    <td className="lc-cell-green">{p.permissiveCount || '—'}</td>
-                    <td className={p.copyleftCount > 0 ? 'lc-cell-red' : ''}>{p.copyleftCount || '—'}</td>
-                    <td className={p.unknownCount > 0 ? 'lc-cell-amber' : ''}>{p.unknownCount || '—'}</td>
-                    <td className={p.criticalCount > 0 ? 'lc-cell-red lc-cell-bold' : ''}>{p.criticalCount || '—'}</td>
-                    <td className={p.incompatibleCount > 0 ? 'lc-cell-red lc-cell-bold' : ''}>{p.incompatibleCount || '—'}</td>
-                    <td className={p.reviewNeededCount > 0 ? 'lc-cell-amber' : ''}>{p.reviewNeededCount || '—'}</td>
+                    <td>{p.totalDeps || '–'}</td>
+                    <td className="lc-cell-blue">{p.directCount || '–'}</td>
+                    <td className="lc-cell-muted">{p.transitiveCount || '–'}</td>
+                    <td className="lc-cell-green">{p.permissiveCount || '–'}</td>
+                    <td className={p.copyleftCount > 0 ? 'lc-cell-red' : ''}>{p.copyleftCount || '–'}</td>
+                    <td className={p.unknownCount > 0 ? 'lc-cell-amber' : ''}>{p.unknownCount || '–'}</td>
+                    <td className={p.criticalCount > 0 ? 'lc-cell-red lc-cell-bold' : ''}>{p.criticalCount || '–'}</td>
+                    <td className={p.incompatibleCount > 0 ? 'lc-cell-red lc-cell-bold' : ''}>{p.incompatibleCount || '–'}</td>
+                    <td className={p.reviewNeededCount > 0 ? 'lc-cell-amber' : ''}>{p.reviewNeededCount || '–'}</td>
                     <td className="lc-cell-muted">{p.lastScanAt ? new Date(p.lastScanAt).toLocaleDateString() : 'Never'}</td>
                     <td>
                       <button
@@ -399,7 +399,7 @@ export default function LicenseCompliancePage() {
                       <td colSpan={13} className="lc-findings-cell">
                         <div className="lc-findings-panel">
                           <div className="lc-findings-header">
-                            <h4>License Findings — {p.productName}</h4>
+                            <h4>License Findings – {p.productName}</h4>
                             <button className="tf-doc-download-btn" onClick={(e) => { e.stopPropagation(); handleExportLic(p.productId, 'pdf'); }} disabled={!!exportingLic}>
                               {exportingLic === `${p.productId}-pdf` ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
                               {exportingLic === `${p.productId}-pdf` ? 'Generating...' : 'Export PDF'}
@@ -434,7 +434,7 @@ export default function LicenseCompliancePage() {
 
                           {latestScan && (
                             <div className="lc-scan-info">
-                              Last scan: {new Date(latestScan.completed_at).toLocaleString()} — {latestScan.total_deps} deps ({latestScan.direct_count || 0} direct, {latestScan.transitive_count || 0} transitive) in {latestScan.duration_ms}ms
+                              Last scan: {new Date(latestScan.completed_at).toLocaleString()} – {latestScan.total_deps} deps ({latestScan.direct_count || 0} direct, {latestScan.transitive_count || 0} transitive) in {latestScan.duration_ms}ms
                             </div>
                           )}
 
@@ -461,7 +461,7 @@ export default function LicenseCompliancePage() {
                                 {findings.map(finding => (
                                   <tr key={finding.id} className={finding.risk_level === 'critical' ? 'lc-row-critical' : finding.risk_level === 'warning' ? 'lc-row-warning' : ''}  >
                                     <td className="lc-dep-name">{finding.dependency_name}</td>
-                                    <td className="lc-dep-version">{finding.dependency_version || '—'}</td>
+                                    <td className="lc-dep-version">{finding.dependency_version || '–'}</td>
                                     <td>{depthBadge(finding.dependency_depth)}</td>
                                     <td className="lc-dep-license">{finding.license_declared || 'NOASSERTION'}</td>
                                     <td>{categoryBadge(finding.license_category)}</td>
@@ -503,7 +503,7 @@ export default function LicenseCompliancePage() {
         <div className="lc-modal-overlay" onClick={() => setWaiverModal(null)}>
           <div className="lc-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Waive License Finding</h3>
-            <p>Waiving <strong>{waiverModal.name}</strong> — provide a reason for the waiver:</p>
+            <p>Waiving <strong>{waiverModal.name}</strong>. Provide a reason for the waiver:</p>
             <textarea
               className="lc-waiver-textarea"
               value={waiverReason}

@@ -242,7 +242,7 @@
   border-bottom: none;
 }
 
-/* Test case rows — clickable accordion */
+/* Test case rows – clickable accordion */
 .atr-case-row {
   cursor: pointer;
   transition: background 0.15s;

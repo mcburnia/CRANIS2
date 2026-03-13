@@ -161,7 +161,7 @@ function IdeAssistantCard({
       </div>
 
       <p className="int-desc">
-        Connect your IDE's AI assistant to CRANIS2 via the MCP protocol. Query vulnerabilities, get fix commands, verify remediation, and check compliance — all without leaving your editor.
+        Connect your IDE's AI assistant to CRANIS2 via the MCP protocol. Query vulnerabilities, get fix commands, verify remediation, and check compliance, all without leaving your editor.
       </p>
 
       {!isPro && (
@@ -185,7 +185,7 @@ function IdeAssistantCard({
           {activeKeys.length > 0 && (
             <div className="int-section">
               <h3>Select API Key</h3>
-              <p className="int-hint">Choose which API key to embed in the configuration. The snippet will show the key prefix — paste the full key value when you configure your IDE.</p>
+              <p className="int-hint">Choose which API key to embed in the configuration. The snippet will show the key prefix. Paste the full key value when you configure your IDE.</p>
               <div className="int-field" style={{ maxWidth: 400 }}>
                 <select value={ideKeyId} onChange={e => setIdeKeyId(e.target.value)}>
                   <option value="">Select an API key...</option>
@@ -272,7 +272,7 @@ function IdeAssistantCard({
                 <span className="int-ide-workflow-num">4</span>
                 <div>
                   <strong>After you run the fix, ask "Verify my fix":</strong>
-                  <p>AI calls <code>verify_fix</code> — triggers SBOM rescan and confirms the vulnerability is resolved.</p>
+                  <p>AI calls <code>verify_fix</code>. Triggers SBOM rescan and confirms the vulnerability is resolved.</p>
                 </div>
               </div>
             </div>
@@ -341,7 +341,7 @@ export default function IntegrationsPage() {
   const [ideExpanded, setIdeExpanded] = useState(false);
   const [ideKeyId, setIdeKeyId] = useState('');
 
-  /** Fetch lists for a specific board — deduped via ref */
+  /** Fetch lists for a specific board – deduped via ref */
   async function loadBoardLists(boardId: string) {
     if (listFetchesRef.current.has(boardId)) return;
     listFetchesRef.current.add(boardId);
@@ -572,7 +572,7 @@ export default function IntegrationsPage() {
       setNewKeyName('');
       setShowAddKey(false);
       fetchApiKeys();
-      setSuccess('API key created. Copy it now — it will not be shown again.');
+      setSuccess('API key created. Copy it now. It will not be shown again.');
     } catch { setError('Failed to create API key'); }
     finally { setCreatingKey(false); }
   };
@@ -642,19 +642,19 @@ jobs:
       PASS=$(echo "$RESPONSE" | python3 -c "import sys,json; print(str(json.load(sys.stdin)['pass']).lower())")
 
       if [ "$PASS" != "true" ]; then
-        echo "FAIL — compliance gaps found above threshold"
+        echo "FAIL – compliance gaps found above threshold"
         exit 1
       fi
-      echo "PASS — CRA compliance gate passed"
+      echo "PASS – CRA compliance gate passed"
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH`;
 
   const bashSnippet = `#!/usr/bin/env bash
 # Set these environment variables:
-#   CRANIS2_API_KEY      — Your API key
-#   CRANIS2_PRODUCT_ID   — Product UUID
-#   CRANIS2_THRESHOLD    — "critical", "high" (default), "medium", or "any"
+#   CRANIS2_API_KEY      – Your API key
+#   CRANIS2_PRODUCT_ID   – Product UUID
+#   CRANIS2_THRESHOLD    – "critical", "high" (default), "medium", or "any"
 
 set -euo pipefail
 BASE_URL="\${CRANIS2_URL:-https://dev.cranis2.dev}"
@@ -771,7 +771,7 @@ fi`;
         </div>
 
         <p className="int-desc">
-          Block releases that don't meet CRA compliance requirements. Add a compliance gate step to your CI/CD pipeline — it calls the CRANIS2 API and fails the build if unresolved gaps exceed your threshold.
+          Block releases that don't meet CRA compliance requirements. Add a compliance gate step to your CI/CD pipeline. It calls the CRANIS2 API and fails the build if unresolved gaps exceed your threshold.
         </p>
 
         {!isPro && (
@@ -1016,10 +1016,10 @@ fi`;
                     <div className="int-default-lists-panel">
                       <p className="int-hint"><strong>This board has no lists yet.</strong> CRANIS2 needs lists (columns) on your Trello board to file compliance cards into. Click below to create four default lists:</p>
                       <ul className="int-default-lists-desc">
-                        <li><strong>CRA Vulnerabilities</strong> — new CVEs and security issues detected in your dependencies</li>
-                        <li><strong>CRA Obligations</strong> — CRA obligation status changes requiring attention</li>
-                        <li><strong>CRA Deadlines</strong> — approaching CRA compliance deadlines</li>
-                        <li><strong>CRA Gaps / Stalls</strong> — compliance gaps or stalled progress on obligations</li>
+                        <li><strong>CRA Vulnerabilities</strong> – new CVEs and security issues detected in your dependencies</li>
+                        <li><strong>CRA Obligations</strong> – CRA obligation status changes requiring attention</li>
+                        <li><strong>CRA Deadlines</strong> – approaching CRA compliance deadlines</li>
+                        <li><strong>CRA Gaps / Stalls</strong> – compliance gaps or stalled progress on obligations</li>
                       </ul>
                       <button className="int-btn-primary" onClick={handleCreateDefaultLists}>
                         <Plus size={14} /> Create Default Lists on This Board

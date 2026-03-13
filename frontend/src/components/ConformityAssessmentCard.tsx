@@ -82,7 +82,7 @@ export default function ConformityAssessmentCard({ productId, craCategory, onSwi
         </div>
       </div>
 
-      {/* Summary — always visible */}
+      {/* Summary – always visible */}
       <div className="ca-summary">
         <div className="ca-summary-module">
           <strong>{data.primaryModule.fullName}</strong>
@@ -95,7 +95,7 @@ export default function ConformityAssessmentCard({ productId, craCategory, onSwi
         )}
         {data.harmonisedStandardsDetected && data.category === 'important_i' && (
           <div className="ca-condition ca-condition-ok">
-            <CheckCircle2 size={14} /> Harmonised standards detected in your technical file — self-assessment permitted.
+            <CheckCircle2 size={14} /> Harmonised standards detected in your technical file. Self-assessment permitted.
           </div>
         )}
         {!data.harmonisedStandardsDetected && data.category === 'important_i' && (

@@ -141,7 +141,7 @@ export default function AdminBillingPage() {
   }
 
   function formatDate(d: string | null) {
-    if (!d) return '—';
+    if (!d) return '–';
     return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
@@ -193,7 +193,7 @@ export default function AdminBillingPage() {
         <h2><Settings size={18} /> Pricing Configuration</h2>
         <div className="abill-pricing-grid">
           <div className="abill-pricing-field">
-            <label>Standard — per contributor/month</label>
+            <label>Standard – per contributor/month</label>
             <div className="abill-pricing-input-group">
               <span className="abill-pricing-currency">&euro;</span>
               <input
@@ -207,7 +207,7 @@ export default function AdminBillingPage() {
             </div>
           </div>
           <div className="abill-pricing-field">
-            <label>Pro — per product/month (+ contributor fee)</label>
+            <label>Pro – per product/month (+ contributor fee)</label>
             <div className="abill-pricing-input-group">
               <span className="abill-pricing-currency">&euro;</span>
               <input
@@ -233,7 +233,7 @@ export default function AdminBillingPage() {
       {/* AI Copilot Usage */}
       {copilotUsage && (
         <section className="abill-section">
-          <h2><Cpu size={18} /> AI Copilot Usage — Platform</h2>
+          <h2><Cpu size={18} /> AI Copilot Usage – Platform</h2>
 
           <div className="stats" style={{ marginBottom: '1.25rem' }}>
             <StatCard label="AI Requests" value={copilotUsage.currentMonth.requests} color="blue" sub="this month" />

@@ -31,7 +31,7 @@ function craLabel(cat: string | null) {
 }
 
 function fmtDate(d: string | null) {
-  if (!d) return '—';
+  if (!d) return '–';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -193,7 +193,7 @@ export default function ComplianceSummaryReport() {
                       <td style={{ padding: '0.75rem', color: 'var(--muted)' }}>
                         {p.craReports.total > 0
                           ? `${p.craReports.total} (${p.craReports.draft} draft)`
-                          : '—'}
+                          : '–'}
                       </td>
                     </tr>
                   ))}
@@ -207,7 +207,7 @@ export default function ComplianceSummaryReport() {
             {data.products.map(p => (
               <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '1.25rem', background: 'var(--surface)' }}>
                 <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: '0.75rem' }}>
-                  {p.name} <span style={{ fontWeight: 400, color: 'var(--muted)', fontSize: '0.85rem' }}>— {craLabel(p.craCategory)}</span>
+                  {p.name} <span style={{ fontWeight: 400, color: 'var(--muted)', fontSize: '0.85rem' }}>– {craLabel(p.craCategory)}</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', fontSize: '0.85rem' }}>
                   <div>

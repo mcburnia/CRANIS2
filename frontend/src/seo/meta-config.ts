@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════
-   SEO meta configuration — single source of truth
+   SEO meta configuration – single source of truth
    Used by usePageMeta (runtime) and inject-seo.mjs (build-time)
    ══════════════════════════════════════ */
 

@@ -215,7 +215,7 @@ export default function ComplianceTimelinePage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState(productId || '');
-  usePageMeta(selectedProduct && products.length ? { title: `Timeline — ${products.find(p => p.id === selectedProduct)?.name || 'Compliance'}` } : undefined);
+  usePageMeta(selectedProduct && products.length ? { title: `Timeline – ${products.find(p => p.id === selectedProduct)?.name || 'Compliance'}` } : undefined);
   const [data, setData] = useState<TimelineData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -289,7 +289,7 @@ export default function ComplianceTimelinePage() {
       )}
 
       <PageHeader
-        title={data ? `Compliance Timeline — ${data.productName}` : 'Compliance Timeline'}
+        title={data ? `Compliance Timeline – ${data.productName}` : 'Compliance Timeline'}
       />
 
       {/* Product selector (when no productId in URL) */}
@@ -335,7 +335,7 @@ export default function ComplianceTimelinePage() {
             />
             <StatCard
               label="License Health"
-              value={lastLicense ? `${permPct}%` : '—'}
+              value={lastLicense ? `${permPct}%` : '–'}
               color={permPct >= 90 ? 'green' : permPct >= 70 ? 'amber' : 'red'}
               sub={lastLicense ? `${lastLicense.permissiveCount} of ${lastLicense.totalDeps} permissive` : undefined}
             />
@@ -467,7 +467,7 @@ export default function ComplianceTimelinePage() {
                               </span>
                             )}
                           </div>
-                          <div className="ct-event-meta">{formatDateTime(evt.date)}{evt.meta ? ` — ${evt.meta}` : ''}</div>
+                          <div className="ct-event-meta">{formatDateTime(evt.date)}{evt.meta ? ` – ${evt.meta}` : ''}</div>
                         </div>
                       </div>
                     );

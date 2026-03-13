@@ -271,14 +271,14 @@ export default function AdminCopilotPage() {
 
             {qualityStandard && (
               <div>
-                <div className="acp-context-label">Layer 1 — Quality Standard (shared preamble)</div>
+                <div className="acp-context-label">Layer 1 – Quality Standard (shared preamble)</div>
                 <div className="acp-quality-preview">
                   {qualityStandard.system_prompt.substring(0, 300)}...
                 </div>
               </div>
             )}
 
-            <div className="acp-context-label">Layer 3 — Capability System Prompt</div>
+            <div className="acp-context-label">Layer 3 – Capability System Prompt</div>
             <textarea
               className="acp-prompt-textarea"
               value={edit.system_prompt}

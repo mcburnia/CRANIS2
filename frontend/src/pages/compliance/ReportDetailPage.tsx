@@ -77,7 +77,7 @@ const STATUS_LABELS: Record<string, string> = {
 /* ── Helpers ──────────────────────────────────────────────── */
 
 function formatDate(d: string | null): string {
-  if (!d) return '—';
+  if (!d) return '–';
   return new Date(d).toLocaleString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
@@ -162,7 +162,7 @@ export default function ReportDetailPage() {
         if (data.linkedFinding && !data.stages.find((s: Stage) => s.stage === 'early_warning')) {
           setEarlyWarningForm(prev => ({
             ...prev,
-            summary: `${data.linkedFinding.title} — affecting ${data.linkedFinding.dependency_name}@${data.linkedFinding.dependency_version}. ${data.linkedFinding.severity} severity${data.linkedFinding.cvss_score ? ` (CVSS ${data.linkedFinding.cvss_score})` : ''}.`,
+            summary: `${data.linkedFinding.title} – affecting ${data.linkedFinding.dependency_name}@${data.linkedFinding.dependency_version}. ${data.linkedFinding.severity} severity${data.linkedFinding.cvss_score ? ` (CVSS ${data.linkedFinding.cvss_score})` : ''}.`,
           }));
           setNotificationForm(prev => ({
             ...prev,
@@ -496,7 +496,7 @@ export default function ReportDetailPage() {
               {draftingStage === activeStage && (
                 <div className="rd-ai-suggesting-banner">
                   <Loader2 size={14} className="spin" />
-                  <span>Generating draft with AI — this may take a few seconds…</span>
+                  <span>Generating draft with AI. This may take a few seconds…</span>
                 </div>
               )}
 
@@ -506,7 +506,7 @@ export default function ReportDetailPage() {
                   {Object.entries(stages.find(s => s.stage === activeStage)?.content || {}).map(([key, val]) => (
                     <div key={key} className="rd-readonly-field">
                       <label>{key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}</label>
-                      <div className="rd-readonly-value">{String(val) || '—'}</div>
+                      <div className="rd-readonly-value">{String(val) || '–'}</div>
                     </div>
                   ))}
                 </div>
@@ -532,8 +532,8 @@ export default function ReportDetailPage() {
                             onChange={e => setEarlyWarningForm(f => ({ ...f, suspectedMalicious: e.target.value as any }))}
                           >
                             <option value="unknown">Unknown</option>
-                            <option value="yes">Yes — suspected malicious</option>
-                            <option value="no">No — not suspected</option>
+                            <option value="yes">Yes – suspected malicious</option>
+                            <option value="no">No – not suspected</option>
                           </select>
                         </div>
                       )}
@@ -573,7 +573,7 @@ export default function ReportDetailPage() {
                             <textarea
                               value={notificationForm.vulnerabilityDetails}
                               onChange={e => setNotificationForm(f => ({ ...f, vulnerabilityDetails: e.target.value }))}
-                              placeholder="General information about the vulnerability — CVE, description, affected versions..."
+                              placeholder="General information about the vulnerability: CVE, description, affected versions..."
                               rows={4}
                             />
                           </div>
@@ -762,7 +762,7 @@ export default function ReportDetailPage() {
                 <div className="rd-finding-title">{linkedFinding.title}</div>
                 <div className="rd-finding-detail">
                   {linkedFinding.dependency_name}@{linkedFinding.dependency_version}
-                  {linkedFinding.fixed_version && <span className="rd-fix-available"> — fix: {linkedFinding.fixed_version}</span>}
+                  {linkedFinding.fixed_version && <span className="rd-fix-available"> – fix: {linkedFinding.fixed_version}</span>}
                 </div>
                 {linkedFinding.description && (
                   <p className="rd-finding-desc">{linkedFinding.description.slice(0, 300)}{linkedFinding.description.length > 300 ? '...' : ''}</p>

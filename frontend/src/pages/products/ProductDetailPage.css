@@ -1215,7 +1215,7 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
 
 .ai-suggest-btn-sm { padding: 0.3rem 0.7rem; font-size: 0.75rem; }
 
-/* AI suggesting banner — pulsing feedback */
+/* AI suggesting banner – pulsing feedback */
 .ai-suggesting-banner {
   display: flex; align-items: center; gap: 0.4rem;
   padding: 0.5rem 0.75rem; margin-bottom: 0.75rem;

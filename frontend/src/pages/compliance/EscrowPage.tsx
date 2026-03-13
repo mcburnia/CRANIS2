@@ -76,7 +76,7 @@ interface EscrowUser {
 export default function EscrowPage() {
   const { productId } = useParams<{ productId: string }>();
   const [productName, setProductName] = useState('');
-  usePageMeta(productName ? { title: `Escrow — ${productName}` } : undefined);
+  usePageMeta(productName ? { title: `Escrow – ${productName}` } : undefined);
   const [productRepoUrl, setProductRepoUrl] = useState('');
   const [config, setConfig] = useState<EscrowConfig | null>(null);
   const [status, setStatus] = useState<EscrowStatus | null>(null);
@@ -248,7 +248,7 @@ export default function EscrowPage() {
       }
       // Show credentials or access notification
       if (data.agent?.newUser && data.agent?.forgejoPassword) {
-        // New Forgejo user — show one-time credentials banner
+        // New Forgejo user – show one-time credentials banner
         setAgentCredentials({
           email: inviteEmail.trim(),
           username: data.agent.forgejoUsername,
@@ -256,7 +256,7 @@ export default function EscrowPage() {
           isNew: true,
         });
       } else {
-        // Existing Forgejo user — show access granted notice
+        // Existing Forgejo user – show access granted notice
         setAgentCredentials({
           email: inviteEmail.trim(),
           username: data.agent.forgejoUsername,
@@ -304,7 +304,7 @@ export default function EscrowPage() {
   }
 
   function formatDate(d: string | null) {
-    if (!d) return '—';
+    if (!d) return '–';
     return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
@@ -329,7 +329,7 @@ export default function EscrowPage() {
         <ArrowLeft size={16} /> Back to product
       </Link>
 
-      <PageHeader title={`Escrow — ${productName || 'Product'}`} />
+      <PageHeader title={`Escrow – ${productName || 'Product'}`} />
 
       {error && <div className="esc-error">{error}</div>}
 
@@ -340,7 +340,7 @@ export default function EscrowPage() {
             <Key size={20} />
             <div>
               <strong>Escrow Repository Credentials</strong>
-              <span>Save these now — the password will not be shown again</span>
+              <span>Save these now. The password will not be shown again.</span>
             </div>
           </div>
           <div className="esc-credentials-grid">
@@ -387,8 +387,8 @@ export default function EscrowPage() {
           <div className="esc-credentials-header">
             <Key size={20} />
             <div>
-              <strong>New Agent Credentials — {agentCredentials.email}</strong>
-              <span>Share these with the agent — the password will not be shown again</span>
+              <strong>New Agent Credentials – {agentCredentials.email}</strong>
+              <span>Share these with the agent. The password will not be shown again.</span>
             </div>
           </div>
           <div className="esc-credentials-grid">
@@ -434,7 +434,7 @@ export default function EscrowPage() {
           <div className="esc-credentials-header">
             <CheckCircle2 size={20} />
             <div>
-              <strong>Access Granted — {agentCredentials.email}</strong>
+              <strong>Access Granted – {agentCredentials.email}</strong>
               <span>This agent already has a Forgejo account and has been notified by email</span>
             </div>
           </div>
@@ -448,7 +448,7 @@ export default function EscrowPage() {
         </div>
       )}
 
-      {/* ─── No repo URL — show message ─── */}
+      {/* ─── No repo URL – show message ─── */}
       {!isConfigured && !setupCredentials && !productRepoUrl && (
         <div className="esc-setup-wizard">
           <div className="esc-setup-icon" style={{ color: 'var(--amber)' }}>
@@ -466,7 +466,7 @@ export default function EscrowPage() {
         </div>
       )}
 
-      {/* ─── Not configured — Setup wizard ─── */}
+      {/* ─── Not configured – Setup wizard ─── */}
       {!isConfigured && !setupCredentials && productRepoUrl && (
         <div className="esc-setup-wizard">
           <div className="esc-setup-icon">
@@ -508,19 +508,19 @@ export default function EscrowPage() {
         </div>
       )}
 
-      {/* ─── Configured — Dashboard ─── */}
+      {/* ─── Configured – Dashboard ─── */}
       {isConfigured && status && (
         <>
           {/* Status banner */}
           <div className={`esc-status-banner ${status.enabled ? (status.lastDeposit?.status === 'failed' ? 'esc-status-error' : 'esc-status-active') : 'esc-status-disabled'}`}>
             {status.enabled ? (
               status.lastDeposit?.status === 'failed' ? (
-                <><XCircle size={18} /> Last deposit failed — check history for details</>
+                <><XCircle size={18} /> Last deposit failed. Check history for details</>
               ) : (
-                <><CheckCircle2 size={18} /> Escrow active — deposits run daily at 5 AM</>
+                <><CheckCircle2 size={18} /> Escrow active. Deposits run daily at 5 AM</>
               )
             ) : (
-              <><Clock size={18} /> Escrow paused — deposits are not being made</>
+              <><Clock size={18} /> Escrow paused. Deposits are not being made</>
             )}
             <button className="esc-toggle-btn" onClick={handleToggleEnabled}>
               {status.enabled ? 'Pause' : 'Resume'}
@@ -539,7 +539,7 @@ export default function EscrowPage() {
             <StatCard label="Artifacts" value={status.lastDeposit?.artifactCount || 0} color="amber" sub="in last deposit" />
             <StatCard
               label="Success Rate"
-              value={status.stats?.total ? Math.round((status.stats.completed / status.stats.total) * 100) + '%' : '—'}
+              value={status.stats?.total ? Math.round((status.stats.completed / status.stats.total) * 100) + '%' : '–'}
               color={status.stats?.failed ? 'red' : 'green'}
               sub={`${status.stats?.completed || 0} of ${status.stats?.total || 0}`}
             />
@@ -665,12 +665,12 @@ export default function EscrowPage() {
                         <tr key={agent.id}>
                           <td>
                             <div className="esc-agent-cell">
-                              <span className="esc-agent-name">{agent.displayName || '—'}</span>
+                              <span className="esc-agent-name">{agent.displayName || '–'}</span>
                               <span className="esc-agent-email">{agent.email}</span>
                             </div>
                           </td>
-                          <td><code className="esc-sha">{agent.agentReference || '—'}</code></td>
-                          <td><code className="esc-sha">{agent.forgejoUsername || '—'}</code></td>
+                          <td><code className="esc-sha">{agent.agentReference || '–'}</code></td>
+                          <td><code className="esc-sha">{agent.forgejoUsername || '–'}</code></td>
                           <td><span className="esc-badge esc-badge-read">Read-only</span></td>
                           <td className="esc-trigger">{formatDate(agent.createdAt)}</td>
                           <td>
@@ -713,11 +713,11 @@ export default function EscrowPage() {
                         <tr key={agent.id} className="esc-row-revoked">
                           <td>
                             <div className="esc-agent-cell">
-                              <span className="esc-agent-name">{agent.displayName || '—'}</span>
+                              <span className="esc-agent-name">{agent.displayName || '–'}</span>
                               <span className="esc-agent-email">{agent.email}</span>
                             </div>
                           </td>
-                          <td><code className="esc-sha">{agent.forgejoUsername || '—'}</code></td>
+                          <td><code className="esc-sha">{agent.forgejoUsername || '–'}</code></td>
                           <td><span className="esc-badge esc-badge-revoked">Revoked</span></td>
                           <td className="esc-trigger">{formatDate(agent.revokedAt)}</td>
                         </tr>
@@ -823,7 +823,7 @@ export default function EscrowPage() {
                         </td>
                         <td className="esc-trigger">{d.trigger}</td>
                         <td>{d.artifactCount || 0}</td>
-                        <td className="esc-sha">{d.commitSha?.slice(0, 8) || '—'}</td>
+                        <td className="esc-sha">{d.commitSha?.slice(0, 8) || '–'}</td>
                       </tr>
                     ))}
                   </tbody>

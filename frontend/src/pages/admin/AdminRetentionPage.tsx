@@ -346,7 +346,7 @@ export default function AdminRetentionPage() {
                             {w.days_until_expiry}d
                           </span>
                         </td>
-                        <td>{w.legal_hold ? <Lock size={14} /> : '—'}</td>
+                        <td>{w.legal_hold ? <Lock size={14} /> : '–'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -390,15 +390,15 @@ export default function AdminRetentionPage() {
                     <td>{formatEur(parseFloat(entry.funded_amount_eur))}</td>
                     <td>
                       {entry.retention_start_date && entry.retention_end_date
-                        ? `${formatDate(entry.retention_start_date)} — ${formatDate(entry.retention_end_date)}`
-                        : '—'}
+                        ? `${formatDate(entry.retention_start_date)} – ${formatDate(entry.retention_end_date)}`
+                        : '–'}
                     </td>
                     <td>
                       <span className={`aretention-badge ${STATUS_BADGE[entry.status] || ''}`}>
                         {entry.status}
                       </span>
                     </td>
-                    <td className="aretention-mono">{entry.wise_transaction_ref || '—'}</td>
+                    <td className="aretention-mono">{entry.wise_transaction_ref || '–'}</td>
                     <td>
                       {entry.status === 'allocated' && (
                         <button
@@ -478,8 +478,8 @@ export default function AdminRetentionPage() {
                         <td><strong>{formatEur(parseFloat(entry.funded_amount_eur))}</strong></td>
                         <td>
                           {entry.retention_start_date && entry.retention_end_date
-                            ? `${formatDate(entry.retention_start_date)} — ${formatDate(entry.retention_end_date)}`
-                            : '—'}
+                            ? `${formatDate(entry.retention_start_date)} – ${formatDate(entry.retention_end_date)}`
+                            : '–'}
                         </td>
                         <td>{formatDate(entry.created_at)}</td>
                       </tr>
@@ -534,9 +534,9 @@ export default function AdminRetentionPage() {
                 ) : snapshots.map(s => (
                   <tr key={s.id} className={s.legal_hold ? 'aretention-row-hold' : ''}>
                     <td className="aretention-mono">{s.filename}</td>
-                    <td>{s.size_bytes ? formatBytes(s.size_bytes) : '—'}</td>
+                    <td>{s.size_bytes ? formatBytes(s.size_bytes) : '–'}</td>
                     <td><span className="aretention-badge aretention-badge-blue">{s.trigger_type || 'manual'}</span></td>
-                    <td>{s.retention_end_date ? formatDate(s.retention_end_date) : '—'}</td>
+                    <td>{s.retention_end_date ? formatDate(s.retention_end_date) : '–'}</td>
                     <td>
                       <span className={`aretention-badge ${s.cold_storage_status === 'archived' ? 'aretention-badge-green' : 'aretention-badge-amber'}`}>
                         {s.cold_storage_status || 'pending'}
@@ -545,7 +545,7 @@ export default function AdminRetentionPage() {
                     <td>
                       {s.legal_hold ? (
                         <span className="aretention-hold-active"><Lock size={14} /> Active</span>
-                      ) : '—'}
+                      ) : '–'}
                     </td>
                     <td>
                       <button
@@ -592,7 +592,7 @@ export default function AdminRetentionPage() {
                   <tr key={q.quarter}>
                     <td><strong>{q.quarter}</strong></td>
                     <td>{q.activeEntries}</td>
-                    <td>{q.totalBytes > 0 ? formatBytes(q.totalBytes) : '—'}</td>
+                    <td>{q.totalBytes > 0 ? formatBytes(q.totalBytes) : '–'}</td>
                     <td>{formatEur(q.estimatedCostEur)}</td>
                   </tr>
                 ))}

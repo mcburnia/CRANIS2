@@ -44,7 +44,7 @@ export default function RiskFindingsTab({ productId }: { productId: string }) {
     }
   }
 
-  // AI Triage — bulk (all open findings)
+  // AI Triage – bulk (all open findings)
   const handleTriageAll = async () => {
     setTriaging(true);
     setTriageError(null);
@@ -85,7 +85,7 @@ export default function RiskFindingsTab({ productId }: { productId: string }) {
     }
   };
 
-  // AI Triage — single finding
+  // AI Triage – single finding
   const handleTriageSingle = async (findingId: string) => {
     setTriagingSingle(findingId);
     setTriageError(null);
@@ -121,7 +121,7 @@ export default function RiskFindingsTab({ productId }: { productId: string }) {
     }
   };
 
-  // Accept triage suggestion — update finding status
+  // Accept triage suggestion – update finding status
   const handleAcceptTriage = async (findingId: string, suggestion: any) => {
     const statusMap: Record<string, string> = {
       dismiss: 'dismissed',
@@ -139,7 +139,7 @@ export default function RiskFindingsTab({ productId }: { productId: string }) {
     fetchFindings();
   };
 
-  // Reject triage suggestion — just remove the card
+  // Reject triage suggestion – just remove the card
   const handleRejectTriage = (findingId: string) => {
     setTriageSuggestions(prev => { const next = { ...prev }; delete next[findingId]; return next; });
   };
@@ -161,7 +161,7 @@ export default function RiskFindingsTab({ productId }: { productId: string }) {
         method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
       if (resp.status === 409) {
-        // Already running — just poll the existing scan
+        // Already running – just poll the existing scan
         const existing = await resp.json();
         if (existing.scanId) {
           let done = false; let attempts = 0;

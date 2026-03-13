@@ -42,7 +42,7 @@ function activityDotClass(entityType: string): string {
 }
 
 function formatDiffValue(val: any): string {
-  if (val === null || val === undefined) return '—';
+  if (val === null || val === undefined) return '–';
   if (typeof val === 'object') return JSON.stringify(val);
   return String(val);
 }

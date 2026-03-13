@@ -491,7 +491,7 @@ export default function BillingPage() {
       <section className="bill-section">
         <h2>Subscription</h2>
 
-        {/* Trial or Cancelled — show both plan cards */}
+        {/* Trial or Cancelled – show both plan cards */}
         {(status === 'trial' || status === 'cancelled' || status === 'read_only' || status === 'suspended') && (
           <>
             {status === 'cancelled' && (
@@ -552,8 +552,8 @@ export default function BillingPage() {
                   </p>
                   <ul className="bill-plan-features">
                     <li>Everything in Standard</li>
-                    <li><strong>AI Copilot</strong> — AI-generated technical file drafts</li>
-                    <li><strong>AI Copilot</strong> — AI-generated obligation evidence</li>
+                    <li><strong>AI Copilot</strong> – AI-generated technical file drafts</li>
+                    <li><strong>AI Copilot</strong> – AI-generated obligation evidence</li>
                     <li>Priority support</li>
                   </ul>
                 </div>
@@ -570,11 +570,11 @@ export default function BillingPage() {
           </>
         )}
 
-        {/* Active — show current plan with upgrade/downgrade */}
+        {/* Active – show current plan with upgrade/downgrade */}
         {status === 'active' && (
           <div className={`bill-plan-card ${plan === 'pro' ? 'bill-plan-card-pro' : ''}`}>
             <div className="bill-plan-info">
-              <h3>{plan === 'pro' && <Sparkles size={16} />} {planLabel} Plan — Active</h3>
+              <h3>{plan === 'pro' && <Sparkles size={16} />} {planLabel} Plan – Active</h3>
               {plan === 'pro' ? (
                 <p>
                   {productCount} product{productCount !== 1 ? 's' : ''} &times; &euro;{(proProductPrice / 100).toFixed(2)}/month

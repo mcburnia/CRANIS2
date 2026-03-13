@@ -28,7 +28,7 @@ export default function AuthenticatedLayout() {
         setOrgName(data.name);
       }
     } catch {
-      // Silently fail — org name is cosmetic
+      // Silently fail – org name is cosmetic
     }
   }
 

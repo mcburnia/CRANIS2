@@ -150,9 +150,9 @@ export default function AdminVulnDbPage() {
                 <tr key={eco.ecosystem}>
                   <td className="avdb-eco-name">{eco.ecosystem}</td>
                   <td>{eco.advisoryCount.toLocaleString()}</td>
-                  <td>{eco.ecosystem === 'NVD' ? <span className="avdb-na">—</span> : eco.packageCount.toLocaleString()}</td>
+                  <td>{eco.ecosystem === 'NVD' ? <span className="avdb-na">–</span> : eco.packageCount.toLocaleString()}</td>
                   <td className="avdb-muted">{formatTimeAgo(eco.lastSyncAt)}</td>
-                  <td className="avdb-muted">{eco.durationSeconds !== null ? eco.durationSeconds + 's' : '—'}</td>
+                  <td className="avdb-muted">{eco.durationSeconds !== null ? eco.durationSeconds + 's' : '–'}</td>
                   <td>
                     <span className={'avdb-status-badge ' + eco.status}>
                       {eco.status === 'completed' && <CheckCircle size={12} />}

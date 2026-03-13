@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       }
     } catch {
-      // Network error — keep token, try again later
+      // Network error – keep token, try again later
     } finally {
       setLoading(false);
     }

@@ -146,10 +146,10 @@ export default function AdminAuditLogPage() {
                 {ev.orgName ? (
                   <span className="aal-org-badge"><Building2 size={11} /> {ev.orgName}</span>
                 ) : (
-                  <span className="aal-no-val">—</span>
+                  <span className="aal-no-val">–</span>
                 )}
               </span>
-              <span className="aal-col-ip">{ev.ipAddress || '—'}</span>
+              <span className="aal-col-ip">{ev.ipAddress || '–'}</span>
             </div>
           ))
         )}

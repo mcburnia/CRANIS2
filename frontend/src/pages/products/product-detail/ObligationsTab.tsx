@@ -275,7 +275,7 @@ export default function ObligationsTab({ product }: { product: Product }) {
                   <textarea
                     className="ob-notes-textarea"
                     rows={5}
-                    placeholder="Document how this obligation is met — evidence, references, compliance notes…"
+                    placeholder="Document how this obligation is met – evidence, references, compliance notes…"
                     value={editingNotes[ob.id] ?? ob.notes ?? ''}
                     onChange={(e) => setEditingNotes(prev => ({ ...prev, [ob.id]: e.target.value }))}
                   />

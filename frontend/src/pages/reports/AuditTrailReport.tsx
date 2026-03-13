@@ -61,7 +61,7 @@ function defaultTo() {
 }
 
 function fmtDate(d: string | null) {
-  if (!d) return '—';
+  if (!d) return '–';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
@@ -225,7 +225,7 @@ export default function AuditTrailReport() {
                         <td style={{ padding: '0.6rem 0.75rem', color: 'var(--muted)', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{fmtDate(e.createdAt)}</td>
                         <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text)' }}>{e.userEmail}</td>
                         <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text)' }}>{eventLabel(e.eventType)}</td>
-                        <td style={{ padding: '0.6rem 0.75rem', color: 'var(--muted)', fontSize: '0.8rem' }}>{e.ipAddress ?? '—'}</td>
+                        <td style={{ padding: '0.6rem 0.75rem', color: 'var(--muted)', fontSize: '0.8rem' }}>{e.ipAddress ?? '–'}</td>
                       </tr>
                     ))}
                   </tbody>

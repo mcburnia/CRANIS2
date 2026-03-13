@@ -22,7 +22,7 @@ export function providerLabel(provider: string): string {
 
 // ── CRA constants ────────────────────────────────────────────
 
-export const CRA_CATEGORY_HELP = 'The CRA defines four product categories with increasing obligations. Default: standard cybersecurity requirements (self-assessment, Module A). Important Class I: products with higher risk — must use harmonised standards or third-party assessment. Important Class II: critical infrastructure products — mandatory third-party conformity assessment (Module B+C or H). Critical: highest risk — requires EU cybersecurity certification per Article 8(6).';
+export const CRA_CATEGORY_HELP = 'The CRA defines four product categories with increasing obligations. Default: standard cybersecurity requirements (self-assessment, Module A). Important Class I: products with higher risk. Must use harmonised standards or third-party assessment. Important Class II: critical infrastructure products. Mandatory third-party conformity assessment (Module B+C or H). Critical: highest risk. Requires EU cybersecurity certification per Article 8(6).';
 
 export const TECHFILE_HELP: Record<string, string> = {
   product_description: 'Describe your product\'s intended purpose, software versions affecting cybersecurity compliance, how it is made available on the market, and reference user instructions per Annex II. Satisfies Annex VII §1.',
@@ -72,12 +72,12 @@ export function getTypeIcon(type: string) {
 }
 
 export function formatDate(iso: string): string {
-  if (!iso) return '—';
+  if (!iso) return '–';
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 export function formatDateTime(iso: string): string {
-  if (!iso) return '—';
+  if (!iso) return '–';
   return new Date(iso).toLocaleString('en-GB', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'

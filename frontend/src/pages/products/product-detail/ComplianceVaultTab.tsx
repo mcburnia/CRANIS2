@@ -48,7 +48,7 @@ interface SnapshotSchedule {
 }
 
 function formatBytes(bytes: number | null): string {
-  if (!bytes) return '—';
+  if (!bytes) return '–';
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -256,7 +256,7 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
         setSnapshots(prev => prev.filter(s => s.id !== snapshot.id));
       } else if (res.status === 409) {
         const data = await res.json();
-        setError(data.message || 'Cannot delete — retention period active or legal hold in place.');
+        setError(data.message || 'Cannot delete. Retention period active or legal hold in place.');
       }
     } catch {
       /* silent */
@@ -349,7 +349,7 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
             Generate self-contained compliance archives for audit readiness.
             Each snapshot includes your technical file, EU Declaration of Conformity,
             SBOMs, vulnerability evidence, obligation statuses, and a SHA-256 integrity manifest.
-            Downloads are available for 24 hours — archives are automatically preserved in cold storage.
+            Downloads are available for 24 hours. Archives are automatically preserved in cold storage.
           </p>
         </div>
         <button
@@ -517,15 +517,15 @@ export default function ComplianceVaultTab({ productId, marketPlacementDate, sup
                   </span>
                 )}
                 {snapshot.cranis2_signed && (
-                  <span className="cv-cold-badge cv-signed-badge" title={`Signed with ${snapshot.signature_algorithm || 'Ed25519'} (key: ${snapshot.signature_key_id || '—'})`}>
+                  <span className="cv-cold-badge cv-signed-badge" title={`Signed with ${snapshot.signature_algorithm || 'Ed25519'} (key: ${snapshot.signature_key_id || '–'})`}>
                     <ShieldCheck size={12} /> Signed
                   </span>
                 )}
                 {(snapshot.retention_active || snapshot.legal_hold) && (
                   <span className="cv-cold-badge cv-retention-lock-badge" title={
                     snapshot.legal_hold
-                      ? 'Under legal hold — deletion blocked'
-                      : `Retention until ${snapshot.retention_end_date} — deletion blocked`
+                      ? 'Under legal hold. Deletion blocked'
+                      : `Retention until ${snapshot.retention_end_date}. Deletion blocked`
                   }>
                     <Lock size={12} /> {snapshot.legal_hold ? 'Legal hold' : 'Retention lock'}
                   </span>

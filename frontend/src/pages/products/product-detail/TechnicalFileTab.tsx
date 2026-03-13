@@ -136,7 +136,7 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
         const current = prev[sectionKey] || {};
 
         if (sectionKey === 'product_description' || sectionKey === 'vulnerability_handling') {
-          // Merge suggested fields — only populate empty values
+          // Merge suggested fields – only populate empty values
           const currentFields = current.fields || {};
           const suggestedFields = sectionSuggestion.fields || {};
           const mergedFields = { ...currentFields };
@@ -169,7 +169,7 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
 
       setAutoFilledSections(prev => new Set([...prev, sectionKey]));
     } catch {
-      // Silently ignore — auto-fill is best-effort
+      // Silently ignore – auto-fill is best-effort
     } finally {
       setLoadingSuggestion(null);
     }
@@ -200,7 +200,7 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
       const data = await res.json();
       const suggestion = data.suggestion;
 
-      // Parse JSON response — the service returns structured JSON for tech file sections
+      // Parse JSON response – the service returns structured JSON for tech file sections
       try {
         // Strip markdown code fences if present
         const cleaned = suggestion.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
@@ -391,7 +391,7 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
 
     return (
       <div className="tf-annex-checklist">
-        <h4 className="tf-subsection-title">Annex I Part I — Essential Requirements Checklist</h4>
+        <h4 className="tf-subsection-title">Annex I Part I – Essential Requirements Checklist</h4>
         <p className="tf-subsection-desc">For each requirement, indicate whether it is applicable and provide evidence or justification.</p>
         <div className="tf-annex-list">
           {reqs.map((req: any, idx: number) => (
@@ -501,11 +501,11 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
                     <span>{section.content?.guidance || 'Complete this section per the CRA requirements.'}</span>
                   </div>
 
-                  {/* Auto-fill banner — shown after auto-fill is applied */}
+                  {/* Auto-fill banner – shown after auto-fill is applied */}
                   {autoFilledSections.has(section.sectionKey) && (
                     <div className="tf-autofill-banner">
                       <Sparkles size={13} />
-                      <span>Platform data auto-filled — review each field before saving.</span>
+                      <span>Platform data auto-filled. Review each field before saving.</span>
                     </div>
                   )}
 
@@ -513,7 +513,7 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
                   {aiSuggesting === section.sectionKey && (
                     <div className="ai-suggesting-banner">
                       <Loader2 size={14} className="spin" />
-                      <span>Generating draft with AI — this may take a few seconds…</span>
+                      <span>Generating draft with AI. This may take a few seconds…</span>
                     </div>
                   )}
 
@@ -521,7 +521,7 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
                   {generatingRiskAssessment && section.sectionKey === 'risk_assessment' && (
                     <div className="ai-suggesting-banner">
                       <Loader2 size={14} className="spin" />
-                      <span>Generating comprehensive risk assessment with AI — this may take 15-30 seconds…</span>
+                      <span>Generating comprehensive risk assessment with AI. This may take 15–30 seconds…</span>
                     </div>
                   )}
 

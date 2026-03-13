@@ -34,9 +34,9 @@ const PRODUCT_TYPES = [
 
 const CRA_CATEGORIES = [
   { value: 'default', label: 'Default', desc: 'Standard CRA obligations' },
-  { value: 'important_i', label: 'Important I', desc: 'Important product — self-assessment possible' },
-  { value: 'important_ii', label: 'Important II', desc: 'Important product — third-party assessment may be required' },
-  { value: 'critical', label: 'Critical', desc: 'Critical product — third-party conformity assessment required' },
+  { value: 'important_i', label: 'Important I', desc: 'Important product – self-assessment possible' },
+  { value: 'important_ii', label: 'Important II', desc: 'Important product – third-party assessment may be required' },
+  { value: 'critical', label: 'Critical', desc: 'Critical product – third-party conformity assessment required' },
 ];
 
 const TYPE_LABELS: Record<string, string> = Object.fromEntries(PRODUCT_TYPES.map(t => [t.value, t.label]));
@@ -53,7 +53,7 @@ function getTypeIcon(type: string) {
 }
 
 function formatDate(iso: string): string {
-  if (!iso) return '—';
+  if (!iso) return '–';
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
@@ -249,9 +249,9 @@ export default function ProductsPage() {
               <div className="form-group">
                 <label className="form-label">Lifecycle Stage</label>
                 <select className="form-input" value={formLifecycle} onChange={e => setFormLifecycle(e.target.value)}>
-                  <option value="pre_production">Pre-production — not yet on the market</option>
-                  <option value="on_market">On market — placed on the EU market</option>
-                  <option value="end_of_life">End of life — approaching or past end of support</option>
+                  <option value="pre_production">Pre-production – not yet on the market</option>
+                  <option value="on_market">On market – placed on the EU market</option>
+                  <option value="end_of_life">End of life – approaching or past end of support</option>
                 </select>
                 <span className="form-hint">Determines how urgently compliance gaps are flagged. Pre-production products are shown as "preparing" rather than "non-compliant".</span>
               </div>

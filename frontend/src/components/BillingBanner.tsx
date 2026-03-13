@@ -24,7 +24,7 @@ export default function BillingBanner() {
     })
       .then(res => res.ok ? res.json() : null)
       .then(d => { if (d) setData(d); })
-      .catch(() => {}); // Silently fail — banner is non-critical
+      .catch(() => {}); // Silently fail – banner is non-critical
   }, []);
 
   if (dismissed || !data || data.exempt) return null;
@@ -34,7 +34,7 @@ export default function BillingBanner() {
   // No banner needed for active or none
   if (['active', 'none', 'exempt'].includes(status)) return null;
 
-  // Trial with plenty of days left — no banner
+  // Trial with plenty of days left – no banner
   if (status === 'trial' && !graceEndsAt && (trialDaysRemaining === null || trialDaysRemaining > 14)) return null;
 
   let severity: 'info' | 'warning' | 'error' = 'info';

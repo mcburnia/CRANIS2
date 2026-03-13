@@ -117,7 +117,7 @@ const router = createBrowserRouter([
           { path: '/integrations', element: <IntegrationsPage /> },
           { path: '/document-templates', element: <DocumentTemplatesPage /> },
 
-          /* URL aliases — redirect intuitive paths to actual routes */
+          /* URL aliases – redirect intuitive paths to actual routes */
           { path: '/cra-reports', element: <Navigate to="/vulnerability-reports" replace /> },
           { path: '/vulnerabilities', element: <Navigate to="/vulnerability-reports" replace /> },
           { path: '/license-scan', element: <Navigate to="/license-compliance" replace /> },
@@ -148,7 +148,7 @@ const router = createBrowserRouter([
         ],
       },
 
-      /* 404 catch-all — must be last */
+      /* 404 catch-all – must be last */
       { path: '*', element: <NotFoundPage /> },
     ],
   },

@@ -203,7 +203,7 @@ export default function DueDiligencePage() {
                     {preview.licenseFindings.length} dependencies classified.
                     {nonPermissive.length > 0
                       ? ` ${nonPermissive.length} non-permissive findings requiring review.`
-                      : ' All permissive — no restrictions on distribution.'}
+                      : ' All permissive. No restrictions on distribution.'}
                   </p>
                 </div>
               </div>
@@ -237,7 +237,7 @@ export default function DueDiligencePage() {
                   <strong>IP Proof Status</strong>
                   <p>
                     {preview.ipProof
-                      ? `RFC 3161 timestamp — ${preview.ipProof.verified ? 'verified' : 'unverified'}, created ${new Date(preview.ipProof.createdAt).toLocaleDateString('en-GB')}.`
+                      ? `RFC 3161 timestamp – ${preview.ipProof.verified ? 'verified' : 'unverified'}, created ${new Date(preview.ipProof.createdAt).toLocaleDateString('en-GB')}.`
                       : 'No IP proof snapshot available.'}
                   </p>
                 </div>
@@ -251,7 +251,7 @@ export default function DueDiligencePage() {
                   <p>
                     {nonPermissive.length > 0
                       ? `Full text included for ${new Set(nonPermissive.map(f => f.licenseDeclared)).size} non-permissive licences.`
-                      : 'No non-permissive licences — no texts needed.'}
+                      : 'No non-permissive licences. No texts needed.'}
                   </p>
                 </div>
               </div>

@@ -28,7 +28,7 @@ function getStrengthLabel(score: number): { text: string; color: string } {
   return { text: 'Very strong', color: 'var(--green)' };
 }
 
-/** Collect browser telemetry silently — no user interaction required */
+/** Collect browser telemetry silently – no user interaction required */
 function getBrowserTelemetry() {
   return {
     browserLanguage: navigator.language || '',

@@ -197,7 +197,7 @@ export default function DocumentTemplatesPage() {
             </div>
 
             <div className="dt-modal-field">
-              <label>Version format <span className="dt-optional">(optional — auto-detected if blank)</span></label>
+              <label>Version format <span className="dt-optional">(optional: auto-detected if blank)</span></label>
               <input
                 type="text"
                 value={versionFormat}

@@ -229,7 +229,7 @@ export default function LandingPage() {
         <p>New EU rules are changing what is expected of software companies. Here is what they mean for you, and how CRANIS2 helps.</p>
       </section>
 
-      {/* §0: Dogfooding — FIRST, before regulations */}
+      {/* §0: Dogfooding – FIRST, before regulations */}
       <section id="dogfooding" className="reg-section">
         <div className="reg-inner">
           <div className="reg-header">

@@ -95,7 +95,7 @@ export default function AdminUsersPage() {
       const data = await res.json();
       setOrgs(data.orgs.map((o: any) => ({ id: o.id, name: o.name })));
     } catch {
-      // Non-critical — invite will still work without org selection
+      // Non-critical – invite will still work without org selection
     }
   }
 
@@ -414,7 +414,7 @@ export default function AdminUsersPage() {
                       value={inviteOrgId}
                       onChange={e => setInviteOrgId(e.target.value)}
                     >
-                      <option value="">No organisation — user will create their own</option>
+                      <option value="">No organisation – user will create their own</option>
                       {orgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
                     </select>
                   </div>

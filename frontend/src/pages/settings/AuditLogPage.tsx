@@ -38,7 +38,7 @@ function getEventInfo(eventType: string) {
 }
 
 function parseBrowserShort(userAgent: string | null): string {
-  if (!userAgent) return '—';
+  if (!userAgent) return '–';
   const ua = userAgent.toLowerCase();
   let browser = 'Other';
   if (ua.includes('firefox')) browser = 'Firefox';
@@ -182,7 +182,7 @@ export default function AuditLogPage() {
                         <Globe size={14} />
                         {event.browserTimezone}
                       </div>
-                    ) : '—'}
+                    ) : '–'}
                   </td>
                   <td>
                     <div className="audit-time">
@@ -190,7 +190,7 @@ export default function AuditLogPage() {
                       <span className="audit-time-full">{formatTimestamp(event.createdAt)}</span>
                     </div>
                   </td>
-                  <td className="audit-mono">{event.ipAddress || '—'}</td>
+                  <td className="audit-mono">{event.ipAddress || '–'}</td>
                   <td>{parseBrowserShort(event.userAgent)}</td>
                 </tr>
               );
@@ -213,19 +213,19 @@ export default function AuditLogPage() {
             <div className="audit-detail-grid">
               <div className="audit-detail-item">
                 <Monitor size={14} /> <label>User Agent</label>
-                <span>{event.userAgent || '—'}</span>
+                <span>{event.userAgent || '–'}</span>
               </div>
               <div className="audit-detail-item">
                 <Globe size={14} /> <label>Accept-Language</label>
-                <span>{event.acceptLanguage || '—'}</span>
+                <span>{event.acceptLanguage || '–'}</span>
               </div>
               <div className="audit-detail-item">
                 <Globe size={14} /> <label>Browser Language</label>
-                <span>{event.browserLanguage || '—'}</span>
+                <span>{event.browserLanguage || '–'}</span>
               </div>
               <div className="audit-detail-item">
                 <Clock size={14} /> <label>Browser Timezone</label>
-                <span>{event.browserTimezone || '—'}</span>
+                <span>{event.browserTimezone || '–'}</span>
               </div>
               {event.referrer && (
                 <div className="audit-detail-item">

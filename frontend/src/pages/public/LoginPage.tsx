@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './LoginPage.css';
 
-/** Collect browser telemetry silently — no user interaction required */
+/** Collect browser telemetry silently – no user interaction required */
 function getBrowserTelemetry() {
   return {
     browserLanguage: navigator.language || '',
