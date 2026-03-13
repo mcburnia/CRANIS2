@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import HelpTip from '../../components/HelpTip';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './AdminRetentionPage.css';
 
@@ -201,6 +202,12 @@ export default function AdminRetentionPage() {
         </div>
       )}
 
+      {/* Guidance note */}
+      <div className="aretention-guidance">
+        <HelpTip text="Allocated = reserved but not yet transferred. Funded = Wise transfer recorded. Released = retention period ended." size={14} />
+        <span>Hover over column headers for explanations of each field.</span>
+      </div>
+
       {/* Expiry warnings banner */}
       {warnings.length > 0 && (
         <div className="aretention-warning-banner">
@@ -314,11 +321,11 @@ export default function AdminRetentionPage() {
                 <tr>
                   <th>Snapshot</th>
                   <th>Size</th>
-                  <th>Estimated</th>
-                  <th>Funded</th>
-                  <th>Retention</th>
-                  <th>Status</th>
-                  <th>Wise Ref</th>
+                  <th>Estimated <HelpTip text="Projected cold storage cost for the full retention period, calculated at snapshot creation using Scaleway Glacier rates with a 2x buffer." /></th>
+                  <th>Funded <HelpTip text="Amount reserved for this snapshot's retention. Matches the estimated cost at time of creation." /></th>
+                  <th>Retention <HelpTip text="Start and end dates for the CRA Art. 13(10) retention period. Typically 10 years from market placement, or until end-of-support if later." /></th>
+                  <th>Status <HelpTip text="Allocated = funds reserved but not yet transferred. Funded = Wise transfer completed. Released = retention period ended." /></th>
+                  <th>Wise Ref <HelpTip text="Transaction reference from the quarterly Wise transfer that funded this retention entry." /></th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -376,10 +383,10 @@ export default function AdminRetentionPage() {
                 <tr>
                   <th>Filename</th>
                   <th>Size</th>
-                  <th>Trigger</th>
-                  <th>Retention End</th>
-                  <th>Cold Storage</th>
-                  <th>Legal Hold</th>
+                  <th>Trigger <HelpTip text="How the snapshot was created: manual (user-initiated), scheduled (automated), or lifecycle_on_market (auto-triggered when a product is placed on the market)." /></th>
+                  <th>Retention End <HelpTip text="When the CRA Art. 13(10) retention period expires. Empty if the product has no market placement date set." /></th>
+                  <th>Cold Storage <HelpTip text="Whether the snapshot archive has been uploaded to Scaleway Glacier for long-term preservation. Local copies expire after 24 hours." /></th>
+                  <th>Legal Hold <HelpTip text="A legal hold prevents deletion of this snapshot regardless of retention status. Use for regulatory investigations, audits, or litigation preservation." /></th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -437,9 +444,9 @@ export default function AdminRetentionPage() {
               <thead>
                 <tr>
                   <th>Quarter</th>
-                  <th>Active Entries</th>
-                  <th>Total Storage</th>
-                  <th>Estimated Cost</th>
+                  <th>Active Entries <HelpTip text="Number of ledger entries with retention periods that overlap this quarter." /></th>
+                  <th>Total Storage <HelpTip text="Combined size of all archives under active retention during this quarter." /></th>
+                  <th>Estimated Cost <HelpTip text="Projected quarterly cost using Scaleway Glacier rate (€0.00254/GB/month) with a 2x buffer for price changes and operational overhead." /></th>
                 </tr>
               </thead>
               <tbody>

@@ -4,6 +4,12 @@
   min-height: 300px; color: var(--muted);
 }
 
+/* Guidance note */
+.aretention-guidance {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.78rem; color: var(--muted); margin-bottom: 1rem;
+}
+
 /* Warning banner */
 .aretention-warning-banner {
   display: flex; align-items: center; gap: 0.5rem;
