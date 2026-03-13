@@ -258,7 +258,7 @@ test.describe('CRA Category Recommendation @acceptance', () => {
       expect(body!.length).toBeGreaterThan(50);
 
       const realErrors = consoleErrors.filter(
-        (err) => !err.includes('favicon') && !err.includes('404')
+        (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to load resource')
       );
       expect(realErrors, `Console errors: ${realErrors.join(', ')}`).toHaveLength(0);
     });

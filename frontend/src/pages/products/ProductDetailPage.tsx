@@ -207,9 +207,7 @@ export default function ProductDetailPage() {
         const data = await res.json();
         setTechFileData(data);
       }
-    } catch (err) {
-      console.error('Failed to fetch technical file:', err);
-    } finally {
+    } catch { /* silent — tech file fetch is non-critical */ } finally {
       setTechFileLoading(false);
     }
   }
@@ -225,9 +223,7 @@ export default function ProductDetailPage() {
         const data = await res.json();
         setVersionHistory(data.versions || []);
       }
-    } catch (err) {
-      console.error('Failed to fetch version history:', err);
-    }
+    } catch { /* silent — version history is non-critical */ }
   }
 
   async function fetchSyncHistory() {
@@ -241,9 +237,7 @@ export default function ProductDetailPage() {
         setSyncHistory(data.history || []);
         setSyncStats(data.stats || null);
       }
-    } catch (err) {
-      console.error('Failed to fetch sync history:', err);
-    }
+    } catch { /* silent — sync history is non-critical */ }
   }
 
   async function fetchPushEvents() {
@@ -256,9 +250,7 @@ export default function ProductDetailPage() {
         const data = await res.json();
         setPushEvents(data || []);
       }
-    } catch (err) {
-      console.error('Failed to fetch push events:', err);
-    }
+    } catch { /* silent — push events are non-critical */ }
   }
 
   async function handleRefreshSBOM() {

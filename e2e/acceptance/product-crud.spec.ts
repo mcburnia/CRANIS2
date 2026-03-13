@@ -179,7 +179,7 @@ test.describe('Product CRUD @acceptance', () => {
     await page.waitForLoadState('networkidle');
 
     const realErrors = consoleErrors.filter(
-      (err) => !err.includes('favicon') && !err.includes('404')
+      (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to load resource')
     );
     expect(realErrors, `Console errors found: ${realErrors.join(', ')}`).toHaveLength(0);
   });

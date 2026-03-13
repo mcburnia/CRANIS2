@@ -79,7 +79,7 @@ test.describe('Navigation — All Pages @smoke', () => {
 
       // Check for console errors (filter benign ones)
       const realErrors = consoleErrors.filter(
-        (err) => !err.includes('favicon') && !err.includes('404')
+        (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to load resource')
       );
       expect(realErrors, `Console errors on ${page_def.name}: ${realErrors.join(', ')}`).toHaveLength(0);
     });

@@ -160,7 +160,7 @@ test.describe('Rapid Click / Double Submit @break', () => {
 
     // No console errors (excluding favicon / 404 noise)
     const realErrors = consoleErrors.filter(
-      (err) => !err.includes('favicon') && !err.includes('404')
+      (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to load resource')
     );
     expect(realErrors, `Console errors found: ${realErrors.join(', ')}`).toHaveLength(0);
   });

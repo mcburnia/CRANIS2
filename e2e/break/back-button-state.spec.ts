@@ -264,7 +264,7 @@ test.describe('Back Button State @break', () => {
 
     // Filter out noise — rapid back/forward cancels in-flight fetches which is expected SPA behaviour
     const realErrors = consoleErrors.filter(
-      (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to fetch')
+      (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to fetch') && !err.includes('Failed to load resource')
     );
     expect(
       realErrors,

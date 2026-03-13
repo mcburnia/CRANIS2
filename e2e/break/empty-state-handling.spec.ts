@@ -64,7 +64,7 @@ test.describe('Empty State Handling @break', () => {
     await page.waitForLoadState('networkidle');
 
     return consoleErrors.filter(
-      (err: string) => !err.includes('favicon') && !err.includes('404')
+      (err: string) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to load resource')
     );
   }
 

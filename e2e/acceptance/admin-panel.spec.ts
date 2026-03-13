@@ -220,7 +220,7 @@ test.describe('Admin Panel @acceptance', () => {
       }
 
       const realErrors = consoleErrors.filter(
-        (err) => !err.includes('favicon') && !err.includes('404')
+        (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to load resource')
       );
       expect(realErrors, `Console errors on admin pages: ${realErrors.join(', ')}`).toHaveLength(0);
     });

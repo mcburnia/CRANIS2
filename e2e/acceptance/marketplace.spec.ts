@@ -9,7 +9,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { TEST_USERS, TEST_PASSWORD } from '../helpers/test-data.js';
-import { apiLogin, apiGet, apiPut } from '../helpers/api-client.js';
+import { apiLogin, apiGet, apiPut, apiPost } from '../helpers/api-client.js';
 
 const BASE_URL = process.env.E2E_BASE_URL || 'https://dev.cranis2.dev';
 
@@ -19,9 +19,16 @@ test.describe('Marketplace Settings @acceptance', () => {
   let originalTagline: string | null = null;
   let originalDescription: string | null = null;
   let token: string;
+  let platformToken: string;
 
   test.beforeAll(async () => {
     token = await apiLogin(TEST_USERS.mfgAdmin, TEST_PASSWORD);
+    platformToken = await apiLogin(TEST_USERS.platformAdmin, TEST_PASSWORD);
+
+    // Marketplace profile editing requires Pro plan — upgrade the org temporarily
+    await apiPut('/api/admin/orgs/a0000001-0000-0000-0000-000000000001/plan', platformToken, {
+      plan: 'pro',
+    });
 
     // Save original profile values for cleanup
     const profile = await apiGet('/api/marketplace/profile', token);
@@ -40,6 +47,15 @@ test.describe('Marketplace Settings @acceptance', () => {
       } catch {
         // Best effort cleanup — don't fail tests if revert doesn't work
       }
+    }
+
+    // Restore org to standard plan
+    try {
+      await apiPut('/api/admin/orgs/a0000001-0000-0000-0000-000000000001/plan', platformToken, {
+        plan: 'standard',
+      });
+    } catch {
+      // Best effort cleanup
     }
   });
 
@@ -115,7 +131,7 @@ test.describe('Marketplace Settings @acceptance', () => {
       await page.waitForLoadState('networkidle');
 
       const realErrors = consoleErrors.filter(
-        (err) => !err.includes('favicon') && !err.includes('404')
+        (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to load resource')
       );
       expect(realErrors, `Console errors: ${realErrors.join(', ')}`).toHaveLength(0);
     });

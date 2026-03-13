@@ -57,7 +57,10 @@ test.describe('Supplier Due Diligence @acceptance', () => {
   test.describe('UI — Product detail page', () => {
     test('Supply Chain tab is visible', async ({ page }) => {
       await page.goto(`${BASE_URL}/products/${MFG_PRODUCT}?tab=supply-chain`);
-      await page.waitForLoadState('load');
+      await page.waitForLoadState('networkidle');
+
+      // Wait for the Supply Chain tab button or tab content to render
+      await page.getByRole('button', { name: 'Supply Chain' }).waitFor({ timeout: 10000 });
 
       const body = await page.textContent('body');
       const hasSupplyChainContent =
@@ -82,7 +85,7 @@ test.describe('Supplier Due Diligence @acceptance', () => {
 
     test('Scan Dependencies button is present', async ({ page }) => {
       await page.goto(`${BASE_URL}/products/${MFG_PRODUCT}?tab=supply-chain`);
-      await page.waitForLoadState('load');
+      await page.waitForLoadState('networkidle');
 
       const scanBtn = page.locator('button:has-text("Scan Dependencies")');
       await expect(scanBtn).toBeVisible();

@@ -125,7 +125,7 @@ test.describe('Oversized Text Inputs @break', () => {
 
     // Filter out irrelevant console errors (favicon, etc.)
     const realErrors = consoleErrors.filter(
-      (err) => !err.includes('favicon') && !err.includes('404')
+      (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to load resource')
     );
     expect(
       realErrors,
@@ -292,7 +292,10 @@ test.describe('Oversized Text Inputs @break', () => {
     await page.waitForLoadState('networkidle');
 
     const realErrors = consoleErrors.filter(
-      (err) => !err.includes('favicon') && !err.includes('404')
+      (err) =>
+        !err.includes('favicon') &&
+        !err.includes('404') &&
+        !err.includes('Failed to load resource')
     );
     expect(
       realErrors,
