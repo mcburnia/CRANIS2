@@ -166,7 +166,7 @@ tail -20 ~/cranis2/logs/nightly-tests-$(date '+%Y-%m-%d').log
 - Summary with pass/fail counts and failed test names
 - Trello notification: posts a card to the "Test Results" board (passed/failed lists) after each run
 
-### Manual Backend Tests (~1,395 tests — runs on server)
+### Manual Backend Tests (~1,447 tests — runs on server)
 
 **CRITICAL: Always use the isolated test stack, never the dev stack.**
 
@@ -1091,9 +1091,11 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-14 (session 46)
+**Last updated:** 2026-03-14 (session 47)
 
 **Completed:**
+- **Importer/distributor obligation workflows (#45)** — Role-aware obligation engine (35 obligations: 19 manufacturer, 10 importer, 6 distributor), compliance checklist with role-specific steps, technical file guidance for importers/distributors, public importer assessment at `/importer-assessment` on welcome site, admin analytics for assessment completions. 4 phases (A–D).
+- **Forgejo test infrastructure fix** — Resolved 15 previously-expected test failures. Fixed `sbom_source` VARCHAR(50) overflow (widened to 255), dual-secret HMAC webhook verification (Forgejo sends GitHub-compatible headers), Forgejo `ALLOWED_HOST_LIST` for Docker-internal webhook delivery, backend_test `FRONTEND_URL` changed to Docker DNS name. **Total: ~1,447 tests pass, 1 expected failure (category-recommendation needs Anthropic API).**
 - **Platform Analytics Dashboard (#57)** — Admin-only analytics page at `/admin/analytics`. Backend endpoint queries both Postgres and Neo4j for: KPI snapshot (total users, orgs, products, connected repos, active users 7d/30d, billable contributors, launch subscribers), growth metrics (weekly signups 26 weeks, cumulative users by month), revenue breakdown (MRR, by plan, by billing status), market intelligence (countries, industries, CRA operator roles, company sizes — all from Neo4j Organisation nodes), and assessment completions (CRA + NIS2 totals, category/entity-class breakdowns, weekly trends). Frontend: KPI stat cards, Recharts bar/line/pie charts, data tables, responsive grid layout. 10 new tests. **Total: ~1,450 backend tests passing (82 files).**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
 - Assistant operating protocol formalised in `Workflow Rules` (propose-first flow, test gates, push handoff, British English)

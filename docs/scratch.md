@@ -308,7 +308,7 @@ At scale (100 customers, 5 products each = 500 products): **~€1,890 total over
 ### Features
 
 #	Feature	Effort	Status	Funnel Hook
-45	Importer/distributor obligation workflows	High	IN PROGRESS	"Are you importing software into the EU? Check your CRA obligations"
+45	Importer/distributor obligation workflows	High	DONE	"Are you importing software into the EU? Check your CRA obligations"
 46	Post-market monitoring & field issue tracking	High	TODO	"Is your product still CRA-compliant after launch?"
 47	Conformity assessment module selector	Medium	DONE	"Which conformity assessment do you need? Free interactive tool"
 48	Notified body directory & assessment tracking	Medium	TODO	"Find your notified body – prepare for third-party assessment"
@@ -389,19 +389,8 @@ Each feature also generates blog/SEO content:
 ### Dependencies: #45 builds on P5 supplier marketplace concepts; #52 extends existing Art. 14 reporting
 ### Estimated effort: High (10 remaining items, ~8–12 sessions total)
 
-### New requirement
-I want to add an analysis page with site admin only access that tracks:
-
-| Metric                     | Why             |
-| -------------------------- | --------------- |
-| Connected repositories     | real adoption   |
-| Weekly signups             | growth momentum |
-| CRA assessment completions | demand signal   |
-| Types of industry served   | market knowhow  |
-| regions/countries served   | market knowhow  |
-
-It should also show us the full picture at the time of looking at it (Who, Where, When, MMR, etc..)
-I'd like to see it in chart and table form as much as is reasonable
+### #57 — Platform Analytics Dashboard — DONE (Session 45)
+Admin-only analytics page at `/admin/analytics`. KPI snapshot (users, orgs, products, repos, active users, contributors, subscribers), growth charts (weekly signups, cumulative users), revenue breakdown (MRR, by plan, by status), market intelligence (countries, industries, CRA roles, company sizes), assessment completions (CRA + NIS2 totals, breakdowns, weekly trends). Recharts bar/line/pie charts + data tables.
 
 # CRANIS2 New Feature Specification
 ## Trusted Open Source and Non-Profit Access Model
