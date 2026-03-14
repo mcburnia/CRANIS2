@@ -43,6 +43,7 @@ import grcBridgeRoutes from "./routes/grc-bridge.js";
 import publicApiV1Routes from "./routes/public-api-v1.js";
 import documentTemplatesRoutes from "./routes/document-templates.js";
 import { publicConformityRouter, productConformityRouter } from "./routes/conformity-assessment.js";
+import { publicNotifiedBodiesRouter } from "./routes/notified-bodies.js";
 import complianceSnapshotRoutes from "./routes/compliance-snapshots.js";
 import cryptoInventoryRoutes from "./routes/crypto-inventory.js";
 import fieldIssuesRoutes from "./routes/field-issues.js";
@@ -50,6 +51,7 @@ import { startScheduler } from './services/scheduler.js';
 import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
 import { getPublicKeyPem } from './services/signing.js';
+import { seedNotifiedBodies } from './services/notified-bodies-seed.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -63,7 +65,7 @@ app.use(express.json({
 
 // Global billing gate – blocks write operations for restricted accounts
 // Skips: auth, billing, admin, health, webhooks, and all GET/OPTIONS requests
-const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs', '/api/v1', '/api/conformity-assessment'];
+const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs', '/api/v1', '/api/conformity-assessment', '/api/notified-bodies'];
 app.use('/api', (req, res, next) => {
   // Only gate write operations
   if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
@@ -121,6 +123,7 @@ app.use('/api/settings/api-keys', apiKeysRoutes);
 app.use('/api/v1', publicApiV1Routes);
 app.use('/api/document-templates', documentTemplatesRoutes);
 app.use('/api/conformity-assessment', publicConformityRouter);
+app.use('/api/notified-bodies', publicNotifiedBodiesRouter);
 app.use('/api/products', productConformityRouter);
 app.use('/api/products', complianceSnapshotRoutes);
 app.use('/api/products', cryptoInventoryRoutes);
@@ -168,6 +171,9 @@ async function start() {
 
     // Ensure Stripe prices exist (non-blocking)
     ensureStripePrices().catch(err => console.error('[STRIPE] Price init error (non-fatal):', err.message));
+
+    // Seed notified bodies directory (non-blocking, idempotent)
+    seedNotifiedBodies().catch(err => console.error('[NOTIFIED-BODIES] Seed error (non-fatal):', err.message));
 
     app.listen(PORT, () => {
       console.log(`CRANIS2 backend listening on port ${PORT}`);

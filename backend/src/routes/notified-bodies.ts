@@ -1,0 +1,363 @@
+/**
+ * Notified Bodies Directory — Route Handlers
+ *
+ * Public endpoints (no auth):
+ *   GET  /api/notified-bodies           — list/search/filter
+ *   GET  /api/notified-bodies/:id       — single body detail
+ *
+ * Admin endpoints (platform admin only):
+ *   POST   /api/admin/notified-bodies           — create
+ *   PUT    /api/admin/notified-bodies/:id        — update
+ *   DELETE /api/admin/notified-bodies/:id        — delete
+ */
+
+import { Router, Request, Response } from 'express';
+import pool from '../db/pool.js';
+import { requirePlatformAdmin } from '../middleware/requirePlatformAdmin.js';
+import { recordEvent, extractRequestData } from '../services/telemetry.js';
+
+// ─── Constants ────────────────────────────────────────────────
+
+const VALID_STATUSES = ['active', 'suspended', 'withdrawn'] as const;
+type AccreditationStatus = typeof VALID_STATUSES[number];
+
+const VALID_MODULES = ['B', 'C', 'H'] as const;
+
+const VALID_SECTORS = [
+  'networking',
+  'industrial',
+  'iot',
+  'medical',
+  'automotive',
+  'energy',
+  'financial',
+  'telecoms',
+  'general',
+] as const;
+
+// EU-27 + EEA countries
+const VALID_COUNTRIES = [
+  'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+  'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+  'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+  'IS', 'LI', 'NO', // EEA
+] as const;
+
+// ─── Public router ────────────────────────────────────────────
+
+export const publicNotifiedBodiesRouter = Router();
+
+/**
+ * GET /api/notified-bodies
+ * Public — list with optional filters: country, module, sector, status, search
+ */
+publicNotifiedBodiesRouter.get('/', async (req: Request, res: Response) => {
+  try {
+    const country = req.query.country as string | undefined;
+    const module = req.query.module as string | undefined;
+    const sector = req.query.sector as string | undefined;
+    const status = req.query.status as string | undefined;
+    const search = req.query.search as string | undefined;
+
+    let sql = 'SELECT * FROM notified_bodies WHERE 1=1';
+    const params: any[] = [];
+    let idx = 1;
+
+    if (country) {
+      sql += ` AND country = $${idx++}`;
+      params.push(country.toUpperCase());
+    }
+
+    if (module && VALID_MODULES.includes(module.toUpperCase() as any)) {
+      sql += ` AND cra_modules @> $${idx++}::jsonb`;
+      params.push(JSON.stringify([module.toUpperCase()]));
+    }
+
+    if (sector) {
+      sql += ` AND sectors @> $${idx++}::jsonb`;
+      params.push(JSON.stringify([sector.toLowerCase()]));
+    }
+
+    if (status && VALID_STATUSES.includes(status as AccreditationStatus)) {
+      sql += ` AND accreditation_status = $${idx++}`;
+      params.push(status);
+    }
+
+    if (search && search.trim().length > 0) {
+      sql += ` AND (LOWER(name) LIKE $${idx} OR LOWER(nando_number) LIKE $${idx})`;
+      params.push(`%${search.trim().toLowerCase()}%`);
+      idx++;
+    }
+
+    sql += ' ORDER BY country, name';
+
+    const result = await pool.query(sql, params);
+    res.json({
+      bodies: result.rows,
+      total: result.rows.length,
+      filters: { country, module, sector, status, search },
+    });
+  } catch (err: any) {
+    console.error('[NOTIFIED-BODIES] List error:', err.message);
+    res.status(500).json({ error: 'Failed to list notified bodies' });
+  }
+});
+
+/**
+ * GET /api/notified-bodies/countries
+ * Public — returns list of countries that have at least one notified body
+ */
+publicNotifiedBodiesRouter.get('/countries', async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT country, COUNT(*) as count
+       FROM notified_bodies
+       WHERE accreditation_status = 'active'
+       GROUP BY country
+       ORDER BY country`
+    );
+    res.json({ countries: result.rows });
+  } catch (err: any) {
+    console.error('[NOTIFIED-BODIES] Countries error:', err.message);
+    res.status(500).json({ error: 'Failed to list countries' });
+  }
+});
+
+/**
+ * GET /api/notified-bodies/:id
+ * Public — single body detail
+ */
+publicNotifiedBodiesRouter.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT * FROM notified_bodies WHERE id = $1', [id]);
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Notified body not found' });
+      return;
+    }
+
+    res.json(result.rows[0]);
+  } catch (err: any) {
+    console.error('[NOTIFIED-BODIES] Get error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch notified body' });
+  }
+});
+
+// ─── Admin router ─────────────────────────────────────────────
+
+export const adminNotifiedBodiesRouter = Router();
+
+/**
+ * POST /api/admin/notified-bodies
+ * Admin — create a new notified body entry
+ */
+adminNotifiedBodiesRouter.post(
+  '/notified-bodies',
+  requirePlatformAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const {
+        name, country, nando_number, website, email, phone, address,
+        cra_modules, sectors, accreditation_status, accreditation_date, notes,
+      } = req.body;
+
+      // Validation
+      if (!name || typeof name !== 'string' || name.trim().length === 0) {
+        res.status(400).json({ error: 'Name is required' });
+        return;
+      }
+      if (!country || !VALID_COUNTRIES.includes(country.toUpperCase() as any)) {
+        res.status(400).json({ error: `Country must be a valid EU-27/EEA code (e.g. DE, FR)` });
+        return;
+      }
+      if (cra_modules && !Array.isArray(cra_modules)) {
+        res.status(400).json({ error: 'cra_modules must be an array of module codes (B, C, H)' });
+        return;
+      }
+      if (cra_modules) {
+        const invalid = cra_modules.filter((m: string) => !VALID_MODULES.includes(m.toUpperCase() as any));
+        if (invalid.length > 0) {
+          res.status(400).json({ error: `Invalid modules: ${invalid.join(', ')}. Valid: ${VALID_MODULES.join(', ')}` });
+          return;
+        }
+      }
+      if (accreditation_status && !VALID_STATUSES.includes(accreditation_status as AccreditationStatus)) {
+        res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` });
+        return;
+      }
+
+      const result = await pool.query(
+        `INSERT INTO notified_bodies
+         (name, country, nando_number, website, email, phone, address,
+          cra_modules, sectors, accreditation_status, accreditation_date, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         RETURNING *`,
+        [
+          name.trim(),
+          country.toUpperCase(),
+          nando_number || null,
+          website || null,
+          email || null,
+          phone || null,
+          address || null,
+          JSON.stringify((cra_modules || []).map((m: string) => m.toUpperCase())),
+          JSON.stringify(sectors || []),
+          accreditation_status || 'active',
+          accreditation_date || null,
+          notes || null,
+        ]
+      );
+
+      const adminUserId = (req as any).userId;
+      const adminEmail = (req as any).email;
+      const reqData = extractRequestData(req);
+      await recordEvent({
+        userId: adminUserId,
+        email: adminEmail,
+        eventType: 'notified_body_created',
+        ...reqData,
+        metadata: { notifiedBodyId: result.rows[0].id, name: name.trim(), country: country.toUpperCase() },
+      });
+
+      res.status(201).json(result.rows[0]);
+    } catch (err: any) {
+      console.error('[NOTIFIED-BODIES] Create error:', err.message);
+      res.status(500).json({ error: 'Failed to create notified body' });
+    }
+  }
+);
+
+/**
+ * PUT /api/admin/notified-bodies/:id
+ * Admin — update an existing notified body
+ */
+adminNotifiedBodiesRouter.put(
+  '/notified-bodies/:id',
+  requirePlatformAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      // Check exists
+      const existing = await pool.query('SELECT id FROM notified_bodies WHERE id = $1', [id]);
+      if (existing.rows.length === 0) {
+        res.status(404).json({ error: 'Notified body not found' });
+        return;
+      }
+
+      const {
+        name, country, nando_number, website, email, phone, address,
+        cra_modules, sectors, accreditation_status, accreditation_date, notes,
+      } = req.body;
+
+      // Validation
+      if (country && !VALID_COUNTRIES.includes(country.toUpperCase() as any)) {
+        res.status(400).json({ error: 'Invalid country code' });
+        return;
+      }
+      if (cra_modules && !Array.isArray(cra_modules)) {
+        res.status(400).json({ error: 'cra_modules must be an array' });
+        return;
+      }
+      if (accreditation_status && !VALID_STATUSES.includes(accreditation_status as AccreditationStatus)) {
+        res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` });
+        return;
+      }
+
+      // Dynamic SET clause
+      const setClauses: string[] = ['updated_at = NOW()'];
+      const params: any[] = [];
+      let idx = 1;
+
+      const addField = (field: string, value: any) => {
+        if (value !== undefined) {
+          setClauses.push(`${field} = $${idx++}`);
+          params.push(value);
+        }
+      };
+
+      addField('name', name?.trim());
+      addField('country', country?.toUpperCase());
+      addField('nando_number', nando_number);
+      addField('website', website);
+      addField('email', email);
+      addField('phone', phone);
+      addField('address', address);
+      if (cra_modules !== undefined) {
+        setClauses.push(`cra_modules = $${idx++}`);
+        params.push(JSON.stringify(cra_modules.map((m: string) => m.toUpperCase())));
+      }
+      if (sectors !== undefined) {
+        setClauses.push(`sectors = $${idx++}`);
+        params.push(JSON.stringify(sectors));
+      }
+      addField('accreditation_status', accreditation_status);
+      addField('accreditation_date', accreditation_date);
+      addField('notes', notes);
+
+      params.push(id);
+
+      const result = await pool.query(
+        `UPDATE notified_bodies SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING *`,
+        params
+      );
+
+      const adminUserId = (req as any).userId;
+      const adminEmail = (req as any).email;
+      const reqData = extractRequestData(req);
+      await recordEvent({
+        userId: adminUserId,
+        email: adminEmail,
+        eventType: 'notified_body_updated',
+        ...reqData,
+        metadata: { notifiedBodyId: id },
+      });
+
+      res.json(result.rows[0]);
+    } catch (err: any) {
+      console.error('[NOTIFIED-BODIES] Update error:', err.message);
+      res.status(500).json({ error: 'Failed to update notified body' });
+    }
+  }
+);
+
+/**
+ * DELETE /api/admin/notified-bodies/:id
+ * Admin — remove a notified body entry
+ */
+adminNotifiedBodiesRouter.delete(
+  '/notified-bodies/:id',
+  requirePlatformAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const result = await pool.query(
+        'DELETE FROM notified_bodies WHERE id = $1 RETURNING id, name',
+        [id]
+      );
+
+      if (result.rows.length === 0) {
+        res.status(404).json({ error: 'Notified body not found' });
+        return;
+      }
+
+      const adminUserId = (req as any).userId;
+      const adminEmail = (req as any).email;
+      const reqData = extractRequestData(req);
+      await recordEvent({
+        userId: adminUserId,
+        email: adminEmail,
+        eventType: 'notified_body_deleted',
+        ...reqData,
+        metadata: { notifiedBodyId: id, name: result.rows[0].name },
+      });
+
+      res.json({ deleted: true, id });
+    } catch (err: any) {
+      console.error('[NOTIFIED-BODIES] Delete error:', err.message);
+      res.status(500).json({ error: 'Failed to delete notified body' });
+    }
+  }
+);

@@ -2136,6 +2136,30 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_corrective_actions_product ON corrective_actions(product_id);
     `);
 
+    // ── Notified bodies directory ─────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS notified_bodies (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name            VARCHAR(500) NOT NULL,
+        country         VARCHAR(5) NOT NULL,
+        nando_number    VARCHAR(50),
+        website         VARCHAR(500),
+        email           VARCHAR(255),
+        phone           VARCHAR(100),
+        address         TEXT,
+        cra_modules     JSONB NOT NULL DEFAULT '[]',
+        sectors         JSONB NOT NULL DEFAULT '[]',
+        accreditation_status VARCHAR(20) NOT NULL DEFAULT 'active',
+        accreditation_date   DATE,
+        last_verified   TIMESTAMPTZ,
+        notes           TEXT,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_notified_bodies_country ON notified_bodies(country);
+      CREATE INDEX IF NOT EXISTS idx_notified_bodies_status ON notified_bodies(accreditation_status);
+    `);
+
   } finally {
     client.release();
   }
