@@ -282,6 +282,17 @@ export async function computeDerivedStatuses(
     if (row.status === 'planned') correctiveByProduct[row.product_id].planned += cnt;
   }
 
+  // 9. Notified body assessments
+  const nbAssessmentResult = await pool.query(
+    `SELECT product_id, status FROM notified_body_assessments
+     WHERE product_id = ANY($1) AND org_id = $2`,
+    [productIds, orgId]
+  );
+  const nbAssessmentByProduct: Record<string, string> = {};
+  for (const row of nbAssessmentResult.rows) {
+    nbAssessmentByProduct[row.product_id] = row.status;
+  }
+
   // ─── Compute derived statuses per product ──────────────────
   const result: Record<string, Record<string, { status: string; reason: string }>> = {};
 
@@ -380,10 +391,20 @@ export async function computeDerivedStatuses(
         derived['art_32'] = { status: 'in_progress', reason: 'Standards section in progress' };
       }
 
-      // art_32_3 – Third-Party Assessment (notified body in DoC)
-      const docSectionForNB = sections['declaration_of_conformity'];
-      if (docSectionForNB?.notifiedBody) {
-        derived['art_32_3'] = { status: docSectionForNB.status === 'completed' ? 'met' : 'in_progress', reason: 'Notified body referenced in DoC' };
+      // art_32_3 – Third-Party Assessment (notified body assessment tracking + DoC reference)
+      const nbStatus = nbAssessmentByProduct[productId];
+      if (nbStatus === 'approved') {
+        derived['art_32_3'] = { status: 'met', reason: 'Notified body assessment approved' };
+      } else if (nbStatus === 'submitted' || nbStatus === 'under_review' || nbStatus === 'additional_info_requested') {
+        derived['art_32_3'] = { status: 'in_progress', reason: `Assessment ${nbStatus.replace(/_/g, ' ')}` };
+      } else if (nbStatus === 'planning') {
+        derived['art_32_3'] = { status: 'in_progress', reason: 'Assessment planning in progress' };
+      } else {
+        // Fallback: check DoC for notified body reference
+        const docSectionForNB = sections['declaration_of_conformity'];
+        if (docSectionForNB?.notifiedBody) {
+          derived['art_32_3'] = { status: docSectionForNB.status === 'completed' ? 'met' : 'in_progress', reason: 'Notified body referenced in DoC' };
+        }
       }
 
       // art_14 – Vulnerability Reporting (ENISA reports)

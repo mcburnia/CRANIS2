@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Package, Shield, AlertTriangle, GitBranch,
   CheckCircle2, Circle, Clock, ChevronRight, ExternalLink, Star,
-  GitFork, Eye, RefreshCw, Unplug, Loader2, Sparkles, Activity, ArrowRight, Rocket,
+  GitFork, Eye, RefreshCw, Unplug, Loader2, Sparkles, Activity, ArrowRight, Rocket, Building2, Plus, X,
 } from 'lucide-react';
 import OnboardingWizard from '../../../components/OnboardingWizard';
 import ConformityAssessmentCard from '../../../components/ConformityAssessmentCard';
@@ -55,6 +55,9 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
   const [checklist, setChecklist] = useState<ProductChecklistPD | null>(null);
   const [copilotUsage, setCopilotUsage] = useState<any>(null);
   const [complianceGaps, setComplianceGaps] = useState<any>(null);
+  const [nbAssessment, setNbAssessment] = useState<any>(null);
+  const [showNbForm, setShowNbForm] = useState(false);
+  const [nbBodies, setNbBodies] = useState<any[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
@@ -82,7 +85,17 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setComplianceGaps(d); })
       .catch(() => {});
-  }, [product.id]);
+    // Fetch notified body assessment (if any)
+    const needsNB = ['important_ii', 'critical'].includes(product.craCategory || '');
+    if (needsNB) {
+      fetch(`/api/products/${product.id}/nb-assessment`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setNbAssessment(d.assessment); })
+        .catch(() => {});
+    }
+  }, [product.id, product.craCategory]);
   return (
     <div className="pd-overview-grid">
       {/* GitHub Repo Card – only if synced */}
@@ -474,6 +487,185 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
         craCategory={product.craCategory}
         onSwitchTab={onSwitchTab}
       />
+
+      {/* Notified Body Assessment Tracker – only for important_ii / critical */}
+      {['important_ii', 'critical'].includes(product.craCategory || '') && (
+        <div className="pd-card">
+          <div className="pd-card-header">
+            <Building2 size={18} />
+            <h3>Notified Body Assessment</h3>
+            {nbAssessment && (
+              <span className={`pd-nb-status pd-nb-status-${nbAssessment.status}`}>
+                {nbAssessment.status.replace(/_/g, ' ')}
+              </span>
+            )}
+          </div>
+
+          {!nbAssessment && !showNbForm && (
+            <div style={{ padding: '12px 0' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.6' }}>
+                {product.craCategory === 'critical'
+                  ? 'Critical products require Module H (full quality assurance) by a notified body.'
+                  : 'Important II products require Module B+C (EU-type examination) by a notified body.'}
+              </p>
+              <button
+                className="pd-nb-start-btn"
+                onClick={() => {
+                  setShowNbForm(true);
+                  const token = localStorage.getItem('session_token');
+                  fetch('/api/notified-bodies', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+                    .then(r => r.ok ? r.json() : null)
+                    .then(d => { if (d?.bodies) setNbBodies(d.bodies); })
+                    .catch(() => {});
+                }}
+              >
+                <Plus size={14} /> Start tracking assessment
+              </button>
+            </div>
+          )}
+
+          {showNbForm && !nbAssessment && (
+            <form
+              className="pd-nb-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const token = localStorage.getItem('session_token');
+                const body = {
+                  module: formData.get('module'),
+                  notified_body_id: formData.get('notified_body_id') || null,
+                  notes: formData.get('notes') || null,
+                };
+                const res = await fetch(`/api/products/${product.id}/nb-assessment`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                  body: JSON.stringify(body),
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  setNbAssessment(data.assessment);
+                  setShowNbForm(false);
+                }
+              }}
+            >
+              <div className="pd-nb-form-row">
+                <label>Module</label>
+                <select name="module" defaultValue={product.craCategory === 'critical' ? 'H' : 'B'} required>
+                  <option value="B">Module B — EU-Type Examination</option>
+                  <option value="C">Module C — Conformity to Type</option>
+                  <option value="H">Module H — Full Quality Assurance</option>
+                </select>
+              </div>
+              <div className="pd-nb-form-row">
+                <label>Notified body (optional)</label>
+                <select name="notified_body_id" defaultValue="">
+                  <option value="">— Select later —</option>
+                  {nbBodies.map((b: any) => (
+                    <option key={b.id} value={b.id}>{b.name} ({b.country})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="pd-nb-form-row">
+                <label>Notes</label>
+                <input type="text" name="notes" placeholder="Optional notes..." />
+              </div>
+              <div className="pd-nb-form-actions">
+                <button type="submit" className="pd-nb-save-btn">Create</button>
+                <button type="button" className="pd-nb-cancel-btn" onClick={() => setShowNbForm(false)}>Cancel</button>
+              </div>
+            </form>
+          )}
+
+          {nbAssessment && (
+            <div className="pd-nb-details">
+              <div className="pd-detail-row">
+                <span className="pd-detail-label">Module</span>
+                <span className="pd-detail-value">Module {nbAssessment.module}</span>
+              </div>
+              {nbAssessment.body_name && (
+                <div className="pd-detail-row">
+                  <span className="pd-detail-label">Notified body</span>
+                  <span className="pd-detail-value">
+                    {nbAssessment.body_name} ({nbAssessment.body_country})
+                    {nbAssessment.body_website && (
+                      <a href={nbAssessment.body_website} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 6 }}>
+                        <ExternalLink size={12} />
+                      </a>
+                    )}
+                  </span>
+                </div>
+              )}
+              {nbAssessment.submitted_date && (
+                <div className="pd-detail-row">
+                  <span className="pd-detail-label">Submitted</span>
+                  <span className="pd-detail-value">{new Date(nbAssessment.submitted_date).toLocaleDateString()}</span>
+                </div>
+              )}
+              {nbAssessment.expected_completion && (
+                <div className="pd-detail-row">
+                  <span className="pd-detail-label">Expected completion</span>
+                  <span className="pd-detail-value">{new Date(nbAssessment.expected_completion).toLocaleDateString()}</span>
+                </div>
+              )}
+              {nbAssessment.certificate_number && (
+                <div className="pd-detail-row">
+                  <span className="pd-detail-label">Certificate</span>
+                  <span className="pd-detail-value">
+                    {nbAssessment.certificate_number}
+                    {nbAssessment.certificate_expiry && ` (expires ${new Date(nbAssessment.certificate_expiry).toLocaleDateString()})`}
+                  </span>
+                </div>
+              )}
+              {nbAssessment.notes && (
+                <div className="pd-detail-row">
+                  <span className="pd-detail-label">Notes</span>
+                  <span className="pd-detail-value">{nbAssessment.notes}</span>
+                </div>
+              )}
+              <div className="pd-nb-form-actions" style={{ marginTop: 12 }}>
+                <select
+                  className="pd-nb-status-select"
+                  value={nbAssessment.status}
+                  onChange={async (e) => {
+                    const newStatus = e.target.value;
+                    const token = localStorage.getItem('session_token');
+                    const res = await fetch(`/api/products/${product.id}/nb-assessment`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({ status: newStatus }),
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      setNbAssessment(data.assessment);
+                    }
+                  }}
+                >
+                  <option value="planning">Planning</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="under_review">Under review</option>
+                  <option value="additional_info_requested">Info requested</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <button
+                  className="pd-nb-cancel-btn"
+                  onClick={async () => {
+                    if (!confirm('Remove assessment tracking for this product?')) return;
+                    const token = localStorage.getItem('session_token');
+                    const res = await fetch(`/api/products/${product.id}/nb-assessment`, {
+                      method: 'DELETE',
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (res.ok) setNbAssessment(null);
+                  }}
+                >
+                  <X size={12} /> Remove
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Compliance Gap Narrator – Next Steps */}
       {complianceGaps && complianceGaps.gaps.length > 0 && (

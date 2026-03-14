@@ -43,7 +43,7 @@ import grcBridgeRoutes from "./routes/grc-bridge.js";
 import publicApiV1Routes from "./routes/public-api-v1.js";
 import documentTemplatesRoutes from "./routes/document-templates.js";
 import { publicConformityRouter, productConformityRouter } from "./routes/conformity-assessment.js";
-import { publicNotifiedBodiesRouter } from "./routes/notified-bodies.js";
+import { publicNotifiedBodiesRouter, productNbAssessmentRouter } from "./routes/notified-bodies.js";
 import complianceSnapshotRoutes from "./routes/compliance-snapshots.js";
 import cryptoInventoryRoutes from "./routes/crypto-inventory.js";
 import fieldIssuesRoutes from "./routes/field-issues.js";
@@ -128,6 +128,7 @@ app.use('/api/products', productConformityRouter);
 app.use('/api/products', complianceSnapshotRoutes);
 app.use('/api/products', cryptoInventoryRoutes);
 app.use('/api/products', fieldIssuesRoutes);
+app.use('/api/products', productNbAssessmentRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

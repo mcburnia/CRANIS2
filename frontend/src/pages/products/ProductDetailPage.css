@@ -1823,3 +1823,58 @@ select.pd-obligation-status:disabled { opacity: 0.5; cursor: wait; }
 .ob-done-item:last-child { border-bottom: none; }
 .ob-done-step { font-weight: 500; color: var(--text); }
 .ob-done-detail { color: var(--muted); font-size: 0.75rem; margin-left: auto; }
+
+/* ── Notified Body Assessment Tracker ──────────────────────────── */
+
+.pd-nb-status {
+  font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.03em; margin-left: auto;
+}
+.pd-nb-status-planning { background: var(--bg-secondary); color: var(--muted); }
+.pd-nb-status-submitted { background: #eff6ff; color: #2563eb; }
+.pd-nb-status-under_review { background: #fef3c7; color: #92400e; }
+.pd-nb-status-additional_info_requested { background: #fef3c7; color: #92400e; }
+.pd-nb-status-approved { background: #dcfce7; color: #166534; }
+.pd-nb-status-rejected { background: #fee2e2; color: #991b1b; }
+
+.pd-nb-start-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); font-size: 0.82rem; font-weight: 500;
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
+}
+.pd-nb-start-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.pd-nb-form { display: flex; flex-direction: column; gap: 10px; padding: 12px 0; }
+.pd-nb-form-row { display: flex; flex-direction: column; gap: 4px; }
+.pd-nb-form-row label { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.pd-nb-form-row select, .pd-nb-form-row input {
+  padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--text); font-size: 0.85rem; font-family: inherit;
+  outline: none; transition: border-color 0.15s;
+}
+.pd-nb-form-row select:focus, .pd-nb-form-row input:focus { border-color: var(--accent); }
+
+.pd-nb-form-actions { display: flex; gap: 8px; align-items: center; }
+.pd-nb-save-btn {
+  padding: 6px 16px; border: none; border-radius: 6px;
+  background: var(--accent); color: white; font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: background 0.15s;
+}
+.pd-nb-save-btn:hover { background: var(--accent-hover); }
+.pd-nb-cancel-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--muted); font-size: 0.82rem; font-weight: 500;
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
+}
+.pd-nb-cancel-btn:hover { border-color: var(--red, #ef4444); color: var(--red, #ef4444); }
+
+.pd-nb-status-select {
+  padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--text); font-size: 0.82rem; font-family: inherit;
+  outline: none; cursor: pointer;
+}
+.pd-nb-status-select:focus { border-color: var(--accent); }
+
+.pd-nb-details { padding: 8px 0; }

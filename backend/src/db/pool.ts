@@ -2160,6 +2160,28 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_notified_bodies_status ON notified_bodies(accreditation_status);
     `);
 
+    // ── Notified body assessment tracking ──────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS notified_body_assessments (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id              UUID NOT NULL,
+        product_id          VARCHAR(255) NOT NULL,
+        notified_body_id    UUID REFERENCES notified_bodies(id) ON DELETE SET NULL,
+        module              VARCHAR(5) NOT NULL,
+        status              VARCHAR(30) NOT NULL DEFAULT 'planning',
+        submitted_date      DATE,
+        expected_completion DATE,
+        certificate_number  VARCHAR(255),
+        certificate_expiry  DATE,
+        notes               TEXT,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(org_id, product_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_nb_assessments_product ON notified_body_assessments(product_id);
+      CREATE INDEX IF NOT EXISTS idx_nb_assessments_org ON notified_body_assessments(org_id);
+    `);
+
   } finally {
     client.release();
   }
