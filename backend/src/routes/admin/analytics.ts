@@ -175,9 +175,10 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
       billingByStatus[status] = (billingByStatus[status] || 0) + cnt;
     }
 
-    // --- Assessments: CRA + NIS2 completions ---
+    // --- Assessments: CRA + NIS2 + Importer completions ---
     let craAssessments = { total: 0, completed: 0, byCategory: [] as Array<{ category: string; count: number }>, byWeek: [] as Array<{ week: string; count: number }> };
     let nis2Assessments = { total: 0, completed: 0, byEntityClass: [] as Array<{ entityClass: string; count: number }>, byWeek: [] as Array<{ week: string; count: number }> };
+    let importerAssessments = { total: 0, completed: 0, byReadiness: [] as Array<{ level: string; count: number }>, byWeek: [] as Array<{ week: string; count: number }> };
     let launchSubscribers = 0;
 
     try {
@@ -225,6 +226,28 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
       `);
       nis2Assessments.byWeek = nis2ByWeek.rows.map(r => ({ week: r.week, count: toInt(r.cnt) }));
 
+      // Importer assessments
+      const impTotal = await pool.query(`SELECT COUNT(*) AS cnt FROM importer_assessments`);
+      const impCompleted = await pool.query(`SELECT COUNT(*) AS cnt FROM importer_assessments WHERE completed_at IS NOT NULL`);
+      importerAssessments.total = toInt(impTotal.rows[0]?.cnt);
+      importerAssessments.completed = toInt(impCompleted.rows[0]?.cnt);
+
+      const impByLevel = await pool.query(`
+        SELECT readiness_level, COUNT(*) AS cnt
+        FROM importer_assessments
+        WHERE completed_at IS NOT NULL AND readiness_level IS NOT NULL
+        GROUP BY readiness_level ORDER BY cnt DESC
+      `);
+      importerAssessments.byReadiness = impByLevel.rows.map(r => ({ level: r.readiness_level, count: toInt(r.cnt) }));
+
+      const impByWeek = await pool.query(`
+        SELECT date_trunc('week', completed_at)::date AS week, COUNT(*) AS cnt
+        FROM importer_assessments
+        WHERE completed_at IS NOT NULL AND completed_at > NOW() - INTERVAL '26 weeks'
+        GROUP BY week ORDER BY week
+      `);
+      importerAssessments.byWeek = impByWeek.rows.map(r => ({ week: r.week, count: toInt(r.cnt) }));
+
       // Launch list subscribers
       const subsResult = await pool.query(`SELECT COUNT(*) AS cnt FROM cra_launch_subscribers`);
       launchSubscribers = toInt(subsResult.rows[0]?.cnt);
@@ -266,6 +289,7 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
       assessments: {
         cra: craAssessments,
         nis2: nis2Assessments,
+        importer: importerAssessments,
       },
     });
   } catch (err) {

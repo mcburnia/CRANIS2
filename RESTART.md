@@ -184,7 +184,7 @@ cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://local
 - Tests target localhost:3011 (isolated test stack — NOT port 3001)
 - Single Cloudflare smoke test in `integration/cloudflare-tunnel.test.ts`
 - Deterministic test IDs for idempotent seeding
-- Expected result: **~1,379 passed, 16 expected infra-dependent failures** (81 test files)
+- Expected result: **~1,432 passed, 16 expected infra-dependent failures** (82 test files)
 - Expected failures: tier3-import-scanning (13, needs Forgejo), webhook-e2e B5/B6 (2, needs Forgejo), category-recommendation (1, needs Anthropic API)
 
 ### Playwright E2E Tests (~280 tests — runs locally on Mac)
@@ -279,6 +279,7 @@ cd ~/CRANIS2/e2e && npm run push-results
   welcome/                 ← Welcome site + public assessment tools (Express, port 3004)
     server.js              ← Express server: landing, contact form, CRA assessment, shared subscribe/unsubscribe
     nis2-assessment.js     ← NIS2 Readiness Assessment module (25 questions, entity classification, scoring)
+    routes/importer-assessment.js ← CRA Importer Obligations Assessment (10 questions, Art. 18 mapping, readiness scoring)
     public/index.html      ← Welcome/landing page HTML
     Dockerfile             ← Node.js container for welcome site
   public/                  ← Original HTML prototypes (reference only)

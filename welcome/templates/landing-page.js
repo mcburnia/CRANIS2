@@ -155,6 +155,18 @@ function assessmentLandingPage() {
       <div class="card-arrow">\u2192</div>
     </a>
 
+    <a href="/importer-obligations-assessment" class="card">
+      <span class="card-tag cra">Importer Obligations</span>
+      <h2>Importer Obligations Assessment</h2>
+      <p>For companies importing products with digital elements into the EU market. Check whether you meet your obligations under CRA Article 18, covering manufacturer verification, supply chain traceability, vulnerability reporting, and documentation retention.</p>
+      <div class="card-meta">
+        <span>\u23F1 ~5 minutes</span>
+        <span>\u2709 10 questions</span>
+        <span>\u2728 3 areas assessed</span>
+      </div>
+      <div class="card-arrow">\u2192</div>
+    </a>
+
     <a href="/nis2-conformity-assessment" class="card">
       <span class="card-tag nis2">Organisation Compliance</span>
       <h2>NIS2 Readiness Assessment</h2>

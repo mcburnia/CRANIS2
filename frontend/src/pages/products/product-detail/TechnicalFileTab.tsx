@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Shield, FileText, CheckCircle2, Clock, ChevronRight, Loader2, Download, Save, Info, AlertTriangle, Sparkles, Wand2,
 } from 'lucide-react';
@@ -7,9 +7,24 @@ import BatchFillWizard from '../../../components/BatchFillWizard';
 import type { TechFileData, TechFileSection } from './shared';
 import { TECHFILE_HELP, timeAgo } from './shared';
 
+const ROLE_TF_GUIDANCE: Record<string, string> = {
+  importer: 'As an importer, you are not required to author the technical file — that is the manufacturer\u2019s responsibility. Use this section to verify that the manufacturer has prepared the required documentation and that it is accessible upon request by market surveillance authorities (CRA Art. 18(2), 18(10)).',
+  distributor: 'As a distributor, you are not required to author the technical file — that is the manufacturer\u2019s responsibility. Use this section to verify that the required documentation exists and that the product bears the CE marking (CRA Art. 19(1)).',
+};
+
 export default function TechnicalFileTab({ productId, techFileData, loading, onUpdate }: {
   productId: string; techFileData: TechFileData; loading: boolean; onUpdate: () => void;
 }) {
+  const [orgCraRole, setOrgCraRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('session_token');
+    if (!token) return;
+    fetch('/api/org', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.craRole) setOrgCraRole(data.craRole); })
+      .catch(() => {});
+  }, []);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [downloadingDoc, setDownloadingDoc] = useState(false);
@@ -470,7 +485,9 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
         <FileText size={20} />
         <div>
           <h3>Technical Documentation</h3>
-          <p>The technical file must be compiled before placing the product on the EU market (CRA Annex VII, Article 31). Click each section to expand and edit.</p>
+          <p>{orgCraRole && ROLE_TF_GUIDANCE[orgCraRole]
+            ? ROLE_TF_GUIDANCE[orgCraRole]
+            : 'The technical file must be compiled before placing the product on the EU market (CRA Annex VII, Article 31). Click each section to expand and edit.'}</p>
         </div>
         <div className="tf-progress-summary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <button

@@ -54,16 +54,17 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
 
   const productId = req.params.productId as string;
 
-  // Verify product belongs to org and fetch product metadata from Neo4j
+  // Verify product belongs to org and fetch product + org metadata from Neo4j
   const neo4jSession = getDriver().session();
   let productName: string;
   let craCategory: string | null;
   let repoUrl: string | null;
+  let craRole: string;
 
   try {
     const result = await neo4jSession.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
-       RETURN p.name AS name, p.craCategory AS craCategory, p.repoUrl AS repoUrl`,
+       RETURN p.name AS name, p.craCategory AS craCategory, p.repoUrl AS repoUrl, o.craRole AS craRole`,
       { orgId, productId }
     );
     if (result.records.length === 0) {
@@ -74,6 +75,7 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
     productName = rec.get('name') || productId;
     craCategory = rec.get('craCategory') || null;
     repoUrl = rec.get('repoUrl') || null;
+    craRole = rec.get('craRole') || 'manufacturer';
   } finally {
     await neo4jSession.close();
   }
@@ -137,96 +139,220 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
 
   const hasPackage = packageResult.rows.length > 0;
 
-  // ── Step completion logic ──
-  const step1Complete = !!repoUrl && hasSbom;
-  const step2Complete = !!craCategory;
-  const step3Complete = scanCount > 0 && openFindings === 0;
-  const step4Complete =
+  // ── Step completion logic (shared) ──
+  const hasCraCategory = !!craCategory;
+  const hasScans = scanCount > 0 && openFindings === 0;
+  const hasTechMin =
     (techSections['product_description'] ?? 'not_started') !== 'not_started' &&
     (techSections['vulnerability_handling'] ?? 'not_started') !== 'not_started' &&
     (techSections['risk_assessment'] ?? 'not_started') !== 'not_started';
-  const step5Complete =
+  const hasStakeholders =
     (stakeholderEmails['manufacturer_contact'] ?? '').length > 0 &&
     (stakeholderEmails['security_contact'] ?? '').length > 0;
-  const step6Complete = (techSections['declaration_of_conformity'] ?? 'not_started') !== 'not_started';
-  const step7Complete = hasPackage;
+  const hasDoC = (techSections['declaration_of_conformity'] ?? 'not_started') !== 'not_started';
 
-  const steps = [
-    {
-      id: 'connect_repo',
-      step: 1,
-      title: 'Connect repository and sync SBOM',
-      description: 'Connect your source repository and generate an SBOM. The SBOM is required under CRA Article 13(11) and must be kept up to date.',
-      complete: step1Complete,
-      actionLabel: 'Go to Dependencies',
-      actionTab: 'dependencies',
-      actionPath: null,
-    },
-    {
-      id: 'set_category',
-      step: 2,
-      title: 'Set your CRA product category',
-      description: 'Classify your product as Default, Important (Class I/II), or Critical. This determines your conformity assessment route and which obligations apply.',
-      complete: step2Complete,
-      actionLabel: 'Edit product',
-      actionTab: 'overview',
-      actionPath: null,
-    },
-    {
-      id: 'triage_findings',
-      step: 3,
-      title: 'Run vulnerability scan and triage findings',
-      description: 'CRA Article 13(5) requires no known exploitable vulnerabilities at market placement. Run a scan and resolve or acknowledge all open findings.',
-      complete: step3Complete,
-      actionLabel: 'Go to Risk Findings',
-      actionTab: 'risk-findings',
-      actionPath: null,
-    },
-    {
-      id: 'technical_file',
-      step: 4,
-      title: 'Complete minimum technical file',
-      description: 'Start sections 1 (Product Description), 3 (Vulnerability Handling), and 4 (Risk Assessment) of your Technical File per CRA Annex VII.',
-      complete: step4Complete,
-      actionLabel: 'Go to Technical File',
-      actionTab: 'technical-file',
-      actionPath: null,
-    },
-    {
-      id: 'stakeholders',
-      step: 5,
-      title: 'Set up stakeholder contacts',
-      description: 'Add a manufacturer contact (CRA Article 13) and a product security contact (CRA Article 11). These appear in your EU Declaration of Conformity.',
-      complete: step5Complete,
-      actionLabel: 'Go to Stakeholders',
-      actionTab: null,
-      actionPath: '/stakeholders',
-    },
-    {
-      id: 'eu_doc',
-      step: 6,
-      title: 'Begin EU Declaration of Conformity',
-      description: 'Complete section 8 of your Technical File to draw up the EU Declaration of Conformity required by CRA Article 16 before placing the product on the market.',
-      complete: step6Complete,
-      actionLabel: 'Go to Technical File',
-      actionTab: 'technical-file',
-      actionPath: null,
-    },
-    {
-      id: 'compliance_package',
-      step: 7,
-      title: 'Download your compliance package',
-      description: 'Generate and download the Due Diligence compliance package – a ZIP containing your SBOM, vulnerability summary, technical file, and EU Declaration of Conformity.',
-      complete: step7Complete,
-      actionLabel: 'Technical Files',
-      actionTab: null,
-      actionPath: '/technical-files',
-    },
-  ];
+  // ── Role-specific steps ──
+  const isImporter = craRole === 'importer';
+  const isDistributor = craRole === 'distributor';
+
+  let steps;
+
+  if (isImporter) {
+    steps = [
+      {
+        id: 'set_category',
+        step: 1,
+        title: 'Set your CRA product category',
+        description: 'Classify the product as Default, Important (Class I/II), or Critical. This determines the conformity assessment route the manufacturer must follow.',
+        complete: hasCraCategory,
+        actionLabel: 'Edit product',
+        actionTab: 'overview',
+        actionPath: null,
+      },
+      {
+        id: 'verify_manufacturer',
+        step: 2,
+        title: 'Verify manufacturer conformity (Art. 18(1))',
+        description: 'Confirm that the manufacturer has carried out the appropriate conformity assessment and that the product bears the CE marking.',
+        complete: hasDoC,
+        actionLabel: 'Go to Technical File',
+        actionTab: 'technical-file',
+        actionPath: null,
+      },
+      {
+        id: 'verify_documentation',
+        step: 3,
+        title: 'Verify technical documentation (Art. 18(2))',
+        description: 'Ensure the manufacturer can make the EU Declaration of Conformity and technical documentation available to market surveillance authorities upon request.',
+        complete: hasTechMin,
+        actionLabel: 'Go to Technical File',
+        actionTab: 'technical-file',
+        actionPath: null,
+      },
+      {
+        id: 'importer_contact',
+        step: 4,
+        title: 'Add importer contact details (Art. 18(6))',
+        description: 'Your name, registered trade name or trademark, and postal/email address must appear on the product or its packaging.',
+        complete: hasStakeholders,
+        actionLabel: 'Go to Stakeholders',
+        actionTab: null,
+        actionPath: '/stakeholders',
+      },
+      {
+        id: 'triage_findings',
+        step: 5,
+        title: 'Review vulnerability findings',
+        description: 'As an importer, you must not place a product on the market if you have reason to believe it does not meet essential CRA requirements. Review any known vulnerability findings.',
+        complete: hasScans,
+        actionLabel: 'Go to Risk Findings',
+        actionTab: 'risk-findings',
+        actionPath: null,
+      },
+      {
+        id: 'compliance_package',
+        step: 6,
+        title: 'Download your compliance package',
+        description: 'Generate the compliance package with the EU Declaration of Conformity and supporting documentation. Retain for 10 years (Art. 18(8)).',
+        complete: hasPackage,
+        actionLabel: 'Technical Files',
+        actionTab: null,
+        actionPath: '/technical-files',
+      },
+    ];
+  } else if (isDistributor) {
+    steps = [
+      {
+        id: 'set_category',
+        step: 1,
+        title: 'Set your CRA product category',
+        description: 'Classify the product as Default, Important (Class I/II), or Critical. This determines the conformity assessment route.',
+        complete: hasCraCategory,
+        actionLabel: 'Edit product',
+        actionTab: 'overview',
+        actionPath: null,
+      },
+      {
+        id: 'verify_markings',
+        step: 2,
+        title: 'Verify CE marking and documentation (Art. 19(1))',
+        description: 'Before making the product available, verify that it bears the CE marking, is accompanied by the EU Declaration of Conformity, and that manufacturer and importer details are present.',
+        complete: hasDoC,
+        actionLabel: 'Go to Technical File',
+        actionTab: 'technical-file',
+        actionPath: null,
+      },
+      {
+        id: 'handling_conditions',
+        step: 3,
+        title: 'Ensure proper handling conditions (Art. 19(2))',
+        description: 'Ensure that while the product is under your responsibility, storage or transport conditions do not jeopardise its compliance with essential requirements.',
+        complete: hasTechMin,
+        actionLabel: 'Go to Technical File',
+        actionTab: 'technical-file',
+        actionPath: null,
+      },
+      {
+        id: 'triage_findings',
+        step: 4,
+        title: 'Review vulnerability findings',
+        description: 'As a distributor, you must not make a product available if you have reason to believe it does not conform to CRA essential requirements.',
+        complete: hasScans,
+        actionLabel: 'Go to Risk Findings',
+        actionTab: 'risk-findings',
+        actionPath: null,
+      },
+      {
+        id: 'compliance_package',
+        step: 5,
+        title: 'Download your compliance package',
+        description: 'Generate the compliance package with the EU Declaration of Conformity and supporting documentation. Retain for 10 years (Art. 19(6)).',
+        complete: hasPackage,
+        actionLabel: 'Technical Files',
+        actionTab: null,
+        actionPath: '/technical-files',
+      },
+    ];
+  } else {
+    // Manufacturer / open source steward — original 7 steps
+    steps = [
+      {
+        id: 'connect_repo',
+        step: 1,
+        title: 'Connect repository and sync SBOM',
+        description: 'Connect your source repository and generate an SBOM. The SBOM is required under CRA Article 13(11) and must be kept up to date.',
+        complete: !!repoUrl && hasSbom,
+        actionLabel: 'Go to Dependencies',
+        actionTab: 'dependencies',
+        actionPath: null,
+      },
+      {
+        id: 'set_category',
+        step: 2,
+        title: 'Set your CRA product category',
+        description: 'Classify your product as Default, Important (Class I/II), or Critical. This determines your conformity assessment route and which obligations apply.',
+        complete: hasCraCategory,
+        actionLabel: 'Edit product',
+        actionTab: 'overview',
+        actionPath: null,
+      },
+      {
+        id: 'triage_findings',
+        step: 3,
+        title: 'Run vulnerability scan and triage findings',
+        description: 'CRA Article 13(5) requires no known exploitable vulnerabilities at market placement. Run a scan and resolve or acknowledge all open findings.',
+        complete: hasScans,
+        actionLabel: 'Go to Risk Findings',
+        actionTab: 'risk-findings',
+        actionPath: null,
+      },
+      {
+        id: 'technical_file',
+        step: 4,
+        title: 'Complete minimum technical file',
+        description: 'Start sections 1 (Product Description), 3 (Vulnerability Handling), and 4 (Risk Assessment) of your Technical File per CRA Annex VII.',
+        complete: hasTechMin,
+        actionLabel: 'Go to Technical File',
+        actionTab: 'technical-file',
+        actionPath: null,
+      },
+      {
+        id: 'stakeholders',
+        step: 5,
+        title: 'Set up stakeholder contacts',
+        description: 'Add a manufacturer contact (CRA Article 13) and a product security contact (CRA Article 11). These appear in your EU Declaration of Conformity.',
+        complete: hasStakeholders,
+        actionLabel: 'Go to Stakeholders',
+        actionTab: null,
+        actionPath: '/stakeholders',
+      },
+      {
+        id: 'eu_doc',
+        step: 6,
+        title: 'Begin EU Declaration of Conformity',
+        description: 'Complete section 8 of your Technical File to draw up the EU Declaration of Conformity required by CRA Article 16 before placing the product on the market.',
+        complete: hasDoC,
+        actionLabel: 'Go to Technical File',
+        actionTab: 'technical-file',
+        actionPath: null,
+      },
+      {
+        id: 'compliance_package',
+        step: 7,
+        title: 'Download your compliance package',
+        description: 'Generate and download the Due Diligence compliance package – a ZIP containing your SBOM, vulnerability summary, technical file, and EU Declaration of Conformity.',
+        complete: hasPackage,
+        actionLabel: 'Technical Files',
+        actionTab: null,
+        actionPath: '/technical-files',
+      },
+    ];
+  }
 
   const stepsComplete = steps.filter(s => s.complete).length;
 
   res.json({
+    craRole,
     productId,
     productName,
     stepsComplete,

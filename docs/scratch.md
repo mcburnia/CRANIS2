@@ -101,10 +101,12 @@ Cross-cutting (done)
 **#57:** DONE (Platform Analytics Dashboard – admin-only KPI cards, growth charts, revenue breakdown, market intelligence, assessment completions)
 **Cross-cutting:** Editorial standard established and applied across entire codebase (frontend, backend, docs, welcome site)
 
+**#45 Importer/distributor workflows:** DONE (role-aware obligations, compliance checklist, technical file guidance, public importer assessment, admin analytics)
+
 **Immediate next:**
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 – Supplier marketplace (post-launch)
-- P9 growth funnels – conformity assessment selector, NIS2 classifier, importer workflows
+- P9 growth funnels – remaining items (#46 post-market monitoring, #53 crypto inventory, etc.)
 
 ---
 
@@ -372,7 +374,7 @@ Each feature also generates blog/SEO content:
 
 1. ~~**#47 Conformity assessment selector** – DONE (P9)~~
 2. ~~**#50 NIS2 entity classifier** – DONE (P9)~~
-3. **#45 Importer/distributor workflows** – Opens new customer segment
+3. ~~**#45 Importer/distributor workflows** – DONE~~
 4. **#46 Post-market monitoring** – Genuine compliance gap for existing customers
 5. **#53 Crypto inventory** – Low effort, high fear factor, good content marketing
 6. **#48 Notified body directory** – Medium effort, valuable resource
@@ -383,7 +385,7 @@ Each feature also generates blog/SEO content:
 11. **#55 EU Authorised Rep** – Niche (non-EU manufacturers only)
 12. **#56 Non-compliance reporting** – Niche, low frequency event
 
-### Status: 2/12 DONE (#47, #50 completed in P9), #45 IN PROGRESS (Phase A done: role-aware obligations), 9 remaining
+### Status: 3/12 DONE (#47, #50 completed in P9, #45 complete), 9 remaining
 ### Dependencies: #45 builds on P5 supplier marketplace concepts; #52 extends existing Art. 14 reporting
 ### Estimated effort: High (10 remaining items, ~8–12 sessions total)
 

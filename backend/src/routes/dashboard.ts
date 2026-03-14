@@ -286,6 +286,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
     }));
 
     res.json({
+      craRole,
       products: finalProducts,
       stats: {
         totalProducts: products.length,

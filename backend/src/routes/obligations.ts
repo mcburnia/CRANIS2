@@ -128,6 +128,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
     });
 
     res.json({
+      craRole,
       products: enrichedProducts,
       totals: { totalObligations: totalCompleted + totalInProgress + totalNotStarted, completed: totalCompleted, inProgress: totalInProgress, notStarted: totalNotStarted },
     });

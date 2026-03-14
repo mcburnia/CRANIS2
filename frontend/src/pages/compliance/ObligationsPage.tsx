@@ -4,6 +4,7 @@ import PageHeader from '../../components/PageHeader';
 import HelpTip from '../../components/HelpTip';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { Info } from 'lucide-react';
 import './ObligationsPage.css';
 
 interface Obligation {
@@ -28,6 +29,7 @@ interface ProductOverview {
 }
 
 interface OverviewData {
+  craRole?: string;
   products: ProductOverview[];
   totals: { totalObligations: number; completed: number; inProgress: number; notStarted: number };
 }
@@ -54,6 +56,24 @@ function formatStatus(status: string): string {
     default: return status;
   }
 }
+
+const ROLE_GUIDANCE: Record<string, { heading: string; body: string; article: string }> = {
+  importer: {
+    heading: 'Importer Obligations — CRA Article 18',
+    body: 'As an importer, your obligations focus on verifying manufacturer compliance before placing products on the EU market. You must ensure the manufacturer has performed the correct conformity assessment, that the product bears the CE marking, and that technical documentation is available upon request. You must also identify yourself on the product and report known vulnerabilities to ENISA.',
+    article: 'Art. 18',
+  },
+  distributor: {
+    heading: 'Distributor Obligations — CRA Article 19',
+    body: 'As a distributor, your obligations focus on verifying documentation and markings before making products available on the EU market. You must check the CE marking, confirm the EU Declaration of Conformity exists, and ensure the manufacturer and importer are identified. You must not supply products you believe to be non-compliant.',
+    article: 'Art. 19',
+  },
+  open_source_steward: {
+    heading: 'Open Source Steward Obligations — CRA Article 24',
+    body: 'As an open source steward, you share the manufacturer obligations for products with digital elements that you systematically provide for commercial use. Your obligations are set out in Articles 13\u201316 of the CRA.',
+    article: 'Art. 24',
+  },
+};
 
 type Filter = 'all' | 'outstanding' | 'met';
 
@@ -97,7 +117,8 @@ export default function ObligationsPage() {
     );
   }
 
-  const { products, totals } = data;
+  const { products, totals, craRole } = data;
+  const guidance = craRole ? ROLE_GUIDANCE[craRole] : undefined;
   const compliancePercent = totals.totalObligations > 0
     ? Math.round((totals.completed / totals.totalObligations) * 100)
     : 0;
@@ -111,6 +132,16 @@ export default function ObligationsPage() {
   return (
     <>
       <PageHeader title="Obligations" timestamp="CRA & NIS2" />
+
+      {guidance && (
+        <div className="ob-role-guidance">
+          <Info size={18} className="ob-role-guidance-icon" />
+          <div>
+            <strong>{guidance.heading}</strong>
+            <p>{guidance.body}</p>
+          </div>
+        </div>
+      )}
 
       <div className="stats">
         <StatCard label="Total Obligations" value={totals.totalObligations} color="blue" sub={`across ${products.length} product${products.length !== 1 ? 's' : ''}`} />

@@ -268,8 +268,8 @@ export default function OrganisationPage() {
               As a <strong>{roleInfo.label.toLowerCase()}</strong> in the <strong>{org.country}</strong>,
               your organisation is subject to CRA obligations under{' '}
               {org.craRole === 'manufacturer' ? 'Articles 13\u201316' :
-               org.craRole === 'importer' ? 'Article 19' :
-               org.craRole === 'distributor' ? 'Article 20' :
+               org.craRole === 'importer' ? 'Article 18' :
+               org.craRole === 'distributor' ? 'Article 19' :
                'Article 24'} of the Cyber Resilience Act.
             </div>
           </div>
