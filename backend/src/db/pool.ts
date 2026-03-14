@@ -2092,6 +2092,31 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_crypto_findings_product ON crypto_findings(product_id);
     `);
 
+    // ── Field issues (post-market monitoring) ──────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS field_issues (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id          UUID NOT NULL,
+        product_id      VARCHAR(255) NOT NULL,
+        title           VARCHAR(500) NOT NULL,
+        description     TEXT,
+        severity        VARCHAR(20) NOT NULL DEFAULT 'medium',
+        source          VARCHAR(30) NOT NULL DEFAULT 'internal_testing',
+        status          VARCHAR(30) NOT NULL DEFAULT 'open',
+        resolution      TEXT,
+        affected_versions TEXT,
+        fixed_in_version  VARCHAR(100),
+        linked_finding_id UUID REFERENCES vulnerability_findings(id) ON DELETE SET NULL,
+        reported_by     UUID REFERENCES users(id) ON DELETE SET NULL,
+        resolved_at     TIMESTAMPTZ,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_field_issues_org ON field_issues(org_id);
+      CREATE INDEX IF NOT EXISTS idx_field_issues_product ON field_issues(product_id);
+      CREATE INDEX IF NOT EXISTS idx_field_issues_status ON field_issues(status);
+    `);
+
   } finally {
     client.release();
   }

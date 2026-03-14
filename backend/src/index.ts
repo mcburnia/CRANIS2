@@ -45,6 +45,7 @@ import documentTemplatesRoutes from "./routes/document-templates.js";
 import { publicConformityRouter, productConformityRouter } from "./routes/conformity-assessment.js";
 import complianceSnapshotRoutes from "./routes/compliance-snapshots.js";
 import cryptoInventoryRoutes from "./routes/crypto-inventory.js";
+import fieldIssuesRoutes from "./routes/field-issues.js";
 import { startScheduler } from './services/scheduler.js';
 import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
@@ -123,6 +124,7 @@ app.use('/api/conformity-assessment', publicConformityRouter);
 app.use('/api/products', productConformityRouter);
 app.use('/api/products', complianceSnapshotRoutes);
 app.use('/api/products', cryptoInventoryRoutes);
+app.use('/api/products', fieldIssuesRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
