@@ -69,11 +69,25 @@ async function initDatabase() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS pqc_assessments (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) NOT NULL,
+        answers JSONB NOT NULL DEFAULT '{}',
+        current_section INT NOT NULL DEFAULT 0,
+        scores JSONB,
+        readiness_level VARCHAR(50),
+        completed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_assessments_email ON cra_assessments(email)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_verification_codes_email ON cra_verification_codes(email, used)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_nis2_assessments_email ON nis2_assessments(email)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_importer_assessments_email ON importer_assessments(email)`);
-    console.log('[WELCOME] Assessment tables ready (CRA + NIS2 + Importer)');
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_pqc_assessments_email ON pqc_assessments(email)`);
+    console.log('[WELCOME] Assessment tables ready (CRA + NIS2 + Importer + PQC)');
   } finally {
     client.release();
   }

@@ -10,6 +10,7 @@ const welcomeRoutes = require('./routes/welcome');
 const craRoutes = require('./routes/cra-assessment');
 const nis2Routes = require('./routes/nis2-assessment');
 const importerRoutes = require('./routes/importer-assessment');
+const pqcRoutes = require('./routes/pqc-assessment');
 const subscriptionRoutes = require('./routes/subscriptions');
 
 /* ── Express setup ─────────────────────────────────────────────────── */
@@ -37,6 +38,7 @@ try {
 app.use('/cra-conformity-assessment', craRoutes);
 app.use('/nis2-conformity-assessment', nis2Routes);
 app.use('/importer-obligations-assessment', importerRoutes);
+app.use('/pqc-readiness-assessment', pqcRoutes);
 app.use('/conformity-assessment', subscriptionRoutes);
 app.use('/', welcomeRoutes);
 

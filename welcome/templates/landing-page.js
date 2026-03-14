@@ -120,6 +120,7 @@ function assessmentLandingPage() {
   .card-tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 4px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
   .card-tag.cra { background: #f5f3ff; color: #7c3aed; }
   .card-tag.nis2 { background: #eff6ff; color: #2563eb; }
+  .card-tag.pqc { background: #fef3c7; color: #92400e; }
   .card h2 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px; }
   .card p { font-size: 14px; color: #6b7280; line-height: 1.6; margin-bottom: 16px; }
   .card-meta { display: flex; gap: 20px; font-size: 12px; color: #9ca3af; }
@@ -138,7 +139,7 @@ function assessmentLandingPage() {
   <div class="brand">CRANIS2</div>
   <h1>Free Compliance Assessments</h1>
   <p class="subtitle">
-    Two major EU cybersecurity regulations are reshaping how organisations build and operate digital products and services.
+    EU cybersecurity regulations and the quantum computing transition are reshaping how organisations build and operate digital products and services.
     Our free assessments help you understand where you stand and what you need to do next.
   </p>
 
@@ -178,11 +179,23 @@ function assessmentLandingPage() {
       </div>
       <div class="card-arrow">\u2192</div>
     </a>
+
+    <a href="/pqc-readiness-assessment" class="card">
+      <span class="card-tag pqc">Quantum Readiness</span>
+      <h2>PQC Readiness Assessment</h2>
+      <p>For any organisation using cryptography. Assess your exposure to quantum computing threats across key types, rotation cycles, crypto agility, data sensitivity, and migration planning. Aligned with NIST FIPS 203/204/205 and CNSA 2.0 timelines.</p>
+      <div class="card-meta">
+        <span>\u23F1 ~8 minutes</span>
+        <span>\u2709 18 questions</span>
+        <span>\u2728 6 areas assessed</span>
+      </div>
+      <div class="card-arrow">\u2192</div>
+    </a>
   </div>
 
   <div class="info-box">
     <h3>What you get</h3>
-    <p>Both assessments are completely free and provide:</p>
+    <p>All assessments are completely free and provide:</p>
     <ul>
       <li>A personalised readiness score with per-area maturity breakdown</li>
       <li>Classification of your product (CRA) or organisation (NIS2) under the regulation</li>
