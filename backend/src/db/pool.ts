@@ -2117,6 +2117,25 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_field_issues_status ON field_issues(status);
     `);
 
+    // ── Corrective actions (linked to field issues) ────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS corrective_actions (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        field_issue_id  UUID NOT NULL REFERENCES field_issues(id) ON DELETE CASCADE,
+        org_id          UUID NOT NULL,
+        product_id      VARCHAR(255) NOT NULL,
+        action_type     VARCHAR(30) NOT NULL DEFAULT 'patch',
+        description     TEXT NOT NULL,
+        status          VARCHAR(30) NOT NULL DEFAULT 'planned',
+        version_released VARCHAR(100),
+        completed_at    TIMESTAMPTZ,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_corrective_actions_issue ON corrective_actions(field_issue_id);
+      CREATE INDEX IF NOT EXISTS idx_corrective_actions_product ON corrective_actions(product_id);
+    `);
+
   } finally {
     client.release();
   }

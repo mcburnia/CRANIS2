@@ -349,4 +349,171 @@ router.delete(
   }
 );
 
+// ─── Corrective Actions ──────────────────────────────────────────────
+
+const VALID_ACTION_TYPES = ['patch', 'hotfix', 'configuration_change', 'workaround', 'recall', 'other'] as const;
+const VALID_ACTION_STATUSES = ['planned', 'in_progress', 'completed', 'verified'] as const;
+
+// GET /:productId/field-issues/:issueId/actions — list corrective actions for an issue
+router.get(
+  '/:productId/field-issues/:issueId/actions',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { productId, issueId } = req.params as { productId: string; issueId: string };
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+      if (!(await verifyProductAccess(orgId, productId))) return res.status(404).json({ error: 'Product not found' });
+
+      const result = await pool.query(
+        `SELECT * FROM corrective_actions
+         WHERE field_issue_id = $1 AND product_id = $2 AND org_id = $3
+         ORDER BY created_at ASC`,
+        [issueId, productId, orgId]
+      );
+      res.json({ actions: result.rows });
+    } catch (err: any) {
+      console.error(`[FIELD-ISSUES] List actions error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to list corrective actions' });
+    }
+  }
+);
+
+// POST /:productId/field-issues/:issueId/actions — create a corrective action
+router.post(
+  '/:productId/field-issues/:issueId/actions',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { productId, issueId } = req.params as { productId: string; issueId: string };
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+      if (!(await verifyProductAccess(orgId, productId))) return res.status(404).json({ error: 'Product not found' });
+
+      // Verify issue exists
+      const issueCheck = await pool.query(
+        'SELECT id FROM field_issues WHERE id = $1 AND product_id = $2 AND org_id = $3',
+        [issueId, productId, orgId]
+      );
+      if (issueCheck.rows.length === 0) return res.status(404).json({ error: 'Field issue not found' });
+
+      const { description, action_type, version_released } = req.body;
+      if (!description || typeof description !== 'string' || description.trim().length === 0) {
+        return res.status(400).json({ error: 'Description is required' });
+      }
+      if (action_type && !VALID_ACTION_TYPES.includes(action_type)) {
+        return res.status(400).json({ error: `Invalid action_type. Must be one of: ${VALID_ACTION_TYPES.join(', ')}` });
+      }
+
+      const result = await pool.query(
+        `INSERT INTO corrective_actions (field_issue_id, org_id, product_id, description, action_type, version_released)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [issueId, orgId, productId, description.trim(), action_type || 'patch', version_released || null]
+      );
+
+      res.status(201).json(result.rows[0]);
+    } catch (err: any) {
+      console.error(`[FIELD-ISSUES] Create action error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to create corrective action' });
+    }
+  }
+);
+
+// PUT /:productId/field-issues/:issueId/actions/:actionId — update a corrective action
+router.put(
+  '/:productId/field-issues/:issueId/actions/:actionId',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { productId, issueId, actionId } = req.params as { productId: string; issueId: string; actionId: string };
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+      if (!(await verifyProductAccess(orgId, productId))) return res.status(404).json({ error: 'Product not found' });
+
+      const existing = await pool.query(
+        'SELECT id, status FROM corrective_actions WHERE id = $1 AND field_issue_id = $2 AND org_id = $3',
+        [actionId, issueId, orgId]
+      );
+      if (existing.rows.length === 0) return res.status(404).json({ error: 'Corrective action not found' });
+
+      const { description, action_type, status, version_released } = req.body;
+      if (action_type && !VALID_ACTION_TYPES.includes(action_type)) {
+        return res.status(400).json({ error: `Invalid action_type. Must be one of: ${VALID_ACTION_TYPES.join(', ')}` });
+      }
+      if (status && !VALID_ACTION_STATUSES.includes(status)) {
+        return res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_ACTION_STATUSES.join(', ')}` });
+      }
+
+      // Auto-set completed_at
+      const oldStatus = existing.rows[0].status;
+      let completedAt: string | null = null;
+      if (status && (status === 'completed' || status === 'verified') && oldStatus !== 'completed' && oldStatus !== 'verified') {
+        completedAt = new Date().toISOString();
+      }
+
+      const setClauses: string[] = ['updated_at = NOW()'];
+      const params: any[] = [];
+      let idx = 1;
+
+      const addField = (field: string, value: any) => {
+        if (value !== undefined) {
+          setClauses.push(`${field} = $${idx++}`);
+          params.push(value);
+        }
+      };
+
+      addField('description', description?.trim());
+      addField('action_type', action_type);
+      addField('status', status);
+      addField('version_released', version_released);
+      if (completedAt) addField('completed_at', completedAt);
+
+      params.push(actionId, issueId, orgId);
+      const whereIdx = idx;
+
+      const result = await pool.query(
+        `UPDATE corrective_actions SET ${setClauses.join(', ')}
+         WHERE id = $${whereIdx} AND field_issue_id = $${whereIdx + 1} AND org_id = $${whereIdx + 2}
+         RETURNING *`,
+        params
+      );
+
+      res.json(result.rows[0]);
+    } catch (err: any) {
+      console.error(`[FIELD-ISSUES] Update action error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to update corrective action' });
+    }
+  }
+);
+
+// DELETE /:productId/field-issues/:issueId/actions/:actionId
+router.delete(
+  '/:productId/field-issues/:issueId/actions/:actionId',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { productId, issueId, actionId } = req.params as { productId: string; issueId: string; actionId: string };
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+      if (!(await verifyProductAccess(orgId, productId))) return res.status(404).json({ error: 'Product not found' });
+
+      const result = await pool.query(
+        'DELETE FROM corrective_actions WHERE id = $1 AND field_issue_id = $2 AND org_id = $3 RETURNING id',
+        [actionId, issueId, orgId]
+      );
+      if (result.rows.length === 0) return res.status(404).json({ error: 'Corrective action not found' });
+
+      res.json({ deleted: true, id: actionId });
+    } catch (err: any) {
+      console.error(`[FIELD-ISSUES] Delete action error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to delete corrective action' });
+    }
+  }
+);
+
 export default router;

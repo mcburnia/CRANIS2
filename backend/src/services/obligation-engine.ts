@@ -249,6 +249,39 @@ export async function computeDerivedStatuses(
     };
   }
 
+  // 7. Field issues (post-market monitoring)
+  const fieldIssueResult = await pool.query(
+    `SELECT product_id, status, severity, COUNT(*) AS cnt
+     FROM field_issues WHERE product_id = ANY($1) AND org_id = $2
+     GROUP BY product_id, status, severity`,
+    [productIds, orgId]
+  );
+  const fieldIssuesByProduct: Record<string, { total: number; open: number; critical: number; resolved: number }> = {};
+  for (const row of fieldIssueResult.rows) {
+    const cnt = parseInt(row.cnt, 10);
+    if (!fieldIssuesByProduct[row.product_id]) fieldIssuesByProduct[row.product_id] = { total: 0, open: 0, critical: 0, resolved: 0 };
+    fieldIssuesByProduct[row.product_id].total += cnt;
+    if (row.status === 'open' || row.status === 'investigating') fieldIssuesByProduct[row.product_id].open += cnt;
+    if (row.severity === 'critical') fieldIssuesByProduct[row.product_id].critical += cnt;
+    if (row.status === 'resolved' || row.status === 'closed') fieldIssuesByProduct[row.product_id].resolved += cnt;
+  }
+
+  // 8. Corrective actions
+  const correctiveResult = await pool.query(
+    `SELECT product_id, status, COUNT(*) AS cnt
+     FROM corrective_actions WHERE product_id = ANY($1) AND org_id = $2
+     GROUP BY product_id, status`,
+    [productIds, orgId]
+  );
+  const correctiveByProduct: Record<string, { total: number; completed: number; planned: number }> = {};
+  for (const row of correctiveResult.rows) {
+    const cnt = parseInt(row.cnt, 10);
+    if (!correctiveByProduct[row.product_id]) correctiveByProduct[row.product_id] = { total: 0, completed: 0, planned: 0 };
+    correctiveByProduct[row.product_id].total += cnt;
+    if (row.status === 'completed' || row.status === 'verified') correctiveByProduct[row.product_id].completed += cnt;
+    if (row.status === 'planned') correctiveByProduct[row.product_id].planned += cnt;
+  }
+
   // ─── Compute derived statuses per product ──────────────────
   const result: Record<string, Record<string, { status: string; reason: string }>> = {};
 
@@ -270,15 +303,22 @@ export async function computeDerivedStatuses(
         }
       }
 
-      // art_13_6 – Vulnerability Handling
+      // art_13_6 – Vulnerability Handling (scans + field issues)
       const scanCount = scanCountByProduct[productId] ?? 0;
       const openFindings = openFindingsByProduct[productId] ?? 0;
+      const fieldIssues = fieldIssuesByProduct[productId];
       if (scanCount > 0) {
-        if (openFindings === 0) {
-          derived['art_13_6'] = { status: 'met', reason: 'Vulnerability scanning active, no open findings' };
+        const openFieldCount = fieldIssues?.open ?? 0;
+        if (openFindings === 0 && openFieldCount === 0) {
+          derived['art_13_6'] = { status: 'met', reason: 'Vulnerability scanning active, no open findings or field issues' };
         } else {
-          derived['art_13_6'] = { status: 'in_progress', reason: `Vulnerability scanning active, ${openFindings} open finding${openFindings !== 1 ? 's' : ''}` };
+          const parts: string[] = [];
+          if (openFindings > 0) parts.push(`${openFindings} open vulnerability finding${openFindings !== 1 ? 's' : ''}`);
+          if (openFieldCount > 0) parts.push(`${openFieldCount} open field issue${openFieldCount !== 1 ? 's' : ''}`);
+          derived['art_13_6'] = { status: 'in_progress', reason: `Vulnerability scanning active, ${parts.join(', ')}` };
         }
+      } else if (fieldIssues && fieldIssues.open > 0) {
+        derived['art_13_6'] = { status: 'in_progress', reason: `${fieldIssues.open} open field issue${fieldIssues.open !== 1 ? 's' : ''} require attention` };
       }
 
       // art_13_12 – Technical Documentation
@@ -399,6 +439,21 @@ export async function computeDerivedStatuses(
         } else {
           derived['art_13_5'] = { status: 'in_progress', reason: `Vulnerability scanning active, ${openFindingsForVuln} open finding${openFindingsForVuln !== 1 ? 's' : ''} require remediation` };
         }
+      }
+
+      // art_13_9 – Security Updates Separate from Feature Updates (corrective action tracking)
+      const corrective = correctiveByProduct[productId];
+      const fieldIssueData = fieldIssuesByProduct[productId];
+      if (corrective && corrective.total > 0) {
+        if (fieldIssueData && fieldIssueData.open > 0 && corrective.planned > 0) {
+          derived['art_13_9'] = { status: 'in_progress', reason: `${corrective.planned} corrective action${corrective.planned !== 1 ? 's' : ''} planned for ${fieldIssueData.open} open field issue${fieldIssueData.open !== 1 ? 's' : ''}` };
+        } else if (corrective.completed === corrective.total) {
+          derived['art_13_9'] = { status: 'met', reason: `All ${corrective.total} corrective action${corrective.total !== 1 ? 's' : ''} completed` };
+        } else {
+          derived['art_13_9'] = { status: 'in_progress', reason: `${corrective.completed}/${corrective.total} corrective action${corrective.total !== 1 ? 's' : ''} completed` };
+        }
+      } else if (fieldIssueData && fieldIssueData.open > 0) {
+        derived['art_13_9'] = { status: 'in_progress', reason: `${fieldIssueData.open} open field issue${fieldIssueData.open !== 1 ? 's' : ''} — corrective actions needed` };
       }
 
       // art_16 – EU Declaration of Conformity content (Annex IV)

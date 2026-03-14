@@ -256,6 +256,87 @@ describe('Field issue summary', () => {
   });
 });
 
+// ─── Corrective Actions ──────────────────────────────────────────────
+
+describe('Corrective actions', () => {
+  let actionIssueId: string;
+  let actionId: string;
+
+  it('creates an issue for corrective action tests', async () => {
+    const res = await api.post(`/api/products/${PRODUCT_ID}/field-issues`, {
+      auth: token,
+      body: { title: 'Issue for corrective action testing', severity: 'high' },
+    });
+    expect(res.status).toBe(201);
+    actionIssueId = res.body.id;
+  });
+
+  it('creates a corrective action', async () => {
+    const res = await api.post(`/api/products/${PRODUCT_ID}/field-issues/${actionIssueId}/actions`, {
+      auth: token,
+      body: { description: 'Deploy hotfix for buffer overflow', action_type: 'hotfix' },
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.description).toBe('Deploy hotfix for buffer overflow');
+    expect(res.body.action_type).toBe('hotfix');
+    expect(res.body.status).toBe('planned');
+    actionId = res.body.id;
+  });
+
+  it('rejects corrective action without description', async () => {
+    const res = await api.post(`/api/products/${PRODUCT_ID}/field-issues/${actionIssueId}/actions`, {
+      auth: token,
+      body: { action_type: 'patch' },
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Description is required');
+  });
+
+  it('rejects invalid action_type', async () => {
+    const res = await api.post(`/api/products/${PRODUCT_ID}/field-issues/${actionIssueId}/actions`, {
+      auth: token,
+      body: { description: 'Test', action_type: 'invalid' },
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Invalid action_type');
+  });
+
+  it('lists corrective actions', async () => {
+    const res = await api.get(`/api/products/${PRODUCT_ID}/field-issues/${actionIssueId}/actions`, {
+      auth: token,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.actions.length).toBe(1);
+    expect(res.body.actions[0].id).toBe(actionId);
+  });
+
+  it('updates corrective action status and auto-sets completed_at', async () => {
+    const res = await api.put(`/api/products/${PRODUCT_ID}/field-issues/${actionIssueId}/actions/${actionId}`, {
+      auth: token,
+      body: { status: 'completed', version_released: '2.4.1' },
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('completed');
+    expect(res.body.version_released).toBe('2.4.1');
+    expect(res.body.completed_at).not.toBeNull();
+  });
+
+  it('deletes a corrective action', async () => {
+    const res = await api.delete(`/api/products/${PRODUCT_ID}/field-issues/${actionIssueId}/actions/${actionId}`, {
+      auth: token,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.deleted).toBe(true);
+  });
+
+  it('returns 404 for non-existent corrective action', async () => {
+    const res = await api.delete(`/api/products/${PRODUCT_ID}/field-issues/${actionIssueId}/actions/00000000-0000-0000-0000-000000000000`, {
+      auth: token,
+    });
+    expect(res.status).toBe(404);
+  });
+});
+
 // ─── Delete ──────────────────────────────────────────────────────────
 
 describe('Delete field issue', () => {
