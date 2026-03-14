@@ -184,8 +184,9 @@ cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://local
 - Tests target localhost:3011 (isolated test stack — NOT port 3001)
 - Single Cloudflare smoke test in `integration/cloudflare-tunnel.test.ts`
 - Deterministic test IDs for idempotent seeding
-- Expected result: **~1,432 passed, 16 expected infra-dependent failures** (82 test files)
-- Expected failures: tier3-import-scanning (13, needs Forgejo), webhook-e2e B5/B6 (2, needs Forgejo), category-recommendation (1, needs Anthropic API)
+- Expected result: **~1,447 passed, 1 expected infra-dependent failure** (82 test files)
+- Expected failures: category-recommendation (1, needs Anthropic API)
+- Previously failing: tier3-import-scanning (13) and webhook-e2e B5/B6 (2) now pass against local Forgejo
 
 ### Playwright E2E Tests (~280 tests — runs locally on Mac)
 

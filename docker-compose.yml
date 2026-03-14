@@ -113,7 +113,8 @@ services:
       NEO4J_USER: ${NEO4J_USER}
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      FRONTEND_URL: http://localhost:3002
+      # Use Docker DNS name so Forgejo (same network) can deliver webhook callbacks
+      FRONTEND_URL: http://backend_test:3001
       DEV_SKIP_EMAIL: "true"
       LOG_LEVEL: warn
       CRANIS2_TEST_MODE: "true"
@@ -291,6 +292,8 @@ services:
       - FORGEJO__service__DISABLE_REGISTRATION=true
       - FORGEJO__service__REQUIRE_SIGNIN_VIEW=true
       - FORGEJO__openid__ENABLE_OPENID_SIGNIN=false
+      # Allow webhook delivery to Docker-internal hosts (e.g. backend_test for E2E tests)
+      - FORGEJO__webhook__ALLOWED_HOST_LIST=*
     volumes:
       - cranis2_forgejo_data:/data
     networks:

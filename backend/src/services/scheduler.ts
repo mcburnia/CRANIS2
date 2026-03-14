@@ -275,7 +275,8 @@ async function autoSyncProduct(productId: string): Promise<boolean> {
         );
         if (importResult) {
           effectiveSbomData = { sbom: importResult.sbom } as any;
-          schedulerSbomSource = `import-scan:${importResult.languagesDetected.join('+')}`;
+          const langTag = importResult.languagesDetected.join('+');
+          schedulerSbomSource = `import-scan:${langTag}`.slice(0, 255);
           logger.info(`[SCHEDULER] Import scan: ${importResult.languagesDetected.join(', ')} – ${importResult.totalPackages} packages`);
         }
       } catch (err: any) {

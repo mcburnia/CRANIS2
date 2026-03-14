@@ -186,7 +186,8 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
         );
         if (importResult) {
           effectiveSbomData = { sbom: importResult.sbom } as any;
-          sbomSource = `import-scan:${importResult.languagesDetected.join('+')}`;
+          const langTag = importResult.languagesDetected.join('+');
+          sbomSource = `import-scan:${langTag}`.slice(0, 255);
           logger.info(`[SYNC] Import scan SBOM: ${importResult.languagesDetected.join(', ')} – ${importResult.totalPackages} packages (confidence: ${importResult.confidence})`);
         }
       } catch (err: any) {

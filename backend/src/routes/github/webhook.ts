@@ -12,22 +12,16 @@ const router = Router();
 // ─── POST /api/github/webhook ─────────────────────────────────────
 // Receive push events from GitHub or Codeberg and mark SBOM as stale
 router.post('/webhook', async (req: Request, res: Response) => {
-  // Detect provider from headers
-  const isGitHub = !!req.headers['x-github-event'];
-  const isForgejo = !!req.headers['x-forgejo-event'] || !!req.headers['x-gitea-event'];
-  const webhookProvider: RepoProvider = isForgejo ? 'codeberg' : 'github';
-
-  const webhookSecret = webhookProvider === 'codeberg'
-    ? process.env.CODEBERG_WEBHOOK_SECRET
-    : process.env.GITHUB_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    console.error(`[WEBHOOK] No ${webhookProvider.toUpperCase()}_WEBHOOK_SECRET configured`);
-    res.status(500).json({ error: 'Webhook not configured' });
-    return;
-  }
+  // Detect provider from headers.
+  // Forgejo/Gitea webhooks send GitHub-compatible headers (X-GitHub-Event, X-Hub-Signature-256)
+  // so we also check for Gitea/Forgejo-specific headers to identify the provider.
+  const isForgejo = !!req.headers['x-forgejo-event'] || !!req.headers['x-gitea-event']
+    || !!req.headers['x-gitea-delivery'] || !!req.headers['x-forgejo-delivery'];
+  const isGitHub = !isForgejo && !!req.headers['x-github-event'];
+  let webhookProvider: RepoProvider = isForgejo ? 'codeberg' : 'github';
 
   // Verify HMAC signature
-  const signature = (req.headers['x-hub-signature-256'] || req.headers['x-forgejo-signature']) as string;
+  const signature = (req.headers['x-hub-signature-256'] || req.headers['x-forgejo-signature'] || req.headers['x-gitea-signature']) as string;
   if (!signature) {
     res.status(401).json({ error: 'Missing signature' });
     return;
@@ -39,10 +33,44 @@ router.post('/webhook', async (req: Request, res: Response) => {
     return;
   }
 
-  const expectedSignature = 'sha256=' + crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
   const sigToCompare = signature.startsWith('sha256=') ? signature : `sha256=${signature}`;
-  if (!crypto.timingSafeEqual(Buffer.from(sigToCompare), Buffer.from(expectedSignature))) {
-    logger.warn(`[WEBHOOK] Invalid ${webhookProvider} signature`);
+
+  // Try the primary secret first, then fall back to the alternate secret.
+  // Forgejo sends GitHub-compatible headers, making it indistinguishable from
+  // GitHub by headers alone. If the primary secret fails, try the other provider's
+  // secret before rejecting — this handles Forgejo webhooks that arrive with
+  // GitHub headers but were created with the Codeberg/Forgejo secret.
+  const secrets: Array<{ secret: string; provider: RepoProvider }> = [];
+  const primarySecret = webhookProvider === 'codeberg'
+    ? process.env.CODEBERG_WEBHOOK_SECRET
+    : process.env.GITHUB_WEBHOOK_SECRET;
+  const alternateSecret = webhookProvider === 'codeberg'
+    ? process.env.GITHUB_WEBHOOK_SECRET
+    : process.env.CODEBERG_WEBHOOK_SECRET;
+  if (primarySecret) secrets.push({ secret: primarySecret, provider: webhookProvider });
+  if (alternateSecret && alternateSecret !== primarySecret) {
+    secrets.push({ secret: alternateSecret, provider: webhookProvider === 'codeberg' ? 'github' : 'codeberg' });
+  }
+
+  if (secrets.length === 0) {
+    console.error(`[WEBHOOK] No webhook secrets configured`);
+    res.status(500).json({ error: 'Webhook not configured' });
+    return;
+  }
+
+  let verified = false;
+  for (const { secret, provider } of secrets) {
+    const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+    if (sigToCompare.length === expected.length &&
+        crypto.timingSafeEqual(Buffer.from(sigToCompare), Buffer.from(expected))) {
+      verified = true;
+      webhookProvider = provider;
+      break;
+    }
+  }
+
+  if (!verified) {
+    logger.warn(`[WEBHOOK] Invalid signature (tried ${secrets.length} secret(s))`);
     res.status(401).json({ error: 'Invalid signature' });
     return;
   }

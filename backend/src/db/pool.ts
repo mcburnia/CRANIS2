@@ -813,8 +813,10 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     await client.query(`ALTER TABLE escrow_configs ADD COLUMN IF NOT EXISTS forgejo_customer_username VARCHAR(255)`);
     await client.query(`ALTER TABLE escrow_users ADD COLUMN IF NOT EXISTS agent_reference VARCHAR(255)`);
 
-    // Track SBOM source (api = GitHub dependency graph, lockfile:filename = generated from lockfile)
-    await client.query(`ALTER TABLE product_sboms ADD COLUMN IF NOT EXISTS sbom_source VARCHAR(50) DEFAULT 'api'`);
+    // Track SBOM source (api = GitHub dependency graph, lockfile:filename = generated from lockfile, import-scan:lang1+lang2+...)
+    await client.query(`ALTER TABLE product_sboms ADD COLUMN IF NOT EXISTS sbom_source VARCHAR(255) DEFAULT 'api'`);
+    // Migration: widen from VARCHAR(50) to VARCHAR(255) for import-scan sources with many languages
+    await client.query(`ALTER TABLE product_sboms ALTER COLUMN sbom_source TYPE VARCHAR(255)`);
     // ── Documentation pages (admin-editable) ──
     await client.query(`
       CREATE TABLE IF NOT EXISTS doc_pages (

@@ -41,7 +41,7 @@ At the end of each development session (after all work is committed), run the fu
 
 **CRITICAL:** NEVER run backend tests against the dev stack (port 3001). ALWAYS use the isolated test stack (port 3011). Running against dev causes ~29 spurious failures from data collisions and wastes time debugging non-issues. The correct sequence is: start test stack → run tests → stop test stack. Use `./scripts/test-stack.sh run` for a one-command workflow.
 
-**Expected failures (16):** 13 tier3-import-scanning (needs Forgejo repo), 2 webhook-e2e (needs Forgejo webhooks), 1 category-recommendation (needs Anthropic API). These require live external services not available in the test stack.
+**Expected failures (1):** 1 category-recommendation (needs Anthropic API key). Tier3 import scanning and webhook E2E tests now pass against the local Forgejo instance.
 
 Report pass/fail totals. Fix any failures while the context is still fresh rather than leaving them for the next session.
 
@@ -137,10 +137,8 @@ cd backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://localhost:3011 
 - Use `getAppPool()` and `getNeo4jSession()` from test-helpers — they are pre-configured for the test databases
 
 ### Expected infrastructure-dependent failures
-These tests require real external services (Forgejo, Anthropic API) and are expected to fail in the isolated test stack:
-- `tier3-import-scanning.test.ts` (13 tests) — needs Forgejo repo access
-- `webhook-e2e.test.ts` B5/B6 (2 tests) — needs Forgejo push round-trip
 - `category-recommendation.test.ts` (1 test) — needs real Anthropic API key
+- Tier3 import scanning and webhook E2E tests now pass against the local Forgejo instance
 
 ## Port Map
 
