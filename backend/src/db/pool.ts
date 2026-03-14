@@ -2061,6 +2061,37 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_snapshot_schedules_next ON snapshot_schedules(next_run_date) WHERE enabled = TRUE;
     `);
 
+    // ── Crypto inventory (#53) ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS crypto_scans (
+        product_id            VARCHAR(255) PRIMARY KEY,
+        org_id                UUID NOT NULL,
+        total_dependencies    INT NOT NULL DEFAULT 0,
+        crypto_libraries_found INT NOT NULL DEFAULT 0,
+        broken_count          INT NOT NULL DEFAULT 0,
+        quantum_vulnerable_count INT NOT NULL DEFAULT 0,
+        quantum_safe_count    INT NOT NULL DEFAULT 0,
+        total_algorithms      INT NOT NULL DEFAULT 0,
+        scanned_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS crypto_findings (
+        id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id            VARCHAR(255) NOT NULL,
+        org_id                UUID NOT NULL,
+        dependency_name       VARCHAR(255) NOT NULL,
+        dependency_version    VARCHAR(100),
+        dependency_purl       TEXT,
+        dependency_ecosystem  VARCHAR(50),
+        library_description   TEXT,
+        worst_tier            VARCHAR(30) NOT NULL,
+        algorithms            JSONB NOT NULL DEFAULT '[]',
+        created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_crypto_findings_product ON crypto_findings(product_id);
+    `);
+
   } finally {
     client.release();
   }
