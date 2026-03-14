@@ -179,6 +179,7 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
     let craAssessments = { total: 0, completed: 0, byCategory: [] as Array<{ category: string; count: number }>, byWeek: [] as Array<{ week: string; count: number }> };
     let nis2Assessments = { total: 0, completed: 0, byEntityClass: [] as Array<{ entityClass: string; count: number }>, byWeek: [] as Array<{ week: string; count: number }> };
     let importerAssessments = { total: 0, completed: 0, byReadiness: [] as Array<{ level: string; count: number }>, byWeek: [] as Array<{ week: string; count: number }> };
+    let pqcAssessments = { total: 0, completed: 0, byReadiness: [] as Array<{ level: string; count: number }>, byWeek: [] as Array<{ week: string; count: number }> };
     let launchSubscribers = 0;
 
     try {
@@ -248,11 +249,55 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
       `);
       importerAssessments.byWeek = impByWeek.rows.map(r => ({ week: r.week, count: toInt(r.cnt) }));
 
+      // PQC assessments
+      const pqcTotal = await pool.query(`SELECT COUNT(*) AS cnt FROM pqc_assessments`);
+      const pqcCompleted = await pool.query(`SELECT COUNT(*) AS cnt FROM pqc_assessments WHERE completed_at IS NOT NULL`);
+      pqcAssessments.total = toInt(pqcTotal.rows[0]?.cnt);
+      pqcAssessments.completed = toInt(pqcCompleted.rows[0]?.cnt);
+
+      const pqcByLevel = await pool.query(`
+        SELECT readiness_level, COUNT(*) AS cnt
+        FROM pqc_assessments
+        WHERE completed_at IS NOT NULL AND readiness_level IS NOT NULL
+        GROUP BY readiness_level ORDER BY cnt DESC
+      `);
+      pqcAssessments.byReadiness = pqcByLevel.rows.map(r => ({ level: r.readiness_level, count: toInt(r.cnt) }));
+
+      const pqcByWeek = await pool.query(`
+        SELECT date_trunc('week', completed_at)::date AS week, COUNT(*) AS cnt
+        FROM pqc_assessments
+        WHERE completed_at IS NOT NULL AND completed_at > NOW() - INTERVAL '26 weeks'
+        GROUP BY week ORDER BY week
+      `);
+      pqcAssessments.byWeek = pqcByWeek.rows.map(r => ({ week: r.week, count: toInt(r.cnt) }));
+
       // Launch list subscribers
       const subsResult = await pool.query(`SELECT COUNT(*) AS cnt FROM cra_launch_subscribers`);
       launchSubscribers = toInt(subsResult.rows[0]?.cnt);
     } catch {
       // Assessment tables may not exist in test DB — gracefully degrade
+    }
+
+    // --- Crypto health across all products ---
+    let cryptoHealth = { scanned: 0, withBroken: 0, withQuantumVulnerable: 0, allQuantumSafe: 0 };
+    try {
+      const cryptoHealthResult = await pool.query(`
+        SELECT
+          COUNT(*) AS scanned,
+          COUNT(*) FILTER (WHERE broken_count > 0) AS with_broken,
+          COUNT(*) FILTER (WHERE quantum_vulnerable_count > 0 AND broken_count = 0) AS with_qv_only,
+          COUNT(*) FILTER (WHERE broken_count = 0 AND quantum_vulnerable_count = 0) AS all_safe
+        FROM crypto_scans
+      `);
+      const ch = cryptoHealthResult.rows[0];
+      cryptoHealth = {
+        scanned: toInt(ch?.scanned),
+        withBroken: toInt(ch?.with_broken),
+        withQuantumVulnerable: toInt(ch?.with_qv_only),
+        allQuantumSafe: toInt(ch?.all_safe),
+      };
+    } catch {
+      // crypto_scans table may not exist in test DB
     }
 
     // --- Total users ---
@@ -290,7 +335,9 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
         cra: craAssessments,
         nis2: nis2Assessments,
         importer: importerAssessments,
+        pqc: pqcAssessments,
       },
+      cryptoHealth,
     });
   } catch (err) {
     console.error('Admin analytics error:', err);

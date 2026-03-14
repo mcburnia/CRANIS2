@@ -234,6 +234,21 @@ export async function computeDerivedStatuses(
     craReportsByProduct[row.product_id].push(row.status);
   }
 
+  // 6. Crypto scan results
+  const cryptoResult = await pool.query(
+    `SELECT product_id, broken_count, quantum_vulnerable_count, quantum_safe_count
+     FROM crypto_scans WHERE product_id = ANY($1)`,
+    [productIds]
+  );
+  const cryptoByProduct: Record<string, { broken: number; qv: number; qs: number }> = {};
+  for (const row of cryptoResult.rows) {
+    cryptoByProduct[row.product_id] = {
+      broken: parseInt(row.broken_count, 10),
+      qv: parseInt(row.quantum_vulnerable_count, 10),
+      qs: parseInt(row.quantum_safe_count, 10),
+    };
+  }
+
   // ─── Compute derived statuses per product ──────────────────
   const result: Record<string, Record<string, { status: string; reason: string }>> = {};
 
@@ -292,12 +307,19 @@ export async function computeDerivedStatuses(
         derived['art_13_15'] = { status: 'in_progress', reason: 'Declaration of Conformity section in progress' };
       }
 
-      // annex_i_part_i – Security by Design (risk_assessment section)
+      // annex_i_part_i – Security by Design (risk_assessment section + crypto posture)
       const riskSection = sections['risk_assessment'];
+      const cryptoForDesign = cryptoByProduct[productId];
       if (riskSection?.status === 'completed') {
-        derived['annex_i_part_i'] = { status: 'met', reason: 'Risk assessment complete' };
+        if (cryptoForDesign && cryptoForDesign.broken > 0) {
+          derived['annex_i_part_i'] = { status: 'in_progress', reason: `Risk assessment complete but ${cryptoForDesign.broken} broken cryptographic algorithm${cryptoForDesign.broken !== 1 ? 's' : ''} detected (Annex I §3 requires state-of-the-art cryptography)` };
+        } else {
+          derived['annex_i_part_i'] = { status: 'met', reason: 'Risk assessment complete' + (cryptoForDesign ? '; cryptographic posture verified' : '') };
+        }
       } else if (riskSection?.status === 'in_progress') {
         derived['annex_i_part_i'] = { status: 'in_progress', reason: 'Risk assessment in progress' };
+      } else if (cryptoForDesign && cryptoForDesign.broken > 0) {
+        derived['annex_i_part_i'] = { status: 'in_progress', reason: `Crypto scan detected ${cryptoForDesign.broken} broken algorithm${cryptoForDesign.broken !== 1 ? 's' : ''} — risk assessment and remediation needed (Annex I §3)` };
       }
 
       // annex_i_part_ii – Vulnerability Handling Requirements (CVD policy)
@@ -331,10 +353,21 @@ export async function computeDerivedStatuses(
         derived['art_14'] = { status: hasFinal ? 'met' : 'in_progress', reason: hasFinal ? 'ENISA report submitted' : 'ENISA report in progress' };
       }
 
-      // art_13_3 – Component Currency
+      // art_13_3 – Component Currency (SBOM + crypto scan)
       const sbomForCurrency = sbomByProduct[productId];
-      if (sbomForCurrency) {
-        derived['art_13_3'] = { status: 'in_progress', reason: `Component inventory tracked via SBOM (${sbomForCurrency.packageCount} packages)` };
+      const crypto = cryptoByProduct[productId];
+      if (sbomForCurrency && crypto) {
+        if (crypto.broken > 0) {
+          derived['art_13_3'] = { status: 'in_progress', reason: `Component inventory tracked (${sbomForCurrency.packageCount} packages). Crypto scan: ${crypto.broken} broken algorithm${crypto.broken !== 1 ? 's' : ''} require remediation` };
+        } else if (crypto.qv > 0) {
+          derived['art_13_3'] = { status: 'in_progress', reason: `Component inventory tracked (${sbomForCurrency.packageCount} packages). Crypto scan: ${crypto.qv} quantum-vulnerable algorithm${crypto.qv !== 1 ? 's' : ''}, PQC migration recommended` };
+        } else {
+          derived['art_13_3'] = { status: 'met', reason: `Component inventory tracked (${sbomForCurrency.packageCount} packages). Crypto scan: all algorithms quantum-safe` };
+        }
+      } else if (sbomForCurrency) {
+        derived['art_13_3'] = { status: 'in_progress', reason: `Component inventory tracked via SBOM (${sbomForCurrency.packageCount} packages). Crypto scan not yet run` };
+      } else if (crypto) {
+        derived['art_13_3'] = { status: 'in_progress', reason: `Crypto scan complete (${crypto.broken} broken, ${crypto.qv} quantum-vulnerable). SBOM not yet available` };
       }
 
       // art_13_7 / art_13_8 – Support period awareness

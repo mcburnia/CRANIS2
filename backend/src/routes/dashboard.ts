@@ -277,12 +277,31 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
         : 0;
     }
 
-    // Enrich products with risk + readiness + support status data
+    // Crypto posture per product
+    let cryptoPostureMap: Record<string, { broken: number; quantumVulnerable: number; quantumSafe: number; scannedAt: string | null }> = {};
+    if (productIds.length > 0) {
+      const cryptoResult = await pool.query(
+        `SELECT product_id, broken_count, quantum_vulnerable_count, quantum_safe_count, scanned_at
+         FROM crypto_scans WHERE product_id = ANY($1)`,
+        [productIds]
+      );
+      for (const row of cryptoResult.rows) {
+        cryptoPostureMap[row.product_id] = {
+          broken: parseInt(row.broken_count, 10),
+          quantumVulnerable: parseInt(row.quantum_vulnerable_count, 10),
+          quantumSafe: parseInt(row.quantum_safe_count, 10),
+          scannedAt: row.scanned_at,
+        };
+      }
+    }
+
+    // Enrich products with risk + readiness + support status + crypto data
     const finalProducts = enrichedProducts.map(p => ({
       ...p,
       riskFindings: productRiskMap[p.id] || { total: 0, critical: 0, high: 0, open: 0 },
       craReadiness: readinessMap[p.id] || { met: 0, total: 0, readiness: 0 },
       supportStatus: computeSupportStatus(supportEndMap[p.id] || null),
+      cryptoPosture: cryptoPostureMap[p.id] || null,
     }));
 
     res.json({
