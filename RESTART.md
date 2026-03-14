@@ -921,7 +921,7 @@ Products represent software products that need CRA compliance tracking. Each pro
 - `class_i` (Important) — Products with digital element requiring third-party assessment
 - `class_ii` (Critical) — Critical products requiring EU-level assessment
 
-**ProductDetailPage tabs**: Overview (product info + GitHub repo card + version history + SBOM summary + compliance progress), Obligations (live — per-product CRA obligation tracker), Technical File (CRA Annex VII — 8 expandable sections with inline editors, Annex I checklist, status tracking), Risk Findings (live — per-product vulnerability scanning with dismiss/acknowledge), Dependencies (SBOM table with ecosystem badges + language breakdown + contributors)
+**ProductDetailPage tabs**: Overview (product info + GitHub repo card + version history + SBOM summary + compliance progress), Obligations (live — per-product CRA obligation tracker), Technical File (CRA Annex VII — 8 expandable sections with inline editors, Annex I checklist, status tracking), Risk Findings (live — per-product vulnerability scanning with dismiss/acknowledge), Dependencies (SBOM table with ecosystem badges + language breakdown + contributors), Field Issues (post-market monitoring with corrective action tracking), Crypto Inventory (cryptographic algorithm usage with PQC readiness assessment)
 
 ## User Registration + Org Setup Flow
 
@@ -1144,7 +1144,7 @@ sudo systemctl restart cloudflared
 - Organisation page — live data, editable fields, dev nuke button
 - Audit log page — paginated event viewer with filtering
 - Products page — full CRUD with Neo4j backend, category badges, lifecycle status
-- Product detail page — 5 tabs (Overview, Obligations, Technical File, Risk Findings, Dependencies)
+- Product detail page — 7 tabs (Overview, Obligations, Technical File, Risk Findings, Dependencies, Field Issues, Crypto Inventory)
 - Repository URL field — full-stack support for repoUrl on products
 - GitHub OAuth (popup window + postMessage + single-use connection tokens)
 - GitHub integration — repo sync, contributor discovery, language breakdown
@@ -1412,5 +1412,31 @@ sudo systemctl restart cloudflared
   - **Phase C:** `corrective_actions` table with CASCADE FK, corrective action CRUD API (planned → in_progress → completed → verified), obligation engine wiring (`art_13_6` vulnerability handling includes open field issues, `art_13_9` security updates tracks corrective action coverage).
   - **Phase D:** Post-market surveillance Markdown report export (`GET /:productId/field-issues/export`), dashboard field issue counts per product, admin analytics `fieldIssueHealth` (totals, severity, avg resolution, 12-week trend). 33 total tests.
 
+**Session 47 (2026-03-14):**
+- **Platform Analytics Dashboard (#57)** — Admin-only analytics page at `/admin/analytics`. KPI snapshot (users, orgs, products, repos, active users, contributors, subscribers), growth charts (weekly signups, cumulative users), revenue breakdown (MRR, by plan, by status), market intelligence (countries, industries, CRA roles, company sizes), assessment completions (CRA + NIS2 totals, breakdowns, weekly trends). Recharts bar/line/pie charts + data tables.
+- **Importer/distributor obligation workflows (#45 Phases B–D)** — Completed the remaining 3 phases of role-aware compliance:
+  - **Phase B:** Role-specific compliance checklist steps for importers (conformity verification, CE marking, manufacturer contact) and distributors (documentation checks, product handling, reporting). Checklist dynamically adapts to the organisation's CRA role.
+  - **Phase C:** Technical file guidance tailored to importers and distributors — role-specific section prompts and help text reflecting Art. 18/19 requirements rather than manufacturer-centric Art. 13.
+  - **Phase D:** Public importer obligations assessment at `/importer-assessment` on the welcome site (10 questions covering CRA Art. 18), admin analytics for assessment completions by type.
+- **Forgejo test infrastructure fix** — Resolved 15 previously-expected test failures (down from 16 to 1). Fixed `sbom_source` VARCHAR(50) overflow (widened to 255), dual-secret HMAC webhook verification (Forgejo sends GitHub-compatible headers), Forgejo `ALLOWED_HOST_LIST` for Docker-internal webhook delivery, backend_test `FRONTEND_URL` changed to Docker DNS name.
+
+**Session 48 (2026-03-14):**
+- **Cryptographic Standards & Quantum Readiness Inventory (#53)** — Full 4-phase feature:
+  - **Phase A:** Backend crypto library registry (37 algorithms classified as broken/quantum-vulnerable/quantum-safe), scanner service that detects crypto usage in dependencies, API endpoints (scan trigger, findings list, posture summary).
+  - **Phase B:** `CryptoInventoryTab` in product detail page — scan trigger button, findings table with algorithm classification badges, posture summary with PQC readiness percentage.
+  - **Phase C:** Public PQC Readiness Assessment at `/pqc-readiness-assessment` on the welcome site (18 questions, 6 sections covering asymmetric crypto, symmetric/hashing, key management, cryptographic agility, data sensitivity, migration planning; 4 readiness levels; email report; CRANIS2 CTA). NGINX proxy rules added for PQC and importer assessment routes.
+  - **Phase D:** Crypto scan results wired into obligation engine derivations (`art_13_3` component currency and `annex_i_part_i` risk assessment). PQC assessment completions + crypto health metrics added to admin analytics. Crypto posture (quantum-safe/vulnerable/broken counts) added to dashboard product enrichment.
+
+**Session 49 (2026-03-14):**
+- **Documentation update** — Synchronised all 6 user-facing documentation and marketing files to reflect the full current feature set:
+  - `docs/CRANIS2-CAPABILITIES-AND-SAFEGUARDS.md` — added post-market monitoring, crypto inventory, importer/distributor obligations, GRC/OSCAL bridge sections.
+  - `docs/EXECUTIVE-SUMMARY.md` — added 4 new feature bullets, updated obligation count to 35, updated conformity assessments to 4, updated summary table.
+  - `docs/USER-GUIDE.md` — bumped to v3.0, added sections 37–40 (post-market monitoring, crypto inventory, conformity assessments, GRC/OSCAL), updated product detail page to 7 tabs, fixed PDF-to-Markdown references.
+  - `docs/FAQ.md` — bumped to v3.0, added 4 new FAQ sections (14 Q&As), updated obligation and plan descriptions, fixed PDF-to-Markdown references.
+  - `welcome/public/index.html` — added 3 new capability cards, 2 new assessment cards, updated obligation count to 35, fixed grid layout.
+  - `frontend/src/pages/public/LandingPage.tsx` — updated obligation count, fixed Markdown references, updated plan descriptions.
+
 **Next Steps:**
 - Production deployment planning (Infomaniak hosting, cranis2.com)
+- P9 growth funnels — remaining items (#48 notified body directory, #49 market surveillance registration, #51 supply chain risk assessment, #52 internal incident lifecycle, #54 end-of-life notification, #55 EU authorised representative, #56 non-compliance reporting)
+- P5 — Supplier marketplace (post-launch)
