@@ -254,4 +254,4 @@ export interface GitHubData {
   languages?: LanguageData[];
 }
 
-export type TabKey = 'overview' | 'obligations' | 'technical-file' | 'activity' | 'risk-findings' | 'dependencies' | 'supply-chain' | 'crypto-inventory' | 'compliance-vault';
+export type TabKey = 'overview' | 'obligations' | 'technical-file' | 'activity' | 'risk-findings' | 'dependencies' | 'supply-chain' | 'crypto-inventory' | 'field-issues' | 'compliance-vault';
