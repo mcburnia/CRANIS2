@@ -1091,9 +1091,10 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-14 (session 47)
+**Last updated:** 2026-03-14 (session 48)
 
 **Completed:**
+- **Cryptographic Standards & Quantum Readiness Inventory (#53)** — 4-phase feature. Phase A: backend crypto library registry (37 algorithms classified as broken/quantum-vulnerable/quantum-safe), scanner service, API endpoints (scan, findings, summary). Phase B: CryptoInventoryTab in product detail page with scan trigger, findings table, posture summary. Phase C: public PQC Readiness Assessment at `/pqc-readiness-assessment` on welcome site (18 questions, 6 sections covering asymmetric crypto, symmetric/hashing, key management, cryptographic agility, data sensitivity, migration planning; 4 readiness levels; email report; CRANIS2 CTA). Phase D: crypto scan results wired into obligation engine derivations (art_13_3 and annex_i_part_i), PQC assessment + crypto health metrics in admin analytics, crypto posture in dashboard product enrichment.
 - **Importer/distributor obligation workflows (#45)** — Role-aware obligation engine (35 obligations: 19 manufacturer, 10 importer, 6 distributor), compliance checklist with role-specific steps, technical file guidance for importers/distributors, public importer assessment at `/importer-assessment` on welcome site, admin analytics for assessment completions. 4 phases (A–D).
 - **Forgejo test infrastructure fix** — Resolved 15 previously-expected test failures. Fixed `sbom_source` VARCHAR(50) overflow (widened to 255), dual-secret HMAC webhook verification (Forgejo sends GitHub-compatible headers), Forgejo `ALLOWED_HOST_LIST` for Docker-internal webhook delivery, backend_test `FRONTEND_URL` changed to Docker DNS name. **Total: ~1,447 tests pass, 1 expected failure (category-recommendation needs Anthropic API).**
 - **Platform Analytics Dashboard (#57)** — Admin-only analytics page at `/admin/analytics`. Backend endpoint queries both Postgres and Neo4j for: KPI snapshot (total users, orgs, products, connected repos, active users 7d/30d, billable contributors, launch subscribers), growth metrics (weekly signups 26 weeks, cumulative users by month), revenue breakdown (MRR, by plan, by billing status), market intelligence (countries, industries, CRA operator roles, company sizes — all from Neo4j Organisation nodes), and assessment completions (CRA + NIS2 totals, category/entity-class breakdowns, weekly trends). Frontend: KPI stat cards, Recharts bar/line/pie charts, data tables, responsive grid layout. 10 new tests. **Total: ~1,450 backend tests passing (82 files).**
@@ -1398,8 +1399,11 @@ sudo systemctl restart cloudflared
   - **P5:** Lockfile parser unit tests (43 tests) covering all 28 parsers with sample input, registry integrity, dispatcher routing, deduplication, error handling.
   - **Total:** ~207 new backend tests added across 14 new/expanded test files. Full suite: ~1,395 tests (81 files), ~1,379 pass, 16 expected infra-dependent failures.
 
+- **Post-market monitoring & field issue tracking (#46)** — Full CRA Art. 13(2)/13(9) post-market surveillance. 4 phases:
+  - **Phase A:** `field_issues` table, full CRUD API (list with filter, summary, single, create, update, delete), 30 integration tests.
+  - **Phase B:** `FieldIssuesTab` frontend component in product detail — summary cards, filter toolbar, expandable issue rows, create/edit modal, severity/status badges.
+  - **Phase C:** `corrective_actions` table with CASCADE FK, corrective action CRUD API (planned → in_progress → completed → verified), obligation engine wiring (`art_13_6` vulnerability handling includes open field issues, `art_13_9` security updates tracks corrective action coverage).
+  - **Phase D:** Post-market surveillance Markdown report export (`GET /:productId/field-issues/export`), dashboard field issue counts per product, admin analytics `fieldIssueHealth` (totals, severity, avg resolution, 12-week trend). 33 total tests.
+
 **Next Steps:**
-- #45 remaining phases: product-level operator context, importer verification workflow, public funnel tool
-- #46 Post-market monitoring & field issue tracking
-- #53 Cryptographic standards inventory
 - Production deployment planning (Infomaniak hosting, cranis2.com)
