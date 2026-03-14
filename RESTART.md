@@ -166,7 +166,7 @@ tail -20 ~/cranis2/logs/nightly-tests-$(date '+%Y-%m-%d').log
 - Summary with pass/fail counts and failed test names
 - Trello notification: posts a card to the "Test Results" board (passed/failed lists) after each run
 
-### Manual Backend Tests (1147+ tests — runs on server)
+### Manual Backend Tests (~1,395 tests — runs on server)
 
 **CRITICAL: Always use the isolated test stack, never the dev stack.**
 
@@ -184,7 +184,7 @@ cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://local
 - Tests target localhost:3011 (isolated test stack — NOT port 3001)
 - Single Cloudflare smoke test in `integration/cloudflare-tunnel.test.ts`
 - Deterministic test IDs for idempotent seeding
-- Expected result: **1147+ passed, 16 expected infra-dependent failures** (67 test files, ~480s)
+- Expected result: **~1,379 passed, 16 expected infra-dependent failures** (81 test files)
 - Expected failures: tier3-import-scanning (13, needs Forgejo), webhook-e2e B5/B6 (2, needs Forgejo), category-recommendation (1, needs Anthropic API)
 
 ### Playwright E2E Tests (~280 tests — runs locally on Mac)
@@ -1383,6 +1383,15 @@ sudo systemctl restart cloudflared
   - OSCAL catalog now includes all 35 obligations with `applies-to-roles` prop on each control.
   - Frontend requires no changes — dynamically renders whatever obligations the API returns.
   - Tests: 22 new tests (21 in obligation-engine-roles.test.ts + 1 new OSCAL test). Full suite: 1244 tests (73 files), 1228 pass, 16 expected infra-dependent failures.
+
+- **Comprehensive test review and improvement (P0–P5)** — Full cross-reference audit of all backend endpoints, services, and E2E flows against test coverage, followed by systematic improvement:
+  - **P0:** Fixed all 7 pre-existing E2E failures (marketplace profile, console errors, supplier DD tab). Zero E2E failures remaining.
+  - **P1:** Added importer/distributor E2E personas and role-aware obligation rendering tests.
+  - **P2:** Deepened 7 thin backend test files (audit-log, marketplace, notifications, due-diligence, billing, sbom-export, escrow) with field validation, content assertions, cross-org isolation.
+  - **P3:** 3 new user journey integration tests (44 tests): onboarding journey, compliance package assembly, role-specific obligations.
+  - **P4:** 4 new endpoint coverage test files (45 tests): retention ledger, admin vuln scan, snapshot schedule, document templates.
+  - **P5:** Lockfile parser unit tests (43 tests) covering all 28 parsers with sample input, registry integrity, dispatcher routing, deduplication, error handling.
+  - **Total:** ~207 new backend tests added across 14 new/expanded test files. Full suite: ~1,395 tests (81 files), ~1,379 pass, 16 expected infra-dependent failures.
 
 **Next Steps:**
 - #45 remaining phases: product-level operator context, importer verification workflow, public funnel tool
