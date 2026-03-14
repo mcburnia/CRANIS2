@@ -1,7 +1,7 @@
 # CRANIS2 Frequently Asked Questions
 
-**Document Version:** 2.0
-**Last Updated:** 2026-03-07
+**Document Version:** 3.0
+**Last Updated:** 2026-03-14
 
 ---
 
@@ -28,6 +28,10 @@
 19. [AI Intelligence (Pro Plan)](#ai-intelligence-pro-plan)
 20. [Public API and Integrations](#public-api-and-integrations)
 21. [Plans and Pricing](#plans-and-pricing)
+22. [Post-Market Monitoring & Field Issues](#post-market-monitoring--field-issues)
+23. [Cryptographic Standards & Quantum Readiness](#cryptographic-standards--quantum-readiness)
+24. [Conformity Assessments](#conformity-assessments)
+25. [GRC/OSCAL Bridge](#grcooscal-bridge)
 
 ---
 
@@ -634,7 +638,7 @@ The ZIP file contains five items:
 
 | File | Format | Contents |
 |------|--------|----------|
-| Due Diligence Report | PDF | Executive summary of compliance posture |
+| Due Diligence Report | Markdown | Executive summary of compliance posture |
 | Software Bill of Materials | CycloneDX 1.6 JSON | Complete dependency inventory |
 | Licence Findings | CSV | All dependencies with compliance verdicts |
 | Vulnerability Summary | JSON | All findings with severities and CVEs |
@@ -706,7 +710,7 @@ See the User Guide, Section 9: Technical Files and Section 2: Regulatory Context
 
 ### Q: What are CRA obligations and what statuses can they have?
 
-CRA obligations are specific requirements derived from CRA articles and mapped to each product based on its CRA category. They cover product security (Annex I), vulnerability handling (Article 13), security updates, SBOM maintenance, technical documentation (Annex VII), conformity assessment (Articles 24–28), CE marking (Article 22), authority reporting (Article 14), and market surveillance cooperation (Article 43). Each obligation has one of three statuses: **Not Started**, **In Progress**, or **Met**. Statuses can be changed inline from the obligations table.
+CRANIS2 tracks **35 CRA obligations** across three operator roles: 19 for manufacturers (Articles 13, 14, 16, 20, 32, and Annexes), 10 for importers (Article 18), and 6 for distributors (Article 19). They cover product security (Annex I), vulnerability handling (Article 13), security updates, SBOM maintenance, technical documentation (Annex VII), conformity assessment (Articles 24–28), CE marking (Article 22), authority reporting (Article 14), market surveillance cooperation (Article 43), and role-specific supply chain obligations for importers and distributors. Each obligation has one of three statuses: **Not Started**, **In Progress**, or **Met**. Statuses can be changed inline from the obligations table, and the obligation engine automatically derives statuses from platform data (SBOMs, scans, technical file progress, field issues, crypto scans).
 
 See the User Guide, Section 8: Obligations Tracking.
 
@@ -885,7 +889,7 @@ See the User Guide, Section 27: AI Auto-Triage.
 
 ### Q: What does the AI risk assessment generator produce?
 
-It generates a four-part risk assessment document: methodology, threat model, risk register, and Annex I requirement mappings. The assessment is grounded in your actual product data (dependencies, scan results, CRA category) and can be exported as a PDF for inclusion in your CRA technical file.
+It generates a four-part risk assessment document: methodology, threat model, risk register, and Annex I requirement mappings. The assessment is grounded in your actual product data (dependencies, scan results, CRA category) and can be exported as Markdown for inclusion in your CRA technical file.
 
 See the User Guide, Section 28: AI Risk Assessment.
 
@@ -909,7 +913,7 @@ See the User Guide, Section 36: Copilot Usage & Cost Protection.
 
 ### Q: What is supplier due diligence?
 
-Supplier due diligence generates template-based questionnaires for your product's dependencies, assessing their security practices, licence compliance, and maintenance cadence. It does not use AI. The questionnaires are derived from CRA requirements using deterministic templates. Dependencies from npm, PyPI, and crates.io are automatically enriched with maintainer and registry metadata. Results can be exported as PDF or CSV.
+Supplier due diligence generates template-based questionnaires for your product's dependencies, assessing their security practices, licence compliance, and maintenance cadence. It does not use AI. The questionnaires are derived from CRA requirements using deterministic templates. Dependencies from npm, PyPI, and crates.io are automatically enriched with maintainer and registry metadata. Results can be exported as Markdown or CSV.
 
 See the User Guide, Section 31: Supplier Due Diligence.
 
@@ -959,9 +963,9 @@ See the User Guide, Section 35: Integrations.
 
 ### Q: What is the difference between Standard and Pro?
 
-**Standard** (EUR 6/contributor/month) includes all core compliance features: SBOMs, vulnerability monitoring, licence compliance, IP proof, technical files, ENISA reporting, escrow, obligations tracking, and the marketplace.
+**Standard** (EUR 6/contributor/month) includes all core compliance features: SBOMs, vulnerability monitoring, licence compliance, IP proof, technical files, ENISA reporting, escrow, obligations tracking (35 obligations across manufacturer, importer, and distributor roles), post-market monitoring with field issue tracking, cryptographic standards inventory, conformity assessments, document templates, compliance evidence vault, and the marketplace.
 
-**Pro** (EUR 9/product/month + EUR 6/contributor/month) adds AI intelligence features (Copilot, auto-triage, risk assessment, incident drafter, category recommender), the public API with API keys, the CI/CD compliance gate, Trello integration, and the IDE compliance assistant via MCP.
+**Pro** (EUR 9/product/month + EUR 6/contributor/month) adds AI intelligence features (Copilot, auto-triage, risk assessment, incident drafter, category recommender), the public API with API keys, the CI/CD compliance gate, Trello integration, the IDE compliance assistant via MCP, and the GRC/OSCAL bridge for audit tool integration.
 
 See the User Guide, Section 18: Billing.
 
@@ -972,6 +976,97 @@ Yes. Navigate to the Billing page and click the appropriate button. Upgrades tak
 ### Q: Are supplier due diligence and the compliance gap narrator available on Standard?
 
 Yes. Both features are available on all paid plans (and during the free trial). They are deterministic, template-based features that do not use AI.
+
+---
+
+## Post-Market Monitoring & Field Issues
+
+### Q: What is post-market monitoring in CRANIS2?
+
+Post-market monitoring tracks field-reported security issues after a product is placed on the market, as required by CRA Articles 13(2) and 13(9). The **Field Issues** tab on each product lets you record, investigate, and resolve security issues reported by customers, discovered through internal testing, or identified by market surveillance authorities. Each field issue progresses through a defined lifecycle: open → investigating → fix in progress → resolved → closed.
+
+See the User Guide, Section 37: Post-Market Monitoring & Field Issues.
+
+### Q: What are corrective actions?
+
+Corrective actions are the specific steps taken to address a field issue. Each field issue can have one or more corrective actions, each with its own lifecycle: planned → in progress → completed → verified. Corrective action data automatically feeds the obligation engine — Art. 13(9) (security updates) tracks corrective action completion rates.
+
+See the User Guide, Section 37: Post-Market Monitoring & Field Issues.
+
+### Q: Can I export field issue data?
+
+Yes. Click **Export Report** on the Field Issues tab to generate a Markdown surveillance report covering all field issues for a product, including corrective action status and timeline. This report is suitable for inclusion in the CRA technical file or for submission to market surveillance authorities.
+
+### Q: How do field issues affect my obligation status?
+
+Field issue data automatically feeds two obligations: **Art. 13(6) — Vulnerability handling** reflects whether any field issues remain open, and **Art. 13(9) — Security updates** tracks whether corrective actions have been completed. If you have unresolved field issues, these obligations cannot show as fully met.
+
+---
+
+## Cryptographic Standards & Quantum Readiness
+
+### Q: What does the cryptographic standards inventory do?
+
+The crypto inventory scans your dependency tree to identify cryptographic algorithm usage and classifies 37 algorithms into three categories: **quantum-safe** (resistant to quantum attacks, e.g. ML-KEM, AES-256, SHA-3), **quantum-vulnerable** (secure today but breakable by quantum computers, e.g. RSA, ECDSA, classic Diffie-Hellman), and **broken** (already insecure, e.g. MD5, SHA-1, DES, RC4). Access it from the **Crypto Inventory** tab on each product.
+
+See the User Guide, Section 38: Cryptographic Standards Inventory.
+
+### Q: What is the PQC readiness assessment?
+
+The Post-Quantum Cryptography (PQC) readiness assessment is a public self-assessment tool with 18 questions covering your migration preparedness for quantum-resistant algorithms. It evaluates current algorithm usage, migration planning, crypto-agility, key management, and compliance with emerging NIST FIPS 203/204/205 standards. Available publicly at `/assess/pqc`.
+
+See the User Guide, Section 39: Conformity Assessments.
+
+### Q: How does the crypto inventory affect my obligations?
+
+Crypto findings feed two areas of the obligation engine: **Art. 13(2) — Cryptographic requirements** reflects whether broken or quantum-vulnerable algorithms have been identified and addressed, and crypto data is included in the context for AI-generated Annex I risk assessment mappings.
+
+---
+
+## Conformity Assessments
+
+### Q: What conformity assessments are available?
+
+CRANIS2 provides four self-assessment tools:
+
+| Assessment | Questions | Scope |
+|-----------|-----------|-------|
+| **CRA Conformity** | 12 | Product-level CRA compliance |
+| **NIS2 Readiness** | 25 | Organisation-level NIS2 compliance |
+| **Importer Obligations** | 10 | CRA Article 18 requirements for importers |
+| **PQC Readiness** | 18 | Post-quantum cryptography preparedness |
+
+All four are available publicly at `/assess` without a CRANIS2 account.
+
+See the User Guide, Section 39: Conformity Assessments.
+
+### Q: Do I need a CRANIS2 account to take an assessment?
+
+No. All four assessments are accessible publicly from the assessment landing page at `/assess`. This allows prospective customers, supply chain partners, and auditors to evaluate compliance posture independently. For authenticated users, results are stored against the product or organisation.
+
+### Q: What is the importer obligations assessment?
+
+The importer obligations assessment covers the 10 CRA Article 18 requirements specific to importers placing products on the EU market. It helps importers evaluate whether they meet their obligations regarding conformity assessment verification, CE marking checks, technical file availability, and cooperation with market surveillance authorities.
+
+---
+
+## GRC/OSCAL Bridge
+
+### Q: What is the GRC/OSCAL bridge?
+
+CRANIS2 exports compliance data in **OSCAL 1.1.2** (Open Security Controls Assessment Language) format for integration with governance, risk, and compliance (GRC) platforms. Four document types are supported: catalog (obligation definitions), profile (applicable obligations), assessment-results (compliance status with findings), and component-definition (product metadata).
+
+**Requires:** Pro plan.
+
+See the User Guide, Section 40: GRC/OSCAL Bridge.
+
+### Q: Which GRC tools can I import OSCAL data into?
+
+Any tool that supports OSCAL 1.1.2 JSON, including Trestle, Lula, Comply, and others. The exports conform to the NIST OSCAL 1.1.2 schema specification.
+
+### Q: How do I access OSCAL exports?
+
+OSCAL exports are available via the Public API (Pro plan required). Use the API endpoints for each document type: `/api/v1/products/:productId/oscal/catalog`, `/oscal/profile`, `/oscal/assessment-results`, and `/oscal/component-definition`.
 
 ---
 

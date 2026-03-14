@@ -12,7 +12,7 @@ import './LandingPage.css';
 const features = [
   { icon: Package, title: 'Automated SBOM & Scanning', desc: "Three-tier dependency detection across 28 lockfile formats and 26 languages. Daily scans against 445,000+ known vulnerabilities. Your software bill of materials, always current." },
   { icon: Shield, title: 'CRA Technical File', desc: "Eight structured sections matching CRA Annex VII. Auto-populated content for product description, vulnerability handling, standards, and test reports. Cuts documentation effort by 60\u201380%." },
-  { icon: BarChart3, title: 'Obligation Intelligence', desc: "19 CRA and NIS2 obligations mapped to your products. Statuses derived automatically from platform data, including SBOMs, scans, and technical file progress. Always know your true compliance standing." },
+  { icon: BarChart3, title: 'Obligation Intelligence', desc: "35 CRA obligations across manufacturer, importer, and distributor roles. Statuses derived automatically from platform data, including SBOMs, scans, technical file progress, field issues, and crypto scans. Always know your true compliance standing." },
   { icon: Lock, title: 'Evidence Vault & Retention', desc: "Cryptographically signed compliance snapshots with RFC 3161 timestamps and 10-year cold storage retention. Tamper-evident evidence that satisfies CRA Art. 13(10)." },
   { icon: Bell, title: 'ENISA Reporting & Alerts', desc: "24-hour, 72-hour, and 14-day deadline tracking for mandatory vulnerability and incident reporting. Escalating alerts so you never miss a regulatory deadline." },
   { icon: Users, title: 'AI Copilot & Integrations', desc: "AI-powered suggestions for technical files, vulnerability triage, risk assessments, and incident reports. Public API, CI/CD gate, Trello integration, and IDE assistant via MCP." },
@@ -66,7 +66,7 @@ const regulations = [
     howSupports: [
       'Dependency-level risk visibility across your entire software supply chain',
       'Supplier due diligence questionnaires with automatic registry enrichment',
-      'AI-powered risk assessments with Annex I mappings, exportable as PDF',
+      'AI-powered risk assessments with Annex I mappings, exportable as Markdown',
       'Licence compliance scanning with copyleft detection and compatibility analysis',
       'Audit trail of every compliance action with timestamps and user attribution',
     ],
@@ -393,12 +393,12 @@ export default function LandingPage() {
           <div className="pricing-tier">
             <h3>Standard</h3>
             <div className="pricing-amount">&euro;6 <span>/ contributor / month</span></div>
-            <p>SBOMs, vulnerability monitoring, licence compliance, obligation tracking, technical file, ENISA reporting, evidence vault, document templates, and conformity assessments.</p>
+            <p>SBOMs, vulnerability monitoring, licence compliance, 35-obligation tracking, technical file, ENISA reporting, post-market monitoring, crypto inventory, evidence vault, document templates, and conformity assessments.</p>
           </div>
           <div className="pricing-tier pricing-tier-pro">
             <h3>Pro</h3>
             <div className="pricing-amount">&euro;9 <span>/ product / month</span> + &euro;6 <span>/ contributor</span></div>
-            <p>Everything in Standard plus AI copilot, public API, CI/CD compliance gate, Trello integration, and IDE assistant via MCP.</p>
+            <p>Everything in Standard plus AI copilot, public API, CI/CD compliance gate, Trello integration, IDE assistant via MCP, and GRC/OSCAL bridge.</p>
           </div>
         </div>
         <p style={{ marginTop: '1.5rem', opacity: 0.8 }}>A contributor is anyone with write access to a registered code repository. No hidden fees. One invoice per organisation.</p>

@@ -20,17 +20,17 @@ CRANIS2 takes the dependency and component information present in your repositor
 
 - **CRA Technical File.** Structures the documentation required under CRA Annex VII across eight sections, with inline editing and version tracking. Auto-population suggests content for four key sections based on your platform data (product description, vulnerability handling, applicable standards, and test reports), eliminating 60–80% of the documentation effort.
 
-- **EU Declaration of Conformity.** Generates a professionally formatted PDF declaration under CRA Article 16, combining your product metadata, organisation details, and applicable standards into a legally compliant document ready for download.
+- **EU Declaration of Conformity.** Generates a professionally formatted declaration under CRA Article 16, combining your product metadata, organisation details, and applicable standards into a legally compliant Markdown document ready for download.
 
 - **ENISA Reporting.** Manages the mandatory incident and vulnerability reporting workflow under CRA Article 14, with deadline tracking (24-hour early warning, 72-hour notification, 14-day final report).
 
-- **Obligations Tracking.** Maps 19 CRA and NIS2 requirements to your products, with auto-intelligence that derives obligation statuses from platform data (SBOMs, scans, technical file progress). You always see your true compliance standing without manual data entry, and manual overrides are preserved.
+- **Obligations Tracking.** Maps 35 CRA obligations across three operator roles (19 manufacturer, 10 importer, 6 distributor) to your products, with auto-intelligence that derives obligation statuses from platform data (SBOMs, scans, technical file progress, field issues, crypto scans). You always see your true compliance standing without manual data entry, and manual overrides are preserved.
 
 - **Compliance Checklist.** A 7-step getting-started guide for each product that breaks CRA conformity into concrete, actionable steps. Progress is tracked in real time so you always know what to do next and how far along you are.
 
-- **AI Copilot (Pro Plan).** AI-powered compliance assistance across the platform. Contextual suggestions for technical file sections and obligation evidence notes, AI auto-triage of vulnerability findings with ecosystem-specific fix commands, risk assessment generation with Annex I mappings (exportable as PDF), incident report drafting for ENISA Article 14 stages, and CRA category recommendation with deterministic scoring plus AI augmentation. Powered by Claude (Anthropic). Source code is never sent to the AI; only compliance metadata.
+- **AI Copilot (Pro Plan).** AI-powered compliance assistance across the platform. Contextual suggestions for technical file sections and obligation evidence notes, AI auto-triage of vulnerability findings with ecosystem-specific fix commands, risk assessment generation with Annex I mappings (exportable as Markdown), incident report drafting for ENISA Article 14 stages, and CRA category recommendation with deterministic scoring plus AI augmentation. Powered by Claude (Anthropic). Source code is never sent to the AI; only compliance metadata.
 
-- **Supplier Due Diligence.** Template-based questionnaires for third-party dependency risk management, with automatic enrichment from npm, PyPI, and crates.io registries. PDF and CSV export. Available on all plans (no AI).
+- **Supplier Due Diligence.** Template-based questionnaires for third-party dependency risk management, with automatic enrichment from npm, PyPI, and crates.io registries. Markdown and CSV export. Available on all plans (no AI).
 
 - **Compliance Gap Narrator.** A deterministic "Next Steps" card on each product's overview showing prioritised compliance actions, derived from obligations, technical file progress, scan coverage, and SBOM freshness. Available on all plans (no AI).
 
@@ -42,7 +42,15 @@ CRANIS2 takes the dependency and component information present in your repositor
 
 - **Document Templates.** A library of pre-built CRA compliance document templates that auto-populate with your product data. Templates cover security policies, vulnerability disclosure procedures, and incident response plans, reducing the documentation burden from days to minutes.
 
-- **Conformity Assessments.** Self-assessment tools for both CRA and NIS2 compliance. Each assessment walks through the regulatory requirements with guidance text, evidence linking, and progress tracking. A public assessment landing page allows prospective customers to understand your compliance posture before engaging.
+- **Post-Market Monitoring.** Tracks field-reported security issues through a full lifecycle (open → investigating → fix in progress → resolved → closed) with corrective action management (planned → in progress → completed → verified). Generates surveillance reports exportable as Markdown. Field issue data automatically feeds the obligation engine — Art. 13(6) vulnerability handling reflects open field issues, and Art. 13(9) security updates tracks corrective action completion.
+
+- **Cryptographic Standards Inventory.** Scans your dependency tree for cryptographic algorithm usage and classifies 37 algorithms as quantum-safe, quantum-vulnerable, or broken. Provides a post-quantum cryptography (PQC) readiness assessment showing your migration path from vulnerable algorithms (RSA, ECDSA, classic Diffie-Hellman) to quantum-resistant alternatives (ML-KEM, ML-DSA, SLH-DSA). Results feed the obligation engine for Art. 13(2) cryptographic requirements and Annex I risk assessment.
+
+- **Importer & Distributor Obligations.** Extends CRA compliance beyond manufacturers. Importers and distributors each have dedicated obligation sets (10 and 6 respectively) with role-specific derived statuses. A public importer obligations assessment (10 questions) helps supply chain partners evaluate their CRA readiness before engaging. Role-specific checklists provide actionable guidance tailored to each operator type.
+
+- **GRC/Audit Tool Bridge.** Exports compliance data in OSCAL 1.1.2 format for integration with governance, risk, and compliance (GRC) platforms. Four document types are supported: catalog (obligation definitions), profile (applicable obligations), assessment-results (compliance status with findings), and component-definition (product metadata with properties). Available on Pro plan.
+
+- **Conformity Assessments.** Self-assessment tools for CRA, NIS2, importer obligations, and post-quantum cryptography readiness. Four public assessments are available: CRA conformity (12 questions), NIS2 readiness (25 questions), importer obligations (10 questions), and PQC readiness (18 questions). Each walks through the regulatory requirements with guidance text, evidence linking, and progress tracking. A public assessment landing page allows prospective customers to understand your compliance posture before engaging.
 
 - **Product Lifecycle Management.** Tracks products through their lifecycle stages: pre-production, on-market, and end-of-life. Market placement dates drive retention calculations and obligation timelines. End-of-support dates are linked to technical file sections with automatic retention extension when updated.
 
@@ -126,7 +134,7 @@ Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerab
 | | |
 |---|---|
 | **Problem** | EU legislation (CRA + NIS2) requires software companies to demonstrate cybersecurity compliance. Most have no tooling for this |
-| **Solution** | CRANIS2 automates SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, regulatory reporting, source code escrow, compliance evidence vault with 10-year retention, document templates, conformity assessments, AI-powered compliance intelligence, supplier due diligence, and external integrations (API, CI/CD, Trello, IDE) |
+| **Solution** | CRANIS2 automates SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, regulatory reporting, post-market monitoring with field issue tracking, cryptographic standards inventory with PQC readiness, source code escrow, compliance evidence vault with 10-year retention, document templates, conformity assessments (CRA, NIS2, importer, PQC), AI-powered compliance intelligence, supplier due diligence, GRC/OSCAL bridge, and external integrations (API, CI/CD, Trello, IDE) |
 | **Timing** | CRA reporting obligations begin Sept 2026; full compliance required Dec 2027 |
 | **Audience** | Software product companies selling into the EU, especially SMEs without dedicated compliance teams |
 | **Source code** | Import statements are read but source code is never stored, analysed or modified |

@@ -1,8 +1,8 @@
 # CRANIS2 User Guide
 
-**Document Version:** 2.0
-**Last Updated:** 2026-03-07
-**Covers:** Sections 1–36 plus Appendices A–E
+**Document Version:** 3.0
+**Last Updated:** 2026-03-14
+**Covers:** Sections 1–40 plus Appendices A–E
 
 ---
 
@@ -44,6 +44,10 @@
 34. [CI/CD Compliance Gate](#34-cicd-compliance-gate)
 35. [Integrations (Trello, MCP, IDE)](#35-integrations-trello-mcp-ide)
 36. [Copilot Usage & Cost Protection](#36-copilot-usage--cost-protection)
+37. [Post-Market Monitoring & Field Issues](#37-post-market-monitoring--field-issues)
+38. [Cryptographic Standards Inventory](#38-cryptographic-standards-inventory)
+39. [Conformity Assessments](#39-conformity-assessments)
+40. [GRC/OSCAL Bridge](#40-grcooscal-bridge)
 - [Appendix A: CRA Product Categories](#appendix-a-cra-product-categories)
 - [Appendix B: Supported Repository Providers](#appendix-b-supported-repository-providers)
 - [Appendix C: Supported Lockfile Formats](#appendix-c-supported-lockfile-formats)
@@ -58,7 +62,7 @@
 
 CRANIS2 is a compliance platform that helps software companies meet the requirements of two major pieces of EU legislation: the **Cyber Resilience Act (CRA)** and the **NIS2 Directive**.
 
-It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see. CRANIS2 reads dependency metadata from your repositories but never stores, analyses or modifies your source code. The platform automates seven compliance functions: SBOM management, vulnerability monitoring, licence compliance, intellectual property proof, CRA technical documentation, ENISA reporting, and source code escrow.
+It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see. CRANIS2 reads dependency metadata from your repositories but never stores, analyses or modifies your source code. The platform automates a comprehensive set of compliance functions: SBOM management, vulnerability monitoring, licence compliance, intellectual property proof, CRA technical documentation, ENISA reporting, source code escrow, post-market monitoring with field issue tracking, cryptographic standards inventory with PQC readiness, compliance evidence vault, document templates, conformity assessments, AI-powered compliance intelligence, supplier due diligence, GRC/OSCAL bridge, and external integrations.
 
 ### Who This Guide Is For
 
@@ -357,7 +361,7 @@ The distribution model affects licence compatibility analysis (see [Section 11: 
 
 ### Product Detail Page
 
-Clicking on a product opens the detail page (`/products/:productId`), which has five tabs:
+Clicking on a product opens the detail page (`/products/:productId`), which has seven tabs:
 
 **Overview** – The landing tab. Shows:
 - Repository card with connection status and provider
@@ -372,6 +376,10 @@ Clicking on a product opens the detail page (`/products/:productId`), which has 
 **Risk Findings** – Vulnerability findings specific to this product, with severity, affected dependency, and triage controls. Findings can be triaged as open, mitigated, or closed.
 
 **Dependencies** – The full SBOM package list for this product. Each dependency shows its name, version, ecosystem (npm, PyPI, crates.io, etc.), licence, and whether it is a direct or transitive dependency.
+
+**Field Issues** – Post-market monitoring for field-reported security issues. Tracks issues through a full lifecycle with corrective action management. See [Section 37: Post-Market Monitoring & Field Issues](#37-post-market-monitoring--field-issues).
+
+**Crypto Inventory** – Cryptographic algorithm usage detected in your dependency tree, classified by quantum readiness. See [Section 38: Cryptographic Standards Inventory](#38-cryptographic-standards-inventory).
 
 ### Editing and Deleting Products
 
@@ -479,7 +487,7 @@ The CRA defines a set of obligations that apply to manufacturers, importers and 
 - Cooperation with market surveillance (Article 43)
 - Incident and vulnerability coordination (Article 15)
 
-The specific obligations tracked in CRANIS2 are derived from these articles and mapped to each product based on its CRA category.
+CRANIS2 tracks **35 obligations in total**, split across three operator roles: 19 for manufacturers (Articles 13, 14, 16, 20, 32, and Annexes), 10 for importers (Article 18), and 6 for distributors (Article 19). The specific obligations shown for each product are determined by its CRA category and the organisation's CRA role.
 
 ### Obligation Statuses
 
@@ -739,7 +747,7 @@ Clicking **Download Due Diligence Package** generates a ZIP file containing:
 
 | File | Format | Description |
 |------|--------|-------------|
-| Due Diligence Report | PDF | Executive summary covering product details, dependency inventory, licence compliance posture, vulnerability assessment, IP proof status, and CRA compliance progress |
+| Due Diligence Report | Markdown | Executive summary covering product details, dependency inventory, licence compliance posture, vulnerability assessment, IP proof status, and CRA compliance progress |
 | Software Bill of Materials | CycloneDX 1.6 JSON | Machine-readable dependency inventory with package hashes, licences, and supplier data |
 | Licence Findings | CSV | Complete list of dependencies with their licences, categories, risk levels, compatibility verdicts, and waiver status |
 | Vulnerability Summary | JSON | All vulnerability findings with severities, affected packages, CVE identifiers, and fix versions |
@@ -1381,7 +1389,7 @@ The AI risk assessment generator creates a comprehensive risk assessment documen
 
 ### Output
 
-The risk assessment is stored against the product and can be exported as a **PDF** for inclusion in the CRA technical file. It is regenerated on demand; each generation reflects the product's current state.
+The risk assessment is stored against the product and can be exported as **Markdown** for inclusion in the CRA technical file. It is regenerated on demand; each generation reflects the product's current state.
 
 ---
 
@@ -1470,7 +1478,7 @@ Enrichment data is cached in a shared 30-day Postgres cache to minimise external
 
 Supplier due diligence data can be exported as:
 
-- **PDF** – formatted report suitable for audit or procurement review
+- **Markdown** – formatted report suitable for audit or procurement review
 - **CSV** – raw data for further analysis
 
 ---
@@ -1677,6 +1685,168 @@ AI usage is tracked on the Billing page:
 - **Organisation-level**: total tokens used, remaining budget, cost estimate (USD)
 - **Product-level**: a Copilot Usage widget on the product Overview tab shows per-product token consumption
 - **Admin-level**: platform admins see cross-organisation usage on the Admin Billing page
+
+---
+
+## 37. Post-Market Monitoring & Field Issues
+
+### What Is Post-Market Monitoring?
+
+CRA Articles 13(2) and 13(9) require manufacturers to monitor their products after placing them on the market. This includes tracking field-reported security issues, implementing corrective actions, and providing security updates. CRANIS2 provides a structured workflow for managing this process.
+
+### Accessing Field Issues
+
+Field issues are managed from the **Field Issues** tab on each product's detail page. You can also access a cross-product view from the sidebar navigation.
+
+### Creating a Field Issue
+
+Click **Report Field Issue** to create a new entry. Each field issue captures:
+
+| Field | Description |
+|-------|-------------|
+| **Title** | Short description of the reported issue |
+| **Description** | Detailed account of the issue, including how it was discovered and its potential impact |
+| **Severity** | Critical, High, Medium, or Low |
+| **Source** | How the issue was reported: customer report, internal testing, vulnerability disclosure, market surveillance, or other |
+| **Affected versions** | Which product versions are affected |
+| **Reporter** | Contact details for the person or organisation that reported the issue |
+
+### Field Issue Lifecycle
+
+Each field issue progresses through a defined lifecycle:
+
+1. **Open** – Issue has been reported and recorded
+2. **Investigating** – The issue is being analysed to determine root cause and impact
+3. **Fix in Progress** – A corrective action has been identified and development is underway
+4. **Resolved** – The fix has been implemented and verified
+5. **Closed** – The issue has been fully addressed and documented
+
+### Corrective Actions
+
+Each field issue can have one or more **corrective actions** — the specific steps taken to address the issue. Corrective actions have their own lifecycle:
+
+1. **Planned** – The action has been identified but work has not started
+2. **In Progress** – Work is underway
+3. **Completed** – The action has been implemented
+4. **Verified** – The action has been tested and confirmed effective
+
+### Obligation Wiring
+
+Field issue data automatically feeds the obligation engine:
+
+- **Art. 13(6) — Vulnerability handling**: Status reflects open field issues. If any field issues remain open, this obligation cannot be fully met.
+- **Art. 13(9) — Security updates**: Status tracks corrective action completion. Pending corrective actions keep this obligation in progress.
+
+### Surveillance Reports
+
+Click **Export Report** to generate a Markdown surveillance report covering all field issues for a product, including corrective action status and timeline. This report is suitable for inclusion in CRA technical file documentation or for submission to market surveillance authorities.
+
+---
+
+## 38. Cryptographic Standards Inventory
+
+### What Is the Crypto Inventory?
+
+CRA Annex I requires products to use appropriate cryptographic standards. CRANIS2 scans your dependency tree to identify cryptographic algorithm usage and classifies each algorithm by its quantum readiness status.
+
+### Accessing the Crypto Inventory
+
+The crypto inventory is available from the **Crypto Inventory** tab on each product's detail page.
+
+### Algorithm Classification
+
+CRANIS2 recognises 37 cryptographic algorithms, each classified into one of three categories:
+
+| Category | Meaning | Examples |
+|----------|---------|----------|
+| **Quantum-safe** | Resistant to known quantum computing attacks | ML-KEM (Kyber), ML-DSA (Dilithium), SLH-DSA (SPHINCS+), AES-256, SHA-3 |
+| **Quantum-vulnerable** | Secure today but will be broken by cryptographically relevant quantum computers | RSA, ECDSA, ECDH, classic Diffie-Hellman, DSA |
+| **Broken** | Already considered insecure regardless of quantum computing | MD5, SHA-1, DES, 3DES, RC4 |
+
+### PQC Readiness Assessment
+
+The **Post-Quantum Cryptography (PQC) Readiness Assessment** provides a structured evaluation of your product's preparedness for the quantum computing transition. It covers 18 questions across areas including:
+
+- Current cryptographic algorithm usage
+- Migration planning for quantum-vulnerable algorithms
+- Crypto-agility (ability to swap algorithms without major refactoring)
+- Key management practices
+- Compliance with emerging PQC standards (NIST FIPS 203/204/205)
+
+The assessment is available as a public self-assessment tool at `/assess/pqc`.
+
+### Obligation Wiring
+
+Crypto inventory data feeds the obligation engine:
+
+- **Art. 13(2) — Cryptographic requirements**: Derived status reflects whether broken or quantum-vulnerable algorithms have been identified and addressed.
+- **Annex I risk assessment**: Crypto findings are included in the risk assessment context for AI-generated Annex I mappings.
+
+---
+
+## 39. Conformity Assessments
+
+### What Are Conformity Assessments?
+
+Conformity assessments are structured self-evaluation tools that help you determine whether your product or organisation meets regulatory requirements. CRANIS2 provides four assessment types:
+
+| Assessment | Questions | Scope |
+|-----------|-----------|-------|
+| **CRA Conformity** | 12 | Product-level CRA compliance covering essential requirements, documentation, vulnerability handling, and CE marking |
+| **NIS2 Readiness** | 25 | Organisation-level NIS2 compliance covering governance, risk management, incident handling, supply chain security, and reporting |
+| **Importer Obligations** | 10 | CRA Article 18 obligations specific to importers placing products on the EU market |
+| **PQC Readiness** | 18 | Post-quantum cryptography preparedness covering algorithm usage, migration planning, and crypto-agility |
+
+### Taking an Assessment
+
+Each assessment presents questions with:
+
+- **Guidance text** explaining the regulatory requirement and what constitutes compliance
+- **Response options** (typically Yes / Partially / No / Not Applicable)
+- **Evidence linking** to connect your response to supporting documentation within the platform
+- **Progress tracking** showing how many questions have been answered
+
+### Public Assessment Landing Page
+
+All four assessments are available publicly at `/assess` without requiring a CRANIS2 account. This allows prospective customers, supply chain partners, and auditors to evaluate compliance posture independently. Results are shown immediately upon completion.
+
+### Assessment Results
+
+Completed assessments produce a compliance score and highlight areas requiring attention. For authenticated users, assessment results are stored against the product or organisation and can be referenced in technical file documentation.
+
+---
+
+## 40. GRC/OSCAL Bridge
+
+### What Is OSCAL?
+
+OSCAL (Open Security Controls Assessment Language) is a NIST framework for expressing security assessment information in a standardised, machine-readable format. It enables interoperability between compliance tools and GRC (Governance, Risk, and Compliance) platforms.
+
+### Supported Document Types
+
+CRANIS2 exports compliance data in OSCAL 1.1.2 format across four document types:
+
+| Document Type | Contents |
+|--------------|----------|
+| **Catalog** | CRA obligation definitions as OSCAL controls, with regulatory references and descriptions |
+| **Profile** | The subset of obligations applicable to a specific product, based on its CRA category and operator role |
+| **Assessment Results** | Current compliance status for each obligation, including findings, evidence references, and timestamps |
+| **Component Definition** | Product metadata expressed as an OSCAL component with properties (category, type, version, distribution model) |
+
+### Accessing OSCAL Exports
+
+**Requires:** Pro plan
+
+OSCAL exports are available via the Public API:
+
+```
+GET /api/v1/products/:productId/oscal/catalog
+GET /api/v1/products/:productId/oscal/profile
+GET /api/v1/products/:productId/oscal/assessment-results
+GET /api/v1/products/:productId/oscal/component-definition
+```
+
+All endpoints return JSON conforming to the OSCAL 1.1.2 schema. The exports can be imported into GRC platforms such as Trestle, Lula, or Comply.
 
 ---
 
