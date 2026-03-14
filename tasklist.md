@@ -9,7 +9,7 @@ All five MVP features are built, tested, and shipped.
 - [x] SBOM Export (CycloneDX 1.6 + SPDX 2.3, structural validation)
 - [x] Compliance Package (Due Diligence ZIP — PDF, SBOM, licence CSV, vuln summary, tech file)
 - [x] IP / Copyright Proof (RFC 3161 timestamping, licence compatibility matrix)
-- [x] Billing & Reports (Stripe, three report types with PDF/CSV export)
+- [x] Billing & Reports (Stripe, three report types with Markdown/CSV export)
 - [x] Escrow Capability (self-hosted Forgejo, daily deposits, management UI)
 
 ---
@@ -17,8 +17,8 @@ All five MVP features are built, tested, and shipped.
 ## Phase 2: Compliance Framework (Complete)
 
 - [x] Obligations auto-intelligence — derived statuses from platform data, `obligation-engine.ts`
-- [x] Expanded obligations list (11 → 19) — Art. 13 sub-articles, Art. 16, Art. 20, Art. 32
-- [x] EU Declaration of Conformity PDF — Annex V compliant, pre-filled from org/product data
+- [x] Expanded obligations list (11 → 19 → 35) — Art. 13, 14, 16, 18, 19, 20, 32, Annexes
+- [x] EU Declaration of Conformity — Annex V compliant, pre-filled from org/product data
 - [x] Technical file auto-population — suggestions endpoint, auto-fill buttons, guidance text
 - [x] Getting-started compliance checklist — per-product, sequenced, dashboard widget
 
@@ -28,59 +28,121 @@ All five MVP features are built, tested, and shipped.
 
 - [x] AI Copilot — contextual AI Suggest buttons on 8 tech file sections + obligation evidence (P3 #13)
 - [x] AI auto-triage — dismiss/acknowledge/escalate with confidence scores, auto-dismiss, CLI mitigations (P3 #15)
-- [x] AI risk assessment generator — methodology, threat model, risk register, 13 Annex I mappings, PDF export (P3 #16)
+- [x] AI risk assessment generator — methodology, threat model, risk register, 13 Annex I mappings (P3 #16)
 - [x] AI incident report drafter — ENISA Art. 14 stage content, non-destructive merge (P3 #17)
 - [x] CRA category recommender — deterministic 4-attribute scoring + AI augmentation, admin rules, audit trail (P3 #18)
-- [x] Supplier due diligence — deterministic questionnaires, npm/PyPI/crates.io enrichment, PDF/CSV export (P3 #19)
+- [x] Supplier due diligence — deterministic questionnaires, npm/PyPI/crates.io enrichment, CSV export (P3 #19)
 - [x] Compliance gap narrator — deterministic gap analysis, prioritised action list, Next Steps card (P3 #20)
 - [x] Copilot usage dashboard — org billing, admin billing, product widget, token counts + cost (P3 #27)
-- [x] Pro plan + admin-configurable pricing — Standard (€6/contributor) + Pro (€9/product + €6/contributor), Stripe auto-prices
+- [x] Pro plan + admin-configurable pricing — Standard (€6/contributor) + Pro (€9/product + €6/contributor)
 - [x] AI Copilot cost protection — per-org token budget, per-endpoint rate limits, response caching
 - [x] Pro plan feature gating — API keys, CI/CD, marketplace behind Pro tier
 
 ---
 
-## Phase 4: Public API & External Integrations (In Progress — 5/7 done)
+## Phase 4: Public API & External Integrations (6/7 Done)
 
 - [x] Public API with API key auth — `api_keys` table, SHA-256 hashed, 4 read-only scopes, v1 routes (P4 #28)
 - [x] CI/CD compliance gate — configurable threshold, bash gate script, GitHub Actions/GitLab CI/generic examples (P4 #22)
-- [x] Trello task creation — per-product board mapping, 4 event types, dedup, card resolution (P5 #26)
-- [x] MCP API server — 5 tools (list_products, get_vulnerabilities, get_mitigation, verify_fix, get_compliance_status), 12+ ecosystems, SBOM rescan validation (P4 #14)
-- [x] IDE compliance assistant — VS Code/Cursor integration via MCP, in-app setup wizard on Integrations page (P4 #21)
-- [ ] GRC/audit tool bridge — Vanta, Drata, OneTrust integration (P4 #23) — PARKED
-- [ ] Chat ops integration — Slack/Teams bot for compliance queries (P4 #24) — PARKED
-- [ ] Slack notifications — Push alerts to Slack channels (P4 #25) — PARKED
+- [x] Trello task creation — per-product board mapping, 4 event types, dedup, card resolution (P4 #26)
+- [x] MCP API server — 5 tools, 12+ ecosystems, SBOM rescan validation (P4 #14)
+- [x] IDE compliance assistant — VS Code/Cursor integration via MCP, in-app setup wizard (P4 #21)
+- [x] GRC/audit tool bridge — OSCAL 1.1.2 export (catalog, profile, assessment-results, component-definition) (P4 #23)
+- [ ] Chat ops / Slack notifications (P4 #24/#25) — PARKED for post-launch
 
 ---
 
-## Phase 5: Supplier Marketplace (Not Started)
+## Phase 5: Supplier Marketplace (Not Started — Post-Launch)
 
-Viral growth loop — manufacturers invite suppliers, suppliers publish verified compliance profiles.
-
-- [ ] Supplier invitation flow — questionnaire includes CRANIS2 invite link, pre-filled signup (#28)
-- [ ] Supplier compliance profile — public CRA compliance card per package (#29)
-- [ ] Auto-resolution of due diligence — profile data auto-answers questionnaires (#30)
-- [ ] Marketplace directory — public searchable directory with "Verified on CRANIS2" badge (#31)
-- [ ] Supplier analytics dashboard — dependency count, pending questionnaires, readiness score (#32)
-- [ ] Supplier tier pricing — free basic profile, premium verified tier (#33)
-- [ ] Manufacturer trust signals — verified vs unverified indicators on Supply Chain tab (#34)
+- [ ] Supplier invitation flow (#28)
+- [ ] Supplier compliance profile (#29)
+- [ ] Auto-resolution of due diligence (#30)
+- [ ] Marketplace directory (#31)
+- [ ] Supplier analytics dashboard (#32)
+- [ ] Supplier tier pricing (#33)
+- [ ] Manufacturer trust signals (#34)
 
 ---
 
-## Bugs
+## P6: Compliance Document Library (Complete)
+
+- [x] Template download page (#35)
+- [x] Auto-populated templates (#36)
+- [x] Full template library — 7 templates (#37)
+
+---
+
+## P7: AI & Codebase Quality (Complete)
+
+- [x] AI CoPilot prompt engineering — 3-layer architecture, 32 prompts, quality standard (#38)
+- [x] Automation wizards — Batch Fill, Post-Scan Triage, Onboarding (#39)
+- [x] Codebase modularity refactor (#40)
+- [x] Welcome page, user docs, FAQ update (#41)
+
+---
+
+## P8: 10-Year Compliance Vault (Complete)
+
+- [x] Compliance snapshot generator + RFC 3161 timestamping (Phases A–B)
+- [x] Ed25519 document signing (Phase C)
+- [x] Retention reserve ledger + funding certificates (Phase D)
+- [x] Storage lifecycle controls — grace period, pending deletion (Phase E)
+- [x] Event-triggered snapshots (Phase F)
+- [x] Admin retention dashboard with funding run + auto-extend (Phase G)
+
+---
+
+## P9: Public Conformity Assessments (Complete)
+
+- [x] CRA Conformity Assessment — 12-question public tool
+- [x] NIS2 Readiness Assessment — 25-question public tool
+- [x] Assessment landing page + launch list subscription
+
+---
+
+## P9 Growth Funnels (5/12 Done)
+
+- [x] #45 Importer/distributor obligation workflows — role-aware engine, compliance checklist, public assessment
+- [x] #46 Post-market monitoring & field issue tracking — CRUD, corrective actions, obligation wiring, surveillance report
+- [x] #47 Conformity assessment module selector
+- [x] #50 NIS2 entity classifier & obligation tracker
+- [x] #53 Cryptographic standards & quantum readiness inventory — scanner, PQC assessment, obligation wiring
+- [ ] #48 Notified body directory & assessment tracking
+- [ ] #49 Market surveillance registration (Art. 20)
+- [ ] #51 Supply chain risk assessment (NIS2 Art. 21)
+- [ ] #52 Internal incident lifecycle management
+- [ ] #54 End-of-life notification to downstream users
+- [ ] #55 EU Authorised Representative workflows (Art. 15)
+- [ ] #56 Non-compliance reporting to authorities (Art. 19)
+
+---
+
+## Standalone Features (Complete)
+
+- [x] #45 PDF to Markdown migration — pdfkit removed, all exports now Markdown
+- [x] #57 Platform Analytics Dashboard — admin-only KPIs, growth, revenue, market intel, assessments
+
+---
+
+## Bugs (All Fixed)
 
 - [x] All Organisations → Actions button does nothing (#27)
 - [x] ENISA Reporting → Cancel button does nothing (#28)
-- [x] Products & Compliance → CRA category mismatch (class_i/class_ii vs important_i/important_ii/critical) (#29)
+- [x] Products & Compliance → CRA category mismatch (#29)
 
 ---
 
 ## Cross-cutting (Complete)
 
-- [x] Welcome page pricing overhaul — enhanced feature lists, vertical layout, €9 Pro price
-- [x] Admin org management — change plan, extend trial, delete organisations
-- [x] CSIRT country tracking — organisation-level, auto-populates ENISA reports
-- [x] Full route test coverage — 33/33 routes tested, 1126+ backend tests
+- [x] Welcome page pricing overhaul
+- [x] Admin org management
+- [x] CSIRT country tracking
+- [x] CRA Action Plan guided workflow
+- [x] Product lifecycle stage + lifecycle-aware readiness
+- [x] Test infrastructure fix + nightly runner + Trello notifications
+- [x] CoPilot quality standard + 3-layer prompt architecture + admin prompt editor
+- [x] Editorial standard (docs/EDITORIAL-STANDARD.md) + full codebase sweep
+- [x] Forgejo test infrastructure fix (15 previously-expected failures now pass)
 
 ---
 
@@ -92,8 +154,8 @@ Viral growth loop — manufacturers invite suppliers, suppliers publish verified
 
 ---
 
-## Notes
+## Test Suite
 
-- 1126+ backend tests (65 files), ~280 E2E tests
-- All P0–P3 work shipped and tested
-- Immediate next: production deployment prep (remaining P4 items parked)
+- **Backend (Vitest):** ~1,497 tests (84 files), ~1,496 pass, 1 expected failure (category-recommendation needs Anthropic API)
+- **E2E (Playwright):** ~280 tests
+- **Nightly runner:** cron at 22:00 CEST, 14-day log retention, Trello notifications

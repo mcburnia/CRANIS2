@@ -317,8 +317,10 @@ cd ~/CRANIS2/e2e && npm run push-results
           index.ts         ← Composes sub-routers
           dashboard.ts, orgs.ts, users.ts, audit-log.ts, system.ts, vuln-scan.ts, copilot.ts, utils.ts
         docs.ts            ← Public + admin documentation page CRUD
+        field-issues.ts    ← Post-market monitoring (field issues + corrective actions CRUD + export)
+        crypto-inventory.ts ← Cryptographic standards inventory (scan, findings, summary)
         dev.ts             ← Dev-only routes (nuke button — MUST REMOVE BEFORE PRODUCTION)
-marketplace.ts     ← Marketplace endpoints (listings, profile, contact, admin)
+        marketplace.ts     ← Marketplace endpoints (listings, profile, contact, admin)
       db/
         pool.ts            ← Postgres pool + schema init (all tables including vuln_db_* and CPE index)
         neo4j.ts           ← Neo4j driver + graph schema init (constraints/indexes)
@@ -330,8 +332,10 @@ marketplace.ts     ← Marketplace endpoints (listings, profile, contact, admin)
         scheduler.ts       ← Daily scheduler (vuln DB sync 1 AM, SBOM sync 2 AM, vuln scan 3 AM)
         vulnerability-scanner.ts ← Platform-wide CVE scanner (local Postgres DB with CPE matching, deduplication)
         vuln-db-sync.ts    ← Local vulnerability database sync (OSV.dev + NVD feeds → Postgres, CPE index rebuild)
-marketplace.ts     ← Compliance badge computation for marketplace profiles
+        marketplace.ts     ← Compliance badge computation for marketplace profiles
         license-compatibility.ts ← License compatibility rules engine (distribution model + FSF conflicts)
+        crypto-scanner.ts  ← Cryptographic algorithm scanner service
+        obligation-engine.ts ← 35-obligation CRA engine (manufacturer, importer, distributor)
       middleware/
         requirePlatformAdmin.ts ← Platform admin auth middleware (JWT + DB check)
       utils/
@@ -1091,13 +1095,16 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-14 (session 48)
+**Last updated:** 2026-03-14 (session 49)
 
-**Completed:**
+**Recently completed:**
+- **Post-market monitoring & field issue tracking (#46)** — Full CRA Art. 13(2)/13(9) post-market surveillance. 4 phases: `field_issues` + `corrective_actions` tables with full CRUD API (A), `FieldIssuesTab` frontend component (B), corrective action tracking + obligation engine wiring for `art_13_6`/`art_13_9` (C), surveillance report export + dashboard/analytics integration (D). 33 tests.
 - **Cryptographic Standards & Quantum Readiness Inventory (#53)** — 4-phase feature. Phase A: backend crypto library registry (37 algorithms classified as broken/quantum-vulnerable/quantum-safe), scanner service, API endpoints (scan, findings, summary). Phase B: CryptoInventoryTab in product detail page with scan trigger, findings table, posture summary. Phase C: public PQC Readiness Assessment at `/pqc-readiness-assessment` on welcome site (18 questions, 6 sections covering asymmetric crypto, symmetric/hashing, key management, cryptographic agility, data sensitivity, migration planning; 4 readiness levels; email report; CRANIS2 CTA). Phase D: crypto scan results wired into obligation engine derivations (art_13_3 and annex_i_part_i), PQC assessment + crypto health metrics in admin analytics, crypto posture in dashboard product enrichment.
 - **Importer/distributor obligation workflows (#45)** — Role-aware obligation engine (35 obligations: 19 manufacturer, 10 importer, 6 distributor), compliance checklist with role-specific steps, technical file guidance for importers/distributors, public importer assessment at `/importer-assessment` on welcome site, admin analytics for assessment completions. 4 phases (A–D).
-- **Forgejo test infrastructure fix** — Resolved 15 previously-expected test failures. Fixed `sbom_source` VARCHAR(50) overflow (widened to 255), dual-secret HMAC webhook verification (Forgejo sends GitHub-compatible headers), Forgejo `ALLOWED_HOST_LIST` for Docker-internal webhook delivery, backend_test `FRONTEND_URL` changed to Docker DNS name. **Total: ~1,447 tests pass, 1 expected failure (category-recommendation needs Anthropic API).**
-- **Platform Analytics Dashboard (#57)** — Admin-only analytics page at `/admin/analytics`. Backend endpoint queries both Postgres and Neo4j for: KPI snapshot (total users, orgs, products, connected repos, active users 7d/30d, billable contributors, launch subscribers), growth metrics (weekly signups 26 weeks, cumulative users by month), revenue breakdown (MRR, by plan, by billing status), market intelligence (countries, industries, CRA operator roles, company sizes — all from Neo4j Organisation nodes), and assessment completions (CRA + NIS2 totals, category/entity-class breakdowns, weekly trends). Frontend: KPI stat cards, Recharts bar/line/pie charts, data tables, responsive grid layout. 10 new tests. **Total: ~1,450 backend tests passing (82 files).**
+- **Forgejo test infrastructure fix** — Resolved 15 previously-expected test failures. Fixed `sbom_source` VARCHAR(50) overflow (widened to 255), dual-secret HMAC webhook verification (Forgejo sends GitHub-compatible headers), Forgejo `ALLOWED_HOST_LIST` for Docker-internal webhook delivery, backend_test `FRONTEND_URL` changed to Docker DNS name.
+- **Platform Analytics Dashboard (#57)** — Admin-only analytics page at `/admin/analytics`. KPI snapshot, growth metrics, revenue breakdown, market intelligence, assessment completions. Recharts charts + data tables.
+
+**Test suite:** ~1,497 tests (84 files), ~1,496 pass, 1 expected failure (category-recommendation needs Anthropic API).
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
 - Assistant operating protocol formalised in `Workflow Rules` (propose-first flow, test gates, push handoff, British English)
 - **CLAUDE.md created** — project-level instructions file (auto-loaded by Claude Code each session); contains operating protocol, environment notes, NGINX gotchas, port map
@@ -1397,7 +1404,7 @@ sudo systemctl restart cloudflared
   - **P3:** 3 new user journey integration tests (44 tests): onboarding journey, compliance package assembly, role-specific obligations.
   - **P4:** 4 new endpoint coverage test files (45 tests): retention ledger, admin vuln scan, snapshot schedule, document templates.
   - **P5:** Lockfile parser unit tests (43 tests) covering all 28 parsers with sample input, registry integrity, dispatcher routing, deduplication, error handling.
-  - **Total:** ~207 new backend tests added across 14 new/expanded test files. Full suite: ~1,395 tests (81 files), ~1,379 pass, 16 expected infra-dependent failures.
+  - **Total:** ~207 new backend tests added across 14 new/expanded test files. Full suite (after subsequent features): ~1,497 tests (84 files), ~1,496 pass, 1 expected failure (category-recommendation needs Anthropic API).
 
 - **Post-market monitoring & field issue tracking (#46)** — Full CRA Art. 13(2)/13(9) post-market surveillance. 4 phases:
   - **Phase A:** `field_issues` table, full CRUD API (list with filter, summary, single, create, update, delete), 30 integration tests.
