@@ -121,6 +121,7 @@ function assessmentLandingPage() {
   .card-tag.cra { background: #f5f3ff; color: #7c3aed; }
   .card-tag.nis2 { background: #eff6ff; color: #2563eb; }
   .card-tag.pqc { background: #fef3c7; color: #92400e; }
+  .card-tag.dir { background: #e0e7ff; color: #3730a3; }
   .card h2 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px; }
   .card p { font-size: 14px; color: #6b7280; line-height: 1.6; margin-bottom: 16px; }
   .card-meta { display: flex; gap: 20px; font-size: 12px; color: #9ca3af; }
@@ -188,6 +189,18 @@ function assessmentLandingPage() {
         <span>\u23F1 ~8 minutes</span>
         <span>\u2709 18 questions</span>
         <span>\u2728 6 areas assessed</span>
+      </div>
+      <div class="card-arrow">\u2192</div>
+    </a>
+
+    <a href="/notified-body-directory" class="card">
+      <span class="card-tag dir">Directory</span>
+      <h2>EU Notified Body Directory</h2>
+      <p>Find EU-designated conformity assessment bodies for the Cyber Resilience Act. Search by country, accredited module (B, C, H), and sector. Includes a decision tool to determine which conformity assessment module your product requires.</p>
+      <div class="card-meta">
+        <span>\uD83C\uDDEA\uD83C\uDDFA 12 countries</span>
+        <span>\uD83C\uDFE2 16 bodies</span>
+        <span>\uD83D\uDD0D Searchable</span>
       </div>
       <div class="card-arrow">\u2192</div>
     </a>
