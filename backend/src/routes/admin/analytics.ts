@@ -300,6 +300,44 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
       // crypto_scans table may not exist in test DB
     }
 
+    // --- Field issues health ---
+    let fieldIssueHealth = { total: 0, open: 0, resolved: 0, critical: 0, avgResolutionDays: null as number | null, byWeek: [] as { week: string; opened: number; resolved: number }[] };
+    try {
+      const fiTotals = await pool.query(`
+        SELECT
+          COUNT(*) AS total,
+          COUNT(*) FILTER (WHERE status IN ('open', 'investigating')) AS open,
+          COUNT(*) FILTER (WHERE status IN ('resolved', 'closed')) AS resolved,
+          COUNT(*) FILTER (WHERE severity = 'critical') AS critical,
+          AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 86400)
+            FILTER (WHERE resolved_at IS NOT NULL) AS avg_days
+        FROM field_issues
+      `);
+      const fi = fiTotals.rows[0];
+      fieldIssueHealth.total = toInt(fi?.total);
+      fieldIssueHealth.open = toInt(fi?.open);
+      fieldIssueHealth.resolved = toInt(fi?.resolved);
+      fieldIssueHealth.critical = toInt(fi?.critical);
+      fieldIssueHealth.avgResolutionDays = fi?.avg_days ? parseFloat(parseFloat(fi.avg_days).toFixed(1)) : null;
+
+      const fiByWeek = await pool.query(`
+        SELECT
+          date_trunc('week', created_at)::date AS week,
+          COUNT(*) AS opened,
+          COUNT(*) FILTER (WHERE resolved_at IS NOT NULL) AS resolved
+        FROM field_issues
+        WHERE created_at > NOW() - INTERVAL '12 weeks'
+        GROUP BY week ORDER BY week
+      `);
+      fieldIssueHealth.byWeek = fiByWeek.rows.map(r => ({
+        week: r.week,
+        opened: toInt(r.opened),
+        resolved: toInt(r.resolved),
+      }));
+    } catch {
+      // field_issues table may not exist
+    }
+
     // --- Total users ---
     const totalUsersResult = await pool.query(`SELECT COUNT(*) AS cnt FROM users`);
     const totalUsers = toInt(totalUsersResult.rows[0]?.cnt);
@@ -338,6 +376,7 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
         pqc: pqcAssessments,
       },
       cryptoHealth,
+      fieldIssueHealth,
     });
   } catch (err) {
     console.error('Admin analytics error:', err);

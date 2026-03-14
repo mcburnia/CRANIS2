@@ -295,13 +295,34 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       }
     }
 
-    // Enrich products with risk + readiness + support status + crypto data
+    // Field issues per product
+    let fieldIssueMap: Record<string, { total: number; open: number; critical: number }> = {};
+    if (productIds.length > 0) {
+      const fiResult = await pool.query(
+        `SELECT product_id, COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE status IN ('open', 'investigating')) AS open,
+                COUNT(*) FILTER (WHERE severity = 'critical') AS critical
+         FROM field_issues WHERE product_id = ANY($1) AND org_id = $2
+         GROUP BY product_id`,
+        [productIds, orgId]
+      );
+      for (const row of fiResult.rows) {
+        fieldIssueMap[row.product_id] = {
+          total: parseInt(row.total),
+          open: parseInt(row.open),
+          critical: parseInt(row.critical),
+        };
+      }
+    }
+
+    // Enrich products with risk + readiness + support status + crypto + field issues
     const finalProducts = enrichedProducts.map(p => ({
       ...p,
       riskFindings: productRiskMap[p.id] || { total: 0, critical: 0, high: 0, open: 0 },
       craReadiness: readinessMap[p.id] || { met: 0, total: 0, readiness: 0 },
       supportStatus: computeSupportStatus(supportEndMap[p.id] || null),
       cryptoPosture: cryptoPostureMap[p.id] || null,
+      fieldIssues: fieldIssueMap[p.id] || { total: 0, open: 0, critical: 0 },
     }));
 
     res.json({

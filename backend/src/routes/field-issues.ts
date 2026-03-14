@@ -6,6 +6,7 @@
  *
  * GET    /:productId/field-issues              – List field issues (filterable)
  * GET    /:productId/field-issues/summary       – Aggregated counts
+ * GET    /:productId/field-issues/export        – Post-market surveillance report (Markdown)
  * GET    /:productId/field-issues/:issueId      – Single issue detail
  * POST   /:productId/field-issues               – Create a new field issue
  * PUT    /:productId/field-issues/:issueId      – Update a field issue
@@ -169,6 +170,149 @@ router.get(
     } catch (err: any) {
       console.error(`[FIELD-ISSUES] Summary error: ${err.message}`);
       res.status(500).json({ error: 'Failed to fetch field issue summary' });
+    }
+  }
+);
+
+// ─── GET /:productId/field-issues/export — Post-market surveillance report ──
+
+router.get(
+  '/:productId/field-issues/export',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { productId } = req.params as { productId: string };
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+      if (!(await verifyProductAccess(orgId, productId))) return res.status(404).json({ error: 'Product not found' });
+
+      // Fetch product name from Neo4j
+      const neoSession = getDriver().session();
+      let productName = productId;
+      try {
+        const pResult = await neoSession.run(
+          'MATCH (p:Product {id: $productId}) RETURN p.name AS name',
+          { productId }
+        );
+        productName = pResult.records[0]?.get('name') || productId;
+      } finally {
+        await neoSession.close();
+      }
+
+      // Fetch all issues with corrective actions
+      const issuesResult = await pool.query(
+        `SELECT fi.*, u.email AS reporter_email
+         FROM field_issues fi
+         LEFT JOIN users u ON fi.reported_by = u.id
+         WHERE fi.product_id = $1 AND fi.org_id = $2
+         ORDER BY fi.created_at DESC`,
+        [productId, orgId]
+      );
+
+      const actionsResult = await pool.query(
+        `SELECT * FROM corrective_actions
+         WHERE product_id = $1 AND org_id = $2
+         ORDER BY created_at ASC`,
+        [productId, orgId]
+      );
+
+      // Summary stats
+      const summaryResult = await pool.query(
+        `SELECT
+           COUNT(*) AS total,
+           COUNT(*) FILTER (WHERE status IN ('open', 'investigating')) AS open,
+           COUNT(*) FILTER (WHERE status IN ('resolved', 'closed')) AS resolved,
+           COUNT(*) FILTER (WHERE severity = 'critical') AS critical,
+           COUNT(*) FILTER (WHERE severity = 'high') AS high,
+           AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 86400)
+             FILTER (WHERE resolved_at IS NOT NULL) AS avg_days
+         FROM field_issues WHERE product_id = $1 AND org_id = $2`,
+        [productId, orgId]
+      );
+
+      const stats = summaryResult.rows[0];
+      const issues = issuesResult.rows;
+      const actionsByIssue: Record<string, any[]> = {};
+      for (const a of actionsResult.rows) {
+        if (!actionsByIssue[a.field_issue_id]) actionsByIssue[a.field_issue_id] = [];
+        actionsByIssue[a.field_issue_id].push(a);
+      }
+
+      // Generate Markdown report
+      const now = new Date().toISOString().slice(0, 10);
+      const lines: string[] = [
+        `# Post-Market Surveillance Report`,
+        ``,
+        `**Product:** ${productName}  `,
+        `**Generated:** ${now}  `,
+        `**CRA Reference:** Article 13(2), Article 13(9)`,
+        ``,
+        `---`,
+        ``,
+        `## Summary`,
+        ``,
+        `| Metric | Value |`,
+        `|--------|-------|`,
+        `| Total field issues | ${parseInt(stats.total)} |`,
+        `| Open / Investigating | ${parseInt(stats.open)} |`,
+        `| Resolved / Closed | ${parseInt(stats.resolved)} |`,
+        `| Critical severity | ${parseInt(stats.critical)} |`,
+        `| High severity | ${parseInt(stats.high)} |`,
+        `| Avg. resolution time | ${stats.avg_days ? parseFloat(parseFloat(stats.avg_days).toFixed(1)) + ' days' : 'N/A'} |`,
+        ``,
+      ];
+
+      if (issues.length === 0) {
+        lines.push(`No field issues have been recorded for this product.`);
+      } else {
+        lines.push(`## Field Issues`, ``);
+        for (const issue of issues) {
+          const sevLabel = issue.severity.charAt(0).toUpperCase() + issue.severity.slice(1);
+          const statusLabel = issue.status.replace(/_/g, ' ');
+          lines.push(`### ${issue.title}`);
+          lines.push(``);
+          lines.push(`- **Severity:** ${sevLabel}`);
+          lines.push(`- **Status:** ${statusLabel}`);
+          lines.push(`- **Source:** ${issue.source.replace(/_/g, ' ')}`);
+          lines.push(`- **Reported:** ${issue.created_at?.toISOString?.()?.slice(0, 10) || String(issue.created_at).slice(0, 10)}`);
+          if (issue.affected_versions) lines.push(`- **Affected versions:** ${issue.affected_versions}`);
+          if (issue.fixed_in_version) lines.push(`- **Fixed in:** ${issue.fixed_in_version}`);
+          if (issue.resolved_at) lines.push(`- **Resolved:** ${String(issue.resolved_at).slice(0, 10)}`);
+          if (issue.reporter_email) lines.push(`- **Reporter:** ${issue.reporter_email}`);
+          lines.push(``);
+          if (issue.description) {
+            lines.push(issue.description, ``);
+          }
+          if (issue.resolution) {
+            lines.push(`**Resolution:** ${issue.resolution}`, ``);
+          }
+
+          // Corrective actions
+          const actions = actionsByIssue[issue.id];
+          if (actions && actions.length > 0) {
+            lines.push(`**Corrective Actions:**`, ``);
+            for (const a of actions) {
+              const aStatus = a.status.replace(/_/g, ' ');
+              lines.push(`- [${aStatus}] ${a.description}${a.version_released ? ` (v${a.version_released})` : ''}`);
+            }
+            lines.push(``);
+          }
+
+          lines.push(`---`, ``);
+        }
+      }
+
+      lines.push(``, `*Report generated by CRANIS2 — EU Cyber Resilience Act compliance platform.*`);
+
+      const markdown = lines.join('\n');
+      const filename = `post-market-surveillance-${productName.replace(/[^a-zA-Z0-9-_]/g, '_')}-${now}.md`;
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(markdown);
+    } catch (err: any) {
+      console.error(`[FIELD-ISSUES] Export error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to generate surveillance report' });
     }
   }
 );

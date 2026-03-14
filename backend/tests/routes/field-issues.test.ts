@@ -356,6 +356,40 @@ describe('Delete field issue', () => {
   });
 });
 
+// ─── Export ─────────────────────────────────────────────────────────
+
+describe('Post-market surveillance export', () => {
+  it('returns a Markdown report', async () => {
+    // Create an issue so export has content
+    await api.post(`/api/products/${PRODUCT_ID}/field-issues`, {
+      auth: token,
+      body: { title: 'Export test issue', severity: 'high', source: 'customer_report' },
+    });
+
+    const res = await api.get(`/api/products/${PRODUCT_ID}/field-issues/export`, {
+      auth: token,
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('text/markdown');
+    expect(res.headers.get('content-disposition')).toContain('attachment');
+    expect(res.body).toContain('# Post-Market Surveillance Report');
+    expect(res.body).toContain('Article 13(2)');
+    expect(res.body).toContain('Export test issue');
+  });
+
+  it('rejects unauthenticated export', async () => {
+    const res = await api.get(`/api/products/${PRODUCT_ID}/field-issues/export`);
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects export for another org product', async () => {
+    const res = await api.get(`/api/products/${OTHER_PRODUCT_ID}/field-issues/export`, {
+      auth: token,
+    });
+    expect(res.status).toBe(404);
+  });
+});
+
 // ─── Cross-org isolation ─────────────────────────────────────────────
 
 describe('Cross-org isolation', () => {
