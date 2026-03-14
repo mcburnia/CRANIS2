@@ -1089,9 +1089,10 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-13 (session 42)
+**Last updated:** 2026-03-14 (session 46)
 
 **Completed:**
+- **Platform Analytics Dashboard (#57)** — Admin-only analytics page at `/admin/analytics`. Backend endpoint queries both Postgres and Neo4j for: KPI snapshot (total users, orgs, products, connected repos, active users 7d/30d, billable contributors, launch subscribers), growth metrics (weekly signups 26 weeks, cumulative users by month), revenue breakdown (MRR, by plan, by billing status), market intelligence (countries, industries, CRA operator roles, company sizes — all from Neo4j Organisation nodes), and assessment completions (CRA + NIS2 totals, category/entity-class breakdowns, weekly trends). Frontend: KPI stat cards, Recharts bar/line/pie charts, data tables, responsive grid layout. 10 new tests. **Total: ~1,450 backend tests passing (82 files).**
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
 - Assistant operating protocol formalised in `Workflow Rules` (propose-first flow, test gates, push handoff, British English)
 - **CLAUDE.md created** — project-level instructions file (auto-loaded by Claude Code each session); contains operating protocol, environment notes, NGINX gotchas, port map

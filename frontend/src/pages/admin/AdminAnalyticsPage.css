@@ -1,0 +1,153 @@
+.admin-analytics {
+  max-width: 1200px;
+}
+
+.aa-loading {
+  display: flex;
+  justify-content: center;
+  padding: 4rem;
+}
+
+.aa-spinner {
+  color: var(--purple);
+  animation: spin 1s linear infinite;
+}
+
+.aa-error {
+  background: var(--surface);
+  border: 1px solid var(--red);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  color: var(--red);
+}
+
+/* KPI cards row */
+.aa-kpi-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Charts row */
+.aa-charts-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Shared card */
+.aa-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.aa-card.aa-full-width {
+  grid-column: 1 / -1;
+}
+
+.aa-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.aa-card-header h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.aa-card-body {
+  padding: 1.25rem;
+}
+
+/* Tables inside cards */
+.aa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.aa-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.aa-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.aa-table tr:last-child td {
+  border-bottom: none;
+}
+
+.aa-table .aa-num {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Metric rows (billing breakdown etc.) */
+.aa-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+}
+
+.aa-metric-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.aa-metric-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.aa-purple { color: var(--purple); }
+.aa-green { color: var(--green); }
+.aa-amber { color: var(--amber); }
+
+/* Empty data */
+.aa-empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 1rem 0;
+  text-align: center;
+}
+
+/* Recharts tooltip */
+.aa-tooltip {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+@media (max-width: 768px) {
+  .aa-kpi-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .aa-charts-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -251,4 +251,5 @@ export const ADMIN_PAGE_TITLES: Record<string, string> = {
   '/admin/feedback': 'Admin – User Feedback',
   '/admin/billing': 'Admin – Billing',
   '/admin/test-results': 'Admin – Test Results',
+  '/admin/analytics': 'Admin – Platform Analytics',
 };

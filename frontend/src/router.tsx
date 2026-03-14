@@ -62,6 +62,7 @@ import AdminStrategyPage from "./pages/admin/AdminStrategyPage";
 import AdminCategoryRulesPage from "./pages/admin/AdminCategoryRulesPage";
 import AdminCopilotPage from "./pages/admin/AdminCopilotPage";
 import AdminRetentionPage from "./pages/admin/AdminRetentionPage";
+import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 
 const router = createBrowserRouter([
   {
@@ -145,6 +146,7 @@ const router = createBrowserRouter([
           { path: '/admin/category-rules', element: <AdminCategoryRulesPage /> },
           { path: '/admin/copilot', element: <AdminCopilotPage /> },
           { path: '/admin/retention', element: <AdminRetentionPage /> },
+          { path: '/admin/analytics', element: <AdminAnalyticsPage /> },
         ],
       },
 
