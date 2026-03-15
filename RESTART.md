@@ -1443,7 +1443,15 @@ sudo systemctl restart cloudflared
   - **Phase C:** Product-scoped assessment tracking. `notified_body_assessments` table, CRUD endpoints on `/api/products/:productId/nb-assessment`. Assessment tracker card on product OverviewTab for Important II/Critical products. Obligation engine wiring: `art_32_3` derived from assessment status. 18 tests.
   - **Phase D:** Platform-wide integration. Compliance checklist gains NB assessment step (step 7) for Important II/Critical products, pushing compliance package to step 8. Dashboard product table and heat map gain NB Assessment column with status badges. Admin analytics gains `nbAssessments` section (total, by status, by module). 7 new tests.
 
+- **Market Surveillance Registration (#49)** — Full 4-phase feature (CRA Art. 20):
+  - **Phase A:** Backend registry of 20 EU market surveillance authorities across 16 countries. `market_surveillance_authorities` table (name, country, competence areas, CRA designation, contact portal URL), public API (list with filters, country summary, single detail), admin CRUD, idempotent seed at startup. `market_surveillance_registrations` table (org-scoped, per-product, status workflow: planning → preparing → submitted → acknowledged → registered/rejected). Product-scoped CRUD endpoints on `/api/products/:productId/ms-registration`. 38 tests.
+  - **Phase B:** Public "Do I need to register?" decision tree at `/market-surveillance-registration` on the welcome site. 3-step interactive tool (product type → role → CRA category) with tailored results. Searchable authority directory filtered to CRA-designated bodies. Registration package checklist. Cross-links from assessment landing page, welcome homepage, and notified body directory.
+  - **Phase C:** Obligation engine wiring — `art_20` derivation upgraded from static "in_progress" to full status mapping (registered → met, submitted/acknowledged → in_progress, planning/preparing → in_progress, rejected → not_met, no record → not_met). Market Surveillance Registration tracker card on product OverviewTab for critical products (authority picker, status management, registration number, renewal date). 2 new obligation engine tests.
+  - **Phase D:** Platform-wide integration. Compliance checklist gains "Register with market surveillance authority" step for critical products (dynamic step numbering). Dashboard product table and heat map gain conditional MS Registration column. Admin analytics gains `msRegistrations` section (total, by status, by country).
+
+- **OverviewTab decomposition** — Extracted `NbAssessmentCard.tsx` (197 lines) and `MsRegistrationCard.tsx` (198 lines) from `OverviewTab.tsx`, reducing it from 967 to 595 lines.
+
 **Next Steps:**
 - Production deployment planning (Infomaniak hosting, cranis2.com)
-- P9 growth funnels — remaining items (#49 market surveillance registration, #51 supply chain risk assessment, #52 internal incident lifecycle, #54 end-of-life notification, #55 EU authorised representative, #56 non-compliance reporting)
+- P9 growth funnels — remaining items (#51 supply chain risk assessment, #52 internal incident lifecycle, #54 end-of-life notification, #55 EU authorised representative, #56 non-compliance reporting)
 - P5 — Supplier marketplace (post-launch)

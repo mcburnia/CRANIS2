@@ -104,12 +104,15 @@ Cross-cutting (done)
 **#57 Platform Analytics Dashboard:** DONE (admin-only KPI cards, growth charts, revenue breakdown, market intelligence, assessment completions)
 **Cross-cutting:** Editorial standard established and applied across entire codebase (frontend, backend, docs, welcome site)
 
-**P9 Growth Funnels:** 5/12 DONE (#45, #46, #47, #50, #53), 7 remaining (#48, #49, #51, #52, #54, #55, #56)
+**#48 Notified body directory:** DONE (registry of 16 EU bodies, public directory on welcome site, product-scoped assessment tracking, obligation engine wiring for art_32_3, compliance checklist/dashboard/analytics integration)
+**#49 Market surveillance registration:** DONE (registry of 20 EU authorities across 16 countries, public decision tree + authority directory on welcome site, product-scoped registration tracking, obligation engine wiring for art_20, compliance checklist/dashboard/analytics integration)
+
+**P9 Growth Funnels:** 7/12 DONE (#45, #46, #47, #48, #49, #50, #53), 5 remaining (#51, #52, #54, #55, #56)
 
 **Immediate next:**
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
-- P9 growth funnels — remaining items (#48 notified body directory, #49 market surveillance, #51 supply chain risk, #52 incident lifecycle, #54 end-of-life, #55 EU authorised rep, #56 non-compliance reporting)
+- P9 growth funnels — remaining items (#51 supply chain risk, #52 incident lifecycle, #54 end-of-life, #55 EU authorised rep, #56 non-compliance reporting)
 
 ---
 
@@ -314,8 +317,8 @@ At scale (100 customers, 5 products each = 500 products): **~€1,890 total over
 45	Importer/distributor obligation workflows	High	DONE	"Are you importing software into the EU? Check your CRA obligations"
 46	Post-market monitoring & field issue tracking	High	DONE	"Is your product still CRA-compliant after launch?"
 47	Conformity assessment module selector	Medium	DONE	"Which conformity assessment do you need? Free interactive tool"
-48	Notified body directory & assessment tracking	Medium	TODO	"Find your notified body – prepare for third-party assessment"
-49	Market surveillance registration (Art. 20)	Medium	TODO	"Critical product? You must register with market surveillance"
+48	Notified body directory & assessment tracking	Medium	DONE	"Find your notified body – prepare for third-party assessment"
+49	Market surveillance registration (Art. 20)	Medium	DONE	"Critical product? You must register with market surveillance"
 50	NIS2 entity classifier & obligation tracker	High	DONE	"Are you essential or important under NIS2? Free classifier"
 51	Supply chain risk assessment (NIS2 Art. 21)	Medium	TODO	"Map your supply chain risk – beyond individual dependency checks"
 52	Internal incident lifecycle management	Medium	TODO	"Detection → containment → recovery → lessons learned"
@@ -380,15 +383,15 @@ Each feature also generates blog/SEO content:
 3. ~~**#45 Importer/distributor workflows** – DONE~~
 4. ~~**#46 Post-market monitoring** – DONE~~
 5. ~~**#53 Crypto inventory** – DONE~~
-6. **#48 Notified body directory** – Medium effort, valuable resource
-7. **#52 Internal incident lifecycle** – Extends existing ENISA reporting
-8. **#51 Supply chain risk assessment** – Extends existing due diligence
-9. **#49 Market surveillance registration** – Niche but mandatory for critical products
+6. ~~**#48 Notified body directory** – DONE~~
+7. ~~**#49 Market surveillance registration** – DONE~~
+8. **#52 Internal incident lifecycle** – Extends existing ENISA reporting
+9. **#51 Supply chain risk assessment** – Extends existing due diligence
 10. **#54 End-of-life notification** – Low effort, completes existing support period tracking
 11. **#55 EU Authorised Rep** – Niche (non-EU manufacturers only)
 12. **#56 Non-compliance reporting** – Niche, low frequency event
 
-### Status: 5/12 DONE (#45, #46, #47, #50, #53 complete), 7 remaining
+### Status: 7/12 DONE (#45, #46, #47, #48, #49, #50, #53 complete), 5 remaining
 ### Dependencies: #52 extends existing Art. 14 reporting
 ### Estimated effort: Medium (7 remaining items, ~5–8 sessions total)
 

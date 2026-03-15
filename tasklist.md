@@ -100,15 +100,15 @@ All five MVP features are built, tested, and shipped.
 
 ---
 
-## P9 Growth Funnels (5/12 Done)
+## P9 Growth Funnels (7/12 Done)
 
 - [x] #45 Importer/distributor obligation workflows — role-aware engine, compliance checklist, public assessment
 - [x] #46 Post-market monitoring & field issue tracking — CRUD, corrective actions, obligation wiring, surveillance report
 - [x] #47 Conformity assessment module selector
+- [x] #48 Notified body directory & assessment tracking — 16 EU bodies, public directory, product assessment tracking, art_32_3 wiring
+- [x] #49 Market surveillance registration (Art. 20) — 20 EU authorities, public decision tree, product registration tracking, art_20 wiring
 - [x] #50 NIS2 entity classifier & obligation tracker
 - [x] #53 Cryptographic standards & quantum readiness inventory — scanner, PQC assessment, obligation wiring
-- [ ] #48 Notified body directory & assessment tracking
-- [ ] #49 Market surveillance registration (Art. 20)
 - [ ] #51 Supply chain risk assessment (NIS2 Art. 21)
 - [ ] #52 Internal incident lifecycle management
 - [ ] #54 End-of-life notification to downstream users
