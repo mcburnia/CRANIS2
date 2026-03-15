@@ -348,7 +348,27 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       }
     }
 
-    // Enrich products with risk + readiness + support status + crypto + field issues
+    // Incidents per product
+    let incidentMap: Record<string, { total: number; active: number; p1p2: number }> = {};
+    if (productIds.length > 0) {
+      const incResult = await pool.query(
+        `SELECT product_id, COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE phase NOT IN ('closed')) AS active,
+                COUNT(*) FILTER (WHERE severity IN ('P1', 'P2') AND phase NOT IN ('closed')) AS p1p2
+         FROM incidents WHERE product_id = ANY($1) AND org_id = $2
+         GROUP BY product_id`,
+        [productIds, orgId]
+      );
+      for (const row of incResult.rows) {
+        incidentMap[row.product_id] = {
+          total: parseInt(row.total),
+          active: parseInt(row.active),
+          p1p2: parseInt(row.p1p2),
+        };
+      }
+    }
+
+    // Enrich products with risk + readiness + support status + crypto + field issues + incidents
     const finalProducts = enrichedProducts.map(p => ({
       ...p,
       riskFindings: productRiskMap[p.id] || { total: 0, critical: 0, high: 0, open: 0 },
@@ -358,6 +378,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       fieldIssues: fieldIssueMap[p.id] || { total: 0, open: 0, critical: 0 },
       nbAssessment: nbAssessmentMap[p.id] || null,
       msRegistration: msRegistrationMap[p.id] || null,
+      incidents: incidentMap[p.id] || null,
     }));
 
     res.json({

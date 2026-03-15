@@ -24,6 +24,7 @@ interface DashboardProduct {
   supportStatus: { status: string; daysRemaining: number | null; endDate: string | null };
   nbAssessment: { status: string; module: string; certificateNumber: string | null } | null;
   msRegistration: { status: string; registrationNumber: string | null } | null;
+  incidents: { total: number; active: number; p1p2: number } | null;
 }
 
 interface DashboardStats {
@@ -387,6 +388,7 @@ export default function DashboardPage() {
                 <th>Support</th>
                 <th>NB Assessment</th>
                 {products.some(p => p.category === 'critical') && <th>MS Registration</th>}
+                <th>Incidents</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -435,6 +437,14 @@ export default function DashboardPage() {
                         })()}
                       </td>
                     )}
+                    <td>
+                      {(() => {
+                        if (!p.incidents || p.incidents.total === 0) return <span style={{ color: 'var(--muted)' }}>{'\u2014'}</span>;
+                        if (p.incidents.p1p2 > 0) return <span className="badge red">{p.incidents.active} active ({p.incidents.p1p2} P1/P2)</span>;
+                        if (p.incidents.active > 0) return <span className="badge amber">{p.incidents.active} active</span>;
+                        return <span className="badge green">{p.incidents.total} resolved</span>;
+                      })()}
+                    </td>
                     <td><span className={`badge ${status.color}`}>{status.label}</span></td>
                   </tr>
                 );
@@ -520,6 +530,9 @@ export default function DashboardPage() {
 
             const msNeeded = sorted.filter(p => p.category === 'critical' && (!p.msRegistration || p.msRegistration.status !== 'registered'));
             if (msNeeded.length > 0) blockers.push({ icon: Shield, colour: 'amber', text: `${msNeeded.length} critical product${msNeeded.length > 1 ? 's' : ''} awaiting market surveillance registration`, products: msNeeded });
+
+            const activeIncidents = sorted.filter(p => p.incidents && p.incidents.p1p2 > 0);
+            if (activeIncidents.length > 0) blockers.push({ icon: AlertTriangle, colour: 'red', text: `${activeIncidents.length} product${activeIncidents.length > 1 ? 's' : ''} with active P1/P2 incidents`, products: activeIncidents });
 
             return (
               <>

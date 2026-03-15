@@ -414,6 +414,29 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
           return { total: 0, byStatus: [], byCountry: [] };
         }
       })(),
+      incidents: await (async () => {
+        try {
+          const total = await pool.query(`SELECT COUNT(*) AS cnt FROM incidents`);
+          const byPhase = await pool.query(`
+            SELECT phase, COUNT(*) AS cnt FROM incidents GROUP BY phase ORDER BY cnt DESC
+          `);
+          const bySeverity = await pool.query(`
+            SELECT severity, COUNT(*) AS cnt FROM incidents GROUP BY severity ORDER BY cnt DESC
+          `);
+          const avgResolution = await pool.query(`
+            SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - detected_at)) / 3600)::numeric(10,1) AS avg_hours
+            FROM incidents WHERE resolved_at IS NOT NULL
+          `);
+          return {
+            total: toInt(total.rows[0]?.cnt),
+            byPhase: byPhase.rows.map(r => ({ phase: r.phase, count: toInt(r.cnt) })),
+            bySeverity: bySeverity.rows.map(r => ({ severity: r.severity, count: toInt(r.cnt) })),
+            avgResolutionHours: avgResolution.rows[0]?.avg_hours ? parseFloat(avgResolution.rows[0].avg_hours) : null,
+          };
+        } catch {
+          return { total: 0, byPhase: [], bySeverity: [], avgResolutionHours: null };
+        }
+      })(),
     });
   } catch (err) {
     console.error('Admin analytics error:', err);
