@@ -142,4 +142,30 @@ describe('/api/dashboard', () => {
       expect(res.body.products).toHaveLength(0);
     });
   });
+
+  // ─── NB Assessment (Phase D) ───────────────────────────────────────
+
+  describe('NB Assessment', () => {
+    it('should include nbAssessment field on each product', async () => {
+      const token = await loginTestUser(TEST_USERS.mfgAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      for (const product of res.body.products) {
+        expect(product).toHaveProperty('nbAssessment');
+        // nbAssessment is either null or an object with status/module/certificateNumber
+        if (product.nbAssessment !== null) {
+          expect(product.nbAssessment).toHaveProperty('status');
+          expect(product.nbAssessment).toHaveProperty('module');
+          expect(product.nbAssessment).toHaveProperty('certificateNumber');
+        }
+      }
+    });
+
+    it('should return null nbAssessment for empty org', async () => {
+      const token = await loginTestUser(TEST_USERS.emptyAdmin);
+      const res = await api.get('/api/dashboard/summary', { auth: token });
+      expect(res.status).toBe(200);
+      expect(res.body.products).toHaveLength(0);
+    });
+  });
 });

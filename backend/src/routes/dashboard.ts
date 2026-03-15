@@ -295,6 +295,23 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       }
     }
 
+    // NB assessment status per product
+    let nbAssessmentMap: Record<string, { status: string; module: string; certificateNumber: string | null }> = {};
+    if (productIds.length > 0) {
+      const nbResult = await pool.query(
+        `SELECT product_id, status, module, certificate_number
+         FROM notified_body_assessments WHERE org_id = $1 AND product_id = ANY($2)`,
+        [orgId, productIds]
+      );
+      for (const row of nbResult.rows) {
+        nbAssessmentMap[row.product_id] = {
+          status: row.status,
+          module: row.module,
+          certificateNumber: row.certificate_number || null,
+        };
+      }
+    }
+
     // Field issues per product
     let fieldIssueMap: Record<string, { total: number; open: number; critical: number }> = {};
     if (productIds.length > 0) {
@@ -323,6 +340,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       supportStatus: computeSupportStatus(supportEndMap[p.id] || null),
       cryptoPosture: cryptoPostureMap[p.id] || null,
       fieldIssues: fieldIssueMap[p.id] || { total: 0, open: 0, critical: 0 },
+      nbAssessment: nbAssessmentMap[p.id] || null,
     }));
 
     res.json({

@@ -81,6 +81,9 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
   }
 
   // Run all Postgres checks in parallel
+  // Does this product require a notified body assessment?
+  const requiresNb = craCategory === 'important_ii' || craCategory === 'critical';
+
   const [
     sbomResult,
     scanResult,
@@ -88,6 +91,7 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
     techSectionsResult,
     stakeholderResult,
     packageResult,
+    nbAssessmentResult,
   ] = await Promise.all([
     // Step 1: SBOM exists
     pool.query(`SELECT 1 FROM product_sboms WHERE product_id = $1 LIMIT 1`, [productId]),
@@ -120,6 +124,13 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
       `SELECT 1 FROM user_events WHERE event_type = 'due_diligence_exported' AND metadata->>'productId' = $1 LIMIT 1`,
       [productId]
     ),
+    // NB assessment status (only relevant for important_ii/critical)
+    requiresNb
+      ? pool.query(
+          `SELECT status FROM notified_body_assessments WHERE org_id = $1 AND product_id = $2 LIMIT 1`,
+          [orgId, productId]
+        )
+      : Promise.resolve({ rows: [] }),
   ]);
 
   // Process results
@@ -138,6 +149,8 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
   }
 
   const hasPackage = packageResult.rows.length > 0;
+  const nbAssessmentStatus = nbAssessmentResult.rows[0]?.status || null;
+  const hasNbApproved = nbAssessmentStatus === 'approved';
 
   // ── Step completion logic (shared) ──
   const hasCraCategory = !!craCategory;
@@ -336,9 +349,27 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
         actionTab: 'technical-file',
         actionPath: null,
       },
-      {
-        id: 'compliance_package',
+    ];
+
+    // Insert NB assessment step for important_ii/critical products (after DoC, before package)
+    if (requiresNb) {
+      steps.push({
+        id: 'nb_assessment',
         step: 7,
+        title: 'Complete notified body assessment',
+        description: craCategory === 'critical'
+          ? 'Critical products require Module H (full quality assurance) assessment by an EU notified body under CRA Article 32(3).'
+          : 'Important Class II products require Module B+C (EU-type examination + conformity to type) assessment by an EU notified body under CRA Article 32(3).',
+        complete: hasNbApproved,
+        actionLabel: 'Go to Overview',
+        actionTab: 'overview',
+        actionPath: null,
+      });
+    }
+
+    steps.push({
+        id: 'compliance_package',
+        step: requiresNb ? 8 : 7,
         title: 'Download your compliance package',
         description: 'Generate and download the Due Diligence compliance package – a ZIP containing your SBOM, vulnerability summary, technical file, and EU Declaration of Conformity.',
         complete: hasPackage,
@@ -346,7 +377,7 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
         actionTab: null,
         actionPath: '/technical-files',
       },
-    ];
+    );
   }
 
   const stepsComplete = steps.filter(s => s.complete).length;

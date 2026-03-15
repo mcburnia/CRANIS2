@@ -377,6 +377,24 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
       },
       cryptoHealth,
       fieldIssueHealth,
+      nbAssessments: await (async () => {
+        try {
+          const total = await pool.query(`SELECT COUNT(*) AS cnt FROM notified_body_assessments`);
+          const byStatus = await pool.query(`
+            SELECT status, COUNT(*) AS cnt FROM notified_body_assessments GROUP BY status ORDER BY cnt DESC
+          `);
+          const byModule = await pool.query(`
+            SELECT module, COUNT(*) AS cnt FROM notified_body_assessments GROUP BY module ORDER BY cnt DESC
+          `);
+          return {
+            total: toInt(total.rows[0]?.cnt),
+            byStatus: byStatus.rows.map(r => ({ status: r.status, count: toInt(r.cnt) })),
+            byModule: byModule.rows.map(r => ({ module: r.module, count: toInt(r.cnt) })),
+          };
+        } catch {
+          return { total: 0, byStatus: [], byModule: [] };
+        }
+      })(),
     });
   } catch (err) {
     console.error('Admin analytics error:', err);

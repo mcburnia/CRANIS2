@@ -109,4 +109,42 @@ describe('GET /api/products/:productId/compliance-checklist', () => {
     const res = await api.get(`/api/products/${PRODUCT_ID}/compliance-checklist`, { auth: impToken });
     expect(res.status).toBe(404);
   });
+
+  // ─── Notified Body Assessment Step (Phase D) ──────────────────────
+
+  describe('NB assessment step for important_ii products', () => {
+    const CODEBERG_ID = TEST_IDS.products.codeberg; // important_ii
+
+    it('should return 8 steps (including nb_assessment) for important_ii product', async () => {
+      const res = await api.get(`/api/products/${CODEBERG_ID}/compliance-checklist`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      expect(res.body.stepsTotal).toBe(8);
+      expect(res.body.steps.length).toBe(8);
+    });
+
+    it('should include nb_assessment step with correct description', async () => {
+      const res = await api.get(`/api/products/${CODEBERG_ID}/compliance-checklist`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      const nbStep = res.body.steps.find((s: any) => s.id === 'nb_assessment');
+      expect(nbStep).toBeTruthy();
+      expect(nbStep.title).toContain('notified body');
+      expect(nbStep.description).toContain('Module B+C');
+    });
+
+    it('should still return 7 steps for important_i product (no NB required)', async () => {
+      const res = await api.get(`/api/products/${PRODUCT_ID}/compliance-checklist`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      expect(res.body.stepsTotal).toBe(7);
+      const nbStep = res.body.steps.find((s: any) => s.id === 'nb_assessment');
+      expect(nbStep).toBeUndefined();
+    });
+
+    it('should place compliance_package as step 8 for important_ii', async () => {
+      const res = await api.get(`/api/products/${CODEBERG_ID}/compliance-checklist`, { auth: mfgToken });
+      expect(res.status).toBe(200);
+      const pkg = res.body.steps.find((s: any) => s.id === 'compliance_package');
+      expect(pkg).toBeTruthy();
+      expect(pkg.step).toBe(8);
+    });
+  });
 });

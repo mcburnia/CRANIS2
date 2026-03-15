@@ -113,4 +113,16 @@ describe('/api/admin/analytics', () => {
     expect(res.status).toBe(200);
     expect(res.body.revenue.mrrCents).toBeGreaterThanOrEqual(0);
   });
+
+  it('should include nbAssessments section', async () => {
+    const res = await api.get('/api/admin/analytics', { auth: platformToken });
+    expect(res.status).toBe(200);
+
+    const { nbAssessments } = res.body;
+    expect(nbAssessments).toBeDefined();
+    expect(typeof nbAssessments.total).toBe('number');
+    expect(nbAssessments.total).toBeGreaterThanOrEqual(0);
+    expect(Array.isArray(nbAssessments.byStatus)).toBe(true);
+    expect(Array.isArray(nbAssessments.byModule)).toBe(true);
+  });
 });

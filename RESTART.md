@@ -1436,7 +1436,14 @@ sudo systemctl restart cloudflared
   - `welcome/public/index.html` — added 3 new capability cards, 2 new assessment cards, updated obligation count to 35, fixed grid layout.
   - `frontend/src/pages/public/LandingPage.tsx` — updated obligation count, fixed Markdown references, updated plan descriptions.
 
+**Session 50 (2026-03-14 – 2026-03-15):**
+- **Notified Body Directory & Assessment Tracking (#48)** — Full 4-phase feature:
+  - **Phase A:** Backend registry of 16 EU conformity assessment bodies across 12 countries. `notified_bodies` table, public API (list with filters, country summary, single detail), admin CRUD with validation (EU-27/EEA countries, CRA modules B/C/H). Idempotent seed at startup. 29 tests.
+  - **Phase B:** Public notified body directory page at `/notified-body-directory` on the welcome site. Interactive "Which module do I need?" decision tool, country/module/sector/search filters, body cards with flags and badges. Linked from assessment landing page and welcome homepage.
+  - **Phase C:** Product-scoped assessment tracking. `notified_body_assessments` table, CRUD endpoints on `/api/products/:productId/nb-assessment`. Assessment tracker card on product OverviewTab for Important II/Critical products. Obligation engine wiring: `art_32_3` derived from assessment status. 18 tests.
+  - **Phase D:** Platform-wide integration. Compliance checklist gains NB assessment step (step 7) for Important II/Critical products, pushing compliance package to step 8. Dashboard product table and heat map gain NB Assessment column with status badges. Admin analytics gains `nbAssessments` section (total, by status, by module). 7 new tests.
+
 **Next Steps:**
 - Production deployment planning (Infomaniak hosting, cranis2.com)
-- P9 growth funnels — remaining items (#48 notified body directory, #49 market surveillance registration, #51 supply chain risk assessment, #52 internal incident lifecycle, #54 end-of-life notification, #55 EU authorised representative, #56 non-compliance reporting)
+- P9 growth funnels — remaining items (#49 market surveillance registration, #51 supply chain risk assessment, #52 internal incident lifecycle, #54 end-of-life notification, #55 EU authorised representative, #56 non-compliance reporting)
 - P5 — Supplier marketplace (post-launch)

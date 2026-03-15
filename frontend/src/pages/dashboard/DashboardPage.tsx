@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
-import { Package, Users, ScrollText, ShieldAlert, Circle, ChevronRight, ClipboardCheck, Grid3X3, AlertTriangle, FileText, Shield, Clock, ArrowRight } from 'lucide-react';
+import { Package, Users, ScrollText, ShieldAlert, Circle, ChevronRight, ClipboardCheck, Grid3X3, AlertTriangle, FileText, Shield, Clock, ArrowRight, Building2 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './DashboardPage.css';
 
@@ -22,6 +22,7 @@ interface DashboardProduct {
   riskFindings: { total: number; critical: number; high: number; open: number };
   craReadiness: { met: number; total: number; readiness: number };
   supportStatus: { status: string; daysRemaining: number | null; endDate: string | null };
+  nbAssessment: { status: string; module: string; certificateNumber: string | null } | null;
 }
 
 interface DashboardStats {
@@ -169,6 +170,21 @@ function getReadinessLabel(pct: number, lifecycle?: string): string {
   if (pct >= 34) return isPreProd ? 'Preparing' : 'In progress';
   if (pct > 0) return isPreProd ? 'Getting started' : 'Attention needed';
   return isPreProd ? 'Not started' : 'Not started';
+}
+
+function getNbAssessmentBadge(nb: DashboardProduct['nbAssessment'], category: string | null): { label: string; color: string } | null {
+  const requiresNb = category === 'important_ii' || category === 'critical';
+  if (!requiresNb) return null;
+  if (!nb) return { label: 'Required', color: 'red' };
+  switch (nb.status) {
+    case 'approved': return { label: 'Approved', color: 'green' };
+    case 'submitted':
+    case 'under_review':
+    case 'additional_info_requested': return { label: nb.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), color: 'amber' };
+    case 'rejected': return { label: 'Rejected', color: 'red' };
+    case 'planning': return { label: 'Planning', color: 'amber' };
+    default: return { label: 'Required', color: 'red' };
+  }
 }
 
 function getLifecycleBadge(lifecycle: string): { label: string; color: string } {
@@ -354,6 +370,7 @@ export default function DashboardPage() {
                 <th>Technical File</th>
                 <th>CRA Readiness</th>
                 <th>Support</th>
+                <th>NB Assessment</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -386,6 +403,13 @@ export default function DashboardPage() {
                       <span className={`badge ${support.color}`}>{support.label}</span>
                       {support.sub && <div className="support-sub">{support.sub}</div>}
                     </td>
+                    <td>
+                      {(() => {
+                        const nb = getNbAssessmentBadge(p.nbAssessment, p.category);
+                        if (!nb) return <span style={{ color: 'var(--muted)' }}>{'\u2014'}</span>;
+                        return <span className={`badge ${nb.color}`}>{nb.label}</span>;
+                      })()}
+                    </td>
                     <td><span className={`badge ${status.color}`}>{status.label}</span></td>
                   </tr>
                 );
@@ -401,6 +425,7 @@ export default function DashboardPage() {
           <h3><Grid3X3 size={18} /> Compliance Heat Map</h3>
           {(() => {
             const sorted = [...products].sort((a, b) => (a.craReadiness?.readiness ?? 0) - (b.craReadiness?.readiness ?? 0));
+            const anyRequiresNb = sorted.some(p => p.category === 'important_ii' || p.category === 'critical');
 
             function cellColour(pct: number): string {
               if (pct >= 67) return 'hm-green';
@@ -461,6 +486,12 @@ export default function DashboardPage() {
             const lowTechFile = sorted.filter(p => p.techFileProgress < 34);
             if (lowTechFile.length > 0) blockers.push({ icon: FileText, colour: 'amber', text: `${lowTechFile.length} product${lowTechFile.length > 1 ? 's' : ''} need technical file attention (<34%)`, products: lowTechFile });
 
+            const nbNeeded = sorted.filter(p => {
+              const req = p.category === 'important_ii' || p.category === 'critical';
+              return req && (!p.nbAssessment || p.nbAssessment.status !== 'approved');
+            });
+            if (nbNeeded.length > 0) blockers.push({ icon: Building2, colour: 'amber', text: `${nbNeeded.length} product${nbNeeded.length > 1 ? 's' : ''} awaiting notified body assessment`, products: nbNeeded });
+
             return (
               <>
                 <div className="hm-grid" role="table">
@@ -471,6 +502,7 @@ export default function DashboardPage() {
                     <div className="hm-col-header" role="columnheader">Vulnerabilities</div>
                     <div className="hm-col-header" role="columnheader">SBOM Health</div>
                     <div className="hm-col-header" role="columnheader">Support Period</div>
+                    {anyRequiresNb && <div className="hm-col-header" role="columnheader">NB Assessment</div>}
                   </div>
                   {sorted.map(p => {
                     const readiness = p.craReadiness?.readiness ?? 0;
@@ -487,6 +519,12 @@ export default function DashboardPage() {
                         <div className={`hm-cell ${vulnColour(p)}`} role="cell">{severe === 0 ? 'None' : severe}</div>
                         <div className={`hm-cell ${sbomColour(p)}`} role="cell">{sbomLabel(p)}</div>
                         <div className={`hm-cell ${supportColour(p)}`} role="cell">{supportLabel(p)}</div>
+                        {anyRequiresNb && (() => {
+                          const nb = getNbAssessmentBadge(p.nbAssessment, p.category);
+                          if (!nb) return <div className="hm-cell hm-muted" role="cell">{'\u2014'}</div>;
+                          const hmColor = nb.color === 'green' ? 'hm-green' : nb.color === 'red' ? 'hm-red' : 'hm-amber';
+                          return <div className={`hm-cell ${hmColor}`} role="cell">{nb.label}</div>;
+                        })()}
                       </div>
                     );
                   })}
