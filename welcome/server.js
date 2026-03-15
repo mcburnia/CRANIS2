@@ -15,6 +15,9 @@ const notifiedBodyRoutes = require('./routes/notified-body-directory');
 const marketSurveillanceRoutes = require('./routes/market-surveillance');
 const incidentReadinessRoutes = require('./routes/incident-readiness');
 const supplyChainRiskRoutes = require('./routes/supply-chain-risk');
+const endOfLifeRoutes = require('./routes/end-of-life');
+const euAuthorisedRepRoutes = require('./routes/eu-authorised-rep');
+const nonComplianceRoutes = require('./routes/non-compliance');
 const subscriptionRoutes = require('./routes/subscriptions');
 
 /* ── Express setup ─────────────────────────────────────────────────── */
@@ -47,6 +50,9 @@ app.use('/notified-body-directory', notifiedBodyRoutes);
 app.use('/market-surveillance-registration', marketSurveillanceRoutes);
 app.use('/incident-readiness-checklist', incidentReadinessRoutes);
 app.use('/supply-chain-risk-assessment', supplyChainRiskRoutes);
+app.use('/end-of-life-calculator', endOfLifeRoutes);
+app.use('/eu-authorised-representative', euAuthorisedRepRoutes);
+app.use('/non-compliance-guide', nonComplianceRoutes);
 app.use('/conformity-assessment', subscriptionRoutes);
 app.use('/', welcomeRoutes);
 

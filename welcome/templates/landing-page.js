@@ -240,6 +240,42 @@ function assessmentLandingPage() {
       </div>
       <div class="card-arrow">\u2192</div>
     </a>
+
+    <a href="/end-of-life-calculator" class="card">
+      <span class="card-tag assess">Calculator</span>
+      <h2>End-of-Life Notification Calculator</h2>
+      <p>When must you notify users before support ends? Enter your support end date to generate a CRA-compliant notification timeline with milestone dates and required actions.</p>
+      <div class="card-meta">
+        <span>\uD83D\uDCC5 Timeline generator</span>
+        <span>\uD83D\uDD14 6 milestones</span>
+        <span>\u23F1 ~2 minutes</span>
+      </div>
+      <div class="card-arrow">\u2192</div>
+    </a>
+
+    <a href="/eu-authorised-representative" class="card">
+      <span class="card-tag assess">Decision Tree</span>
+      <h2>EU Authorised Representative</h2>
+      <p>Non-EU manufacturer? Determine whether you need to appoint an EU Authorised Representative under CRA Art.\u00a015. Includes responsibilities and appointment requirements.</p>
+      <div class="card-meta">
+        <span>\uD83C\uDDEA\uD83C\uDDFA 3 questions</span>
+        <span>\uD83D\uDCCB Duties explained</span>
+        <span>\u23F1 ~2 minutes</span>
+      </div>
+      <div class="card-arrow">\u2192</div>
+    </a>
+
+    <a href="/non-compliance-guide" class="card">
+      <span class="card-tag assess">Guide</span>
+      <h2>Non-Compliance Reporting Guide</h2>
+      <p>What to do when you discover your product is non-compliant. Step-by-step process for manufacturers, importers, and distributors covering corrective measures and authority notification.</p>
+      <div class="card-meta">
+        <span>\uD83D\uDCDD 6 steps</span>
+        <span>\uD83D\uDC65 3 roles</span>
+        <span>\u23F1 ~3 minutes</span>
+      </div>
+      <div class="card-arrow">\u2192</div>
+    </a>
   </div>
 
   <div class="info-box">
