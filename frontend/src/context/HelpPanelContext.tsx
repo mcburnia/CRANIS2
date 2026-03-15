@@ -13,7 +13,7 @@ interface HelpPanelState {
 const HelpPanelContext = createContext<HelpPanelState | null>(null);
 
 const STORAGE_KEY = 'cranis2_help_panel';
-const DEFAULT_PAGE = '/help/ch1_01_account_creation.html';
+const DEFAULT_PAGE = '/help/ch0_01_what_is_cra.html';
 
 // ── Route-to-help mapping ─────────────────────────────────────
 // Maps app routes (or route prefixes) to the most relevant help page.
@@ -36,7 +36,7 @@ const HELP_ROUTES: HelpRoute[] = [
   { pattern: '/setup/org', help: '/help/ch1_02_org_setup.html' },
 
   // Dashboard
-  { pattern: '/dashboard', help: '/help/ch1_04_compliance_checklist.html' },
+  { pattern: '/dashboard', help: '/help/ch1_06_reading_dashboard.html' },
 
   // Product detail — tab-specific (matched by query param ?tab= or URL hash)
   { pattern: /^\/products\/[^/]+$/, tab: 'overview', help: '/help/ch1_03_repo_connection.html' },
@@ -44,10 +44,10 @@ const HELP_ROUTES: HelpRoute[] = [
   { pattern: /^\/products\/[^/]+$/, tab: 'technical-file', help: '/help/ch4_01_technical_file.html' },
   { pattern: /^\/products\/[^/]+$/, tab: 'dependencies', help: '/help/ch2_01_sbom_sync_cycle.html' },
   { pattern: /^\/products\/[^/]+$/, tab: 'risk-findings', help: '/help/ch3_01_finding_triage.html' },
-  { pattern: /^\/products\/[^/]+$/, tab: 'supply-chain', help: '/help/ch2_03_licence_compliance.html' },
+  { pattern: /^\/products\/[^/]+$/, tab: 'supply-chain', help: '/help/ch2_04_supply_chain_risk.html' },
   { pattern: /^\/products\/[^/]+$/, tab: 'crypto-inventory', help: '/help/ch6_04_crypto_pqc.html' },
   { pattern: /^\/products\/[^/]+$/, tab: 'field-issues', help: '/help/ch6_01_field_issue_lifecycle.html' },
-  { pattern: /^\/products\/[^/]+$/, tab: 'incidents', help: '/help/ch3_03_enisa_escalation.html' },
+  { pattern: /^\/products\/[^/]+$/, tab: 'incidents', help: '/help/ch6_05_incident_lifecycle.html' },
   { pattern: /^\/products\/[^/]+$/, tab: 'compliance-vault', help: '/help/ch5_02_ip_proof.html' },
   { pattern: /^\/products\/[^/]+$/, tab: 'activity', help: '/help/ch1_04_compliance_checklist.html' },
   // Product detail — default (no tab matched)
@@ -58,8 +58,11 @@ const HELP_ROUTES: HelpRoute[] = [
   { pattern: /^\/products\/[^/]+\/action-plan/, help: '/help/ch1_04_compliance_checklist.html' },
   { pattern: /^\/products\/[^/]+\/timeline/, help: '/help/ch5_01_enisa_reporting.html' },
 
+  // Notifications
+  { pattern: '/notifications', help: '/help/ch1_07_notifications.html' },
+
   // Portfolio pages
-  { pattern: '/products', help: '/help/ch1_04_compliance_checklist.html' },
+  { pattern: '/products', help: '/help/ch1_05_add_product.html' },
   { pattern: '/obligations', help: '/help/ch4_02_obligations.html' },
   { pattern: '/technical-files', help: '/help/ch4_01_technical_file.html' },
   { pattern: '/vulnerability-reports', help: '/help/ch5_01_enisa_reporting.html' },
@@ -74,19 +77,19 @@ const HELP_ROUTES: HelpRoute[] = [
   // Settings & billing
   { pattern: '/billing', help: '/help/ch5_04_billing_lifecycle.html' },
   { pattern: '/reports', help: '/help/ch5_01_enisa_reporting.html' },
-  { pattern: '/stakeholders', help: '/help/ch7_04_user_roles.html' },
-  { pattern: '/organisation', help: '/help/ch1_02_org_setup.html' },
+  { pattern: '/stakeholders', help: '/help/ch7_06_stakeholders.html' },
+  { pattern: '/organisation', help: '/help/ch7_07_org_settings.html' },
   { pattern: '/integrations', help: '/help/ch7_01_api_keys.html' },
-  { pattern: '/document-templates', help: '/help/ch4_01_technical_file.html' },
+  { pattern: '/document-templates', help: '/help/ch7_10_document_templates.html' },
   { pattern: '/audit-log', help: '/help/ch7_04_user_roles.html' },
 
   // Admin pages
   { pattern: /^\/admin/, help: '/help/ch7_04_user_roles.html' },
 
   // Public tools
-  { pattern: '/marketplace', help: '/help/ch1_01_account_creation.html' },
-  { pattern: '/docs', help: '/help/ch1_01_account_creation.html' },
-  { pattern: '/', help: '/help/ch1_01_account_creation.html' },
+  { pattern: '/marketplace', help: '/help/ch7_09_marketplace.html' },
+  { pattern: '/docs', help: '/help/ch0_01_what_is_cra.html' },
+  { pattern: '/', help: '/help/ch0_01_what_is_cra.html' },
 ];
 
 function getHelpPageForRoute(pathname: string, search: string): string {
