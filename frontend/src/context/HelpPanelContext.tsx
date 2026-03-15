@@ -68,7 +68,7 @@ const HELP_ROUTES: HelpRoute[] = [
   { pattern: '/vulnerability-reports', help: '/help/ch5_01_enisa_reporting.html' },
   { pattern: '/license-compliance', help: '/help/ch2_03_licence_compliance.html' },
   { pattern: '/ip-proof', help: '/help/ch5_02_ip_proof.html' },
-  { pattern: '/due-diligence', help: '/help/ch2_03_licence_compliance.html' },
+  { pattern: '/due-diligence', help: '/help/ch5_07_due_diligence_package.html' },
   { pattern: '/risk-findings', help: '/help/ch3_01_finding_triage.html' },
   { pattern: '/repos', help: '/help/ch2_01_sbom_sync_cycle.html' },
   { pattern: '/contributors', help: '/help/ch7_04_user_roles.html' },
