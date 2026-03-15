@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import pool from '../db/pool.js';
+import { isFreeClassification, type TrustClassification } from '../services/trust-classification.js';
 
 const TIER_RANK: Record<string, number> = { standard: 1, pro: 2, enterprise: 3 };
 
@@ -21,7 +22,7 @@ export function requirePlan(minPlan: string) {
       if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
       const billing = await pool.query(
-        'SELECT plan, exempt FROM org_billing WHERE org_id = $1',
+        'SELECT plan, exempt, trust_classification FROM org_billing WHERE org_id = $1',
         [orgId]
       );
       const row = billing.rows[0];
@@ -29,7 +30,13 @@ export function requirePlan(minPlan: string) {
       // No billing record or exempt → allow
       if (!row || row.exempt) { next(); return; }
 
-      const orgRank = TIER_RANK[row.plan || 'standard'] || 1;
+      // Free trust classifications get standard-tier features
+      // (they bypass billing charges but do not get Pro features unless explicitly set)
+      const effectivePlan = row.trust_classification && isFreeClassification(row.trust_classification as TrustClassification)
+        ? (row.plan || 'standard')  // Use their actual plan if set, otherwise standard
+        : (row.plan || 'standard');
+
+      const orgRank = TIER_RANK[effectivePlan] || 1;
       if (orgRank >= minRank) { next(); return; }
 
       res.status(403).json({

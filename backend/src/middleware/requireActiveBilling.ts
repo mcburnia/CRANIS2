@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import pool from '../db/pool.js';
 import { verifySessionToken } from '../utils/token.js';
+import { isFreeClassification, type TrustClassification } from '../services/trust-classification.js';
 
 /**
  * Global billing gate middleware for write operations.
@@ -52,7 +53,7 @@ export async function requireActiveBilling(req: Request, res: Response, next: Fu
 
     // Check billing status
     const billing = await pool.query(
-      'SELECT status, exempt FROM org_billing WHERE org_id = $1',
+      'SELECT status, exempt, trust_classification FROM org_billing WHERE org_id = $1',
       [orgId]
     );
     const row = billing.rows[0];
@@ -65,6 +66,12 @@ export async function requireActiveBilling(req: Request, res: Response, next: Fu
 
     // Exempt orgs always pass
     if (row.exempt) {
+      next();
+      return;
+    }
+
+    // Free-tier trust classifications (OSS, community, non-profit) bypass billing restrictions
+    if (row.trust_classification && isFreeClassification(row.trust_classification as TrustClassification)) {
       next();
       return;
     }

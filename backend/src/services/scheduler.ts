@@ -28,6 +28,7 @@ import { checkTrialExpiry, checkPaymentGrace } from './billing.js';
 import { ensureWebhook } from './webhook.js';
 import { runAllEscrowDeposits } from './escrow-service.js';
 import { logger } from '../utils/logger.js';
+import { evaluateOrganisation, applyClassification } from './trust-classification.js';
 import { DEADLINES } from '../routes/compliance-checklist.js';
 import {
   getApplicableObligations, ensureObligations,
@@ -69,6 +70,10 @@ const RETENTION_EXPIRY_HOUR = 9;
 // Hour of the day to run monthly reserve sufficiency check (0-23, default: 10 AM – 1st of month only)
 const RESERVE_SUFFICIENCY_HOUR = 10;
 
+// Day of week to run trust classification re-evaluation (0=Sunday, default: 1=Monday at 6 AM)
+const TRUST_EVAL_DAY = 1;
+const TRUST_EVAL_HOUR = 6;
+
 let lastSyncDate = '';
 let lastVulnScanDate = '';
 let lastVulnDbSyncDate = '';
@@ -80,6 +85,7 @@ let lastSmartDeadlineDate = '';
 let lastSnapshotScheduleDate = '';
 let lastRetentionExpiryDate = '';
 let lastReserveSufficiencyMonth = '';
+let lastTrustEvalWeek = '';
 
 async function getProductRepoToken(productId: string, forProvider?: RepoProvider): Promise<{ token: string; userId: string; provider: RepoProvider; instanceUrl: string | null } | null> {
   // Find the user who owns this product (via org) and has a repo connection
@@ -1442,6 +1448,52 @@ async function cleanupExpiredSnapshots(): Promise<void> {
   }
 }
 
+// ── Weekly trust classification re-evaluation ────────────────────
+async function runWeeklyTrustEvaluation() {
+  const now = new Date();
+  if (now.getUTCDay() !== TRUST_EVAL_DAY) return;
+  if (now.getUTCHours() < TRUST_EVAL_HOUR) return;
+
+  // Week key to prevent re-runs within the same week
+  const weekKey = `${now.getUTCFullYear()}-W${Math.ceil((now.getTime() - new Date(now.getUTCFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))}`;
+  if (lastTrustEvalWeek === weekKey) return;
+  lastTrustEvalWeek = weekKey;
+
+  logger.info('[TRUST-EVAL] Starting weekly trust classification re-evaluation...');
+
+  try {
+    // Get all orgs with billing records
+    const orgsResult = await pool.query(
+      `SELECT org_id, trust_classification, provisional_expires_at FROM org_billing`
+    );
+
+    let evaluated = 0;
+    let changed = 0;
+    let promoted = 0;
+
+    for (const row of orgsResult.rows) {
+      try {
+        const evaluation = await evaluateOrganisation(row.org_id);
+        const result = await applyClassification(row.org_id, evaluation, 'automatic');
+        evaluated++;
+        if (result.changed) {
+          changed++;
+          // Track provisional → trusted promotions
+          if (result.previousClassification === 'provisional_open_source' && evaluation.classification === 'trusted_open_source') {
+            promoted++;
+          }
+        }
+      } catch (err: any) {
+        console.error(`[TRUST-EVAL] Failed for org ${row.org_id}:`, err.message);
+      }
+    }
+
+    logger.info(`[TRUST-EVAL] Complete: ${evaluated} evaluated, ${changed} changed, ${promoted} promoted to trusted`);
+  } catch (err: any) {
+    console.error('[TRUST-EVAL] Weekly evaluation failed:', err.message);
+  }
+}
+
 export function startScheduler(): void {
   logger.info('[SCHEDULER] Started – checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00, scheduled snapshots at ' + SNAPSHOT_SCHEDULE_HOUR + ':00, retention expiry at ' + RETENTION_EXPIRY_HOUR + ':00, reserve sufficiency on 1st at ' + RESERVE_SUFFICIENCY_HOUR + ':00');
 
@@ -1460,5 +1512,6 @@ export function startScheduler(): void {
     runScheduledSnapshots().catch(err => console.error('[SCHEDULER] Uncaught error in scheduled snapshots:', err));
     checkRetentionExpiry().catch(err => console.error('[SCHEDULER] Uncaught error in retention expiry check:', err));
     checkReserveSufficiency().catch(err => console.error('[SCHEDULER] Uncaught error in reserve sufficiency check:', err));
+    runWeeklyTrustEvaluation().catch(err => console.error('[SCHEDULER] Uncaught error in trust evaluation:', err));
   }, CHECK_INTERVAL_MS);
 }
