@@ -84,6 +84,8 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
   // Does this product require a notified body assessment?
   const requiresNb = craCategory === 'important_ii' || craCategory === 'critical';
 
+  const requiresMs = craCategory === 'critical';
+
   const [
     sbomResult,
     scanResult,
@@ -92,6 +94,7 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
     stakeholderResult,
     packageResult,
     nbAssessmentResult,
+    msRegistrationResult,
   ] = await Promise.all([
     // Step 1: SBOM exists
     pool.query(`SELECT 1 FROM product_sboms WHERE product_id = $1 LIMIT 1`, [productId]),
@@ -131,6 +134,13 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
           [orgId, productId]
         )
       : Promise.resolve({ rows: [] }),
+    // MS registration status (only relevant for critical)
+    requiresMs
+      ? pool.query(
+          `SELECT status FROM market_surveillance_registrations WHERE org_id = $1 AND product_id = $2 LIMIT 1`,
+          [orgId, productId]
+        )
+      : Promise.resolve({ rows: [] }),
   ]);
 
   // Process results
@@ -151,6 +161,8 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
   const hasPackage = packageResult.rows.length > 0;
   const nbAssessmentStatus = nbAssessmentResult.rows[0]?.status || null;
   const hasNbApproved = nbAssessmentStatus === 'approved';
+  const msRegistrationStatus = msRegistrationResult.rows[0]?.status || null;
+  const hasMsRegistered = msRegistrationStatus === 'registered';
 
   // ── Step completion logic (shared) ──
   const hasCraCategory = !!craCategory;
@@ -352,10 +364,11 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
     ];
 
     // Insert NB assessment step for important_ii/critical products (after DoC, before package)
+    let nextStep = 7;
     if (requiresNb) {
       steps.push({
         id: 'nb_assessment',
-        step: 7,
+        step: nextStep++,
         title: 'Complete notified body assessment',
         description: craCategory === 'critical'
           ? 'Critical products require Module H (full quality assurance) assessment by an EU notified body under CRA Article 32(3).'
@@ -367,9 +380,23 @@ router.get('/:productId/compliance-checklist', requireAuth, async (req: Request,
       });
     }
 
+    // Insert MS registration step for critical products only (CRA Art. 20)
+    if (requiresMs) {
+      steps.push({
+        id: 'ms_registration',
+        step: nextStep++,
+        title: 'Register with market surveillance authority',
+        description: 'Critical products must be registered with the relevant national market surveillance authority before being placed on the EU market (CRA Art. 20). Your registration package includes manufacturer details, product identification, and conformity assessment references.',
+        complete: hasMsRegistered,
+        actionLabel: 'Go to Overview',
+        actionTab: 'overview',
+        actionPath: null,
+      });
+    }
+
     steps.push({
         id: 'compliance_package',
-        step: requiresNb ? 8 : 7,
+        step: nextStep,
         title: 'Download your compliance package',
         description: 'Generate and download the Due Diligence compliance package – a ZIP containing your SBOM, vulnerability summary, technical file, and EU Declaration of Conformity.',
         complete: hasPackage,

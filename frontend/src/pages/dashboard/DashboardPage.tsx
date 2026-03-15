@@ -23,6 +23,7 @@ interface DashboardProduct {
   craReadiness: { met: number; total: number; readiness: number };
   supportStatus: { status: string; daysRemaining: number | null; endDate: string | null };
   nbAssessment: { status: string; module: string; certificateNumber: string | null } | null;
+  msRegistration: { status: string; registrationNumber: string | null } | null;
 }
 
 interface DashboardStats {
@@ -183,6 +184,20 @@ function getNbAssessmentBadge(nb: DashboardProduct['nbAssessment'], category: st
     case 'additional_info_requested': return { label: nb.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), color: 'amber' };
     case 'rejected': return { label: 'Rejected', color: 'red' };
     case 'planning': return { label: 'Planning', color: 'amber' };
+    default: return { label: 'Required', color: 'red' };
+  }
+}
+
+function getMsRegistrationBadge(ms: DashboardProduct['msRegistration'], category: string | null): { label: string; color: string } | null {
+  if (category !== 'critical') return null;
+  if (!ms) return { label: 'Required', color: 'red' };
+  switch (ms.status) {
+    case 'registered': return { label: 'Registered', color: 'green' };
+    case 'submitted':
+    case 'acknowledged': return { label: ms.status.replace(/\b\w/g, c => c.toUpperCase()), color: 'amber' };
+    case 'rejected': return { label: 'Rejected', color: 'red' };
+    case 'planning':
+    case 'preparing': return { label: ms.status.replace(/\b\w/g, c => c.toUpperCase()), color: 'amber' };
     default: return { label: 'Required', color: 'red' };
   }
 }
@@ -371,6 +386,7 @@ export default function DashboardPage() {
                 <th>CRA Readiness</th>
                 <th>Support</th>
                 <th>NB Assessment</th>
+                {products.some(p => p.category === 'critical') && <th>MS Registration</th>}
                 <th>Status</th>
               </tr>
             </thead>
@@ -410,6 +426,15 @@ export default function DashboardPage() {
                         return <span className={`badge ${nb.color}`}>{nb.label}</span>;
                       })()}
                     </td>
+                    {products.some(pr => pr.category === 'critical') && (
+                      <td>
+                        {(() => {
+                          const ms = getMsRegistrationBadge(p.msRegistration, p.category);
+                          if (!ms) return <span style={{ color: 'var(--muted)' }}>{'\u2014'}</span>;
+                          return <span className={`badge ${ms.color}`}>{ms.label}</span>;
+                        })()}
+                      </td>
+                    )}
                     <td><span className={`badge ${status.color}`}>{status.label}</span></td>
                   </tr>
                 );
@@ -426,6 +451,7 @@ export default function DashboardPage() {
           {(() => {
             const sorted = [...products].sort((a, b) => (a.craReadiness?.readiness ?? 0) - (b.craReadiness?.readiness ?? 0));
             const anyRequiresNb = sorted.some(p => p.category === 'important_ii' || p.category === 'critical');
+            const anyRequiresMs = sorted.some(p => p.category === 'critical');
 
             function cellColour(pct: number): string {
               if (pct >= 67) return 'hm-green';
@@ -492,6 +518,9 @@ export default function DashboardPage() {
             });
             if (nbNeeded.length > 0) blockers.push({ icon: Building2, colour: 'amber', text: `${nbNeeded.length} product${nbNeeded.length > 1 ? 's' : ''} awaiting notified body assessment`, products: nbNeeded });
 
+            const msNeeded = sorted.filter(p => p.category === 'critical' && (!p.msRegistration || p.msRegistration.status !== 'registered'));
+            if (msNeeded.length > 0) blockers.push({ icon: Shield, colour: 'amber', text: `${msNeeded.length} critical product${msNeeded.length > 1 ? 's' : ''} awaiting market surveillance registration`, products: msNeeded });
+
             return (
               <>
                 <div className="hm-grid" role="table">
@@ -503,6 +532,7 @@ export default function DashboardPage() {
                     <div className="hm-col-header" role="columnheader">SBOM Health</div>
                     <div className="hm-col-header" role="columnheader">Support Period</div>
                     {anyRequiresNb && <div className="hm-col-header" role="columnheader">NB Assessment</div>}
+                    {anyRequiresMs && <div className="hm-col-header" role="columnheader">MS Registration</div>}
                   </div>
                   {sorted.map(p => {
                     const readiness = p.craReadiness?.readiness ?? 0;
@@ -524,6 +554,12 @@ export default function DashboardPage() {
                           if (!nb) return <div className="hm-cell hm-muted" role="cell">{'\u2014'}</div>;
                           const hmColor = nb.color === 'green' ? 'hm-green' : nb.color === 'red' ? 'hm-red' : 'hm-amber';
                           return <div className={`hm-cell ${hmColor}`} role="cell">{nb.label}</div>;
+                        })()}
+                        {anyRequiresMs && (() => {
+                          const ms = getMsRegistrationBadge(p.msRegistration, p.category);
+                          if (!ms) return <div className="hm-cell hm-muted" role="cell">{'\u2014'}</div>;
+                          const hmColor = ms.color === 'green' ? 'hm-green' : ms.color === 'red' ? 'hm-red' : 'hm-amber';
+                          return <div className={`hm-cell ${hmColor}`} role="cell">{ms.label}</div>;
                         })()}
                       </div>
                     );

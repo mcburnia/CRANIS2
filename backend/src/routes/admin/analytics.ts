@@ -395,6 +395,25 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
           return { total: 0, byStatus: [], byModule: [] };
         }
       })(),
+      msRegistrations: await (async () => {
+        try {
+          const total = await pool.query(`SELECT COUNT(*) AS cnt FROM market_surveillance_registrations`);
+          const byStatus = await pool.query(`
+            SELECT status, COUNT(*) AS cnt FROM market_surveillance_registrations GROUP BY status ORDER BY cnt DESC
+          `);
+          const byCountry = await pool.query(`
+            SELECT authority_country, COUNT(*) AS cnt FROM market_surveillance_registrations
+            WHERE authority_country IS NOT NULL GROUP BY authority_country ORDER BY cnt DESC
+          `);
+          return {
+            total: toInt(total.rows[0]?.cnt),
+            byStatus: byStatus.rows.map(r => ({ status: r.status, count: toInt(r.cnt) })),
+            byCountry: byCountry.rows.map(r => ({ country: r.authority_country, count: toInt(r.cnt) })),
+          };
+        } catch {
+          return { total: 0, byStatus: [], byCountry: [] };
+        }
+      })(),
     });
   } catch (err) {
     console.error('Admin analytics error:', err);

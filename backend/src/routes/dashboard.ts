@@ -312,6 +312,22 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       }
     }
 
+    // MS registration status per product
+    let msRegistrationMap: Record<string, { status: string; registrationNumber: string | null }> = {};
+    if (productIds.length > 0) {
+      const msResult = await pool.query(
+        `SELECT product_id, status, registration_number
+         FROM market_surveillance_registrations WHERE org_id = $1 AND product_id = ANY($2)`,
+        [orgId, productIds]
+      );
+      for (const row of msResult.rows) {
+        msRegistrationMap[row.product_id] = {
+          status: row.status,
+          registrationNumber: row.registration_number || null,
+        };
+      }
+    }
+
     // Field issues per product
     let fieldIssueMap: Record<string, { total: number; open: number; critical: number }> = {};
     if (productIds.length > 0) {
@@ -341,6 +357,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
       cryptoPosture: cryptoPostureMap[p.id] || null,
       fieldIssues: fieldIssueMap[p.id] || { total: 0, open: 0, critical: 0 },
       nbAssessment: nbAssessmentMap[p.id] || null,
+      msRegistration: msRegistrationMap[p.id] || null,
     }));
 
     res.json({
