@@ -10,6 +10,7 @@ import {
   Shield, Loader2, CheckCircle2, Send, Eye, Clock, Info, X,
   ArrowRight, Search, FileCheck, Mail, ClipboardCheck,
 } from 'lucide-react';
+import SupplyChainRiskCard from './SupplyChainRiskCard';
 import './styles/supply-chain-tab.css';
 
 interface RiskFlag {
@@ -244,6 +245,9 @@ export default function SupplyChainTab({ productId }: SupplyChainTabProps) {
 
   return (
     <div className="sc-tab">
+      {/* Risk scorecard */}
+      <SupplyChainRiskCard productId={productId} />
+
       {/* Header */}
       <div className="sc-header">
         <div className="sc-header-left">

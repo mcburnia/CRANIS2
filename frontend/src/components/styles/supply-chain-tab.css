@@ -1,5 +1,19 @@
 /* Supply Chain Tab */
 
+.sc-risk-card {
+  background: var(--surface, white);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+.sc-risk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
 .sc-loading {
   display: flex;
   flex-direction: column;

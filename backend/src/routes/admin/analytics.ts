@@ -414,6 +414,32 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
           return { total: 0, byStatus: [], byCountry: [] };
         }
       })(),
+      supplyChain: await (async () => {
+        try {
+          const sbomCount = await pool.query(`SELECT COUNT(DISTINCT product_id) AS cnt FROM product_sboms`);
+          const totalDeps = await pool.query(`SELECT SUM(package_count) AS cnt FROM product_sboms`);
+          const vulnDeps = await pool.query(
+            `SELECT COUNT(DISTINCT dependency_name) AS cnt FROM vulnerability_findings WHERE status IN ('open', 'acknowledged')`
+          );
+          const critHighVulns = await pool.query(
+            `SELECT COUNT(*) AS cnt FROM vulnerability_findings WHERE status IN ('open', 'acknowledged') AND severity IN ('critical', 'high')`
+          );
+          const questionnaires = await pool.query(`SELECT COUNT(*) AS cnt FROM supplier_questionnaires`);
+          const byStatus = await pool.query(
+            `SELECT status, COUNT(*) AS cnt FROM supplier_questionnaires GROUP BY status ORDER BY cnt DESC`
+          );
+          return {
+            productsWithSbom: toInt(sbomCount.rows[0]?.cnt),
+            totalDependencies: toInt(totalDeps.rows[0]?.cnt),
+            dependenciesWithVulns: toInt(vulnDeps.rows[0]?.cnt),
+            criticalHighVulns: toInt(critHighVulns.rows[0]?.cnt),
+            questionnaires: toInt(questionnaires.rows[0]?.cnt),
+            questionnairesByStatus: byStatus.rows.map(r => ({ status: r.status, count: toInt(r.cnt) })),
+          };
+        } catch {
+          return { productsWithSbom: 0, totalDependencies: 0, dependenciesWithVulns: 0, criticalHighVulns: 0, questionnaires: 0, questionnairesByStatus: [] };
+        }
+      })(),
       incidents: await (async () => {
         try {
           const total = await pool.query(`SELECT COUNT(*) AS cnt FROM incidents`);
