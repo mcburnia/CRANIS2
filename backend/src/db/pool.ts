@@ -2275,6 +2275,27 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_incident_timeline_incident ON incident_timeline(incident_id);
     `);
 
+    // ── Non-profit verification applications ───────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS nonprofit_applications (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id              UUID NOT NULL,
+        organisation_name   VARCHAR(500) NOT NULL,
+        country             VARCHAR(5) NOT NULL,
+        registration_number VARCHAR(255) NOT NULL,
+        website             VARCHAR(500),
+        proof_document_path VARCHAR(500),
+        status              VARCHAR(20) NOT NULL DEFAULT 'pending',
+        admin_notes         TEXT,
+        reviewed_by         UUID REFERENCES users(id),
+        reviewed_at         TIMESTAMPTZ,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_nonprofit_apps_org ON nonprofit_applications(org_id);
+      CREATE INDEX IF NOT EXISTS idx_nonprofit_apps_status ON nonprofit_applications(status);
+    `);
+
   } finally {
     client.release();
   }

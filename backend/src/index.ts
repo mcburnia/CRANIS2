@@ -46,6 +46,7 @@ import { publicConformityRouter, productConformityRouter } from "./routes/confor
 import { publicNotifiedBodiesRouter, productNbAssessmentRouter } from "./routes/notified-bodies.js";
 import { publicMarketSurveillanceRouter, productMsRegistrationRouter } from "./routes/market-surveillance.js";
 import incidentRoutes from "./routes/incidents.js";
+import { nonprofitUserRouter } from "./routes/nonprofit-verification.js";
 import complianceSnapshotRoutes from "./routes/compliance-snapshots.js";
 import cryptoInventoryRoutes from "./routes/crypto-inventory.js";
 import fieldIssuesRoutes from "./routes/field-issues.js";
@@ -135,6 +136,7 @@ app.use('/api/products', productNbAssessmentRouter);
 app.use('/api/market-surveillance-authorities', publicMarketSurveillanceRouter);
 app.use('/api/products', productMsRegistrationRouter);
 app.use('/api/products', incidentRoutes);
+app.use('/api/org', nonprofitUserRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {
