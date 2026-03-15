@@ -1,3 +1,35 @@
 .public-layout {
   min-height: 100vh;
+  display: flex;
+}
+
+.public-layout-content {
+  flex: 1;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+/* Floating help button on public pages */
+.help-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent, #a855f7);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35), 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 100;
+}
+
+.help-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.45), 0 3px 6px rgba(0, 0, 0, 0.12);
 }
