@@ -204,7 +204,7 @@ const stations = {
     "body": "<p>Your product is now registered in CRANIS2. The next step is to <strong>connect your source code repository</strong> — this is what enables CRANIS2 to automatically generate your SBOM, scan for vulnerabilities, and build your compliance evidence.</p><div class=\"tip\">See the <strong>Repository connection</strong> guide (Chapter 1, Diagram 3) for step-by-step instructions on connecting GitHub, Codeberg, GitLab, Gitea, or Forgejo.</div>"
   }
 };
-const allIds = ["recommender", "products", "name", "type", "category", "distmodel", "created"];
+const allIds = ["products", "name", "type", "category", "distmodel", "created", "recommender"];
 function show(id) {
   const s = stations[id];
   if (!s) return;

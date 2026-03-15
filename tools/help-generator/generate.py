@@ -15,10 +15,15 @@ OUTPUT_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'pu
 #             chapter_footer, prev_file, next_file, map_fn, stations_dict)
 
 def make_page(filename, breadcrumb, title, subtitle, tags, footer_label,
-              prev_file, next_file, svg, stations):
+              prev_file, next_file, svg, stations, station_order=None):
     """Generate a complete HTML help page."""
 
-    all_ids = json.dumps(list(stations.keys()))
+    # station_order ensures main stations come first in allIds
+    # (so auto-select picks the first main station, not a feeder)
+    if station_order:
+        all_ids = json.dumps(station_order)
+    else:
+        all_ids = json.dumps(list(stations.keys()))
     stations_js = json.dumps(stations, ensure_ascii=False, indent=2)
 
     tags_html = ''.join(f'<span class="tag">{t}</span>' for t in tags)
