@@ -216,6 +216,18 @@ function assessmentLandingPage() {
       </div>
       <div class="card-arrow">\u2192</div>
     </a>
+
+    <a href="/incident-readiness-checklist" class="card">
+      <span class="card-tag assess">Checklist</span>
+      <h2>Incident Response Readiness</h2>
+      <p>Is your incident response process CRA-ready? Interactive checklist covering detection, assessment, containment, remediation, recovery, and post-incident review. Aligned with CRA Art.\u00a014 and ENISA reporting deadlines.</p>
+      <div class="card-meta">
+        <span>\u2705 22 checks</span>
+        <span>\uD83D\uDCCB 6 areas</span>
+        <span>\u23F1 ~5 minutes</span>
+      </div>
+      <div class="card-arrow">\u2192</div>
+    </a>
   </div>
 
   <div class="info-box">
