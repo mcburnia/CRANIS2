@@ -204,6 +204,18 @@ function assessmentLandingPage() {
       </div>
       <div class="card-arrow">\u2192</div>
     </a>
+
+    <a href="/market-surveillance-registration" class="card">
+      <span class="card-tag dir">Directory</span>
+      <h2>Market Surveillance Registration</h2>
+      <p>Critical product? Determine whether you need to register with a market surveillance authority under CRA Art.\u00a020 using our interactive decision tree. Searchable directory of national authorities across the EU and EEA.</p>
+      <div class="card-meta">
+        <span>\uD83C\uDDEA\uD83C\uDDFA 16 countries</span>
+        <span>\uD83C\uDFE2 20 authorities</span>
+        <span>\uD83C\uDF33 Decision tree</span>
+      </div>
+      <div class="card-arrow">\u2192</div>
+    </a>
   </div>
 
   <div class="info-box">

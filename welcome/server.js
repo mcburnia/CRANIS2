@@ -12,6 +12,7 @@ const nis2Routes = require('./routes/nis2-assessment');
 const importerRoutes = require('./routes/importer-assessment');
 const pqcRoutes = require('./routes/pqc-assessment');
 const notifiedBodyRoutes = require('./routes/notified-body-directory');
+const marketSurveillanceRoutes = require('./routes/market-surveillance');
 const subscriptionRoutes = require('./routes/subscriptions');
 
 /* ── Express setup ─────────────────────────────────────────────────── */
@@ -41,6 +42,7 @@ app.use('/nis2-conformity-assessment', nis2Routes);
 app.use('/importer-obligations-assessment', importerRoutes);
 app.use('/pqc-readiness-assessment', pqcRoutes);
 app.use('/notified-body-directory', notifiedBodyRoutes);
+app.use('/market-surveillance-registration', marketSurveillanceRoutes);
 app.use('/conformity-assessment', subscriptionRoutes);
 app.use('/', welcomeRoutes);
 

@@ -236,6 +236,7 @@ function notifiedBodyDirectoryPage() {
   </div>
 
   <div class="footer">
+    <a href="/market-surveillance-registration">Market surveillance registration</a> &middot;
     <a href="/conformity-assessment">Free compliance assessments</a> &middot;
     <a href="/welcome">Learn more about CRANIS2</a>
   </div>
