@@ -13,6 +13,7 @@ import { generateSBOMFromImports } from '../../services/import-scanner.js';
 import * as provider from '../../services/repo-provider.js';
 import type { NormalisedRelease } from '../../services/repo-provider.js';
 import type { SpdxPackage } from '../../services/github.js';
+import { evaluateOrganisation, applyClassification, getClassification } from '../../services/trust-classification.js';
 import { createRepo as codebergCreateRepo } from '../../services/codeberg.js';
 import { ensureWebhook } from '../../services/webhook.js';
 import { logger } from '../../utils/logger.js';
@@ -137,6 +138,22 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
     ensureWebhook(detectedProvider, repoToken, parsed.owner, parsed.repo, repoData.html_url, repoInstanceUrl || undefined)
       .catch(err => console.error(`[SYNC] Webhook registration failed (non-blocking): ${err.message}`));
 
+    // Abuse protection: if a private repo is connected, ensure org is classified as commercial
+    if (repoData.private) {
+      (async () => {
+        try {
+          const current = await getClassification(orgId);
+          if (current && current.trust_classification !== 'commercial' && current.trust_classification !== 'review_required') {
+            const evaluation = await evaluateOrganisation(orgId);
+            await applyClassification(orgId, evaluation, 'automatic');
+            console.log(`[TRUST] Private repo connected — org ${orgId} reclassified to ${evaluation.classification}`);
+          }
+        } catch (err: any) {
+          console.error('[TRUST] Private repo abuse check failed:', err.message);
+        }
+      })();
+    }
+
     // Store contributors in Neo4j
     for (const contrib of contributors) {
       await neo4jSession.run(
@@ -236,6 +253,14 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
                 logger.debug("[SYNC] IP proof snapshot created for", pipelineProductId);
               } catch (ipErr: any) {
                 console.error("[SYNC] IP proof snapshot failed:", ipErr.message);
+              }
+              // 7. Trust classification re-evaluation
+              try {
+                const evaluation = await evaluateOrganisation(pipelineOrgId);
+                await applyClassification(pipelineOrgId, evaluation, 'automatic');
+                logger.debug("[SYNC] Trust classification updated for org", pipelineOrgId, "→", evaluation.classification);
+              } catch (tcErr: any) {
+                console.error("[SYNC] Trust classification update failed:", tcErr.message);
               }
             }
           } catch (err: any) {

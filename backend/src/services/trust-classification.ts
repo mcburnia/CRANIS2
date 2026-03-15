@@ -284,7 +284,15 @@ export async function applyClassification(
   orgId: string,
   evaluation: TrustEvaluation,
   source: 'automatic' | 'manual' = 'automatic'
-): Promise<void> {
+): Promise<{ changed: boolean; previousClassification: string | null }> {
+  // Check current classification to detect changes
+  const current = await pool.query(
+    'SELECT trust_classification FROM org_billing WHERE org_id = $1',
+    [orgId]
+  );
+  const previousClassification = current.rows[0]?.trust_classification || null;
+  const changed = previousClassification !== null && previousClassification !== evaluation.classification;
+
   const provisionalExpiry = evaluation.classification === 'provisional_open_source'
     ? new Date(Date.now() + PROVISIONAL_DURATION_DAYS * 24 * 60 * 60 * 1000).toISOString()
     : null;
@@ -308,6 +316,12 @@ export async function applyClassification(
       orgId,
     ]
   );
+
+  if (changed) {
+    console.log(`[TRUST] Classification changed for org ${orgId}: ${previousClassification} → ${evaluation.classification} (${source})`);
+  }
+
+  return { changed, previousClassification };
 }
 
 // ─── Get current classification ───────────────────────────────
