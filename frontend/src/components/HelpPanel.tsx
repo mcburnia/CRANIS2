@@ -84,15 +84,21 @@ export default function HelpPanel() {
         src={currentPage}
         title="CRANIS2 Help"
         onLoad={(e) => {
-          // Inject panel-specific CSS overrides into the iframe
           try {
             const doc = (e.target as HTMLIFrameElement).contentDocument;
-            if (doc && !doc.getElementById('panel-overrides')) {
+            if (!doc) return;
+            // Inject panel-specific CSS overrides
+            if (!doc.getElementById('panel-overrides')) {
               const link = doc.createElement('link');
               link.id = 'panel-overrides';
               link.rel = 'stylesheet';
               link.href = '/help/panel-overrides.css';
               doc.head.appendChild(link);
+            }
+            // Auto-select the first station so instructions show immediately
+            const win = (e.target as HTMLIFrameElement).contentWindow as any;
+            if (win && typeof win.show === 'function' && win.allIds && win.allIds.length > 0) {
+              setTimeout(() => win.show(win.allIds[0]), 150);
             }
           } catch { /* cross-origin safety — ignore */ }
         }}
