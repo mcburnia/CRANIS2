@@ -81,7 +81,7 @@ const HELP_ROUTES: HelpRoute[] = [
   { pattern: '/organisation', help: '/help/ch7_07_org_settings.html' },
   { pattern: '/integrations', help: '/help/ch7_01_api_keys.html' },
   { pattern: '/document-templates', help: '/help/ch7_10_document_templates.html' },
-  { pattern: '/audit-log', help: '/help/ch7_04_user_roles.html' },
+  { pattern: '/audit-log', help: '/help/ch5_05_compliance_reports.html' },
 
   // Admin pages
   { pattern: /^\/admin/, help: '/help/ch7_04_user_roles.html' },
