@@ -304,6 +304,23 @@ export async function computeDerivedStatuses(
     msRegistrationByProduct[row.product_id] = row.status;
   }
 
+  // 11. Active incidents (P1/P2 without linked CRA report)
+  const incidentResult = await pool.query(
+    `SELECT product_id, COUNT(*) AS active_count,
+            COUNT(*) FILTER (WHERE linked_report_id IS NULL AND severity IN ('P1', 'P2')) AS unescalated
+     FROM incidents
+     WHERE product_id = ANY($1) AND org_id = $2 AND phase NOT IN ('closed')
+     GROUP BY product_id`,
+    [productIds, orgId]
+  );
+  const incidentByProduct: Record<string, { active: number; unescalated: number }> = {};
+  for (const row of incidentResult.rows) {
+    incidentByProduct[row.product_id] = {
+      active: parseInt(row.active_count),
+      unescalated: parseInt(row.unescalated),
+    };
+  }
+
   // ─── Compute derived statuses per product ──────────────────
   const result: Record<string, Record<string, { status: string; reason: string }>> = {};
 
@@ -418,11 +435,16 @@ export async function computeDerivedStatuses(
         }
       }
 
-      // art_14 – Vulnerability Reporting (ENISA reports)
+      // art_14 – Vulnerability Reporting (ENISA reports + incident lifecycle)
       const reports = craReportsByProduct[productId] ?? [];
-      if (reports.length > 0) {
+      const incidents = incidentByProduct[productId];
+      if (incidents && incidents.unescalated > 0) {
+        derived['art_14'] = { status: 'not_met', reason: `${incidents.unescalated} active P1/P2 incident${incidents.unescalated !== 1 ? 's' : ''} not yet escalated to ENISA` };
+      } else if (reports.length > 0) {
         const hasFinal = reports.some(s => s === 'final_report_sent' || s === 'closed');
         derived['art_14'] = { status: hasFinal ? 'met' : 'in_progress', reason: hasFinal ? 'ENISA report submitted' : 'ENISA report in progress' };
+      } else if (incidents && incidents.active > 0) {
+        derived['art_14'] = { status: 'in_progress', reason: `${incidents.active} active incident${incidents.active !== 1 ? 's' : ''} being managed` };
       }
 
       // art_13_3 – Component Currency (SBOM + crypto scan)
