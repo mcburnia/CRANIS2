@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRC/OSCAL bridge — CRANIS2 Help</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --navy:#1C2B3A;--teal:#1D9E75;--teal-lt:#E1F5EE;--teal-dk:#085041;
+    --purple:#534AB7;--purple-lt:#EEEDFE;--coral:#D85A30;--coral-lt:#FAECE7;
+    --amber:#BA7517;--amber-lt:#FAEEDA;--green-lt:#EAF3DE;--green-dk:#173404;
+    --gray-lt:#F1EFE8;--bg:#F4F2EE;--surface:#FFFFFF;--border:#E2DDD4;
+    --text:#1A1A18;--text-2:#5A5854;--text-3:#8C8A84;
+    --shadow:0 2px 8px rgba(0,0,0,.07),0 8px 24px rgba(0,0,0,.05);
+  }
+  html,body{font-family:'Source Serif 4',Georgia,serif;background:var(--bg);color:var(--text);}
+  header{background:var(--navy);padding:0 28px;display:flex;align-items:center;gap:16px;height:52px;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Outfit',sans-serif;font-weight:700;font-size:17px;color:#fff;letter-spacing:-.3px;}
+  .logo span{color:var(--teal)}
+  .sep{width:1px;height:20px;background:rgba(255,255,255,.2)}
+  .breadcrumb{font-family:'Outfit',sans-serif;font-size:13px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:7px;}
+  .breadcrumb strong{color:rgba(255,255,255,.9);font-weight:500}
+  .audience-tags{margin-left:auto;display:flex;gap:6px}
+  .tag{font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6)}
+  .map-section{background:var(--surface);border-bottom:2px solid var(--border);padding:24px 24px 16px}
+  .map-header{display:flex;align-items:baseline;gap:12px;margin-bottom:18px}
+  .map-header h1{font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+  .map-header p{font-family:'Outfit',sans-serif;font-size:13px;color:var(--text-3)}
+  .map-wrap{overflow-x:auto;padding-bottom:4px}
+  .map-wrap svg{display:block;min-width:700px}
+  .map-hint{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px}
+  .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+  .stn{cursor:pointer;transition:opacity .15s}.stn:hover{opacity:.75}
+  .instructions-wrap{max-width:820px;margin:0 auto;padding:36px 28px 80px}
+  .prompt-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px;text-align:center;gap:14px}
+  .prompt-icon{width:48px;height:48px;border-radius:50%;background:var(--teal-lt);display:flex;align-items:center;justify-content:center;font-size:22px}
+  .prompt-state h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;color:var(--text)}
+  .prompt-state p{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-3);max-width:340px;line-height:1.6}
+  .instruction-card{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;display:none;animation:fadeUp .22s ease both}
+  .instruction-card.visible{display:block}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .card-header{padding:18px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+  .card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .card-header-text h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.15px}
+  .card-header-text .card-sub{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);margin-top:2px}
+  .line-badge{display:inline-block;font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;padding:2px 8px;border-radius:4px;margin-left:8px;vertical-align:middle}
+  .badge-teal{background:var(--teal-lt);color:var(--teal-dk)}.badge-coral{background:var(--coral-lt);color:#711E08}
+  .badge-purple{background:var(--purple-lt);color:#26215C}.badge-amber{background:var(--amber-lt);color:#412402}
+  .badge-blue{background:#E6F1FB;color:#042C53}.badge-green{background:var(--green-lt);color:var(--green-dk)}
+  .badge-gray{background:var(--gray-lt);color:#2C2C2A}
+  .card-body{padding:22px 24px 26px;display:flex;flex-direction:column;gap:14px}
+  .card-body p{font-size:15px;line-height:1.72;color:var(--text-2)}
+  .card-body strong{color:var(--text);font-weight:600}
+  .detail-list{list-style:none;display:flex;flex-direction:column;gap:7px;padding-left:2px}
+  .detail-list li{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-2);display:flex;align-items:flex-start;gap:10px;line-height:1.55}
+  .detail-list li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--teal);margin-top:7px;flex-shrink:0}
+  .tip{background:var(--teal-lt);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--teal-dk);line-height:1.55}
+  .warn{background:var(--amber-lt);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#412402;line-height:1.55}
+  .info{background:#E6F1FB;border-left:3px solid #185FA5;border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#042C53;line-height:1.55}
+  .code{font-family:'DM Mono',monospace;font-size:12.5px;background:var(--gray-lt);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--text)}
+  footer{background:var(--surface);border-top:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;position:sticky;bottom:0;z-index:100}
+  footer span{font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--text-3)}
+  .nav-links{margin-left:auto;display:flex;gap:10px}
+  .nav-btn{font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:var(--teal-dk);padding:5px 14px;border:1px solid var(--teal);border-radius:5px;cursor:pointer;background:transparent;transition:background .15s}
+  .nav-btn:hover{background:var(--teal-lt)}
+  .nav-btn:disabled{opacity:.3;cursor:default;border-color:var(--border);color:var(--text-3)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">CRANIS<span>2</span></div>
+  <div class="sep"></div>
+  <div class="breadcrumb">
+    <span>Chapter 7 · Integrations & Admin</span>
+    <span>›</span>
+    <strong>GRC/OSCAL bridge</strong>
+  </div>
+  <div class="audience-tags"><span class="tag">Developers</span><span class="tag">Staff</span></div>
+</header>
+<div class="map-section">
+  <div class="map-header">
+    <h1>GRC/OSCAL bridge</h1>
+    <p>OSCAL 1.1.2 exports for GRC platform integration</p>
+  </div>
+  <div class="map-wrap">
+    <svg viewBox="0 0 760 369" xmlns="http://www.w3.org/2000/svg"><defs><style>
+  .lbl{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:11px;fill:#1A1A18;}
+  .lbl-sub{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:9.5px;fill:#8C8A84;}
+</style></defs><g transform="translate(0,45.6)"><line x1="63.0" y1="115.0" x2="177.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="193.0" y1="115.0" x2="303.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="327.0" y1="115.0" x2="567.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="583.0" y1="115.0" x2="693.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="324.1" y1="107.1" x2="439.0" y2="7.7" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
+<line x1="451.0" y1="7.7" x2="569.0" y2="109.8" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
+<line x1="324.1" y1="122.9" x2="439.0" y2="222.3" stroke="#185FA5" stroke-width="4" stroke-linecap="round"/>
+<line x1="451.0" y1="222.3" x2="569.0" y2="120.2" stroke="#185FA5" stroke-width="4" stroke-linecap="round"/>
+<line x1="55.0" y1="10.4" x2="55.0" y2="107.0" stroke="#BA7517" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 4"/>
+<g class="stn" id="ms-data" onclick="show('data')"><rect x="49.0" y="105.0" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="55.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="55.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">CRANIS2 data</text><text x="55.0" y="150.0" text-anchor="middle" class="lbl-sub">Obligations + findings</text></g>
+<g class="stn" id="ms-api" onclick="show('api')"><circle cx="185.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="185.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">API endpoint</text><text x="185.0" y="150.0" text-anchor="middle" class="lbl-sub">/oscal/{type}</text></g>
+<g class="stn" id="ms-doctype" onclick="show('doctype')"><circle cx="315.0" cy="115.0" r="12" fill="white" stroke="#1D9E75" stroke-width="3"/><circle cx="315.0" cy="115.0" r="6" fill="#1D9E75"/><text x="315.0" y="141.0" text-anchor="end" class="lbl" font-weight="600" style="fill:#1A1A18">Document type?</text><text x="315.0" y="154.0" text-anchor="end" class="lbl-sub">Interchange</text></g>
+<g class="stn" id="ms-assessment" onclick="show('assessment')"><circle cx="575.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="575.0" y="89.0" text-anchor="start" class="lbl" font-weight="600" style="fill:#1A1A18">Assessment</text><text x="575.0" y="102.0" text-anchor="start" class="lbl-sub">Compliance status</text></g>
+<g class="stn" id="ms-import" onclick="show('import')"><circle cx="705.0" cy="115.0" r="12" fill="white" stroke="#3B6D11" stroke-width="3"/><circle cx="705.0" cy="115.0" r="6" fill="#3B6D11"/><text x="705.0" y="141.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Import to GRC</text><text x="705.0" y="154.0" text-anchor="middle" class="lbl-sub">OSCAL 1.1.2</text></g>
+<g class="stn" id="ms-catalog" onclick="show('catalog')"><circle cx="445.0" cy="2.4" r="8" fill="white" stroke="#534AB7" stroke-width="3"/><text x="445.0" y="-23.6" text-anchor="middle" class="lbl" font-weight="600" style="fill:#534AB7">Catalog / Profile</text><text x="445.0" y="-10.6" text-anchor="middle" class="lbl-sub">Obligation definitions</text></g>
+<g class="stn" id="ms-component" onclick="show('component')"><circle cx="445.0" cy="227.6" r="8" fill="white" stroke="#185FA5" stroke-width="3"/><text x="445.0" y="249.6" text-anchor="middle" class="lbl" font-weight="600" style="fill:#185FA5">Component def.</text><text x="445.0" y="262.6" text-anchor="middle" class="lbl-sub">Product metadata</text></g>
+<g class="stn" id="ms-pro-req" onclick="show('pro-req')"><circle cx="55.0" cy="2.4" r="8" fill="white" stroke="#BA7517" stroke-width="2.5"/><text x="55.0" y="-23.6" text-anchor="middle" class="lbl" font-weight="600" style="fill:#BA7517">Pro plan</text><text x="55.0" y="-10.6" text-anchor="middle" class="lbl-sub">Required</text></g></g>
+  <line x1="30" y1="341.166604983954" x2="55" y2="341.166604983954" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
+  <text x="61" y="345.166604983954" class="lbl-sub">Main journey</text>
+  <line x1="150" y1="341.166604983954" x2="175" y2="341.166604983954" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
+  <text x="181" y="345.166604983954" class="lbl-sub">Error / branch</text>
+  <line x1="278" y1="341.166604983954" x2="303" y2="341.166604983954" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+  <text x="309" y="345.166604983954" class="lbl-sub">Feeder</text>
+  <line x1="368" y1="341.166604983954" x2="393" y2="341.166604983954" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
+  <text x="399" y="345.166604983954" class="lbl-sub">Next process</text>
+  <circle cx="468" cy="341.166604983954" r="6" fill="white" stroke="#888" stroke-width="2"/>
+  <circle cx="468" cy="341.166604983954" r="3" fill="#888"/>
+  <text x="479" y="345.166604983954" class="lbl-sub">Interchange</text></svg>
+  </div>
+  <div class="map-hint"><div class="hint-dot"></div>Click any station to see instructions for that step</div>
+</div>
+<div class="instructions-wrap">
+  <div class="prompt-state" id="prompt">
+    <div class="prompt-icon">🗺️</div>
+    <h2>Select a station to begin</h2>
+    <p>Click any station on the map above to read the instructions for that step.</p>
+  </div>
+  <div class="instruction-card" id="instruction-card">
+    <div class="card-header">
+      <div class="card-icon" id="card-icon"></div>
+      <div class="card-header-text">
+        <h2 id="card-title"></h2>
+        <div class="card-sub" id="card-sub"></div>
+      </div>
+    </div>
+    <div class="card-body" id="card-body"></div>
+  </div>
+</div>
+<footer>
+  <span>CRANIS2 User Guide · Chapter 7 · Diagram 5 of 5</span>
+  <div class="nav-links"><button class="nav-btn" onclick="window.location='ch7_04_user_roles.html'">← Previous</button><button class="nav-btn" disabled>Next →</button></div>
+</footer>
+<script>
+const stations = {
+  "pro-req": {
+    icon:"\u2b50",
+    iconBg:"#FAEEDA",
+    badge:"Requirement",
+    badgeClass:"badge-amber",
+    title:"Pro plan required",
+    sub:"GRC/OSCAL bridge is a Pro plan feature",
+    body:`<p>The GRC/OSCAL bridge requires the Pro plan and an active API key. It exports compliance data in OSCAL 1.1.2 format for integration with GRC platforms such as Trestle, Lula, and Comply.</p>`
+  },
+  "data": {
+    icon:"\ud83d\udcca",
+    iconBg:"#F1EFE8",
+    badge:"Source",
+    badgeClass:"badge-gray",
+    title:"CRANIS2 compliance data",
+    sub:"The source for all OSCAL exports",
+    body:`<p>The OSCAL bridge exports three types of compliance data from CRANIS2:</p><ul class="detail-list"><li><strong>Obligation definitions</strong> — the 35 CRA obligations as structured controls</li><li><strong>Compliance status and findings</strong> — current obligation statuses and open findings</li><li><strong>Product metadata</strong> — name, version, category, distribution model, and properties</li></ul>`
+  },
+  "api": {
+    icon:"\ud83d\udd0c",
+    iconBg:"#E1F5EE",
+    badge:"Step 1",
+    badgeClass:"badge-teal",
+    title:"Access via the Public API",
+    sub:"Authenticated with your API key",
+    body:`<p>OSCAL exports are available via four API endpoints under <span class="code">/api/v1/products/:productId/oscal/</span>:</p><ul class="detail-list"><li><span class="code">/catalog</span> — obligation definitions as OSCAL controls</li><li><span class="code">/profile</span> — applicable obligations for this product</li><li><span class="code">/assessment-results</span> — compliance status with findings</li><li><span class="code">/component-definition</span> — product metadata as OSCAL component</li></ul><p>All endpoints return JSON conforming to the OSCAL 1.1.2 schema.</p>`
+  },
+  "doctype": {
+    icon:"\ud83d\udd00",
+    iconBg:"#E1F5EE",
+    badge:"Interchange",
+    badgeClass:"badge-teal",
+    title:"Choose your document type",
+    sub:"Four OSCAL document types available",
+    body:`<p>Select the OSCAL document type based on what your GRC platform needs:</p><ul class="detail-list"><li><strong>Catalog</strong> — for populating your GRC tool with the full CRA obligation set as controls</li><li><strong>Profile</strong> — for importing only the obligations applicable to a specific product</li><li><strong>Assessment Results</strong> — for syncing current compliance status and findings</li><li><strong>Component Definition</strong> — for registering the product as an OSCAL component in your GRC tool</li></ul>`
+  },
+  "catalog": {
+    icon:"\ud83d\udcda",
+    iconBg:"#EEEDFE",
+    badge:"Type 1 + 2",
+    badgeClass:"badge-purple",
+    title:"Catalog and Profile",
+    sub:"Obligation definitions and applicable subset",
+    body:`<p><strong>Catalog:</strong> Exports all 35 CRA obligations as OSCAL controls, with regulatory references (Article numbers, Annex references) and descriptions. Use this to initially populate your GRC tool with the CRA control set.</p><p><strong>Profile:</strong> Exports only the obligations applicable to a specific product, based on its CRA category and your organisation's operator role. Use this to scope the assessment to what actually applies.</p>`
+  },
+  "assessment": {
+    icon:"\ud83d\udccb",
+    iconBg:"#E1F5EE",
+    badge:"Type 3",
+    badgeClass:"badge-teal",
+    title:"Assessment results",
+    sub:"Current compliance status and findings",
+    body:`<p>The assessment results export provides the current compliance posture for a product:</p><ul class="detail-list"><li>Status of each applicable obligation (Met, In Progress, Not Started)</li><li>Open findings with severity and description</li><li>Evidence references linking obligations to platform data</li><li>Timestamps for each status</li></ul><p>Use this for regular compliance status synchronisation between CRANIS2 and your GRC tool.</p>`
+  },
+  "component": {
+    icon:"\ud83d\udd27",
+    iconBg:"#E6F1FB",
+    badge:"Type 4",
+    badgeClass:"badge-blue",
+    title:"Component definition",
+    sub:"Product metadata as OSCAL component",
+    body:`<p>The component definition export expresses your product as an OSCAL component with properties including:</p><ul class="detail-list"><li>Product name and version</li><li>CRA category and class</li><li>Distribution model</li><li>Lifecycle status</li><li>Applicable standards and certifications</li></ul><p>Use this to register the product in your GRC tool's component inventory.</p>`
+  },
+  "import": {
+    icon:"\ud83d\udce5",
+    iconBg:"#EAF3DE",
+    badge:"Final step",
+    badgeClass:"badge-green",
+    title:"Import into your GRC platform",
+    sub:"Any OSCAL 1.1.2 compatible tool",
+    body:`<p>Import the OSCAL JSON exports into your GRC or audit platform. Tested with:</p><ul class="detail-list"><li><strong>Trestle</strong> — NIST's open-source OSCAL tooling</li><li><strong>Lula</strong> — compliance validation against OSCAL</li><li><strong>Comply</strong> — GRC platform with OSCAL support</li></ul><p>Any tool that supports OSCAL 1.1.2 JSON will accept these exports.</p>`
+  }
+};
+const allIds = ["pro-req", "data", "api", "doctype", "catalog", "assessment", "component", "import"];
+function show(id) {
+  const s = stations[id];
+  if (!s) return;
+  allIds.forEach(k => {
+    const el = document.getElementById('ms-' + k);
+    if (!el) return;
+    el.querySelectorAll('circle,rect').forEach(c => { c.style.filter = ''; });
+  });
+  const active = document.getElementById('ms-' + id);
+  if (active) active.querySelectorAll('circle').forEach(c => {
+    c.style.filter = 'drop-shadow(0 0 6px rgba(29,158,117,.6))';
+  });
+  document.getElementById('card-icon').textContent = s.icon;
+  document.getElementById('card-icon').style.background = s.iconBg;
+  document.getElementById('card-title').innerHTML = s.title + '<span class="line-badge ' + s.badgeClass + '">' + s.badge + '</span>';
+  document.getElementById('card-sub').textContent = s.sub;
+  document.getElementById('card-body').innerHTML = s.body;
+  document.getElementById('prompt').style.display = 'none';
+  const card = document.getElementById('instruction-card');
+  card.classList.remove('visible');
+  void card.offsetWidth;
+  card.classList.add('visible');
+}
+</script>
+</body>
+</html>

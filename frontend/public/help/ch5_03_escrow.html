@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Source code escrow — CRANIS2 Help</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --navy:#1C2B3A;--teal:#1D9E75;--teal-lt:#E1F5EE;--teal-dk:#085041;
+    --purple:#534AB7;--purple-lt:#EEEDFE;--coral:#D85A30;--coral-lt:#FAECE7;
+    --amber:#BA7517;--amber-lt:#FAEEDA;--green-lt:#EAF3DE;--green-dk:#173404;
+    --gray-lt:#F1EFE8;--bg:#F4F2EE;--surface:#FFFFFF;--border:#E2DDD4;
+    --text:#1A1A18;--text-2:#5A5854;--text-3:#8C8A84;
+    --shadow:0 2px 8px rgba(0,0,0,.07),0 8px 24px rgba(0,0,0,.05);
+  }
+  html,body{font-family:'Source Serif 4',Georgia,serif;background:var(--bg);color:var(--text);}
+  header{background:var(--navy);padding:0 28px;display:flex;align-items:center;gap:16px;height:52px;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Outfit',sans-serif;font-weight:700;font-size:17px;color:#fff;letter-spacing:-.3px;}
+  .logo span{color:var(--teal)}
+  .sep{width:1px;height:20px;background:rgba(255,255,255,.2)}
+  .breadcrumb{font-family:'Outfit',sans-serif;font-size:13px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:7px;}
+  .breadcrumb strong{color:rgba(255,255,255,.9);font-weight:500}
+  .audience-tags{margin-left:auto;display:flex;gap:6px}
+  .tag{font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6)}
+  .map-section{background:var(--surface);border-bottom:2px solid var(--border);padding:24px 24px 16px}
+  .map-header{display:flex;align-items:baseline;gap:12px;margin-bottom:18px}
+  .map-header h1{font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+  .map-header p{font-family:'Outfit',sans-serif;font-size:13px;color:var(--text-3)}
+  .map-wrap{overflow-x:auto;padding-bottom:4px}
+  .map-wrap svg{display:block;min-width:700px}
+  .map-hint{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px}
+  .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+  .stn{cursor:pointer;transition:opacity .15s}.stn:hover{opacity:.75}
+  .instructions-wrap{max-width:820px;margin:0 auto;padding:36px 28px 80px}
+  .prompt-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px;text-align:center;gap:14px}
+  .prompt-icon{width:48px;height:48px;border-radius:50%;background:var(--teal-lt);display:flex;align-items:center;justify-content:center;font-size:22px}
+  .prompt-state h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;color:var(--text)}
+  .prompt-state p{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-3);max-width:340px;line-height:1.6}
+  .instruction-card{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;display:none;animation:fadeUp .22s ease both}
+  .instruction-card.visible{display:block}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .card-header{padding:18px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+  .card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .card-header-text h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.15px}
+  .card-header-text .card-sub{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);margin-top:2px}
+  .line-badge{display:inline-block;font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;padding:2px 8px;border-radius:4px;margin-left:8px;vertical-align:middle}
+  .badge-teal{background:var(--teal-lt);color:var(--teal-dk)}.badge-coral{background:var(--coral-lt);color:#711E08}
+  .badge-purple{background:var(--purple-lt);color:#26215C}.badge-amber{background:var(--amber-lt);color:#412402}
+  .badge-blue{background:#E6F1FB;color:#042C53}.badge-green{background:var(--green-lt);color:var(--green-dk)}
+  .badge-gray{background:var(--gray-lt);color:#2C2C2A}
+  .card-body{padding:22px 24px 26px;display:flex;flex-direction:column;gap:14px}
+  .card-body p{font-size:15px;line-height:1.72;color:var(--text-2)}
+  .card-body strong{color:var(--text);font-weight:600}
+  .detail-list{list-style:none;display:flex;flex-direction:column;gap:7px;padding-left:2px}
+  .detail-list li{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-2);display:flex;align-items:flex-start;gap:10px;line-height:1.55}
+  .detail-list li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--teal);margin-top:7px;flex-shrink:0}
+  .tip{background:var(--teal-lt);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--teal-dk);line-height:1.55}
+  .warn{background:var(--amber-lt);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#412402;line-height:1.55}
+  .info{background:#E6F1FB;border-left:3px solid #185FA5;border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#042C53;line-height:1.55}
+  .code{font-family:'DM Mono',monospace;font-size:12.5px;background:var(--gray-lt);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--text)}
+  footer{background:var(--surface);border-top:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;position:sticky;bottom:0;z-index:100}
+  footer span{font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--text-3)}
+  .nav-links{margin-left:auto;display:flex;gap:10px}
+  .nav-btn{font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:var(--teal-dk);padding:5px 14px;border:1px solid var(--teal);border-radius:5px;cursor:pointer;background:transparent;transition:background .15s}
+  .nav-btn:hover{background:var(--teal-lt)}
+  .nav-btn:disabled{opacity:.3;cursor:default;border-color:var(--border);color:var(--text-3)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">CRANIS<span>2</span></div>
+  <div class="sep"></div>
+  <div class="breadcrumb">
+    <span>Chapter 5 · Reporting & Evidence</span>
+    <span>›</span>
+    <strong>Source code escrow</strong>
+  </div>
+  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span><span class="tag">Sales</span></div>
+</header>
+<div class="map-section">
+  <div class="map-header">
+    <h1>Source code escrow</h1>
+    <p>Setup, daily deposits, and release models</p>
+  </div>
+  <div class="map-wrap">
+    <svg viewBox="0 0 760 237" xmlns="http://www.w3.org/2000/svg"><defs><style>
+  .lbl{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:11px;fill:#1A1A18;}
+  .lbl-sub{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:9.5px;fill:#8C8A84;}
+</style></defs><g transform="translate(0,26.8)"><line x1="63.0" y1="115.0" x2="155.3" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="171.3" y1="115.0" x2="263.7" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="279.7" y1="115.0" x2="372.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="388.0" y1="115.0" x2="476.3" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="500.3" y1="115.0" x2="697.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="497.4" y1="107.1" x2="590.6" y2="26.4" stroke="#3B6D11" stroke-width="4" stroke-linecap="round"/>
+<g class="stn" id="ms-enable" onclick="show('enable')"><rect x="49.0" y="105.0" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="55.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="55.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Enable escrow</text><text x="55.0" y="150.0" text-anchor="middle" class="lbl-sub">/products/:id/escrow</text></g>
+<g class="stn" id="ms-configure" onclick="show('configure')"><circle cx="163.3" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="163.3" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Configure</text><text x="163.3" y="150.0" text-anchor="middle" class="lbl-sub">Artefacts + release model</text></g>
+<g class="stn" id="ms-deposit" onclick="show('deposit')"><circle cx="271.7" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="271.7" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Daily deposits</text><text x="271.7" y="150.0" text-anchor="middle" class="lbl-sub">5 AM UTC</text></g>
+<g class="stn" id="ms-forgejo" onclick="show('forgejo')"><circle cx="380.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="380.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Stored in Forgejo</text><text x="380.0" y="150.0" text-anchor="middle" class="lbl-sub">Switzerland</text></g>
+<g class="stn" id="ms-release" onclick="show('release')"><circle cx="488.3" cy="115.0" r="12" fill="white" stroke="#1D9E75" stroke-width="3"/><circle cx="488.3" cy="115.0" r="6" fill="#1D9E75"/><text x="488.3" y="141.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Release model</text><text x="488.3" y="154.0" text-anchor="middle" class="lbl-sub">Interchange</text></g>
+<g class="stn" id="ms-designated" onclick="show('designated')"><circle cx="705.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="705.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Designated</text><text x="705.0" y="150.0" text-anchor="middle" class="lbl-sub">Named recipients</text></g>
+<g class="stn" id="ms-open-source" onclick="show('open-source')"><circle cx="596.7" cy="21.2" r="8" fill="white" stroke="#3B6D11" stroke-width="3"/><text x="596.7" y="-4.8" text-anchor="middle" class="lbl" font-weight="600" style="fill:#3B6D11">Open source</text><text x="596.7" y="8.2" text-anchor="middle" class="lbl-sub">Published publicly</text></g></g>
+  <line x1="30" y1="209.81941874331417" x2="55" y2="209.81941874331417" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
+  <text x="61" y="213.81941874331417" class="lbl-sub">Main journey</text>
+  <line x1="150" y1="209.81941874331417" x2="175" y2="209.81941874331417" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
+  <text x="181" y="213.81941874331417" class="lbl-sub">Error / branch</text>
+  <line x1="278" y1="209.81941874331417" x2="303" y2="209.81941874331417" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+  <text x="309" y="213.81941874331417" class="lbl-sub">Feeder</text>
+  <line x1="368" y1="209.81941874331417" x2="393" y2="209.81941874331417" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
+  <text x="399" y="213.81941874331417" class="lbl-sub">Next process</text>
+  <circle cx="468" cy="209.81941874331417" r="6" fill="white" stroke="#888" stroke-width="2"/>
+  <circle cx="468" cy="209.81941874331417" r="3" fill="#888"/>
+  <text x="479" y="213.81941874331417" class="lbl-sub">Interchange</text></svg>
+  </div>
+  <div class="map-hint"><div class="hint-dot"></div>Click any station to see instructions for that step</div>
+</div>
+<div class="instructions-wrap">
+  <div class="prompt-state" id="prompt">
+    <div class="prompt-icon">🗺️</div>
+    <h2>Select a station to begin</h2>
+    <p>Click any station on the map above to read the instructions for that step.</p>
+  </div>
+  <div class="instruction-card" id="instruction-card">
+    <div class="card-header">
+      <div class="card-icon" id="card-icon"></div>
+      <div class="card-header-text">
+        <h2 id="card-title"></h2>
+        <div class="card-sub" id="card-sub"></div>
+      </div>
+    </div>
+    <div class="card-body" id="card-body"></div>
+  </div>
+</div>
+<footer>
+  <span>CRANIS2 User Guide · Chapter 5 · Diagram 3 of 4</span>
+  <div class="nav-links"><button class="nav-btn" onclick="window.location='ch5_02_ip_proof.html'">← Previous</button><button class="nav-btn" onclick="window.location='ch5_04_billing_lifecycle.html'">Next →</button></div>
+</footer>
+<script>
+const stations = {
+  "enable": {
+    icon:"\ud83d\udd12",
+    iconBg:"#F1EFE8",
+    badge:"Step 1",
+    badgeClass:"badge-gray",
+    title:"Enable escrow for a product",
+    sub:"Navigate to /products/:id/escrow",
+    body:`<p>Escrow is opt-in and configured per product. Navigate to the product's <strong>Escrow</strong> tab and toggle escrow on. Once enabled, the first deposit runs automatically at 5 AM UTC the following day.</p><div class="tip">Escrow is a meaningful trust signal in B2B sales conversations. It demonstrates that your clients are protected against business continuity risk.</div>`
+  },
+  "configure": {
+    icon:"\u2699\ufe0f",
+    iconBg:"#E1F5EE",
+    badge:"Step 2",
+    badgeClass:"badge-teal",
+    title:"Configure artefacts and release model",
+    sub:"Choose what to deposit and how it can be released",
+    body:`<p>From the Escrow tab, configure two settings:</p><p><strong>Artefacts to include in deposits:</strong></p><ul class="detail-list"><li>SBOM (CycloneDX/SPDX)</li><li>Vulnerability reports</li><li>Licence audit results</li><li>IP proof snapshots</li><li>CRA documentation (Technical File + obligations)</li><li>Compliance timeline</li></ul><p><strong>Release model:</strong> Open source (published publicly) or Designated recipients (named clients receive private copies).</p>`
+  },
+  "deposit": {
+    icon:"\ud83d\udce5",
+    iconBg:"#FAEEDA",
+    badge:"Step 3",
+    badgeClass:"badge-amber",
+    title:"Daily automated deposits \u2014 5:00 AM UTC",
+    sub:"Source code always current",
+    body:`<p>Every day at 5 AM UTC, CRANIS2 automatically deposits the latest state of your product's source code and selected artefacts to the escrow instance. The deposit is a mirror of your connected repository — it is always current without any manual action.</p><p>Deposits are logged in the Activity Log and you can verify the last deposit date from the Escrow tab.</p>`
+  },
+  "forgejo": {
+    icon:"\ud83c\udfe6",
+    iconBg:"#EEEDFE",
+    badge:"Storage",
+    badgeClass:"badge-purple",
+    title:"Stored in self-hosted Forgejo",
+    sub:"Switzerland \u00b7 European data sovereignty",
+    body:`<p>Escrow deposits are stored in a self-hosted Forgejo instance within the CRANIS2 infrastructure, hosted in Switzerland with Infomaniak. This ensures:</p><ul class="detail-list"><li><strong>European data sovereignty</strong> — your source code never leaves Europe</li><li><strong>Independence</strong> — the Forgejo instance is separate from your production repository</li><li><strong>Persistence</strong> — deposits are preserved even after product deletion or subscription cancellation</li></ul>`
+  },
+  "release": {
+    icon:"\ud83d\udd00",
+    iconBg:"#E1F5EE",
+    badge:"Interchange",
+    badgeClass:"badge-teal",
+    title:"Release model",
+    sub:"How the escrow is released if triggered",
+    body:`<p>The release model determines what happens to the escrow if your company ceases to operate:</p><ul class="detail-list"><li><strong>Open source</strong> — the source code is published publicly under an open-source licence</li><li><strong>Designated recipients</strong> — specific clients you name receive private copies of the source code</li></ul><p>You set the release model during configuration. It can be updated at any time from the Escrow tab.</p>`
+  },
+  "open-source": {
+    icon:"\ud83c\udf10",
+    iconBg:"#EAF3DE",
+    badge:"Release path",
+    badgeClass:"badge-green",
+    title:"Open source release",
+    sub:"Code published publicly if triggered",
+    body:`<p>If your company ceases to operate and the open source release model is configured, the escrow contents are published publicly — making your software available to all your clients and the wider community. This is the most transparent option and works well for products that could benefit from community maintenance.</p>`
+  },
+  "designated": {
+    icon:"\ud83d\udc65",
+    iconBg:"#E6F1FB",
+    badge:"Release path",
+    badgeClass:"badge-blue",
+    title:"Designated recipients",
+    sub:"Named clients receive private copies",
+    body:`<p>If your company ceases to operate and the designated recipients model is configured, the specific clients you have named receive private copies of the source code. This is appropriate for B2B software where clients need continued access but open publication is not appropriate.</p><p>You designate recipients from the Escrow configuration tab. Recipients can be updated at any time.</p>`
+  }
+};
+const allIds = ["enable", "configure", "deposit", "forgejo", "release", "open-source", "designated"];
+function show(id) {
+  const s = stations[id];
+  if (!s) return;
+  allIds.forEach(k => {
+    const el = document.getElementById('ms-' + k);
+    if (!el) return;
+    el.querySelectorAll('circle,rect').forEach(c => { c.style.filter = ''; });
+  });
+  const active = document.getElementById('ms-' + id);
+  if (active) active.querySelectorAll('circle').forEach(c => {
+    c.style.filter = 'drop-shadow(0 0 6px rgba(29,158,117,.6))';
+  });
+  document.getElementById('card-icon').textContent = s.icon;
+  document.getElementById('card-icon').style.background = s.iconBg;
+  document.getElementById('card-title').innerHTML = s.title + '<span class="line-badge ' + s.badgeClass + '">' + s.badge + '</span>';
+  document.getElementById('card-sub').textContent = s.sub;
+  document.getElementById('card-body').innerHTML = s.body;
+  document.getElementById('prompt').style.display = 'none';
+  const card = document.getElementById('instruction-card');
+  card.classList.remove('visible');
+  void card.offsetWidth;
+  card.classList.add('visible');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENISA reporting workflow — CRANIS2 Help</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --navy:#1C2B3A;--teal:#1D9E75;--teal-lt:#E1F5EE;--teal-dk:#085041;
+    --purple:#534AB7;--purple-lt:#EEEDFE;--coral:#D85A30;--coral-lt:#FAECE7;
+    --amber:#BA7517;--amber-lt:#FAEEDA;--green-lt:#EAF3DE;--green-dk:#173404;
+    --gray-lt:#F1EFE8;--bg:#F4F2EE;--surface:#FFFFFF;--border:#E2DDD4;
+    --text:#1A1A18;--text-2:#5A5854;--text-3:#8C8A84;
+    --shadow:0 2px 8px rgba(0,0,0,.07),0 8px 24px rgba(0,0,0,.05);
+  }
+  html,body{font-family:'Source Serif 4',Georgia,serif;background:var(--bg);color:var(--text);}
+  header{background:var(--navy);padding:0 28px;display:flex;align-items:center;gap:16px;height:52px;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Outfit',sans-serif;font-weight:700;font-size:17px;color:#fff;letter-spacing:-.3px;}
+  .logo span{color:var(--teal)}
+  .sep{width:1px;height:20px;background:rgba(255,255,255,.2)}
+  .breadcrumb{font-family:'Outfit',sans-serif;font-size:13px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:7px;}
+  .breadcrumb strong{color:rgba(255,255,255,.9);font-weight:500}
+  .audience-tags{margin-left:auto;display:flex;gap:6px}
+  .tag{font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6)}
+  .map-section{background:var(--surface);border-bottom:2px solid var(--border);padding:24px 24px 16px}
+  .map-header{display:flex;align-items:baseline;gap:12px;margin-bottom:18px}
+  .map-header h1{font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+  .map-header p{font-family:'Outfit',sans-serif;font-size:13px;color:var(--text-3)}
+  .map-wrap{overflow-x:auto;padding-bottom:4px}
+  .map-wrap svg{display:block;min-width:700px}
+  .map-hint{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px}
+  .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+  .stn{cursor:pointer;transition:opacity .15s}.stn:hover{opacity:.75}
+  .instructions-wrap{max-width:820px;margin:0 auto;padding:36px 28px 80px}
+  .prompt-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px;text-align:center;gap:14px}
+  .prompt-icon{width:48px;height:48px;border-radius:50%;background:var(--teal-lt);display:flex;align-items:center;justify-content:center;font-size:22px}
+  .prompt-state h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;color:var(--text)}
+  .prompt-state p{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-3);max-width:340px;line-height:1.6}
+  .instruction-card{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;display:none;animation:fadeUp .22s ease both}
+  .instruction-card.visible{display:block}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .card-header{padding:18px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+  .card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .card-header-text h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.15px}
+  .card-header-text .card-sub{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);margin-top:2px}
+  .line-badge{display:inline-block;font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;padding:2px 8px;border-radius:4px;margin-left:8px;vertical-align:middle}
+  .badge-teal{background:var(--teal-lt);color:var(--teal-dk)}.badge-coral{background:var(--coral-lt);color:#711E08}
+  .badge-purple{background:var(--purple-lt);color:#26215C}.badge-amber{background:var(--amber-lt);color:#412402}
+  .badge-blue{background:#E6F1FB;color:#042C53}.badge-green{background:var(--green-lt);color:var(--green-dk)}
+  .badge-gray{background:var(--gray-lt);color:#2C2C2A}
+  .card-body{padding:22px 24px 26px;display:flex;flex-direction:column;gap:14px}
+  .card-body p{font-size:15px;line-height:1.72;color:var(--text-2)}
+  .card-body strong{color:var(--text);font-weight:600}
+  .detail-list{list-style:none;display:flex;flex-direction:column;gap:7px;padding-left:2px}
+  .detail-list li{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-2);display:flex;align-items:flex-start;gap:10px;line-height:1.55}
+  .detail-list li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--teal);margin-top:7px;flex-shrink:0}
+  .tip{background:var(--teal-lt);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--teal-dk);line-height:1.55}
+  .warn{background:var(--amber-lt);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#412402;line-height:1.55}
+  .info{background:#E6F1FB;border-left:3px solid #185FA5;border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#042C53;line-height:1.55}
+  .code{font-family:'DM Mono',monospace;font-size:12.5px;background:var(--gray-lt);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--text)}
+  footer{background:var(--surface);border-top:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;position:sticky;bottom:0;z-index:100}
+  footer span{font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--text-3)}
+  .nav-links{margin-left:auto;display:flex;gap:10px}
+  .nav-btn{font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:var(--teal-dk);padding:5px 14px;border:1px solid var(--teal);border-radius:5px;cursor:pointer;background:transparent;transition:background .15s}
+  .nav-btn:hover{background:var(--teal-lt)}
+  .nav-btn:disabled{opacity:.3;cursor:default;border-color:var(--border);color:var(--text-3)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">CRANIS<span>2</span></div>
+  <div class="sep"></div>
+  <div class="breadcrumb">
+    <span>Chapter 5 · Reporting & Evidence</span>
+    <span>›</span>
+    <strong>ENISA reporting workflow</strong>
+  </div>
+  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span><span class="tag">Sales</span></div>
+</header>
+<div class="map-section">
+  <div class="map-header">
+    <h1>ENISA reporting workflow</h1>
+    <p>24h, 72h, and 14-day submission stages</p>
+  </div>
+  <div class="map-wrap">
+    <svg viewBox="0 0 760 211" xmlns="http://www.w3.org/2000/svg"><defs><style>
+  .lbl{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:11px;fill:#1A1A18;}
+  .lbl-sub{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:9.5px;fill:#8C8A84;}
+</style></defs><line x1="63.0" y1="115.0" x2="155.3" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="171.3" y1="115.0" x2="263.7" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="279.7" y1="115.0" x2="372.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="388.0" y1="115.0" x2="480.3" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="496.3" y1="115.0" x2="588.7" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="604.7" y1="115.0" x2="693.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<g class="stn" id="ms-create" onclick="show('create')"><rect x="49.0" y="105.0" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="55.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="55.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Create report</text><text x="55.0" y="150.0" text-anchor="middle" class="lbl-sub">/vulnerability-reports</text></g>
+<g class="stn" id="ms-details" onclick="show('details')"><circle cx="163.3" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="163.3" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Report details</text><text x="163.3" y="150.0" text-anchor="middle" class="lbl-sub">Type + awareness date</text></g>
+<g class="stn" id="ms-clock" onclick="show('clock')"><circle cx="271.7" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="271.7" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Deadline clock</text><text x="271.7" y="150.0" text-anchor="middle" class="lbl-sub">Hourly monitoring</text></g>
+<g class="stn" id="ms-stage1" onclick="show('stage1')"><circle cx="380.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="380.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">24h · Stage 1</text><text x="380.0" y="150.0" text-anchor="middle" class="lbl-sub">Early warning</text></g>
+<g class="stn" id="ms-stage2" onclick="show('stage2')"><circle cx="488.3" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="488.3" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">72h · Stage 2</text><text x="488.3" y="150.0" text-anchor="middle" class="lbl-sub">Notification</text></g>
+<g class="stn" id="ms-stage3" onclick="show('stage3')"><circle cx="596.7" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="596.7" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">14d · Stage 3</text><text x="596.7" y="150.0" text-anchor="middle" class="lbl-sub">Final report</text></g>
+<g class="stn" id="ms-close" onclick="show('close')"><circle cx="705.0" cy="115.0" r="12" fill="white" stroke="#3B6D11" stroke-width="3"/><circle cx="705.0" cy="115.0" r="6" fill="#3B6D11"/><text x="705.0" y="141.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Close report</text><text x="705.0" y="154.0" text-anchor="middle" class="lbl-sub">Addenda allowed</text></g>
+  <line x1="30" y1="183.0" x2="55" y2="183.0" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
+  <text x="61" y="187.0" class="lbl-sub">Main journey</text>
+  <line x1="150" y1="183.0" x2="175" y2="183.0" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
+  <text x="181" y="187.0" class="lbl-sub">Error / branch</text>
+  <line x1="278" y1="183.0" x2="303" y2="183.0" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+  <text x="309" y="187.0" class="lbl-sub">Feeder</text>
+  <line x1="368" y1="183.0" x2="393" y2="183.0" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
+  <text x="399" y="187.0" class="lbl-sub">Next process</text>
+  <circle cx="468" cy="183.0" r="6" fill="white" stroke="#888" stroke-width="2"/>
+  <circle cx="468" cy="183.0" r="3" fill="#888"/>
+  <text x="479" y="187.0" class="lbl-sub">Interchange</text></svg>
+  </div>
+  <div class="map-hint"><div class="hint-dot"></div>Click any station to see instructions for that step</div>
+</div>
+<div class="instructions-wrap">
+  <div class="prompt-state" id="prompt">
+    <div class="prompt-icon">🗺️</div>
+    <h2>Select a station to begin</h2>
+    <p>Click any station on the map above to read the instructions for that step.</p>
+  </div>
+  <div class="instruction-card" id="instruction-card">
+    <div class="card-header">
+      <div class="card-icon" id="card-icon"></div>
+      <div class="card-header-text">
+        <h2 id="card-title"></h2>
+        <div class="card-sub" id="card-sub"></div>
+      </div>
+    </div>
+    <div class="card-body" id="card-body"></div>
+  </div>
+</div>
+<footer>
+  <span>CRANIS2 User Guide · Chapter 5 · Diagram 1 of 4</span>
+  <div class="nav-links"><button class="nav-btn" onclick="window.location='ch4_04_declaration_conformity.html'">← Previous</button><button class="nav-btn" onclick="window.location='ch5_02_ip_proof.html'">Next →</button></div>
+</footer>
+<script>
+const stations = {
+  "create": {
+    icon:"\ud83d\udccb",
+    iconBg:"#F1EFE8",
+    badge:"Step 1",
+    badgeClass:"badge-gray",
+    title:"Create the report",
+    sub:"Navigate to /vulnerability-reports \u2192 New Report",
+    body:`<p>Navigate to <span class="code">/vulnerability-reports</span> and click <strong>New Report</strong>. Alternatively, create directly from an existing risk finding using the Report button — this pre-populates the form with the CVE details.</p>`
+  },
+  "details": {
+    icon:"\ud83d\udcdd",
+    iconBg:"#E1F5EE",
+    badge:"Step 2",
+    badgeClass:"badge-teal",
+    title:"Enter report details",
+    sub:"Product, type, and awareness date/time",
+    body:`<p>The creation form requires:</p><ul class="detail-list"><li><strong>Product</strong> — select the affected product from your portfolio</li><li><strong>Report type</strong> — Actively Exploited Vulnerability or Severe Incident</li><li><strong>Awareness date and time</strong> — when you first became aware. All deadlines are calculated from this moment.</li></ul><p>Additional fields (CSIRT country, affected member states, TLP classification) can be added after creation.</p><div class="warn">Set the awareness date accurately — this is legally significant and starts the deadline clock.</div>`
+  },
+  "clock": {
+    icon:"\u23f1\ufe0f",
+    iconBg:"#FAEEDA",
+    badge:"Step 3",
+    badgeClass:"badge-amber",
+    title:"Deadline clock starts",
+    sub:"CRANIS2 monitors hourly with escalating alerts",
+    body:`<p>From the awareness date, three submission deadlines are calculated automatically. CRANIS2 monitors these hourly and generates escalating notifications:</p><ul class="detail-list"><li>12 hours before each deadline</li><li>4 hours before each deadline</li><li>1 hour before each deadline</li><li>When a deadline becomes overdue</li></ul><p>The ENISA Reporting overview page shows a live countdown to the next deadline.</p>`
+  },
+  "stage1": {
+    icon:"\ud83d\udce2",
+    iconBg:"#FAEEDA",
+    badge:"Stage 1",
+    badgeClass:"badge-amber",
+    title:"Early warning \u2014 24 hours",
+    sub:"First submission: existence of the issue",
+    body:`<p>Submit the early warning within 24 hours. Content required:</p><ul class="detail-list"><li>Summary of the vulnerability or incident</li><li>Whether malicious action is suspected</li><li>Initial assessment of affected EU member states</li></ul><p>Navigate to the report detail page — CRANIS2 automatically opens the form for the next required stage. Once submitted, status advances to <span class="code">early_warning_sent</span>.</p><div class="tip">Pro plan: use the <strong>AI Incident Report Drafter</strong> to generate stage-appropriate content in seconds.</div>`
+  },
+  "stage2": {
+    icon:"\ud83d\udcc4",
+    iconBg:"#FAECE7",
+    badge:"Stage 2",
+    badgeClass:"badge-coral",
+    title:"Notification \u2014 72 hours",
+    sub:"Detailed description and current status",
+    body:`<p>Submit the full notification within 72 hours. Content required:</p><ul class="detail-list"><li>Detailed description of the vulnerability or incident</li><li>Nature of the exploit or attack vector</li><li>Corrective measures taken or planned</li><li>Current patch status and affected versions</li></ul><p>Once submitted, status advances to <span class="code">notification_sent</span>. Intermediate progress updates can be submitted between stages at any time.</p>`
+  },
+  "stage3": {
+    icon:"\ud83d\udcd1",
+    iconBg:"#EEEDFE",
+    badge:"Stage 3",
+    badgeClass:"badge-purple",
+    title:"Final report \u2014 14 days",
+    sub:"Root cause and complete remediation account",
+    body:`<p>Submit the final report within 14 days (for vulnerabilities) or 1 month (for incidents). Content required:</p><ul class="detail-list"><li>Root cause analysis</li><li>Full severity assessment</li><li>Information on malicious actors if known</li><li>Security updates issued to users</li><li>Preventive measures implemented</li><li>User notification status</li></ul>`
+  },
+  "close": {
+    icon:"\u2705",
+    iconBg:"#EAF3DE",
+    badge:"Complete",
+    badgeClass:"badge-green",
+    title:"Close the report",
+    sub:"Post-close addenda permitted",
+    body:`<p>When all three stages are submitted and the issue is resolved, close the report. Closing marks it as resolved in your ENISA reporting history.</p><p>Post-close addenda are permitted — you can submit additional intermediate stages even after closure if new information emerges. This is particularly relevant if a follow-up investigation reveals new details about the root cause or impact.</p>`
+  }
+};
+const allIds = ["create", "details", "clock", "stage1", "stage2", "stage3", "close"];
+function show(id) {
+  const s = stations[id];
+  if (!s) return;
+  allIds.forEach(k => {
+    const el = document.getElementById('ms-' + k);
+    if (!el) return;
+    el.querySelectorAll('circle,rect').forEach(c => { c.style.filter = ''; });
+  });
+  const active = document.getElementById('ms-' + id);
+  if (active) active.querySelectorAll('circle').forEach(c => {
+    c.style.filter = 'drop-shadow(0 0 6px rgba(29,158,117,.6))';
+  });
+  document.getElementById('card-icon').textContent = s.icon;
+  document.getElementById('card-icon').style.background = s.iconBg;
+  document.getElementById('card-title').innerHTML = s.title + '<span class="line-badge ' + s.badgeClass + '">' + s.badge + '</span>';
+  document.getElementById('card-sub').textContent = s.sub;
+  document.getElementById('card-body').innerHTML = s.body;
+  document.getElementById('prompt').style.display = 'none';
+  const card = document.getElementById('instruction-card');
+  card.classList.remove('visible');
+  void card.offsetWidth;
+  card.classList.add('visible');
+}
+</script>
+</body>
+</html>

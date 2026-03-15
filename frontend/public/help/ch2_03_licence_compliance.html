@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Licence compliance — CRANIS2 Help</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --navy:#1C2B3A;--teal:#1D9E75;--teal-lt:#E1F5EE;--teal-dk:#085041;
+    --purple:#534AB7;--purple-lt:#EEEDFE;--coral:#D85A30;--coral-lt:#FAECE7;
+    --amber:#BA7517;--amber-lt:#FAEEDA;--green-lt:#EAF3DE;--green-dk:#173404;
+    --gray-lt:#F1EFE8;--bg:#F4F2EE;--surface:#FFFFFF;--border:#E2DDD4;
+    --text:#1A1A18;--text-2:#5A5854;--text-3:#8C8A84;
+    --shadow:0 2px 8px rgba(0,0,0,.07),0 8px 24px rgba(0,0,0,.05);
+  }
+  html,body{font-family:'Source Serif 4',Georgia,serif;background:var(--bg);color:var(--text);}
+  header{background:var(--navy);padding:0 28px;display:flex;align-items:center;gap:16px;height:52px;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Outfit',sans-serif;font-weight:700;font-size:17px;color:#fff;letter-spacing:-.3px;}
+  .logo span{color:var(--teal)}
+  .sep{width:1px;height:20px;background:rgba(255,255,255,.2)}
+  .breadcrumb{font-family:'Outfit',sans-serif;font-size:13px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:7px;}
+  .breadcrumb strong{color:rgba(255,255,255,.9);font-weight:500}
+  .audience-tags{margin-left:auto;display:flex;gap:6px}
+  .tag{font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6)}
+  .map-section{background:var(--surface);border-bottom:2px solid var(--border);padding:24px 24px 16px}
+  .map-header{display:flex;align-items:baseline;gap:12px;margin-bottom:18px}
+  .map-header h1{font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+  .map-header p{font-family:'Outfit',sans-serif;font-size:13px;color:var(--text-3)}
+  .map-wrap{overflow-x:auto;padding-bottom:4px}
+  .map-wrap svg{display:block;min-width:700px}
+  .map-hint{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px}
+  .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+  .stn{cursor:pointer;transition:opacity .15s}.stn:hover{opacity:.75}
+  .instructions-wrap{max-width:820px;margin:0 auto;padding:36px 28px 80px}
+  .prompt-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px;text-align:center;gap:14px}
+  .prompt-icon{width:48px;height:48px;border-radius:50%;background:var(--teal-lt);display:flex;align-items:center;justify-content:center;font-size:22px}
+  .prompt-state h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;color:var(--text)}
+  .prompt-state p{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-3);max-width:340px;line-height:1.6}
+  .instruction-card{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;display:none;animation:fadeUp .22s ease both}
+  .instruction-card.visible{display:block}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .card-header{padding:18px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+  .card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .card-header-text h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.15px}
+  .card-header-text .card-sub{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);margin-top:2px}
+  .line-badge{display:inline-block;font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;padding:2px 8px;border-radius:4px;margin-left:8px;vertical-align:middle}
+  .badge-teal{background:var(--teal-lt);color:var(--teal-dk)}.badge-coral{background:var(--coral-lt);color:#711E08}
+  .badge-purple{background:var(--purple-lt);color:#26215C}.badge-amber{background:var(--amber-lt);color:#412402}
+  .badge-blue{background:#E6F1FB;color:#042C53}.badge-green{background:var(--green-lt);color:var(--green-dk)}
+  .badge-gray{background:var(--gray-lt);color:#2C2C2A}
+  .card-body{padding:22px 24px 26px;display:flex;flex-direction:column;gap:14px}
+  .card-body p{font-size:15px;line-height:1.72;color:var(--text-2)}
+  .card-body strong{color:var(--text);font-weight:600}
+  .detail-list{list-style:none;display:flex;flex-direction:column;gap:7px;padding-left:2px}
+  .detail-list li{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-2);display:flex;align-items:flex-start;gap:10px;line-height:1.55}
+  .detail-list li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--teal);margin-top:7px;flex-shrink:0}
+  .tip{background:var(--teal-lt);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--teal-dk);line-height:1.55}
+  .warn{background:var(--amber-lt);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#412402;line-height:1.55}
+  .info{background:#E6F1FB;border-left:3px solid #185FA5;border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#042C53;line-height:1.55}
+  .code{font-family:'DM Mono',monospace;font-size:12.5px;background:var(--gray-lt);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--text)}
+  footer{background:var(--surface);border-top:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;position:sticky;bottom:0;z-index:100}
+  footer span{font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--text-3)}
+  .nav-links{margin-left:auto;display:flex;gap:10px}
+  .nav-btn{font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:var(--teal-dk);padding:5px 14px;border:1px solid var(--teal);border-radius:5px;cursor:pointer;background:transparent;transition:background .15s}
+  .nav-btn:hover{background:var(--teal-lt)}
+  .nav-btn:disabled{opacity:.3;cursor:default;border-color:var(--border);color:var(--text-3)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">CRANIS<span>2</span></div>
+  <div class="sep"></div>
+  <div class="breadcrumb">
+    <span>Chapter 2 · SBOM & Dependencies</span>
+    <span>›</span>
+    <strong>Licence compliance</strong>
+  </div>
+  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span></div>
+</header>
+<div class="map-section">
+  <div class="map-header">
+    <h1>Licence compliance</h1>
+    <p>Classification, waivers, and due diligence export</p>
+  </div>
+  <div class="map-wrap">
+    <svg viewBox="0 0 760 331" xmlns="http://www.w3.org/2000/svg"><defs><style>
+  .lbl{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:11px;fill:#1A1A18;}
+  .lbl-sub{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:9.5px;fill:#8C8A84;}
+</style></defs><g transform="translate(0,26.8)"><line x1="63.0" y1="115.0" x2="155.3" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="171.3" y1="115.0" x2="259.7" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="283.7" y1="115.0" x2="480.3" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="496.3" y1="115.0" x2="588.7" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="604.7" y1="115.0" x2="693.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="280.7" y1="107.1" x2="374.0" y2="26.4" stroke="#3B6D11" stroke-width="4" stroke-linecap="round"/>
+<line x1="280.7" y1="122.9" x2="374.0" y2="203.6" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
+<g class="stn" id="ms-trigger" onclick="show('trigger')"><rect x="49.0" y="105.0" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="55.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="55.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">SBOM syncs</text><text x="55.0" y="150.0" text-anchor="middle" class="lbl-sub">Triggers scan</text></g>
+<g class="stn" id="ms-classify" onclick="show('classify')"><circle cx="163.3" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="163.3" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Classify all deps</text><text x="163.3" y="150.0" text-anchor="middle" class="lbl-sub">vs. distrib. model</text></g>
+<g class="stn" id="ms-branch" onclick="show('branch')"><circle cx="271.7" cy="115.0" r="12" fill="white" stroke="#1D9E75" stroke-width="3"/><circle cx="271.7" cy="115.0" r="6" fill="#1D9E75"/><text x="271.7" y="141.0" text-anchor="end" class="lbl" font-weight="600" style="fill:#1A1A18">Licence type?</text><text x="271.7" y="154.0" text-anchor="end" class="lbl-sub">Interchange</text></g>
+<g class="stn" id="ms-copyleft" onclick="show('copyleft')"><circle cx="488.3" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="488.3" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Copyleft</text><text x="488.3" y="150.0" text-anchor="middle" class="lbl-sub">Review needed</text></g>
+<g class="stn" id="ms-waiver" onclick="show('waiver')"><circle cx="596.7" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="596.7" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Waiver recorded</text><text x="596.7" y="150.0" text-anchor="middle" class="lbl-sub">Justification logged</text></g>
+<g class="stn" id="ms-export" onclick="show('export')"><circle cx="705.0" cy="115.0" r="12" fill="white" stroke="#534AB7" stroke-width="3"/><circle cx="705.0" cy="115.0" r="6" fill="#534AB7"/><text x="705.0" y="141.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Due diligence</text><text x="705.0" y="154.0" text-anchor="middle" class="lbl-sub">Export available</text></g>
+<g class="stn" id="ms-permissive" onclick="show('permissive')"><circle cx="380.0" cy="21.2" r="8" fill="white" stroke="#3B6D11" stroke-width="3"/><text x="380.0" y="-4.8" text-anchor="middle" class="lbl" font-weight="600" style="fill:#3B6D11">Permissive</text><text x="380.0" y="8.2" text-anchor="middle" class="lbl-sub">No action needed</text></g>
+<g class="stn" id="ms-unknown" onclick="show('unknown')"><circle cx="380.0" cy="208.8" r="8" fill="white" stroke="#D85A30" stroke-width="3"/><text x="380.0" y="230.8" text-anchor="middle" class="lbl" font-weight="600" style="fill:#D85A30">Unknown</text><text x="380.0" y="243.8" text-anchor="middle" class="lbl-sub">Investigate manually</text></g></g>
+  <line x1="30" y1="303.63883748662835" x2="55" y2="303.63883748662835" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
+  <text x="61" y="307.63883748662835" class="lbl-sub">Main journey</text>
+  <line x1="150" y1="303.63883748662835" x2="175" y2="303.63883748662835" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
+  <text x="181" y="307.63883748662835" class="lbl-sub">Error / branch</text>
+  <line x1="278" y1="303.63883748662835" x2="303" y2="303.63883748662835" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+  <text x="309" y="307.63883748662835" class="lbl-sub">Feeder</text>
+  <line x1="368" y1="303.63883748662835" x2="393" y2="303.63883748662835" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
+  <text x="399" y="307.63883748662835" class="lbl-sub">Next process</text>
+  <circle cx="468" cy="303.63883748662835" r="6" fill="white" stroke="#888" stroke-width="2"/>
+  <circle cx="468" cy="303.63883748662835" r="3" fill="#888"/>
+  <text x="479" y="307.63883748662835" class="lbl-sub">Interchange</text></svg>
+  </div>
+  <div class="map-hint"><div class="hint-dot"></div>Click any station to see instructions for that step</div>
+</div>
+<div class="instructions-wrap">
+  <div class="prompt-state" id="prompt">
+    <div class="prompt-icon">🗺️</div>
+    <h2>Select a station to begin</h2>
+    <p>Click any station on the map above to read the instructions for that step.</p>
+  </div>
+  <div class="instruction-card" id="instruction-card">
+    <div class="card-header">
+      <div class="card-icon" id="card-icon"></div>
+      <div class="card-header-text">
+        <h2 id="card-title"></h2>
+        <div class="card-sub" id="card-sub"></div>
+      </div>
+    </div>
+    <div class="card-body" id="card-body"></div>
+  </div>
+</div>
+<footer>
+  <span>CRANIS2 User Guide · Chapter 2 · Diagram 3 of 3</span>
+  <div class="nav-links"><button class="nav-btn" onclick="window.location='ch2_02_vuln_scan_flow.html'">← Previous</button><button class="nav-btn" onclick="window.location='ch3_01_finding_triage.html'">Next →</button></div>
+</footer>
+<script>
+const stations = {
+  "trigger": {
+    icon:"\ud83d\udce6",
+    iconBg:"#F1EFE8",
+    badge:"Trigger",
+    badgeClass:"badge-gray",
+    title:"SBOM sync triggers licence scan",
+    sub:"Automatic \u2014 runs after every sync",
+    body:`<p>Every time an SBOM sync completes — whether triggered manually, by a push event, or by the nightly scheduler — a licence scan runs automatically against the new dependency list. No manual action is required to initiate it.</p>`
+  },
+  "classify": {
+    icon:"\ud83c\udff7\ufe0f",
+    iconBg:"#E1F5EE",
+    badge:"Step 1",
+    badgeClass:"badge-teal",
+    title:"Every dependency licence classified",
+    sub:"Compared against your distribution model",
+    body:`<p>Each dependency's SPDX licence identifier is looked up and classified. The result is compared against your product's distribution model, which affects compatibility:</p><ul class="detail-list"><li><strong>SaaS hosted</strong> — copyleft licences are generally compatible as you are not distributing a binary</li><li><strong>Binary / library</strong> — copyleft licences may require your product to be open-sourced; flagged for review</li><li><strong>Internal only</strong> — most licences are permissible</li></ul>`
+  },
+  "branch": {
+    icon:"\ud83d\udd00",
+    iconBg:"#E1F5EE",
+    badge:"Interchange",
+    badgeClass:"badge-teal",
+    title:"Licence type branch",
+    sub:"Three outcomes from classification",
+    body:`<p>Classification produces three possible outcomes:</p><ul class="detail-list"><li><strong>Permissive</strong> — green path above the line. No action needed.</li><li><strong>Copyleft</strong> — main line continues. Review required.</li><li><strong>Unknown / flagged</strong> — red path below the line. Manual investigation needed.</li></ul>`
+  },
+  "permissive": {
+    icon:"\u2705",
+    iconBg:"#EAF3DE",
+    badge:"Clean path",
+    badgeClass:"badge-green",
+    title:"Permissive licence",
+    sub:"No action required",
+    body:`<p>Permissive licences (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Unlicense) impose no meaningful restrictions on how you distribute or use the dependency. No action is required and these do not appear as compliance issues.</p>`
+  },
+  "copyleft": {
+    icon:"\u2696\ufe0f",
+    iconBg:"#FAEEDA",
+    badge:"Review needed",
+    badgeClass:"badge-amber",
+    title:"Copyleft licence",
+    sub:"Compatibility depends on your distribution model",
+    body:`<p>Copyleft licences (GPL, LGPL, AGPL, MPL, EUPL) require derivative works to be distributed under the same or compatible terms. Whether this is an issue depends on your distribution model:</p><ul class="detail-list"><li>Review the licence terms against how you distribute your product</li><li>If compliant, record a waiver with justification</li><li>If problematic, consider replacing the dependency with a permissively-licensed alternative</li></ul>`
+  },
+  "unknown": {
+    icon:"\u2753",
+    iconBg:"#FAECE7",
+    badge:"Flagged",
+    badgeClass:"badge-coral",
+    title:"Unknown or proprietary licence",
+    sub:"Manual investigation required",
+    body:`<p>If a dependency has no recognised SPDX licence identifier, or uses proprietary terms, it is flagged for manual review. Common causes:</p><ul class="detail-list"><li>The licence file is non-standard or missing from the package registry</li><li>The dependency uses a custom or organisation-specific licence</li><li>The package is dual-licensed and the applicable terms are unclear</li></ul><p>Investigate the dependency's repository or registry page directly to determine the licence terms.</p>`
+  },
+  "waiver": {
+    icon:"\ud83d\udcdd",
+    iconBg:"#FAEEDA",
+    badge:"Step 2",
+    badgeClass:"badge-amber",
+    title:"Record a waiver",
+    sub:"Justification logged per dependency",
+    body:`<p>When you have reviewed a copyleft or flagged licence and determined it is acceptable for your use case, record a waiver from the licence compliance page. The waiver captures:</p><ul class="detail-list"><li>The dependency name and version</li><li>The licence type</li><li>Your justification for accepting it</li><li>The date of the review decision</li></ul><p>Waivers are included in the due diligence export and form part of your compliance evidence.</p>`
+  },
+  "export": {
+    icon:"\ud83d\udce4",
+    iconBg:"#EEEDFE",
+    badge:"Output",
+    badgeClass:"badge-purple",
+    title:"Due diligence export",
+    sub:"Markdown or CSV \u2014 available on all plans",
+    body:`<p>The due diligence export packages your licence compliance findings into a structured report. Common uses include:</p><ul class="detail-list"><li><strong>Investor due diligence</strong> — evidence of software governance during fundraising</li><li><strong>Customer procurement</strong> — responding to supply chain security questionnaires</li><li><strong>Internal audit</strong> — periodic governance review</li><li><strong>Insurance</strong> — demonstrating cybersecurity maturity for underwriting</li></ul><p>Export from the Licence Compliance page. Available in Markdown and CSV formats.</p>`
+  }
+};
+const allIds = ["trigger", "classify", "branch", "permissive", "copyleft", "unknown", "waiver", "export"];
+function show(id) {
+  const s = stations[id];
+  if (!s) return;
+  allIds.forEach(k => {
+    const el = document.getElementById('ms-' + k);
+    if (!el) return;
+    el.querySelectorAll('circle,rect').forEach(c => { c.style.filter = ''; });
+  });
+  const active = document.getElementById('ms-' + id);
+  if (active) active.querySelectorAll('circle').forEach(c => {
+    c.style.filter = 'drop-shadow(0 0 6px rgba(29,158,117,.6))';
+  });
+  document.getElementById('card-icon').textContent = s.icon;
+  document.getElementById('card-icon').style.background = s.iconBg;
+  document.getElementById('card-title').innerHTML = s.title + '<span class="line-badge ' + s.badgeClass + '">' + s.badge + '</span>';
+  document.getElementById('card-sub').textContent = s.sub;
+  document.getElementById('card-body').innerHTML = s.body;
+  document.getElementById('prompt').style.display = 'none';
+  const card = document.getElementById('instruction-card');
+  card.classList.remove('visible');
+  void card.offsetWidth;
+  card.classList.add('visible');
+}
+</script>
+</body>
+</html>

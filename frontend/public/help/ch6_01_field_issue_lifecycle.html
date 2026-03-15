@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field issue lifecycle — CRANIS2 Help</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --navy:#1C2B3A;--teal:#1D9E75;--teal-lt:#E1F5EE;--teal-dk:#085041;
+    --purple:#534AB7;--purple-lt:#EEEDFE;--coral:#D85A30;--coral-lt:#FAECE7;
+    --amber:#BA7517;--amber-lt:#FAEEDA;--green-lt:#EAF3DE;--green-dk:#173404;
+    --gray-lt:#F1EFE8;--bg:#F4F2EE;--surface:#FFFFFF;--border:#E2DDD4;
+    --text:#1A1A18;--text-2:#5A5854;--text-3:#8C8A84;
+    --shadow:0 2px 8px rgba(0,0,0,.07),0 8px 24px rgba(0,0,0,.05);
+  }
+  html,body{font-family:'Source Serif 4',Georgia,serif;background:var(--bg);color:var(--text);}
+  header{background:var(--navy);padding:0 28px;display:flex;align-items:center;gap:16px;height:52px;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Outfit',sans-serif;font-weight:700;font-size:17px;color:#fff;letter-spacing:-.3px;}
+  .logo span{color:var(--teal)}
+  .sep{width:1px;height:20px;background:rgba(255,255,255,.2)}
+  .breadcrumb{font-family:'Outfit',sans-serif;font-size:13px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:7px;}
+  .breadcrumb strong{color:rgba(255,255,255,.9);font-weight:500}
+  .audience-tags{margin-left:auto;display:flex;gap:6px}
+  .tag{font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6)}
+  .map-section{background:var(--surface);border-bottom:2px solid var(--border);padding:24px 24px 16px}
+  .map-header{display:flex;align-items:baseline;gap:12px;margin-bottom:18px}
+  .map-header h1{font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+  .map-header p{font-family:'Outfit',sans-serif;font-size:13px;color:var(--text-3)}
+  .map-wrap{overflow-x:auto;padding-bottom:4px}
+  .map-wrap svg{display:block;min-width:700px}
+  .map-hint{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px}
+  .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+  .stn{cursor:pointer;transition:opacity .15s}.stn:hover{opacity:.75}
+  .instructions-wrap{max-width:820px;margin:0 auto;padding:36px 28px 80px}
+  .prompt-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px;text-align:center;gap:14px}
+  .prompt-icon{width:48px;height:48px;border-radius:50%;background:var(--teal-lt);display:flex;align-items:center;justify-content:center;font-size:22px}
+  .prompt-state h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;color:var(--text)}
+  .prompt-state p{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-3);max-width:340px;line-height:1.6}
+  .instruction-card{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;display:none;animation:fadeUp .22s ease both}
+  .instruction-card.visible{display:block}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .card-header{padding:18px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+  .card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .card-header-text h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.15px}
+  .card-header-text .card-sub{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);margin-top:2px}
+  .line-badge{display:inline-block;font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;padding:2px 8px;border-radius:4px;margin-left:8px;vertical-align:middle}
+  .badge-teal{background:var(--teal-lt);color:var(--teal-dk)}.badge-coral{background:var(--coral-lt);color:#711E08}
+  .badge-purple{background:var(--purple-lt);color:#26215C}.badge-amber{background:var(--amber-lt);color:#412402}
+  .badge-blue{background:#E6F1FB;color:#042C53}.badge-green{background:var(--green-lt);color:var(--green-dk)}
+  .badge-gray{background:var(--gray-lt);color:#2C2C2A}
+  .card-body{padding:22px 24px 26px;display:flex;flex-direction:column;gap:14px}
+  .card-body p{font-size:15px;line-height:1.72;color:var(--text-2)}
+  .card-body strong{color:var(--text);font-weight:600}
+  .detail-list{list-style:none;display:flex;flex-direction:column;gap:7px;padding-left:2px}
+  .detail-list li{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-2);display:flex;align-items:flex-start;gap:10px;line-height:1.55}
+  .detail-list li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--teal);margin-top:7px;flex-shrink:0}
+  .tip{background:var(--teal-lt);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--teal-dk);line-height:1.55}
+  .warn{background:var(--amber-lt);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#412402;line-height:1.55}
+  .info{background:#E6F1FB;border-left:3px solid #185FA5;border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#042C53;line-height:1.55}
+  .code{font-family:'DM Mono',monospace;font-size:12.5px;background:var(--gray-lt);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--text)}
+  footer{background:var(--surface);border-top:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;position:sticky;bottom:0;z-index:100}
+  footer span{font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--text-3)}
+  .nav-links{margin-left:auto;display:flex;gap:10px}
+  .nav-btn{font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:var(--teal-dk);padding:5px 14px;border:1px solid var(--teal);border-radius:5px;cursor:pointer;background:transparent;transition:background .15s}
+  .nav-btn:hover{background:var(--teal-lt)}
+  .nav-btn:disabled{opacity:.3;cursor:default;border-color:var(--border);color:var(--text-3)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">CRANIS<span>2</span></div>
+  <div class="sep"></div>
+  <div class="breadcrumb">
+    <span>Chapter 6 · Post-Market & Security</span>
+    <span>›</span>
+    <strong>Field issue lifecycle</strong>
+  </div>
+  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span></div>
+</header>
+<div class="map-section">
+  <div class="map-header">
+    <h1>Field issue lifecycle</h1>
+    <p>Post-market monitoring from report to closure</p>
+  </div>
+  <div class="map-wrap">
+    <svg viewBox="0 0 760 211" xmlns="http://www.w3.org/2000/svg"><defs><style>
+  .lbl{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:11px;fill:#1A1A18;}
+  .lbl-sub{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:9.5px;fill:#8C8A84;}
+</style></defs><line x1="63.0" y1="115.0" x2="177.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="193.0" y1="115.0" x2="307.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="323.0" y1="115.0" x2="437.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="453.0" y1="115.0" x2="567.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="583.0" y1="115.0" x2="693.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="445.0" y1="71.0" x2="445.0" y2="107.0" stroke="#BA7517" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 4"/>
+<g class="stn" id="ms-report" onclick="show('report')"><rect x="49.0" y="105.0" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="55.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="55.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Report issue</text><text x="55.0" y="150.0" text-anchor="middle" class="lbl-sub">Field Issues tab</text></g>
+<g class="stn" id="ms-open" onclick="show('open')"><circle cx="185.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="185.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">1 · Open</text><text x="185.0" y="150.0" text-anchor="middle" class="lbl-sub">Recorded</text></g>
+<g class="stn" id="ms-investigating" onclick="show('investigating')"><circle cx="315.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="315.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">2 · Investigating</text><text x="315.0" y="150.0" text-anchor="middle" class="lbl-sub">Root cause</text></g>
+<g class="stn" id="ms-fix-progress" onclick="show('fix-progress')"><circle cx="445.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="445.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">3 · Fix in progress</text><text x="445.0" y="150.0" text-anchor="middle" class="lbl-sub">Dev underway</text></g>
+<g class="stn" id="ms-resolved" onclick="show('resolved')"><circle cx="575.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="575.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">4 · Resolved</text><text x="575.0" y="150.0" text-anchor="middle" class="lbl-sub">Fix verified</text></g>
+<g class="stn" id="ms-closed" onclick="show('closed')"><circle cx="705.0" cy="115.0" r="12" fill="white" stroke="#3B6D11" stroke-width="3"/><circle cx="705.0" cy="115.0" r="6" fill="#3B6D11"/><text x="705.0" y="141.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">5 · Closed</text><text x="705.0" y="154.0" text-anchor="middle" class="lbl-sub">Fully documented</text></g>
+<g class="stn" id="ms-corrective" onclick="show('corrective')"><circle cx="445.0" cy="63.0" r="8" fill="white" stroke="#BA7517" stroke-width="2.5"/><text x="445.0" y="37.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#BA7517">Corrective actions</text><text x="445.0" y="50.0" text-anchor="middle" class="lbl-sub">Per issue</text></g>
+  <line x1="30" y1="183.0" x2="55" y2="183.0" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
+  <text x="61" y="187.0" class="lbl-sub">Main journey</text>
+  <line x1="150" y1="183.0" x2="175" y2="183.0" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
+  <text x="181" y="187.0" class="lbl-sub">Error / branch</text>
+  <line x1="278" y1="183.0" x2="303" y2="183.0" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+  <text x="309" y="187.0" class="lbl-sub">Feeder</text>
+  <line x1="368" y1="183.0" x2="393" y2="183.0" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
+  <text x="399" y="187.0" class="lbl-sub">Next process</text>
+  <circle cx="468" cy="183.0" r="6" fill="white" stroke="#888" stroke-width="2"/>
+  <circle cx="468" cy="183.0" r="3" fill="#888"/>
+  <text x="479" y="187.0" class="lbl-sub">Interchange</text></svg>
+  </div>
+  <div class="map-hint"><div class="hint-dot"></div>Click any station to see instructions for that step</div>
+</div>
+<div class="instructions-wrap">
+  <div class="prompt-state" id="prompt">
+    <div class="prompt-icon">🗺️</div>
+    <h2>Select a station to begin</h2>
+    <p>Click any station on the map above to read the instructions for that step.</p>
+  </div>
+  <div class="instruction-card" id="instruction-card">
+    <div class="card-header">
+      <div class="card-icon" id="card-icon"></div>
+      <div class="card-header-text">
+        <h2 id="card-title"></h2>
+        <div class="card-sub" id="card-sub"></div>
+      </div>
+    </div>
+    <div class="card-body" id="card-body"></div>
+  </div>
+</div>
+<footer>
+  <span>CRANIS2 User Guide · Chapter 6 · Diagram 1 of 4</span>
+  <div class="nav-links"><button class="nav-btn" onclick="window.location='ch5_04_billing_lifecycle.html'">← Previous</button><button class="nav-btn" onclick="window.location='ch6_02_corrective_action.html'">Next →</button></div>
+</footer>
+<script>
+const stations = {
+  "report": {
+    icon:"\ud83d\udce2",
+    iconBg:"#F1EFE8",
+    badge:"Step 1",
+    badgeClass:"badge-gray",
+    title:"Report a field issue",
+    sub:"From the Field Issues tab on any product",
+    body:`<p>Navigate to the product's <strong>Field Issues</strong> tab and click <strong>Report Field Issue</strong>. A new issue captures:</p><ul class="detail-list"><li>Title and detailed description</li><li>Severity (Critical, High, Medium, Low)</li><li>Source (customer report, internal testing, vulnerability disclosure, market surveillance, or other)</li><li>Affected product versions</li><li>Reporter contact details</li></ul>`
+  },
+  "open": {
+    icon:"\ud83d\udd34",
+    iconBg:"#FAECE7",
+    badge:"Status 1",
+    badgeClass:"badge-coral",
+    title:"Open",
+    sub:"Issue recorded, not yet under investigation",
+    body:`<p><strong>Open</strong> is the initial status assigned when a field issue is created. It indicates the issue has been formally recorded but investigation has not yet begun.</p><p>Open field issues automatically affect your <strong>Art. 13(6) — Vulnerability handling</strong> obligation status. Any open field issue prevents this obligation from showing as fully Met.</p>`
+  },
+  "investigating": {
+    icon:"\ud83d\udd0d",
+    iconBg:"#FAEEDA",
+    badge:"Status 2",
+    badgeClass:"badge-amber",
+    title:"Investigating",
+    sub:"Root cause analysis underway",
+    body:`<p>Move to <strong>Investigating</strong> when your team has begun analysing the issue. This status indicates you are actively working to determine the root cause, affected scope, and impact. Update the description field with findings as the investigation progresses.</p>`
+  },
+  "fix-progress": {
+    icon:"\ud83d\udd27",
+    iconBg:"#FAEEDA",
+    badge:"Status 3",
+    badgeClass:"badge-amber",
+    title:"Fix in progress",
+    sub:"Corrective action identified and development underway",
+    body:`<p>Move to <strong>Fix in Progress</strong> when a corrective action has been identified and development work has begun. At this stage you should add one or more Corrective Actions to the issue (see the Corrective Actions station above) to track the specific steps being taken.</p><div class="tip">Corrective action status directly feeds the Art. 13(9) — Security updates obligation. Pending actions keep this obligation In Progress.</div>`
+  },
+  "corrective": {
+    icon:"\ud83d\udee0\ufe0f",
+    iconBg:"#FAEEDA",
+    badge:"Feeder",
+    badgeClass:"badge-amber",
+    title:"Corrective actions",
+    sub:"One or more per field issue",
+    body:`<p>Each field issue can have one or more corrective actions — the specific steps being taken to fix it. Corrective actions have their own lifecycle: Planned → In Progress → Completed → Verified.</p><p>All corrective action data is automatically included in the exported surveillance report and feeds the Art. 13(9) obligation status.</p>`
+  },
+  "resolved": {
+    icon:"\u2705",
+    iconBg:"#EAF3DE",
+    badge:"Status 4",
+    badgeClass:"badge-green",
+    title:"Resolved",
+    sub:"Fix implemented and verified effective",
+    body:`<p>Move to <strong>Resolved</strong> when the corrective action has been implemented and tested. The fix has been verified as effective and the issue no longer poses a risk to users.</p>`
+  },
+  "closed": {
+    icon:"\ud83d\udcc1",
+    iconBg:"#EAF3DE",
+    badge:"Status 5",
+    badgeClass:"badge-green",
+    title:"Closed",
+    sub:"Fully addressed and documented",
+    body:`<p>Close the issue when all corrective actions are verified and the issue has been fully addressed and documented. Closing updates both Art. 13(6) and Art. 13(9) obligation statuses.</p><p>Click <strong>Export Report</strong> to generate a Markdown surveillance report suitable for inclusion in your Technical File or for submission to market surveillance authorities.</p>`
+  }
+};
+const allIds = ["report", "open", "investigating", "fix-progress", "corrective", "resolved", "closed"];
+function show(id) {
+  const s = stations[id];
+  if (!s) return;
+  allIds.forEach(k => {
+    const el = document.getElementById('ms-' + k);
+    if (!el) return;
+    el.querySelectorAll('circle,rect').forEach(c => { c.style.filter = ''; });
+  });
+  const active = document.getElementById('ms-' + id);
+  if (active) active.querySelectorAll('circle').forEach(c => {
+    c.style.filter = 'drop-shadow(0 0 6px rgba(29,158,117,.6))';
+  });
+  document.getElementById('card-icon').textContent = s.icon;
+  document.getElementById('card-icon').style.background = s.iconBg;
+  document.getElementById('card-title').innerHTML = s.title + '<span class="line-badge ' + s.badgeClass + '">' + s.badge + '</span>';
+  document.getElementById('card-sub').textContent = s.sub;
+  document.getElementById('card-body').innerHTML = s.body;
+  document.getElementById('prompt').style.display = 'none';
+  const card = document.getElementById('instruction-card');
+  card.classList.remove('visible');
+  void card.offsetWidth;
+  card.classList.add('visible');
+}
+</script>
+</body>
+</html>
