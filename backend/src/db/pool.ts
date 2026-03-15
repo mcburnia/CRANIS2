@@ -2226,6 +2226,47 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_ms_reg_org ON market_surveillance_registrations(org_id);
     `);
 
+    // ── Internal incident lifecycle ─────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS incidents (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id              UUID NOT NULL,
+        product_id          VARCHAR(255) NOT NULL,
+        title               VARCHAR(500) NOT NULL,
+        description         TEXT,
+        severity            VARCHAR(10) NOT NULL DEFAULT 'P3',
+        phase               VARCHAR(20) NOT NULL DEFAULT 'detection',
+        detected_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        contained_at        TIMESTAMPTZ,
+        resolved_at         TIMESTAMPTZ,
+        review_completed_at TIMESTAMPTZ,
+        incident_lead       VARCHAR(255),
+        root_cause          TEXT,
+        lessons_learned     TEXT,
+        impact_summary      TEXT,
+        linked_report_id    UUID REFERENCES cra_reports(id) ON DELETE SET NULL,
+        linked_field_issue_id UUID REFERENCES field_issues(id) ON DELETE SET NULL,
+        created_by          VARCHAR(255),
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_incidents_org ON incidents(org_id);
+      CREATE INDEX IF NOT EXISTS idx_incidents_product ON incidents(product_id);
+      CREATE INDEX IF NOT EXISTS idx_incidents_phase ON incidents(phase);
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS incident_timeline (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        incident_id     UUID NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+        event_type      VARCHAR(30) NOT NULL,
+        description     TEXT NOT NULL,
+        created_by      VARCHAR(255),
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_incident_timeline_incident ON incident_timeline(incident_id);
+    `);
+
   } finally {
     client.release();
   }
