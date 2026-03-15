@@ -100,7 +100,7 @@ All five MVP features are built, tested, and shipped.
 
 ---
 
-## P9 Growth Funnels (7/12 Done)
+## P9 Growth Funnels (12/12 ALL DONE)
 
 - [x] #45 Importer/distributor obligation workflows — role-aware engine, compliance checklist, public assessment
 - [x] #46 Post-market monitoring & field issue tracking — CRUD, corrective actions, obligation wiring, surveillance report
@@ -108,12 +108,12 @@ All five MVP features are built, tested, and shipped.
 - [x] #48 Notified body directory & assessment tracking — 16 EU bodies, public directory, product assessment tracking, art_32_3 wiring
 - [x] #49 Market surveillance registration (Art. 20) — 20 EU authorities, public decision tree, product registration tracking, art_20 wiring
 - [x] #50 NIS2 entity classifier & obligation tracker
+- [x] #51 Supply chain risk assessment (NIS2 Art. 21) — scoring engine (5 areas), public assessment, SupplyChainRiskCard, admin analytics
+- [x] #52 Internal incident lifecycle — incidents + timeline tables, 8 endpoints, ENISA escalation, IncidentsTab, art_14 wiring, dashboard/analytics
 - [x] #53 Cryptographic standards & quantum readiness inventory — scanner, PQC assessment, obligation wiring
-- [ ] #51 Supply chain risk assessment (NIS2 Art. 21)
-- [ ] #52 Internal incident lifecycle management
-- [ ] #54 End-of-life notification to downstream users
-- [ ] #55 EU Authorised Representative workflows (Art. 15)
-- [ ] #56 Non-compliance reporting to authorities (Art. 19)
+- [x] #54 End-of-life notification — public calculator on welcome site (CRA Art. 13(15) timeline)
+- [x] #55 EU Authorised Representative (Art. 15) — public decision tree on welcome site
+- [x] #56 Non-compliance reporting (Art. 19) — public step-by-step guide on welcome site
 
 ---
 
@@ -157,6 +157,6 @@ All five MVP features are built, tested, and shipped.
 
 ## Test Suite
 
-- **Backend (Vitest):** ~1,537 tests (88 files), ~1,536 pass, 1 expected failure (category-recommendation needs Anthropic API)
+- **Backend (Vitest):** ~1,578 tests (90 files), ~1,577 pass, 1 expected failure (category-recommendation needs Anthropic API)
 - **E2E (Playwright):** ~280 tests
 - **Nightly runner:** cron at 22:00 CEST, 14-day log retention, Trello notifications

@@ -1451,9 +1451,28 @@ sudo systemctl restart cloudflared
 
 - **OverviewTab decomposition** — Extracted `NbAssessmentCard.tsx` (197 lines) and `MsRegistrationCard.tsx` (198 lines) from `OverviewTab.tsx`, reducing it from 967 to 595 lines.
 
+- **Internal Incident Lifecycle (#52)** — Full 4-phase feature:
+  - **Phase A:** `incidents` + `incident_timeline` tables, 8 API endpoints (CRUD, timeline, summary, ENISA escalation with linked CRA report creation). Phase workflow: detection → assessment → containment → remediation → recovery → review → closed. Auto-timestamping on milestones. 33 tests.
+  - **Phase B:** Public incident readiness checklist at `/incident-readiness-checklist` — 22 items across 6 areas (detection, assessment, containment, remediation, recovery, review). Per-area scoring with gap identification.
+  - **Phase C:** `IncidentsTab` frontend with list/detail views, phase progression bar, timeline, ENISA escalation, review documentation. Obligation engine: `art_14` derivation now flags unescalated P1/P2 incidents as `not_met`.
+  - **Phase D:** Dashboard incidents column with P1/P2 highlight, blocker detection. Admin analytics `incidents` section (by phase, severity, avg resolution).
+
+- **Supply Chain Risk Assessment (#51)** — Full 4-phase feature:
+  - **Phase A:** `supply-chain-risk.ts` scoring engine — 5 weighted areas (SBOM health 20pts, vulnerability exposure 30pts, licence risk 20pts, supplier coverage 20pts, concentration risk 10pts). Overall 0–100 score, risk level, top-10 risk dependencies. API endpoints: full scorecard + lightweight summary. 8 tests.
+  - **Phase B:** Public self-assessment at `/supply-chain-risk-assessment` — 20 questions across 5 areas (CRA Art. 13(5) + NIS2 Art. 21).
+  - **Phase C:** `SupplyChainRiskCard` component at top of Supply Chain tab — score bar, area breakdown grid, top risk dependencies.
+  - **Phase D:** Admin analytics `supplyChain` section (SBOM count, dependencies, vuln stats, questionnaire status).
+
+- **End-of-Life Notification (#54)** — Public calculator at `/end-of-life-calculator`. Enter support end date → generates CRA Art. 13(15) notification timeline with 6 milestones.
+
+- **EU Authorised Representative (#55)** — Public decision tree at `/eu-authorised-representative`. 3-step flow for non-EU manufacturers (CRA Art. 15). Duties reference card.
+
+- **Non-Compliance Reporting (#56)** — Public step-by-step guide at `/non-compliance-guide`. 6 steps covering corrective measures, authority notification, ENISA reporting. Role-specific obligations for manufacturer, importer, distributor.
+
+- **P9 Growth Funnels: 12/12 ALL DONE.**
+
 **Next Steps:**
-- #58 Trusted Open Source & Non-Profit Access Model — progressive trust classification, behavioural scoring, abuse protection, non-profit verification (full spec in docs/scratch.md)
+- #58 Trusted Open Source & Non-Profit Access Model — progressive trust classification, behavioural scoring, abuse protection, non-profit verification (full spec in docs/trusted-open-source-access.md)
 - #59 Multi-language support — i18n/localisation (scope TBD)
-- P9 growth funnels — remaining items (#51 supply chain risk assessment, #52 internal incident lifecycle, #54 end-of-life notification, #55 EU authorised representative, #56 non-compliance reporting)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)

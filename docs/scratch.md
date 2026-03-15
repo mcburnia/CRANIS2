@@ -107,12 +107,19 @@ Cross-cutting (done)
 **#48 Notified body directory:** DONE (registry of 16 EU bodies, public directory on welcome site, product-scoped assessment tracking, obligation engine wiring for art_32_3, compliance checklist/dashboard/analytics integration)
 **#49 Market surveillance registration:** DONE (registry of 20 EU authorities across 16 countries, public decision tree + authority directory on welcome site, product-scoped registration tracking, obligation engine wiring for art_20, compliance checklist/dashboard/analytics integration)
 
-**P9 Growth Funnels:** 7/12 DONE (#45, #46, #47, #48, #49, #50, #53), 5 remaining (#51, #52, #54, #55, #56)
+**#51 Supply chain risk assessment:** DONE (scoring engine with 5 weighted areas, full + summary API, public self-assessment on welcome site, SupplyChainRiskCard in Supply Chain tab, admin analytics)
+**#52 Internal incident lifecycle:** DONE (incidents + timeline tables, 8 API endpoints with phase workflow + ENISA escalation, public incident readiness checklist, IncidentsTab frontend, art_14 obligation wiring, dashboard/analytics integration). 33 tests.
+**#54 End-of-life notification:** DONE (public notification timeline calculator on welcome site)
+**#55 EU Authorised Representative:** DONE (public decision tree on welcome site)
+**#56 Non-compliance reporting:** DONE (public step-by-step guide on welcome site)
+
+**P9 Growth Funnels:** 12/12 ALL DONE
 
 **Immediate next:**
+- #58 Trusted Open Source & Non-Profit Access Model (full spec in docs/trusted-open-source-access.md)
+- #59 Multi-language support (i18n, scope TBD)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
-- P9 growth funnels — remaining items (#51 supply chain risk, #52 incident lifecycle, #54 end-of-life, #55 EU authorised rep, #56 non-compliance reporting)
 
 ---
 
@@ -320,12 +327,12 @@ At scale (100 customers, 5 products each = 500 products): **~€1,890 total over
 48	Notified body directory & assessment tracking	Medium	DONE	"Find your notified body – prepare for third-party assessment"
 49	Market surveillance registration (Art. 20)	Medium	DONE	"Critical product? You must register with market surveillance"
 50	NIS2 entity classifier & obligation tracker	High	DONE	"Are you essential or important under NIS2? Free classifier"
-51	Supply chain risk assessment (NIS2 Art. 21)	Medium	TODO	"Map your supply chain risk – beyond individual dependency checks"
-52	Internal incident lifecycle management	Medium	TODO	"Detection → containment → recovery → lessons learned"
+51	Supply chain risk assessment (NIS2 Art. 21)	Medium	DONE	"Map your supply chain risk – beyond individual dependency checks"
+52	Internal incident lifecycle management	Medium	DONE	"Detection → containment → recovery → lessons learned"
 53	Cryptographic standards inventory	Low	DONE	"Will your crypto pass a CRA audit? SHA-1, RSA-1024, DES – find out"
-54	End-of-life notification to downstream users	Low	TODO	"Notify your users before support ends – it's a CRA obligation"
-55	EU Authorised Representative workflows (Art. 15)	Low	TODO	"Non-EU manufacturer? You need an EU representative"
-56	Non-compliance reporting to authorities (Art. 19)	Low	TODO	"What to do when you discover your product is non-compliant"
+54	End-of-life notification to downstream users	Low	DONE	"Notify your users before support ends – it's a CRA obligation"
+55	EU Authorised Representative workflows (Art. 15)	Low	DONE	"Non-EU manufacturer? You need an EU representative"
+56	Non-compliance reporting to authorities (Art. 19)	Low	DONE	"What to do when you discover your product is non-compliant"
 
 ### Conversion funnel architecture
 
@@ -385,15 +392,13 @@ Each feature also generates blog/SEO content:
 5. ~~**#53 Crypto inventory** – DONE~~
 6. ~~**#48 Notified body directory** – DONE~~
 7. ~~**#49 Market surveillance registration** – DONE~~
-8. **#52 Internal incident lifecycle** – Extends existing ENISA reporting
-9. **#51 Supply chain risk assessment** – Extends existing due diligence
-10. **#54 End-of-life notification** – Low effort, completes existing support period tracking
-11. **#55 EU Authorised Rep** – Niche (non-EU manufacturers only)
-12. **#56 Non-compliance reporting** – Niche, low frequency event
+8. ~~**#52 Internal incident lifecycle** – DONE~~
+9. ~~**#51 Supply chain risk assessment** – DONE~~
+10. ~~**#54 End-of-life notification** – DONE~~
+11. ~~**#55 EU Authorised Rep** – DONE~~
+12. ~~**#56 Non-compliance reporting** – DONE~~
 
-### Status: 7/12 DONE (#45, #46, #47, #48, #49, #50, #53 complete), 5 remaining
-### Dependencies: #52 extends existing Art. 14 reporting
-### Estimated effort: Medium (5 remaining items, ~3–5 sessions total)
+### Status: 12/12 ALL DONE
 
 ### #57 — Platform Analytics Dashboard — DONE (Session 45)
 Admin-only analytics page at `/admin/analytics`. KPI snapshot (users, orgs, products, repos, active users, contributors, subscribers), growth charts (weekly signups, cumulative users), revenue breakdown (MRR, by plan, by status), market intelligence (countries, industries, CRA roles, company sizes), assessment completions (CRA + NIS2 totals, breakdowns, weekly trends). Recharts bar/line/pie charts + data tables.
