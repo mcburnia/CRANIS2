@@ -1452,6 +1452,8 @@ sudo systemctl restart cloudflared
 - **OverviewTab decomposition** — Extracted `NbAssessmentCard.tsx` (197 lines) and `MsRegistrationCard.tsx` (198 lines) from `OverviewTab.tsx`, reducing it from 967 to 595 lines.
 
 **Next Steps:**
-- Production deployment planning (Infomaniak hosting, cranis2.com)
+- #58 Trusted Open Source & Non-Profit Access Model — progressive trust classification, behavioural scoring, abuse protection, non-profit verification (full spec in docs/scratch.md)
+- #59 Multi-language support — i18n/localisation (scope TBD)
 - P9 growth funnels — remaining items (#51 supply chain risk assessment, #52 internal incident lifecycle, #54 end-of-life notification, #55 EU authorised representative, #56 non-compliance reporting)
+- Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)

@@ -148,14 +148,15 @@ All five MVP features are built, tested, and shipped.
 
 ## Pre-Production
 
+- [ ] #58 Trusted Open Source & Non-Profit Access Model — progressive trust classification, behavioural scoring, abuse protection, non-profit verification, admin dashboard
+- [ ] #59 Multi-language support — i18n/localisation of platform UI and public-facing welcome site (scope TBD)
 - [ ] Production deployment — Infomaniak hosting, `cranis2.com` domain, DNS, SSL
 - [ ] Update OAuth callback URLs and `FRONTEND_URL` for production
-- [ ] Multi-language support — i18n/localisation (scope TBD)
 
 ---
 
 ## Test Suite
 
-- **Backend (Vitest):** ~1,497 tests (84 files), ~1,496 pass, 1 expected failure (category-recommendation needs Anthropic API)
+- **Backend (Vitest):** ~1,537 tests (88 files), ~1,536 pass, 1 expected failure (category-recommendation needs Anthropic API)
 - **E2E (Playwright):** ~280 tests
 - **Nightly runner:** cron at 22:00 CEST, 14-day log retention, Trello notifications

@@ -393,13 +393,24 @@ Each feature also generates blog/SEO content:
 
 ### Status: 7/12 DONE (#45, #46, #47, #48, #49, #50, #53 complete), 5 remaining
 ### Dependencies: #52 extends existing Art. 14 reporting
-### Estimated effort: Medium (7 remaining items, ~5–8 sessions total)
+### Estimated effort: Medium (5 remaining items, ~3–5 sessions total)
 
 ### #57 — Platform Analytics Dashboard — DONE (Session 45)
 Admin-only analytics page at `/admin/analytics`. KPI snapshot (users, orgs, products, repos, active users, contributors, subscribers), growth charts (weekly signups, cumulative users), revenue breakdown (MRR, by plan, by status), market intelligence (countries, industries, CRA roles, company sizes), assessment completions (CRA + NIS2 totals, breakdowns, weekly trends). Recharts bar/line/pie charts + data tables.
 
-# CRANIS2 New Feature Specification
-## Trusted Open Source and Non-Profit Access Model
+---
+
+## Pre-Production Items
+
+### #58 — Trusted Open Source & Non-Profit Access Model
+**Status:** TODO — Full spec below. Priority: High.
+
+### #59 — Multi-Language Support (i18n)
+**Status:** TODO — Scope TBD. Platform UI + welcome site assessments.
+
+---
+
+# #58 Feature Specification — Trusted Open Source and Non-Profit Access Model
 
 ## Document Status
 Proposed backlog item
