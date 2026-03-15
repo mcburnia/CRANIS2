@@ -1136,6 +1136,14 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
 
     // ── Copilot cost protection ──
     await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS copilot_token_limit INTEGER`);
+
+    // ── Trust classification (#58) ──
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS trust_classification VARCHAR(30) DEFAULT 'commercial'`);
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS trust_score INTEGER DEFAULT 0`);
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS commercial_signal_score INTEGER DEFAULT 0`);
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS classification_last_review TIMESTAMPTZ`);
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS classification_source VARCHAR(10) DEFAULT 'automatic'`);
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS provisional_expires_at TIMESTAMPTZ`);
     await client.query(`
       CREATE TABLE IF NOT EXISTS copilot_cache (
         id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),

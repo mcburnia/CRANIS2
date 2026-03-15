@@ -4,6 +4,10 @@ import { getDriver } from '../../db/neo4j.js';
 import { requirePlatformAdmin } from '../../middleware/requirePlatformAdmin.js';
 import { recordEvent, extractRequestData } from '../../services/telemetry.js';
 import { toISOString } from './utils.js';
+import {
+  evaluateOrganisation, applyClassification, getClassification,
+  setClassificationManually, type TrustClassification,
+} from '../../services/trust-classification.js';
 
 const router = Router();
 
@@ -102,15 +106,22 @@ router.get('/orgs', requirePlatformAdmin, async (req: Request, res: Response) =>
       }
     }
 
-    // Postgres: billing plan + status per org
-    let billingMap: Record<string, { plan: string; billingStatus: string }> = {};
+    // Postgres: billing plan + status + trust classification per org
+    let billingMap: Record<string, { plan: string; billingStatus: string; trustClassification: string; trustScore: number; commercialSignalScore: number }> = {};
     if (orgIds.length > 0) {
       const billingResult = await pool.query(
-        `SELECT org_id, plan, status FROM org_billing WHERE org_id = ANY($1)`,
+        `SELECT org_id, plan, status, trust_classification, trust_score, commercial_signal_score
+         FROM org_billing WHERE org_id = ANY($1)`,
         [orgIds]
       );
       for (const row of billingResult.rows) {
-        billingMap[row.org_id] = { plan: row.plan || 'standard', billingStatus: row.status || 'trial' };
+        billingMap[row.org_id] = {
+          plan: row.plan || 'standard',
+          billingStatus: row.status || 'trial',
+          trustClassification: row.trust_classification || 'commercial',
+          trustScore: row.trust_score || 0,
+          commercialSignalScore: row.commercial_signal_score || 0,
+        };
       }
     }
 
@@ -122,6 +133,9 @@ router.get('/orgs', requirePlatformAdmin, async (req: Request, res: Response) =>
       obligations: oblCountMap[o.id] || { total: 0, met: 0 },
       plan: billingMap[o.id]?.plan || 'standard',
       billingStatus: billingMap[o.id]?.billingStatus || 'trial',
+      trustClassification: billingMap[o.id]?.trustClassification || 'commercial',
+      trustScore: billingMap[o.id]?.trustScore || 0,
+      commercialSignalScore: billingMap[o.id]?.commercialSignalScore || 0,
     }));
 
     res.json({
@@ -426,6 +440,106 @@ router.delete('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Re
   } catch (err) {
     console.error('Admin delete org error:', err);
     res.status(500).json({ error: 'Failed to delete organisation' });
+  }
+});
+
+// ─── Trust classification management ─────────────────────────
+
+const VALID_CLASSIFICATIONS: TrustClassification[] = [
+  'commercial', 'provisional_open_source', 'trusted_open_source',
+  'community_project', 'verified_nonprofit', 'review_required',
+];
+
+// GET /api/admin/orgs/:orgId/trust — get current classification with full details
+router.get('/orgs/:orgId/trust', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const { orgId } = req.params as { orgId: string };
+    const classification = await getClassification(orgId);
+    if (!classification) {
+      res.status(404).json({ error: 'Organisation billing record not found' });
+      return;
+    }
+    res.json(classification);
+  } catch (err) {
+    console.error('Admin get trust error:', err);
+    res.status(500).json({ error: 'Failed to fetch trust classification' });
+  }
+});
+
+// POST /api/admin/orgs/:orgId/trust/evaluate — trigger re-evaluation
+router.post('/orgs/:orgId/trust/evaluate', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const { orgId } = req.params as { orgId: string };
+
+    // Verify org exists
+    const billing = await pool.query('SELECT org_id FROM org_billing WHERE org_id = $1', [orgId]);
+    if (billing.rows.length === 0) {
+      res.status(404).json({ error: 'Organisation not found' });
+      return;
+    }
+
+    const evaluation = await evaluateOrganisation(orgId);
+    await applyClassification(orgId, evaluation, 'automatic');
+
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: (req as any).userId,
+      email: (req as any).email,
+      eventType: 'trust_classification_evaluated',
+      ...reqData,
+      metadata: {
+        orgId,
+        classification: evaluation.classification,
+        trustScore: evaluation.trustScore,
+        commercialSignalScore: evaluation.commercialSignalScore,
+        reasons: evaluation.reasons,
+      },
+    });
+
+    res.json({ evaluation });
+  } catch (err) {
+    console.error('Admin trust evaluate error:', err);
+    res.status(500).json({ error: 'Failed to evaluate trust classification' });
+  }
+});
+
+// PUT /api/admin/orgs/:orgId/trust — manually set classification
+router.put('/orgs/:orgId/trust', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const { orgId } = req.params as { orgId: string };
+    const { classification, reason } = req.body;
+
+    if (!classification || !VALID_CLASSIFICATIONS.includes(classification)) {
+      res.status(400).json({ error: `Classification must be one of: ${VALID_CLASSIFICATIONS.join(', ')}` });
+      return;
+    }
+    if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
+      res.status(400).json({ error: 'Reason is required for manual classification' });
+      return;
+    }
+
+    const billing = await pool.query('SELECT org_id FROM org_billing WHERE org_id = $1', [orgId]);
+    if (billing.rows.length === 0) {
+      res.status(404).json({ error: 'Organisation not found' });
+      return;
+    }
+
+    await setClassificationManually(orgId, classification, reason.trim());
+
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: (req as any).userId,
+      email: (req as any).email,
+      eventType: 'trust_classification_manual',
+      ...reqData,
+      metadata: { orgId, classification, reason: reason.trim() },
+    });
+
+    const updated = await getClassification(orgId);
+    res.json({ classification: updated });
+  } catch (err) {
+    console.error('Admin set trust error:', err);
+    res.status(500).json({ error: 'Failed to set trust classification' });
   }
 });
 
