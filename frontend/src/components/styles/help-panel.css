@@ -1,0 +1,107 @@
+/* Help Panel — side panel for contextual user guide */
+
+.help-panel {
+  flex-shrink: 0;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, #fff);
+  border-left: 1px solid var(--border, #e5e7eb);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.06);
+  z-index: 50;
+  animation: helpSlideIn 0.2s ease-out;
+}
+
+@keyframes helpSlideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.help-panel-dragging {
+  transition: none !important;
+}
+
+/* Resize handle */
+.help-panel-resize {
+  position: absolute;
+  left: -4px;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  color: transparent;
+  transition: color 0.15s;
+}
+
+.help-panel-resize:hover,
+.help-panel-dragging .help-panel-resize {
+  color: var(--accent, #a855f7);
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.08), transparent);
+}
+
+/* Header */
+.help-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  background: var(--surface, #fff);
+  flex-shrink: 0;
+}
+
+.help-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+}
+
+.help-panel-title svg {
+  color: var(--accent, #a855f7);
+}
+
+.help-panel-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-secondary, #6b7280);
+  display: flex;
+  align-items: center;
+  transition: all 0.15s;
+}
+
+.help-panel-close:hover {
+  background: var(--bg-hover, #f3f4f6);
+  color: var(--text-primary, #111827);
+}
+
+/* Iframe */
+.help-panel-iframe {
+  flex: 1;
+  border: none;
+  width: 100%;
+  background: #F4F2EE; /* matches the help page background */
+}
+
+/* Mobile: overlay instead of side-by-side */
+@media (max-width: 1024px) {
+  .help-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 200;
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15);
+  }
+}

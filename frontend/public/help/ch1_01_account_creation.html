@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account Creation — CRANIS2 Help</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:      #1C2B3A;
+    --teal:      #1D9E75;
+    --teal-lt:   #E1F5EE;
+    --teal-dk:   #085041;
+    --purple:    #534AB7;
+    --purple-lt: #EEEDFE;
+    --coral:     #D85A30;
+    --coral-lt:  #FAECE7;
+    --amber:     #BA7517;
+    --amber-lt:  #FAEEDA;
+    --green-lt:  #EAF3DE;
+    --green-dk:  #173404;
+    --gray-lt:   #F1EFE8;
+    --bg:        #F4F2EE;
+    --surface:   #FFFFFF;
+    --border:    #E2DDD4;
+    --text:      #1A1A18;
+    --text-2:    #5A5854;
+    --text-3:    #8C8A84;
+    --shadow:    0 2px 8px rgba(0,0,0,.07), 0 8px 24px rgba(0,0,0,.05);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Source Serif 4', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* — Header — */
+  header {
+    background: var(--navy);
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: #fff;
+    letter-spacing: -.3px;
+  }
+  .logo span { color: var(--teal); }
+  .sep { width: 1px; height: 20px; background: rgba(255,255,255,.2); }
+  .breadcrumb {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    color: rgba(255,255,255,.5);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .breadcrumb strong { color: rgba(255,255,255,.9); font-weight: 500; }
+  .audience-tags { margin-left: auto; display: flex; gap: 6px; }
+  .tag {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,.2);
+    color: rgba(255,255,255,.6);
+  }
+
+  /* — Map section — */
+  .map-section {
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    padding: 24px 24px 16px;
+  }
+  .map-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .map-header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -.3px;
+  }
+  .map-header p {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    color: var(--text-3);
+  }
+  .map-wrap { overflow-x: auto; padding-bottom: 4px; }
+  .map-wrap svg { display: block; min-width: 700px; }
+  .map-hint {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    color: var(--text-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 10px;
+  }
+  .hint-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:.4; transform:scale(.8); }
+  }
+
+  /* SVG interactivity */
+  .stn { cursor: pointer; transition: opacity .15s; }
+  .stn:hover { opacity: .75; }
+
+  /* — Instructions panel — */
+  .instructions-wrap {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 36px 28px 80px;
+  }
+
+  /* Default state */
+  .prompt-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 56px 24px;
+    text-align: center;
+    gap: 14px;
+  }
+  .prompt-icon {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--teal-lt);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .prompt-state h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .prompt-state p {
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    color: var(--text-3);
+    max-width: 340px;
+    line-height: 1.6;
+  }
+
+  /* Active instruction card */
+  .instruction-card {
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    display: none;
+    animation: fadeUp .22s ease both;
+  }
+  .instruction-card.visible { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    padding: 18px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .card-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .card-header-text h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -.15px;
+  }
+  .card-header-text .card-sub {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 2px;
+  }
+  .line-badge {
+    display: inline-block;
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .badge-teal   { background: var(--teal-lt);   color: var(--teal-dk); }
+  .badge-coral  { background: var(--coral-lt);  color: #711E08; }
+  .badge-purple { background: var(--purple-lt); color: #26215C; }
+  .badge-amber  { background: var(--amber-lt);  color: #412402; }
+
+  .card-body {
+    padding: 22px 24px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .card-body p {
+    font-size: 15px;
+    line-height: 1.72;
+    color: var(--text-2);
+  }
+  .card-body strong { color: var(--text); font-weight: 600; }
+  .detail-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding-left: 2px;
+  }
+  .detail-list li {
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    color: var(--text-2);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.55;
+  }
+  .detail-list li::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--teal);
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+  .tip {
+    background: var(--teal-lt);
+    border-left: 3px solid var(--teal);
+    border-radius: 0 8px 8px 0;
+    padding: 11px 16px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    color: var(--teal-dk);
+    line-height: 1.55;
+  }
+  .warn {
+    background: var(--amber-lt);
+    border-left: 3px solid var(--amber);
+    border-radius: 0 8px 8px 0;
+    padding: 11px 16px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    color: #412402;
+    line-height: 1.55;
+  }
+  .code {
+    font-family: 'DM Mono', monospace;
+    font-size: 12.5px;
+    background: var(--gray-lt);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text);
+  }
+
+  /* Footer */
+  footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+  }
+  footer span {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11.5px;
+    color: var(--text-3);
+  }
+  .nav-links { margin-left: auto; display: flex; gap: 10px; }
+  .nav-btn {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--teal-dk);
+    padding: 5px 14px;
+    border: 1px solid var(--teal);
+    border-radius: 5px;
+    cursor: pointer;
+    background: transparent;
+    transition: background .15s;
+  }
+  .nav-btn:hover { background: var(--teal-lt); }
+  .nav-btn:disabled { opacity: .3; cursor: default; border-color: var(--border); color: var(--text-3); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CRANIS<span>2</span></div>
+  <div class="sep"></div>
+  <div class="breadcrumb">
+    <span>Chapter 1 &middot; Onboarding</span>
+    <span>&rsaquo;</span>
+    <strong>Account creation</strong>
+  </div>
+  <div class="audience-tags">
+    <span class="tag">End user</span>
+    <span class="tag">Staff</span>
+    <span class="tag">Sales</span>
+  </div>
+</header>
+
+<!-- Beck map -->
+<div class="map-section">
+  <div class="map-header">
+    <h1>Account creation</h1>
+    <p>From first visit to your organisation dashboard</p>
+  </div>
+  <div class="map-wrap">
+    <svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .lbl       { font-family:'Outfit','Helvetica Neue',sans-serif; font-size:11px; fill:#1A1A18; }
+          .lbl-sub   { font-family:'Outfit','Helvetica Neue',sans-serif; font-size:9.5px; fill:#8C8A84; }
+          .lbl-coral { fill:#8B2500; }
+          .lbl-amber { fill:#7A4A00; }
+        </style>
+      </defs>
+
+      <!-- Lines -->
+      <line x1="80" y1="115" x2="700" y2="115" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+      <polyline points="390,115 450,55 535,55" fill="none" stroke="#D85A30" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="110" y1="52" x2="110" y2="103" fill="none" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+      <line x1="697" y1="115" x2="740" y2="115" stroke="#534AB7" stroke-width="5" stroke-linecap="round"/>
+
+      <!-- S1 Signup -->
+      <g class="stn" id="ms-signup" onclick="show('signup')">
+        <rect x="104" y="105" width="12" height="20" rx="2" fill="#1D9E75"/>
+        <circle cx="110" cy="115" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/>
+        <text x="110" y="137" text-anchor="middle" class="lbl" font-weight="600">Signup</text>
+        <text x="110" y="150" text-anchor="middle" class="lbl-sub">/signup</text>
+      </g>
+
+      <!-- S2 Credentials -->
+      <g class="stn" id="ms-credentials" onclick="show('credentials')">
+        <circle cx="210" cy="115" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/>
+        <text x="210" y="137" text-anchor="middle" class="lbl" font-weight="600">Credentials</text>
+        <text x="210" y="150" text-anchor="middle" class="lbl-sub">Email + password</text>
+      </g>
+
+      <!-- S3 Email sent -->
+      <g class="stn" id="ms-email-sent" onclick="show('email-sent')">
+        <circle cx="310" cy="115" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/>
+        <text x="310" y="137" text-anchor="middle" class="lbl" font-weight="600">Email sent</text>
+        <text x="310" y="150" text-anchor="middle" class="lbl-sub">Check inbox</text>
+      </g>
+
+      <!-- S4 INTERCHANGE verify -->
+      <g class="stn" id="ms-verify" onclick="show('verify')">
+        <circle cx="390" cy="115" r="12" fill="white" stroke="#1D9E75" stroke-width="3"/>
+        <circle cx="390" cy="115" r="6" fill="#1D9E75"/>
+        <text x="390" y="141" text-anchor="middle" class="lbl" font-weight="600">Verify link</text>
+        <text x="390" y="154" text-anchor="middle" class="lbl-sub">Interchange</text>
+      </g>
+
+      <!-- S5 Verified -->
+      <g class="stn" id="ms-verified" onclick="show('verified')">
+        <circle cx="490" cy="115" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/>
+        <text x="490" y="137" text-anchor="middle" class="lbl" font-weight="600">Verified</text>
+        <text x="490" y="150" text-anchor="middle" class="lbl-sub">Account active</text>
+      </g>
+
+      <!-- S6 Welcome -->
+      <g class="stn" id="ms-welcome" onclick="show('welcome')">
+        <circle cx="590" cy="115" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/>
+        <text x="590" y="137" text-anchor="middle" class="lbl" font-weight="600">Welcome</text>
+        <text x="590" y="150" text-anchor="middle" class="lbl-sub">First login</text>
+      </g>
+
+      <!-- S7 Org setup interchange -->
+      <g class="stn" id="ms-orgsetup" onclick="show('orgsetup')">
+        <circle cx="700" cy="115" r="12" fill="white" stroke="#534AB7" stroke-width="3"/>
+        <circle cx="700" cy="115" r="6" fill="#534AB7"/>
+        <text x="700" y="141" text-anchor="middle" class="lbl" font-weight="600">Org setup</text>
+        <text x="700" y="154" text-anchor="middle" class="lbl-sub">Next diagram &rarr;</text>
+      </g>
+
+      <!-- Coral branch -->
+      <g class="stn" id="ms-no-email" onclick="show('no-email')">
+        <circle cx="450" cy="55" r="8" fill="white" stroke="#D85A30" stroke-width="3"/>
+        <text x="450" y="38" text-anchor="middle" class="lbl lbl-coral" font-weight="600">No email</text>
+        <text x="450" y="26" text-anchor="middle" class="lbl-sub">Check spam</text>
+      </g>
+      <g class="stn" id="ms-resend" onclick="show('resend')">
+        <rect x="529" y="46" width="12" height="18" rx="2" fill="#D85A30"/>
+        <circle cx="535" cy="55" r="8" fill="white" stroke="#D85A30" stroke-width="3"/>
+        <text x="535" y="38" text-anchor="middle" class="lbl lbl-coral" font-weight="600">Resend</text>
+        <text x="535" y="26" text-anchor="middle" class="lbl-sub">Try again</text>
+      </g>
+
+      <!-- Trial feeder -->
+      <g class="stn" id="ms-trial" onclick="show('trial')">
+        <circle cx="110" cy="52" r="8" fill="white" stroke="#BA7517" stroke-width="2.5"/>
+        <text x="110" y="36" text-anchor="middle" class="lbl lbl-amber" font-weight="600">Free trial</text>
+        <text x="110" y="24" text-anchor="middle" class="lbl-sub">90 days</text>
+      </g>
+
+      <!-- Legend -->
+      <line x1="30" y1="182" x2="55" y2="182" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
+      <text x="61" y="186" class="lbl-sub">Main journey</text>
+      <line x1="150" y1="182" x2="175" y2="182" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
+      <text x="181" y="186" class="lbl-sub">Error / recovery</text>
+      <line x1="280" y1="182" x2="305" y2="182" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+      <text x="311" y="186" class="lbl-sub">Feeder</text>
+      <line x1="370" y1="182" x2="395" y2="182" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
+      <text x="401" y="186" class="lbl-sub">Next process</text>
+      <circle cx="468" cy="182" r="6" fill="white" stroke="#888" stroke-width="2"/>
+      <circle cx="468" cy="182" r="3" fill="#888"/>
+      <text x="479" y="186" class="lbl-sub">Interchange</text>
+    </svg>
+  </div>
+  <div class="map-hint">
+    <div class="hint-dot"></div>
+    Click any station to see instructions for that step
+  </div>
+</div>
+
+<!-- Instructions -->
+<div class="instructions-wrap">
+
+  <!-- Default prompt -->
+  <div class="prompt-state" id="prompt">
+    <div class="prompt-icon">&#x1F5FA;&#xFE0F;</div>
+    <h2>Select a station to begin</h2>
+    <p>Click any station on the map above to read the instructions for that step in the process.</p>
+  </div>
+
+  <!-- Instruction card -->
+  <div class="instruction-card" id="instruction-card">
+    <div class="card-header">
+      <div class="card-icon" id="card-icon"></div>
+      <div class="card-header-text">
+        <h2 id="card-title"></h2>
+        <div class="card-sub" id="card-sub"></div>
+      </div>
+    </div>
+    <div class="card-body" id="card-body"></div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CRANIS2 User Guide &middot; Chapter 1 &middot; Diagram 1 of 4</span>
+  <div class="nav-links">
+    <button class="nav-btn" disabled>&larr; Previous</button>
+    <button class="nav-btn" onclick="window.location='ch1_02_org_setup.html'">Next &rarr;</button>
+  </div>
+</footer>
+
+<script>
+const stations = {
+  trial: {
+    icon: '\uD83C\uDFF7', iconBg: '#FAEEDA', badge: 'Feeder', badgeClass: 'badge-amber',
+    title: 'Free trial',
+    sub: '90 days \u00B7 no credit card required',
+    body: '<p>Every new CRANIS2 account receives a <strong>90-day free trial</strong> with full, unrestricted access to all platform features \u2014 including Pro-plan AI features, the public API, the CI/CD compliance gate, and the evidence vault.</p><ul class="detail-list"><li><strong>Trial period:</strong> 90 days from organisation creation \u2014 full access, no restrictions</li><li><strong>Grace period:</strong> 7 days after trial expires \u2014 full access with a warning banner</li><li><strong>Read-only:</strong> After grace period \u2014 viewing and exporting remain available; write operations are blocked</li><li><strong>Suspended:</strong> 60 days after read-only \u2014 account suspended, then cancelled</li></ul><div class="tip"><strong>No credit card required</strong> to start. You can subscribe at any point during the trial or grace period to continue with uninterrupted access.</div>'
+  },
+  signup: {
+    icon: '\uD83D\uDCD8', iconBg: '#E1F5EE', badge: 'Step 1', badgeClass: 'badge-teal',
+    title: 'Signup',
+    sub: 'Navigate to /signup to begin',
+    body: '<p>Navigate to <span class="code">https://cranis2.com/signup</span> to begin registration. No invitation is required \u2014 any company can create an account and start a free trial immediately.</p><p>You will need a valid email address and a password that meets five strength criteria. The signup form includes a real-time strength meter that shows your progress against each criterion as you type.</p><div class="tip">The 90-day trial clock starts from the moment your <strong>organisation</strong> is created, not from account registration itself.</div>'
+  },
+  credentials: {
+    icon: '\uD83D\uDD10', iconBg: '#E1F5EE', badge: 'Step 2', badgeClass: 'badge-teal',
+    title: 'Credentials',
+    sub: 'Email address and password',
+    body: '<p>Your email address becomes your login and is used for platform notifications, ENISA deadline alerts, and billing communications. Choose a primary address your team monitors regularly.</p><p>Your password must satisfy all five of the following criteria before you can submit the form:</p><ul class="detail-list"><li>At least 8 characters in length</li><li>At least one uppercase letter (A\u2013Z)</li><li>At least one lowercase letter (a\u2013z)</li><li>At least one number (0\u20139)</li><li>At least one special character (e.g. ! @ # $ %)</li></ul><div class="tip"><strong>Strength meter:</strong> All five criteria must be green before the form will submit. The indicator updates as you type.</div>'
+  },
+  'email-sent': {
+    icon: '\u2709\uFE0F', iconBg: '#FAEEDA', badge: 'Step 3', badgeClass: 'badge-teal',
+    title: 'Verification email sent',
+    sub: 'Check your inbox before continuing',
+    body: '<p>Immediately after submitting the registration form, a verification email is sent to the address you provided. It comes from <span class="code">info@poste.cranis2.com</span>.</p><p>Your account is not activated until the link in this email is clicked. You cannot log in or access any part of the platform before verification is complete.</p><div class="warn"><strong>Check your spam folder</strong> if the email does not arrive within a few minutes. Some corporate mail filters route messages from <span class="code">poste.cranis2.com</span> to junk. Add the address to your safe senders list if needed.</div>'
+  },
+  'no-email': {
+    icon: '\u26A0\uFE0F', iconBg: '#FAECE7', badge: 'Recovery branch', badgeClass: 'badge-coral',
+    title: 'No email received',
+    sub: 'Troubleshooting steps before requesting a resend',
+    body: '<p>If the verification email has not arrived within a few minutes, work through the following before requesting a resend:</p><ul class="detail-list"><li>Check your spam, junk, and promotions folders</li><li>Search your inbox for <span class="code">info@poste.cranis2.com</span></li><li>Confirm you entered the correct email address at registration</li><li>Check whether your organisation has a mail quarantine or filtering policy that may be holding the message</li></ul><div class="warn">If none of the above resolves the issue, proceed to the <strong>Resend</strong> station on the map.</div>'
+  },
+  resend: {
+    icon: '\uD83D\uDD04', iconBg: '#FAECE7', badge: 'Recovery branch', badgeClass: 'badge-coral',
+    title: 'Resend verification email',
+    sub: 'Request a new verification link',
+    body: '<p>Return to the CRANIS2 login page and use the <strong>Resend verification email</strong> link. A fresh link will be sent to the same address immediately.</p><ul class="detail-list"><li>Verification links expire after <strong>24 hours</strong> \u2014 if your original link has expired, this is the correct step</li><li>Links are single-use \u2014 clicking a link twice will not cause an error but the second click will have no effect</li></ul><div class="tip"><strong>Wrong email address?</strong> If you registered with an incorrect address, start a fresh registration with the correct one. Contact CRANIS2 support if you need the original account removed.</div>'
+  },
+  verify: {
+    icon: '\uD83D\uDD00', iconBg: '#E1F5EE', badge: 'Interchange', badgeClass: 'badge-teal',
+    title: 'Verify link',
+    sub: 'The decision point \u2014 success or recovery',
+    body: '<p>Clicking the verification link in the email is the decision point in this process. Two outcomes are possible:</p><ul class="detail-list"><li><strong>Link valid:</strong> Your account is activated immediately and you are taken directly into the platform \u2014 no separate login required</li><li><strong>Link expired or not received:</strong> Return to the login page, request a resend, and follow the recovery branch on the map</li></ul><div class="tip">This is an interchange on the map because the journey either continues on the main teal line (success) or diverts onto the coral recovery branch (no email / resend).</div>'
+  },
+  verified: {
+    icon: '\u2705', iconBg: '#EAF3DE', badge: 'Step 5', badgeClass: 'badge-teal',
+    title: 'Email verified',
+    sub: 'Account is now fully active',
+    body: '<p>Your account is now active. The verification link takes you directly into the platform \u2014 you will land on the Welcome page without needing to log in separately.</p><p>Email verification is a one-time step. You will not be asked to verify again on any subsequent login.</p><div class="tip">If you are setting up CRANIS2 for your organisation and others will be joining as team members, they each need their own account. Invite them via <strong>Settings \u2014 Stakeholders</strong> once your organisation is created.</div>'
+  },
+  welcome: {
+    icon: '\uD83D\uDC4B', iconBg: '#EEEDFE', badge: 'Step 6', badgeClass: 'badge-teal',
+    title: 'Welcome page',
+    sub: 'Your first view of the platform',
+    body: '<p>After verification you land on the Welcome page, which introduces the platform and prompts you to complete two remaining setup steps before you can begin compliance work:</p><ul class="detail-list"><li><strong>Create your organisation</strong> \u2014 required before any products can be added or any compliance activity can begin</li><li><strong>Add your first product</strong> \u2014 connects your source code repository and starts the compliance workflow</li></ul><div class="tip">The Welcome page remains accessible from the sidebar until both steps are complete. You can return to it at any time during onboarding.</div>'
+  },
+  orgsetup: {
+    icon: '\uD83C\uDFE2', iconBg: '#EEEDFE', badge: 'Next diagram', badgeClass: 'badge-purple',
+    title: 'Organisation setup',
+    sub: 'Continues in Chapter 1 \u00B7 Diagram 2',
+    body: '<p>Once your account is verified, the immediate next step is creating your organisation. The setup wizard takes approximately one minute and collects five pieces of information:</p><ul class="detail-list"><li>Organisation name</li><li>Country of registration</li><li>Company size (micro, small, medium, or large)</li><li>CRA role (manufacturer, importer, distributor, or open source steward)</li><li>Industry (optional)</li></ul><p>Your <strong>CRA role</strong> is the most consequential choice \u2014 it determines which of the 35 CRA obligations CRANIS2 tracks for your products. Most software product companies should select <strong>Manufacturer</strong>.</p><div class="tip">Click <strong>Next \u2192</strong> below to open the Organisation Setup diagram and continue.</div>'
+  }
+};
+
+const allIds = Object.keys(stations);
+let current = null;
+
+function show(id) {
+  const s = stations[id];
+  if (!s) return;
+
+  allIds.forEach(function(k) {
+    var el = document.getElementById('ms-' + k);
+    if (!el) return;
+    el.querySelectorAll('circle').forEach(function(c) { c.style.filter = ''; c.style.opacity = ''; });
+    el.querySelectorAll('rect').forEach(function(r) { r.style.opacity = ''; });
+  });
+  var active = document.getElementById('ms-' + id);
+  if (active) {
+    active.querySelectorAll('circle').forEach(function(c) {
+      c.style.filter = 'drop-shadow(0 0 6px rgba(29,158,117,.55))';
+    });
+  }
+
+  document.getElementById('card-icon').textContent = s.icon;
+  document.getElementById('card-icon').style.background = s.iconBg;
+  document.getElementById('card-title').innerHTML =
+    s.title + '<span class="line-badge ' + s.badgeClass + '">' + s.badge + '</span>';
+  document.getElementById('card-sub').textContent = s.sub;
+  document.getElementById('card-body').innerHTML = s.body;
+
+  document.getElementById('prompt').style.display = 'none';
+  var card = document.getElementById('instruction-card');
+  card.classList.remove('visible');
+  void card.offsetWidth;
+  card.classList.add('visible');
+
+  current = id;
+}
+</script>
+</body>
+</html>

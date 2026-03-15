@@ -177,7 +177,7 @@
 }
 
 /* Feedback button */
-.feedback-btn {
+.feedback-btn, .help-guide-btn {
   width: 100%;
   text-align: left;
   background: none;
@@ -185,4 +185,8 @@
   font-size: 0.9rem;
   font-family: inherit;
   cursor: pointer;
+}
+.help-guide-btn.active {
+  color: var(--accent, #a855f7);
+  background: rgba(168, 85, 247, 0.08);
 }

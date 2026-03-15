@@ -9,6 +9,8 @@ import {
   ChevronRight, BookOpen, FileDown
 } from 'lucide-react';
 import FeedbackModal from './FeedbackModal';
+import { useHelpPanel } from '../context/HelpPanelContext';
+import { HelpCircle } from 'lucide-react';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -79,6 +81,7 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
   const location = useLocation();
   const { unreadCount } = useUnreadCount();
   const [showFeedback, setShowFeedback] = useState(false);
+  const helpPanel = useHelpPanel();
 
   // Determine which section the current route belongs to
   const activeSection = useMemo(() => {
@@ -143,6 +146,10 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
           <BookOpen size={18} className="nav-icon" />
           Documentation
         </Link>
+        <button className={`nav-item help-guide-btn ${helpPanel.isOpen ? 'active' : ''}`} onClick={() => { helpPanel.toggle(); }}>
+          <HelpCircle size={18} className="nav-icon" />
+          User Guide
+        </button>
         <button className="nav-item feedback-btn" onClick={() => { setShowFeedback(true); if (onNavigate) onNavigate(); }}>
           <MessageSquareMore size={18} className="nav-icon" />
           Feedback & Bug Report

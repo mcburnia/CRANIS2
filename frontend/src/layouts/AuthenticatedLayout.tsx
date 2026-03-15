@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
+import HelpPanel from '../components/HelpPanel';
+import { HelpPanelProvider } from '../context/HelpPanelContext';
 import { Menu, X, Loader } from 'lucide-react';
 import BillingBanner from '../components/BillingBanner';
 import './AuthenticatedLayout.css';
@@ -50,25 +52,28 @@ export default function AuthenticatedLayout() {
   }
 
   return (
-    <div className="app-layout">
-      <div className="mobile-topbar">
-        <div className="topbar-logo">CRANIS<span>2</span></div>
-        <button
-          className="hamburger-btn"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          aria-label="Toggle navigation"
-        >
-          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+    <HelpPanelProvider>
+      <div className="app-layout">
+        <div className="mobile-topbar">
+          <div className="topbar-logo">CRANIS<span>2</span></div>
+          <button
+            className="hamburger-btn"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Toggle navigation"
+          >
+            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+        <div className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
+        <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+          <Sidebar onNavigate={() => setSidebarOpen(false)} orgName={orgName} />
+        </aside>
+        <main className="main">
+          <BillingBanner />
+          <Outlet />
+        </main>
+        <HelpPanel />
       </div>
-      <div className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <Sidebar onNavigate={() => setSidebarOpen(false)} orgName={orgName} />
-      </aside>
-      <main className="main">
-        <BillingBanner />
-        <Outlet />
-      </main>
-    </div>
+    </HelpPanelProvider>
   );
 }
