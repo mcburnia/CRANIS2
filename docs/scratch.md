@@ -115,8 +115,9 @@ Cross-cutting (done)
 
 **P9 Growth Funnels:** 12/12 ALL DONE
 
+**#58 Trusted Open Source & Non-Profit Access Model:** DONE (progressive trust classification, behavioural scoring, OSI licence detection, abuse protection, non-profit verification, admin dashboard, weekly re-evaluation, billing integration)
+
 **Immediate next:**
-- #58 Trusted Open Source & Non-Profit Access Model (full spec in docs/trusted-open-source-access.md)
 - #59 Multi-language support (i18n, scope TBD)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
@@ -407,8 +408,8 @@ Admin-only analytics page at `/admin/analytics`. KPI snapshot (users, orgs, prod
 
 ## Pre-Production Items
 
-### #58 — Trusted Open Source & Non-Profit Access Model
-**Status:** TODO — Full spec below. Priority: High.
+### #58 — Trusted Open Source & Non-Profit Access Model — DONE
+**Status:** DONE (6 phases: data model + scoring service + OSI licence list + admin API (A), auto-evaluation on repo sync + abuse protection (B), non-profit verification workflow (C), admin trust dashboard UI + analytics (D), weekly background re-evaluation (E), billing middleware integration (F)). 33 tests.
 
 ### #59 — Multi-Language Support (i18n)
 **Status:** TODO — Scope TBD. Platform UI + welcome site assessments.

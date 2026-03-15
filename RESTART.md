@@ -1471,8 +1471,15 @@ sudo systemctl restart cloudflared
 
 - **P9 Growth Funnels: 12/12 ALL DONE.**
 
+- **Trusted Open Source & Non-Profit Access Model (#58)** — Full 6-phase feature:
+  - **Phase A:** Trust classification data model (6 columns on org_billing), scoring service with OSI licence list (40+ SPDX IDs), trust score computation (contributors, forks, stars, releases, commits), commercial signal detection (private repos, non-OSI licences). Admin API: GET/POST/PUT trust classification with audit logging. 15 tests.
+  - **Phase B:** Auto-evaluation hooked into repo sync pipeline (step 7 post-SBOM). Private repo abuse protection — immediate re-evaluation on private repo connection.
+  - **Phase C:** Non-profit verification workflow. `nonprofit_applications` table, user submission endpoint, admin review (approve/reject/info_requested). Approval auto-sets `verified_nonprofit` classification. 18 tests.
+  - **Phase D:** Admin trust dashboard — classification badges on org cards, "Evaluate Trust" and "Set Classification" action modals. Admin analytics: trust distribution, free-access count, review-required count.
+  - **Phase E:** Weekly background re-evaluation via scheduler (Monday 6:00 UTC). Auto-promotes provisional → trusted when score exceeds threshold.
+  - **Phase F:** Billing integration — `requireActiveBilling` bypasses restrictions for free classifications, `requirePlan` updated for trust-aware gating, billing status API returns trust_classification.
+
 **Next Steps:**
-- #58 Trusted Open Source & Non-Profit Access Model — progressive trust classification, behavioural scoring, abuse protection, non-profit verification (full spec in docs/trusted-open-source-access.md)
 - #59 Multi-language support — i18n/localisation (scope TBD)
 - Production deployment planning (Infomaniak hosting, cranis2.com)
 - P5 — Supplier marketplace (post-launch)
