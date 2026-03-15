@@ -217,6 +217,18 @@ function assessmentLandingPage() {
       <div class="card-arrow">\u2192</div>
     </a>
 
+    <a href="/supply-chain-risk-assessment" class="card">
+      <span class="card-tag assess">Assessment</span>
+      <h2>Supply Chain Risk Assessment</h2>
+      <p>Rate your supply chain risk across five key areas: dependency inventory, vulnerability monitoring, supplier visibility, licence compliance, and resilience. Aligned with CRA Art.\u00a013(5) and NIS2 Art.\u00a021.</p>
+      <div class="card-meta">
+        <span>\uD83D\uDD17 20 questions</span>
+        <span>\uD83D\uDCCA 5 areas</span>
+        <span>\u23F1 ~5 minutes</span>
+      </div>
+      <div class="card-arrow">\u2192</div>
+    </a>
+
     <a href="/incident-readiness-checklist" class="card">
       <span class="card-tag assess">Checklist</span>
       <h2>Incident Response Readiness</h2>
