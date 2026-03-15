@@ -178,6 +178,28 @@ describe('PUT (update registration)', () => {
   });
 });
 
+// ─── Obligation engine wiring ───────────────────────────────
+
+describe('Obligation engine (art_20)', () => {
+  it('does not derive art_20 for non-critical products', async () => {
+    // codeberg product is important_ii — art_20 should not appear
+    const res = await api.get(`/api/obligations/${PRODUCT_ID}`, { auth: token });
+    expect(res.status).toBe(200);
+    const art20 = res.body.obligations?.find((o: any) => o.obligationKey === 'art_20');
+    // art_20 should not be present for important_ii products
+    expect(art20).toBeUndefined();
+  });
+
+  it('registration status is queryable alongside obligations', async () => {
+    // Verify the registration (currently 'registered' from earlier PUT)
+    // doesn't cause errors in the obligation engine query
+    const res = await api.get(`/api/obligations/${PRODUCT_ID}`, { auth: token });
+    expect(res.status).toBe(200);
+    expect(res.body.obligations).toBeDefined();
+    expect(res.body.obligations.length).toBeGreaterThan(0);
+  });
+});
+
 // ─── DELETE ─────────────────────────────────────────────────
 
 describe('DELETE (remove registration)', () => {

@@ -293,6 +293,17 @@ export async function computeDerivedStatuses(
     nbAssessmentByProduct[row.product_id] = row.status;
   }
 
+  // 10. Market surveillance registrations (critical products only)
+  const msRegistrationResult = await pool.query(
+    `SELECT product_id, status FROM market_surveillance_registrations
+     WHERE product_id = ANY($1) AND org_id = $2`,
+    [productIds, orgId]
+  );
+  const msRegistrationByProduct: Record<string, string> = {};
+  for (const row of msRegistrationResult.rows) {
+    msRegistrationByProduct[row.product_id] = row.status;
+  }
+
   // ─── Compute derived statuses per product ──────────────────
   const result: Record<string, Record<string, { status: string; reason: string }>> = {};
 
@@ -487,7 +498,18 @@ export async function computeDerivedStatuses(
 
       // art_20 – EU Market Surveillance Registration (critical products only)
       if (categoryMap[productId] === 'critical') {
-        derived['art_20'] = { status: 'in_progress', reason: 'Critical product: EU market surveillance registration required' };
+        const msStatus = msRegistrationByProduct[productId];
+        if (msStatus === 'registered') {
+          derived['art_20'] = { status: 'met', reason: 'Market surveillance registration complete' };
+        } else if (msStatus === 'submitted' || msStatus === 'acknowledged') {
+          derived['art_20'] = { status: 'in_progress', reason: `Registration ${msStatus.replace(/_/g, ' ')}` };
+        } else if (msStatus === 'planning' || msStatus === 'preparing') {
+          derived['art_20'] = { status: 'in_progress', reason: 'Registration preparation in progress' };
+        } else if (msStatus === 'rejected') {
+          derived['art_20'] = { status: 'not_met', reason: 'Registration rejected — resubmission required' };
+        } else {
+          derived['art_20'] = { status: 'not_met', reason: 'Critical product: market surveillance registration required' };
+        }
       }
 
       // art_13 – Overall (derived from all others)

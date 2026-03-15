@@ -58,6 +58,9 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
   const [nbAssessment, setNbAssessment] = useState<any>(null);
   const [showNbForm, setShowNbForm] = useState(false);
   const [nbBodies, setNbBodies] = useState<any[]>([]);
+  const [msRegistration, setMsRegistration] = useState<any>(null);
+  const [showMsForm, setShowMsForm] = useState(false);
+  const [msAuthorities, setMsAuthorities] = useState<any[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
@@ -93,6 +96,15 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
       })
         .then(r => r.ok ? r.json() : null)
         .then(d => { if (d) setNbAssessment(d.assessment); })
+        .catch(() => {});
+    }
+    // Fetch market surveillance registration (critical only)
+    if (product.craCategory === 'critical') {
+      fetch(`/api/products/${product.id}/ms-registration`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setMsRegistration(d.registration); })
         .catch(() => {});
     }
   }, [product.id, product.craCategory]);
@@ -657,6 +669,186 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
                       headers: { Authorization: `Bearer ${token}` },
                     });
                     if (res.ok) setNbAssessment(null);
+                  }}
+                >
+                  <X size={12} /> Remove
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Market Surveillance Registration Tracker – critical only */}
+      {product.craCategory === 'critical' && (
+        <div className="pd-card">
+          <div className="pd-card-header">
+            <Shield size={18} />
+            <h3>Market Surveillance Registration</h3>
+            {msRegistration && (
+              <span className={`pd-nb-status pd-nb-status-${msRegistration.status}`}>
+                {msRegistration.status.replace(/_/g, ' ')}
+              </span>
+            )}
+          </div>
+
+          {!msRegistration && !showMsForm && (
+            <div style={{ padding: '12px 0' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.6' }}>
+                Critical products must be registered with the relevant market surveillance authority before being placed on the EU market (CRA Art.&nbsp;20).
+              </p>
+              <button
+                className="pd-nb-start-btn"
+                onClick={() => {
+                  setShowMsForm(true);
+                  fetch('/api/market-surveillance-authorities?cra_designated=true')
+                    .then(r => r.ok ? r.json() : null)
+                    .then(d => { if (d?.authorities) setMsAuthorities(d.authorities); })
+                    .catch(() => {});
+                }}
+              >
+                <Plus size={14} /> Start tracking registration
+              </button>
+            </div>
+          )}
+
+          {showMsForm && !msRegistration && (
+            <form
+              className="pd-nb-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const token = localStorage.getItem('session_token');
+                const authorityId = formData.get('authority_id') as string;
+                const selectedAuth = msAuthorities.find((a: any) => a.id === authorityId);
+                const body: any = {
+                  authority_id: authorityId || null,
+                  authority_name: selectedAuth?.name || (formData.get('authority_name') as string) || null,
+                  authority_country: selectedAuth?.country || (formData.get('authority_country') as string) || null,
+                  notes: formData.get('notes') || null,
+                };
+                const res = await fetch(`/api/products/${product.id}/ms-registration`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                  body: JSON.stringify(body),
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  setMsRegistration(data.registration);
+                  setShowMsForm(false);
+                }
+              }}
+            >
+              <div className="pd-nb-form-row">
+                <label>Authority (from directory)</label>
+                <select name="authority_id" defaultValue="">
+                  <option value="">— Select or enter manually below —</option>
+                  {msAuthorities.map((a: any) => (
+                    <option key={a.id} value={a.id}>{a.name} ({a.country})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="pd-nb-form-row">
+                <label>Authority name (if not in directory)</label>
+                <input type="text" name="authority_name" placeholder="e.g. BNetzA" />
+              </div>
+              <div className="pd-nb-form-row">
+                <label>Country</label>
+                <input type="text" name="authority_country" placeholder="e.g. DE" maxLength={5} />
+              </div>
+              <div className="pd-nb-form-row">
+                <label>Notes</label>
+                <input type="text" name="notes" placeholder="Optional notes..." />
+              </div>
+              <div className="pd-nb-form-actions">
+                <button type="submit" className="pd-nb-save-btn">Create</button>
+                <button type="button" className="pd-nb-cancel-btn" onClick={() => setShowMsForm(false)}>Cancel</button>
+              </div>
+            </form>
+          )}
+
+          {msRegistration && (
+            <div className="pd-nb-details">
+              {(msRegistration.msa_name || msRegistration.authority_name) && (
+                <div className="pd-detail-row">
+                  <span className="pd-detail-label">Authority</span>
+                  <span className="pd-detail-value">
+                    {msRegistration.msa_name || msRegistration.authority_name}
+                    {(msRegistration.msa_country || msRegistration.authority_country) &&
+                      ` (${msRegistration.msa_country || msRegistration.authority_country})`}
+                    {msRegistration.msa_website && (
+                      <a href={msRegistration.msa_website} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 6 }}>
+                        <ExternalLink size={12} />
+                      </a>
+                    )}
+                  </span>
+                </div>
+              )}
+              {msRegistration.submission_date && (
+                <div className="pd-detail-row">
+                  <span className="pd-detail-label">Submitted</span>
+                  <span className="pd-detail-value">{new Date(msRegistration.submission_date).toLocaleDateString()}</span>
+                </div>
+              )}
+              {msRegistration.registration_number && (
+                <div className="pd-detail-row">
+                  <span className="pd-detail-label">Registration no.</span>
+                  <span className="pd-detail-value">{msRegistration.registration_number}</span>
+                </div>
+              )}
+              {msRegistration.registration_date && (
+                <div className="pd-detail-row">
+                  <span className="pd-detail-label">Registered</span>
+                  <span className="pd-detail-value">{new Date(msRegistration.registration_date).toLocaleDateString()}</span>
+                </div>
+              )}
+              {msRegistration.renewal_date && (
+                <div className="pd-detail-row">
+                  <span className="pd-detail-label">Renewal due</span>
+                  <span className="pd-detail-value">{new Date(msRegistration.renewal_date).toLocaleDateString()}</span>
+                </div>
+              )}
+              {msRegistration.notes && (
+                <div className="pd-detail-row">
+                  <span className="pd-detail-label">Notes</span>
+                  <span className="pd-detail-value">{msRegistration.notes}</span>
+                </div>
+              )}
+              <div className="pd-nb-form-actions" style={{ marginTop: 12 }}>
+                <select
+                  className="pd-nb-status-select"
+                  value={msRegistration.status}
+                  onChange={async (e) => {
+                    const newStatus = e.target.value;
+                    const token = localStorage.getItem('session_token');
+                    const res = await fetch(`/api/products/${product.id}/ms-registration`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({ status: newStatus }),
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      setMsRegistration(data.registration);
+                    }
+                  }}
+                >
+                  <option value="planning">Planning</option>
+                  <option value="preparing">Preparing</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="acknowledged">Acknowledged</option>
+                  <option value="registered">Registered</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <button
+                  className="pd-nb-cancel-btn"
+                  onClick={async () => {
+                    if (!confirm('Remove registration tracking for this product?')) return;
+                    const token = localStorage.getItem('session_token');
+                    const res = await fetch(`/api/products/${product.id}/ms-registration`, {
+                      method: 'DELETE',
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (res.ok) setMsRegistration(null);
                   }}
                 >
                   <X size={12} /> Remove
