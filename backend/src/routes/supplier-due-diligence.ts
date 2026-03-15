@@ -24,6 +24,7 @@ import {
   updateQuestionnaireStatus,
   deleteQuestionnaires,
 } from '../services/supplier-due-diligence.js';
+import { computeSupplyChainRisk } from '../services/supply-chain-risk.js';
 
 const router = Router();
 
@@ -380,6 +381,60 @@ router.patch(
     } catch (error) {
       console.error('[SUPPLIER-DD] Error:', error);
       res.status(500).json({ error: 'Failed to update status' });
+    }
+  }
+);
+
+// ─── Supply chain risk scorecard ──────────────────────────────
+
+/**
+ * GET /:productId/supply-chain-risk
+ * Full supply chain risk scorecard — overall score, per-area breakdown,
+ * top risk dependencies, and dependency statistics.
+ */
+router.get(
+  '/:productId/supply-chain-risk',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { productId } = req.params as { productId: string };
+      const orgId = await getUserOrgId((req as any).userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+      if (!(await verifyProductAccess(orgId, productId))) return res.status(404).json({ error: 'Product not found' });
+
+      const result = await computeSupplyChainRisk(productId, orgId);
+      res.json(result);
+    } catch (error) {
+      console.error('[SUPPLY-CHAIN-RISK] Error:', error);
+      res.status(500).json({ error: 'Failed to compute supply chain risk' });
+    }
+  }
+);
+
+/**
+ * GET /:productId/supply-chain-risk/summary
+ * Lightweight summary for dashboard — score, level, and dependency count only.
+ */
+router.get(
+  '/:productId/supply-chain-risk/summary',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { productId } = req.params as { productId: string };
+      const orgId = await getUserOrgId((req as any).userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+      if (!(await verifyProductAccess(orgId, productId))) return res.status(404).json({ error: 'Product not found' });
+
+      const result = await computeSupplyChainRisk(productId, orgId);
+      res.json({
+        overallScore: result.overallScore,
+        riskLevel: result.riskLevel,
+        totalDependencies: result.stats.totalDependencies,
+        withVulnerabilities: result.stats.withVulnerabilities,
+      });
+    } catch (error) {
+      console.error('[SUPPLY-CHAIN-RISK] Summary error:', error);
+      res.status(500).json({ error: 'Failed to compute supply chain risk summary' });
     }
   }
 );
