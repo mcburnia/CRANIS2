@@ -2182,6 +2182,50 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_nb_assessments_org ON notified_body_assessments(org_id);
     `);
 
+    // ── Market surveillance authorities directory ──────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS market_surveillance_authorities (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name            VARCHAR(500) NOT NULL,
+        country         VARCHAR(5) NOT NULL,
+        website         VARCHAR(500),
+        email           VARCHAR(255),
+        phone           VARCHAR(100),
+        address         TEXT,
+        competence_areas JSONB NOT NULL DEFAULT '[]',
+        cra_designated  BOOLEAN NOT NULL DEFAULT false,
+        contact_portal_url VARCHAR(500),
+        notes           TEXT,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_msa_country ON market_surveillance_authorities(country);
+      CREATE INDEX IF NOT EXISTS idx_msa_designated ON market_surveillance_authorities(cra_designated);
+    `);
+
+    // ── Market surveillance registration tracking ─────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS market_surveillance_registrations (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id              UUID NOT NULL,
+        product_id          VARCHAR(255) NOT NULL,
+        authority_id        UUID REFERENCES market_surveillance_authorities(id) ON DELETE SET NULL,
+        status              VARCHAR(30) NOT NULL DEFAULT 'planning',
+        authority_name      VARCHAR(500),
+        authority_country   VARCHAR(5),
+        registration_number VARCHAR(255),
+        registration_date   DATE,
+        submission_date     DATE,
+        renewal_date        DATE,
+        notes               TEXT,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(org_id, product_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_ms_reg_product ON market_surveillance_registrations(product_id);
+      CREATE INDEX IF NOT EXISTS idx_ms_reg_org ON market_surveillance_registrations(org_id);
+    `);
+
   } finally {
     client.release();
   }
