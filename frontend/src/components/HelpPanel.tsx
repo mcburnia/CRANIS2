@@ -83,6 +83,19 @@ export default function HelpPanel() {
         className="help-panel-iframe"
         src={currentPage}
         title="CRANIS2 Help"
+        onLoad={(e) => {
+          // Inject panel-specific CSS overrides into the iframe
+          try {
+            const doc = (e.target as HTMLIFrameElement).contentDocument;
+            if (doc && !doc.getElementById('panel-overrides')) {
+              const link = doc.createElement('link');
+              link.id = 'panel-overrides';
+              link.rel = 'stylesheet';
+              link.href = '/help/panel-overrides.css';
+              doc.head.appendChild(link);
+            }
+          } catch { /* cross-origin safety — ignore */ }
+        }}
       />
     </div>
   );
