@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Users, Package, AlertTriangle, ChevronDown, ChevronRight, Shield, FileText, Loader, Search, ExternalLink, CheckCircle, MoreVertical, Trash2, Crown, Calendar } from 'lucide-react';
+import { Building2, Users, Package, AlertTriangle, ChevronDown, ChevronRight, Shield, FileText, Loader, Search, ExternalLink, CheckCircle, MoreVertical, Trash2, Crown, Calendar, RefreshCw, Tag } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -24,6 +24,9 @@ interface Org {
   obligations: OrgObligations;
   plan: string;
   billingStatus: string;
+  trustClassification: string;
+  trustScore: number;
+  commercialSignalScore: number;
 }
 
 interface OrgDetailUser {
@@ -69,6 +72,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   critical: 'Critical',
 };
 
+const TRUST_LABELS: Record<string, { label: string; colour: string }> = {
+  commercial: { label: 'Commercial', colour: '#6b7280' },
+  provisional_open_source: { label: 'Provisional OSS', colour: '#f59e0b' },
+  trusted_open_source: { label: 'Trusted OSS', colour: '#22c55e' },
+  community_project: { label: 'Community', colour: '#3b82f6' },
+  verified_nonprofit: { label: 'Non-Profit', colour: '#8b5cf6' },
+  review_required: { label: 'Review', colour: '#ef4444' },
+};
+
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return 'Never';
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -91,11 +103,13 @@ export default function AdminOrgsPage() {
   const [orgDetail, setOrgDetail] = useState<OrgDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
-  const [confirmAction, setConfirmAction] = useState<{ orgId: string; orgName: string; action: 'change_plan' | 'extend_trial' | 'delete' } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ orgId: string; orgName: string; action: 'change_plan' | 'extend_trial' | 'delete' | 'evaluate_trust' | 'set_trust' } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'standard' | 'pro'>('standard');
   const [trialDays, setTrialDays] = useState(30);
+  const [selectedTrust, setSelectedTrust] = useState('commercial');
+  const [trustReason, setTrustReason] = useState('');
 
   useEffect(() => { fetchOrgs(); }, []);
 
@@ -135,7 +149,7 @@ export default function AdminOrgsPage() {
     }
   }
 
-  function openAction(orgId: string, orgName: string, action: 'change_plan' | 'extend_trial' | 'delete') {
+  function openAction(orgId: string, orgName: string, action: 'change_plan' | 'extend_trial' | 'delete' | 'evaluate_trust' | 'set_trust') {
     const org = orgs.find(o => o.id === orgId);
     if (action === 'change_plan' && org) setSelectedPlan(org.plan === 'pro' ? 'pro' : 'standard');
     if (action === 'extend_trial') setTrialDays(30);
@@ -199,6 +213,41 @@ export default function AdminOrgsPage() {
     finally { setActionLoading(false); }
   }
 
+  async function handleEvaluateTrust() {
+    if (!confirmAction) return;
+    setActionLoading(true);
+    setActionError('');
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/admin/orgs/${confirmAction.orgId}/trust/evaluate`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) { const d = await res.json(); setActionError(d.error || 'Failed'); return; }
+      setConfirmAction(null);
+      await fetchOrgs();
+    } catch { setActionError('Network error'); }
+    finally { setActionLoading(false); }
+  }
+
+  async function handleSetTrust() {
+    if (!confirmAction || !trustReason.trim()) { setActionError('Reason is required'); return; }
+    setActionLoading(true);
+    setActionError('');
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/admin/orgs/${confirmAction.orgId}/trust`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ classification: selectedTrust, reason: trustReason.trim() }),
+      });
+      if (!res.ok) { const d = await res.json(); setActionError(d.error || 'Failed'); return; }
+      setConfirmAction(null);
+      await fetchOrgs();
+    } catch { setActionError('Network error'); }
+    finally { setActionLoading(false); }
+  }
+
   const filtered = orgs.filter(o =>
     o.name.toLowerCase().includes(search.toLowerCase()) ||
     (o.country || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -247,6 +296,10 @@ export default function AdminOrgsPage() {
                   {org.billingStatus && org.billingStatus !== 'active' && (
                     <span className={`ao-badge-status ao-status-${org.billingStatus}`}>{org.billingStatus.replace(/_/g, ' ')}</span>
                   )}
+                  {org.trustClassification && org.trustClassification !== 'commercial' && (() => {
+                    const t = TRUST_LABELS[org.trustClassification] || TRUST_LABELS.commercial;
+                    return <span className="ao-badge-trust" style={{ background: t.colour + '1a', color: t.colour, borderColor: t.colour + '40' }}>{t.label}</span>;
+                  })()}
                 </div>
                 <div className="ao-org-meta">
                   {org.craRole && <span className="ao-tag ao-tag-role">{CRA_ROLE_LABELS[org.craRole] || org.craRole}</span>}
@@ -282,6 +335,12 @@ export default function AdminOrgsPage() {
                     </button>
                     <button onClick={() => openAction(org.id, org.name, 'extend_trial')}>
                       <Calendar size={13} /> Extend Trial
+                    </button>
+                    <button onClick={() => openAction(org.id, org.name, 'evaluate_trust')}>
+                      <RefreshCw size={13} /> Evaluate Trust
+                    </button>
+                    <button onClick={() => { setSelectedTrust(org.trustClassification || 'commercial'); setTrustReason(''); openAction(org.id, org.name, 'set_trust'); }}>
+                      <Tag size={13} /> Set Classification
                     </button>
                     <button className="ao-delete-action" onClick={() => openAction(org.id, org.name, 'delete')}>
                       <Trash2 size={13} /> Delete Organisation
@@ -431,6 +490,51 @@ export default function AdminOrgsPage() {
               <button className="ao-btn-cancel" onClick={() => setConfirmAction(null)} disabled={actionLoading}>Cancel</button>
               <button className="ao-btn-confirm ao-btn-revoke" onClick={handleDeleteOrg} disabled={actionLoading}>
                 {actionLoading ? 'Deleting...' : 'Delete Organisation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmAction && confirmAction.action === 'evaluate_trust' && (
+        <div className="ao-modal-overlay" onClick={() => setConfirmAction(null)}>
+          <div className="ao-modal" onClick={e => e.stopPropagation()}>
+            <h3>Evaluate Trust Classification</h3>
+            <p>Re-evaluate trust classification for <strong>{confirmAction.orgName}</strong> based on current repository metadata, dependency licences, and behavioural signals.</p>
+            {actionError && <div className="ao-action-error">{actionError}</div>}
+            <div className="ao-modal-actions">
+              <button className="ao-btn-cancel" onClick={() => setConfirmAction(null)} disabled={actionLoading}>Cancel</button>
+              <button className="ao-btn-confirm ao-btn-grant" onClick={handleEvaluateTrust} disabled={actionLoading}>
+                {actionLoading ? 'Evaluating...' : 'Run Evaluation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmAction && confirmAction.action === 'set_trust' && (
+        <div className="ao-modal-overlay" onClick={() => setConfirmAction(null)}>
+          <div className="ao-modal" onClick={e => e.stopPropagation()}>
+            <h3>Set Trust Classification</h3>
+            <p>Manually set trust classification for <strong>{confirmAction.orgName}</strong>.</p>
+            <div className="ao-trial-input">
+              <label>Classification</label>
+              <select value={selectedTrust} onChange={e => setSelectedTrust(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: 6, border: '1px solid var(--border)' }}>
+                {Object.entries(TRUST_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="ao-trial-input" style={{ marginTop: 12 }}>
+              <label>Reason (required)</label>
+              <input type="text" value={trustReason} onChange={e => setTrustReason(e.target.value)}
+                placeholder="e.g. Verified open-source project" style={{ width: '100%', padding: '8px', borderRadius: 6, border: '1px solid var(--border)' }} />
+            </div>
+            {actionError && <div className="ao-action-error">{actionError}</div>}
+            <div className="ao-modal-actions">
+              <button className="ao-btn-cancel" onClick={() => setConfirmAction(null)} disabled={actionLoading}>Cancel</button>
+              <button className="ao-btn-confirm ao-btn-grant" onClick={handleSetTrust} disabled={actionLoading}>
+                {actionLoading ? 'Saving...' : 'Set Classification'}
               </button>
             </div>
           </div>

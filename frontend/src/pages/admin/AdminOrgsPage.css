@@ -286,6 +286,10 @@
   font-size: 0.6rem; font-weight: 600; text-transform: capitalize;
   padding: 0.1rem 0.4rem; border-radius: 3px;
 }
+.ao-badge-trust {
+  font-size: 0.6rem; font-weight: 700; padding: 0.1rem 0.5rem;
+  border-radius: 3px; border: 1px solid; margin-left: 4px;
+}
 .ao-status-trial { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
 .ao-status-past_due { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
 .ao-status-suspended { background: rgba(239, 68, 68, 0.15); color: var(--red); }

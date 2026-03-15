@@ -463,6 +463,29 @@ router.get('/analytics', requirePlatformAdmin, async (_req: Request, res: Respon
           return { total: 0, byPhase: [], bySeverity: [], avgResolutionHours: null };
         }
       })(),
+      trustClassification: await (async () => {
+        try {
+          const byClassification = await pool.query(`
+            SELECT trust_classification, COUNT(*) AS cnt FROM org_billing
+            WHERE trust_classification IS NOT NULL
+            GROUP BY trust_classification ORDER BY cnt DESC
+          `);
+          const freeCount = await pool.query(`
+            SELECT COUNT(*) AS cnt FROM org_billing
+            WHERE trust_classification IN ('provisional_open_source', 'trusted_open_source', 'community_project', 'verified_nonprofit')
+          `);
+          const reviewCount = await pool.query(`
+            SELECT COUNT(*) AS cnt FROM org_billing WHERE trust_classification = 'review_required'
+          `);
+          return {
+            byClassification: byClassification.rows.map(r => ({ classification: r.trust_classification, count: toInt(r.cnt) })),
+            freeAccessOrgs: toInt(freeCount.rows[0]?.cnt),
+            reviewRequired: toInt(reviewCount.rows[0]?.cnt),
+          };
+        } catch {
+          return { byClassification: [], freeAccessOrgs: 0, reviewRequired: 0 };
+        }
+      })(),
     });
   } catch (err) {
     console.error('Admin analytics error:', err);
