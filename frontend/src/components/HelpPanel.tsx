@@ -95,10 +95,13 @@ export default function HelpPanel() {
               link.href = '/help/panel-overrides.css';
               doc.head.appendChild(link);
             }
-            // Auto-select the first station so instructions show immediately
-            const win = (e.target as HTMLIFrameElement).contentWindow as any;
-            if (win && typeof win.show === 'function' && win.allIds && win.allIds.length > 0) {
-              setTimeout(() => win.show(win.allIds[0]), 150);
+            // Auto-select the first station so instructions show immediately.
+            // Use script injection since const/let top-level vars aren't on window.
+            if (!doc.getElementById('panel-autoselect')) {
+              const script = doc.createElement('script');
+              script.id = 'panel-autoselect';
+              script.textContent = 'if(typeof allIds!=="undefined"&&typeof show==="function"&&allIds.length>0){setTimeout(function(){show(allIds[0])},100);}';
+              doc.body.appendChild(script);
             }
           } catch { /* cross-origin safety — ignore */ }
         }}
