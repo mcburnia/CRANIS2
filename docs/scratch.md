@@ -58,6 +58,22 @@ Use `tools/becksmap/` generator for new maps. Follow `docs/HELP-GUIDE-STANDARD.m
 
 ---
 
+## Future Capability
+
+### Software Evidence Engine (SEE)
+
+**Status:** SPECIFIED — not yet planned or phased
+
+Automated engineering evidence extraction and lifecycle provenance generation from software repositories. Constructs a Software Evidence Graph in Neo4j from Git history, CI/CD metadata, test evolution, SBOMs, and vulnerability records.
+
+Full specification: `docs/see-specification.md`
+
+Key capabilities: commit/branch/developer attribution, experimentation detection, architecture evolution tracking, R&D tax evidence generation, multi-regulation compliance reports (CRA, NIS2, AI Act, DORA, ISO 27001, HMRC R&D).
+
+Relationship to #60 (Repo Estimator): the estimator is a pragmatic MVP that delivers LOC/effort/cost estimation. SEE is the broader strategic capability that subsumes and extends it with full lifecycle provenance and evidence graph modelling.
+
+---
+
 ## Parked
 
 - **P4 #24/#25** — Chat ops / Slack notifications (post-launch)
