@@ -4,7 +4,7 @@ import { useHelpPanel } from '../context/HelpPanelContext';
 import './styles/help-panel.css';
 
 // Bump this when help content changes to bust iframe cache
-const HELP_VERSION = '18';
+const HELP_VERSION = '19';
 const MIN_WIDTH = 320;
 const MAX_WIDTH = 700;
 const DEFAULT_WIDTH = 440;
