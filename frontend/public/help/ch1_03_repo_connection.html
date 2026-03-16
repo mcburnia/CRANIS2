@@ -75,7 +75,7 @@
     <span>›</span>
     <strong>Repository connection</strong>
   </div>
-  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span><span class="tag">Developers</span></div>
+  <div class="audience-tags"><span class="tag">Software Engineer</span><span class="tag">Administration User</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -154,7 +154,7 @@ const stations = {
     badge:"Interchange",
     badgeClass:"badge-teal",
     title:"Provider type",
-    sub:"Two paths \u2014 OAuth or PAT",
+    sub:"Two paths: OAuth or PAT",
     body:`<p>This is the branch point. The connection method differs by provider:</p><ul class="detail-list"><li><strong>GitHub or Codeberg</strong> → follow the purple OAuth path above the line</li><li><strong>Gitea, Forgejo, or self-hosted GitLab</strong> → follow the blue PAT path below the line</li></ul><p>Both paths converge at the Connected station once authentication is complete.</p>`
   },
   "oauth": {
@@ -200,16 +200,16 @@ const stations = {
     badgeClass:"badge-teal",
     title:"Connection established",
     sub:"First SBOM sync starts automatically",
-    body:`<p>The repository is now connected to your product. CRANIS2 immediately begins the first SBOM generation using its three-tier approach:</p><ul class="detail-list"><li><strong>Tier 1:</strong> Repository Dependency Graph API (GitHub only)</li><li><strong>Tier 2:</strong> Lockfile parsing — 28 supported formats</li><li><strong>Tier 3:</strong> Import scanning — 26 languages (source read in memory, never stored)</li></ul><p>You do not need to wait for the sync to complete before exploring the rest of the platform.</p>`
+    body:`<p>The repository is now connected to your product. CRANIS2 immediately begins the first SBOM generation (Art. 13(5)) using its three-tier approach:</p><ul class="detail-list"><li><strong>Tier 1:</strong> Repository Dependency Graph API (GitHub only)</li><li><strong>Tier 2:</strong> Lockfile parsing, 28 supported formats</li><li><strong>Tier 3:</strong> Import scanning, 26 languages (source read in memory, never stored)</li></ul><p>You do not need to wait for the sync to complete before exploring the rest of the platform.</p>`
   },
   "sbom": {
     icon:"\ud83d\udcc4",
     iconBg:"#EEEDFE",
-    badge:"Next diagram",
+    badge:"Output",
     badgeClass:"badge-purple",
     title:"SBOM generated",
-    sub:"Continues in Chapter 2",
-    body:`<p>Once the first sync completes, your product has a Software Bill of Materials — a full inventory of its dependencies. This feeds the vulnerability scanner, licence compliance engine, and obligations tracker automatically.</p><div class="tip">See the <strong>SBOM sync cycle</strong> diagram in Chapter 2 for the full detail of what happens after each sync.</div>`
+    sub:"Machine-readable dependency inventory per Art. 13(5)",
+    body:`<p>Once the first sync completes, your product has a Software Bill of Materials, a full inventory of its dependencies in SPDX format. This feeds the vulnerability scanner (Art. 13(6)), licence compliance engine, and obligations tracker automatically.</p><div class="tip">Navigate to the <strong>Dependencies</strong> tab on your product to see the SBOM. The help panel will show the SBOM sync cycle guide.</div>`
   }
 };
 const allIds = ["start", "provider", "oauth", "oauth-select", "pat", "pat-validate", "connected", "sbom"];

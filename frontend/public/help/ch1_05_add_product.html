@@ -75,7 +75,7 @@
     <span>\u203a</span>
     <strong>Adding your first product</strong>
   </div>
-  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span></div>
+  <div class="audience-tags"><span class="tag">Product Manager</span><span class="tag">Administration User</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -142,7 +142,7 @@ const stations = {
     "badgeClass": "badge-amber",
     "title": "AI Category Recommender",
     "sub": "Not sure which category? Let CRANIS2 help",
-    "body": "<p>If you are unsure which CRA category applies to your product, CRANIS2 includes a <strong>Category Recommender</strong> that asks four simple questions about your product and suggests the correct classification.</p><p>You can run the recommender at any time by clicking the CRA category badge on your product's detail page.</p>"
+    "body": "<p>If you are unsure which CRA category applies to your product, CRANIS2 includes a <strong>Category Recommender</strong> (prompt key: <span class=\"code\">category_recommendation</span>, Pro plan) that asks four simple questions and suggests the correct classification based on Art. 6-8 and Annex III.</p><p>You can run the recommender at any time by clicking the CRA category badge on your product's detail page. You review and approve the recommendation before it is applied.</p>"
   },
   "products": {
     "icon": "📦",
@@ -178,7 +178,7 @@ const stations = {
     "badgeClass": "badge-teal",
     "title": "Choose the CRA risk category",
     "sub": "This determines your conformity assessment route",
-    "body": "<p>The CRA classifies products into four risk categories. This is the most important choice you make — it determines which conformity assessment procedure applies:</p><ul class=\"detail-list\"><li><strong>Default</strong> — self-assessment. Most software products fall here.</li><li><strong>Important Class I</strong> — self-assessment if harmonised standards are applied; otherwise third-party assessment</li><li><strong>Important Class II</strong> — mandatory third-party assessment by a notified body</li><li><strong>Critical</strong> — mandatory EU-level certification</li></ul><div class=\"tip\">If unsure, start with <strong>Default</strong> and use the AI Category Recommender later to verify. You can change the category at any time.</div>"
+    "body": "<p>The CRA classifies products into four risk categories per Art. 6-8 and Annex III. This is the most important choice you make. It determines which conformity assessment procedure applies (Art. 32):</p><ul class=\"detail-list\"><li><strong>Default</strong> self-assessment. Most software products fall here.</li><li><strong>Important Class I</strong> self-assessment if harmonised standards are applied; otherwise third-party assessment</li><li><strong>Important Class II</strong> mandatory third-party assessment by a notified body</li><li><strong>Critical</strong> mandatory EU-level certification</li></ul><div class=\"tip\">If unsure, start with <strong>Default</strong> and use the AI Category Recommender later to verify. You can change the category at any time. Changing it recalculates your conformity assessment route and applicable obligations.</div>"
   },
   "distmodel": {
     "icon": "📤",
@@ -196,7 +196,7 @@ const stations = {
     "badgeClass": "badge-green",
     "title": "Product created",
     "sub": "Next step: connect your source code repository",
-    "body": "<p>Your product is now registered in CRANIS2. The next step is to <strong>connect your source code repository</strong> — this is what enables CRANIS2 to automatically generate your SBOM, scan for vulnerabilities, and build your compliance evidence.</p><div class=\"tip\">See the <strong>Repository connection</strong> guide (Chapter 1, Diagram 3) for step-by-step instructions on connecting GitHub, Codeberg, GitLab, Gitea, or Forgejo.</div>"
+    "body": "<p>Your product is now registered in CRANIS2. The next step is to <strong>connect your source code repository</strong>. This enables CRANIS2 to automatically generate your SBOM (Art. 13(5)), scan for vulnerabilities (Art. 13(6)), and build your compliance evidence.</p><div class=\"tip\">Navigate to the product's <strong>Overview</strong> tab and click Connect Repository. The help panel will show the connection guide.</div>"
   }
 };
 const allIds = ["products", "name", "type", "category", "distmodel", "created", "recommender"];

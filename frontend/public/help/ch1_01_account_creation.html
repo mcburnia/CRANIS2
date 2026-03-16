@@ -75,7 +75,7 @@
     <span>›</span>
     <strong>Account creation</strong>
   </div>
-  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span><span class="tag">Sales</span></div>
+  <div class="audience-tags"><span class="tag">All roles</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -166,7 +166,7 @@ const stations = {
     badgeClass:"badge-teal",
     title:"Credentials",
     sub:"Email address and password",
-    body:`<p>Your password must satisfy all five criteria: 8+ characters, uppercase, lowercase, number, and special character.</p><div class="tip">A real-time strength meter shows progress as you type.</div>`
+    body:`<p>Your password must satisfy all five criteria: 8+ characters, uppercase, lowercase, number, and special character.</p><div class="tip">A real-time strength meter shows progress as you type.</div><div class="warn"><strong>Common mistakes:</strong> Using a shared or team email address. Each user needs their own account for audit traceability. Use your work email, not a personal address.</div>`
   },
   "email-sent": {
     icon:"\u2709\ufe0f",
@@ -193,7 +193,7 @@ const stations = {
     badgeClass:"badge-coral",
     title:"Resend verification email",
     sub:"Request a new link",
-    body:`<p>Return to the login page and use <strong>Resend verification email</strong>. Links expire after 24 hours.</p>`
+    body:`<p>Return to the login page and use <strong>Resend verification email</strong>. Links expire after 24 hours.</p><div class="info">Resend requests are rate-limited. If you have requested multiple times, wait a few minutes before trying again.</div>`
   },
   "verify": {
     icon:"\ud83d\udd00",
@@ -201,7 +201,7 @@ const stations = {
     badge:"Interchange",
     badgeClass:"badge-teal",
     title:"Verify link",
-    sub:"Decision point \u2014 success or recovery",
+    sub:"Decision point, success or recovery",
     body:`<p>A successful click activates your account immediately. If the link has expired, request a resend.</p>`
   },
   "verified": {
@@ -225,10 +225,10 @@ const stations = {
   "orgsetup": {
     icon:"\ud83c\udfe2",
     iconBg:"#EEEDFE",
-    badge:"Next diagram",
+    badge:"Next step",
     badgeClass:"badge-purple",
     title:"Organisation setup",
-    sub:"Continues in Chapter 1 \u00b7 Diagram 2",
+    sub:"Navigate to /welcome to continue",
     body:`<p>Create your organisation. The setup wizard takes about one minute.</p><div class="tip">Navigate to <strong>/welcome</strong> in the app to begin organisation setup. The help panel will update automatically.</div>`
   }
 };
