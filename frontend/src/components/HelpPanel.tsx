@@ -3,6 +3,8 @@ import { X, BookOpen, GripVertical } from 'lucide-react';
 import { useHelpPanel } from '../context/HelpPanelContext';
 import './styles/help-panel.css';
 
+// Bump this when help content changes to bust iframe cache
+const HELP_VERSION = '2';
 const MIN_WIDTH = 320;
 const MAX_WIDTH = 700;
 const DEFAULT_WIDTH = 440;
@@ -81,7 +83,7 @@ export default function HelpPanel() {
       {/* Iframe content */}
       <iframe
         className="help-panel-iframe"
-        src={currentPage}
+        src={`${currentPage}?v=${HELP_VERSION}`}
         title="CRANIS2 Help"
         onLoad={(e) => {
           try {
