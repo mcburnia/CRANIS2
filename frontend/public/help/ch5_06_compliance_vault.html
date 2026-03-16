@@ -35,6 +35,9 @@
   .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
   .stn{cursor:pointer;transition:opacity .15s}.stn:hover{opacity:.75}
+  .stn .lbl,.stn .lbl-sub{transition:font-size .15s ease,font-weight .15s ease}
+  .stn:hover .lbl{font-size:15px;font-weight:700}
+  .stn:hover .lbl-sub{font-size:13px;font-weight:500}
   .instructions-wrap{max-width:820px;margin:0 auto;padding:36px 28px 80px}
   .prompt-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px;text-align:center;gap:14px}
   .prompt-icon{width:48px;height:48px;border-radius:50%;background:var(--teal-lt);display:flex;align-items:center;justify-content:center;font-size:22px}

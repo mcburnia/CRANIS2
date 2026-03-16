@@ -35,6 +35,9 @@
   .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
   .stn{cursor:pointer;transition:opacity .15s}.stn:hover{opacity:.75}
+  .stn .lbl,.stn .lbl-sub{transition:font-size .15s ease,font-weight .15s ease}
+  .stn:hover .lbl{font-size:15px;font-weight:700}
+  .stn:hover .lbl-sub{font-size:13px;font-weight:500}
   .instructions-wrap{max-width:820px;margin:0 auto;padding:36px 28px 80px}
   .prompt-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px;text-align:center;gap:14px}
   .prompt-icon{width:48px;height:48px;border-radius:50%;background:var(--teal-lt);display:flex;align-items:center;justify-content:center;font-size:22px}
@@ -92,10 +95,10 @@
 <line x1="550.5" y1="115.0" x2="693.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
 <line x1="55.0" y1="71.0" x2="55.0" y2="107.0" stroke="#BA7517" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 4"/>
 <g class="stn" id="ms-navigate" onclick="show('navigate')"><rect x="49.0" y="105.0" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="55.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="55.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Settings → Integrations</text><text x="55.0" y="150.0" text-anchor="middle" class="lbl-sub">API Keys section</text></g>
-<g class="stn" id="ms-create" onclick="show('create')"><circle cx="217.5" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="217.5" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Create key</text><text x="217.5" y="150.0" text-anchor="middle" class="lbl-sub">Name the key</text></g>
+<g class="stn" id="ms-create" onclick="show('create')"><circle cx="217.5" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="217.5" y="85.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Create key</text><text x="217.5" y="98.0" text-anchor="middle" class="lbl-sub">Name the key</text></g>
 <g class="stn" id="ms-copy" onclick="show('copy')"><circle cx="380.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="380.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Copy key once</text><text x="380.0" y="150.0" text-anchor="middle" class="lbl-sub">Never shown again</text></g>
-<g class="stn" id="ms-auth" onclick="show('auth')"><circle cx="542.5" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="542.5" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Authenticate</text><text x="542.5" y="150.0" text-anchor="middle" class="lbl-sub">Bearer header</text></g>
-<g class="stn" id="ms-endpoints" onclick="show('endpoints')"><circle cx="705.0" cy="115.0" r="12" fill="white" stroke="#534AB7" stroke-width="3"/><circle cx="705.0" cy="115.0" r="6" fill="#534AB7"/><text x="705.0" y="141.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">API endpoints</text><text x="705.0" y="154.0" text-anchor="middle" class="lbl-sub">5 available</text></g>
+<g class="stn" id="ms-auth" onclick="show('auth')"><circle cx="542.5" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="542.5" y="85.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Authenticate</text><text x="542.5" y="98.0" text-anchor="middle" class="lbl-sub">Bearer header</text></g>
+<g class="stn" id="ms-endpoints" onclick="show('endpoints')"><circle cx="705.0" cy="115.0" r="12" fill="white" stroke="#534AB7" stroke-width="3"/><circle cx="705.0" cy="115.0" r="6" fill="#534AB7"/><text x="705.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">API endpoints</text><text x="705.0" y="150.0" text-anchor="middle" class="lbl-sub">5 available</text></g>
 <g class="stn" id="ms-pro-req" onclick="show('pro-req')"><circle cx="55.0" cy="63.0" r="8" fill="white" stroke="#BA7517" stroke-width="2.5"/><text x="55.0" y="37.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#BA7517">Pro plan</text><text x="55.0" y="50.0" text-anchor="middle" class="lbl-sub">Required</text></g>
   <line x1="30" y1="183.0" x2="55" y2="183.0" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
   <text x="61" y="187.0" class="lbl-sub">Main journey</text>
