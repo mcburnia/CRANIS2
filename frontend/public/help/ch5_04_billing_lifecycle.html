@@ -75,7 +75,7 @@
     <span>›</span>
     <strong>Billing lifecycle</strong>
   </div>
-  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span><span class="tag">Sales</span></div>
+  <div class="audience-tags"><span class="tag">Administration User</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -148,9 +148,9 @@ const stations = {
     iconBg:"#FAEEDA",
     badge:"Phase 2",
     badgeClass:"badge-amber",
-    title:"Grace period \u2014 7 days",
+    title:"Grace period, 7 days",
     sub:"Full access with a warning banner",
-    body:`<p>When the 90-day trial expires, the organisation enters a 7-day grace period. During this period:</p><ul class="detail-list"><li>Full access to all features continues</li><li>A warning banner appears prompting you to subscribe</li><li>No data is lost or features are restricted</li></ul><p>Subscribe before the grace period ends to avoid entering read-only mode.</p>`
+    body:`<p>When the 90-day trial expires, the organisation enters a 7-day grace period. During this period:</p><ul class="detail-list"><li>Full access to all Standard features continues</li><li>A warning banner appears prompting you to subscribe</li><li>No data is lost and no features are restricted</li></ul><p>Subscribe before the grace period ends to avoid entering read-only mode.</p>`
   },
   "subscribe": {
     icon:"\ud83d\udcb3",
@@ -175,7 +175,7 @@ const stations = {
     iconBg:"#F1EFE8",
     badge:"Phase 4",
     badgeClass:"badge-gray",
-    title:"Suspended \u2014 60 days",
+    title:"Suspended, 60 days",
     sub:"Limited access",
     body:`<p>If the account remains in read-only mode for 60 days without a subscription being activated, it is suspended. Contact CRANIS2 support to reactivate a suspended account — your data is retained during the suspension period.</p>`
   },
@@ -186,7 +186,7 @@ const stations = {
     badgeClass:"badge-gray",
     title:"Cancelled",
     sub:"Account closed after suspension period",
-    body:`<p>After the suspension period, the account is cancelled. Data retention policies apply — existing compliance evidence vault archives remain in Scaleway Glacier storage for their full retention period regardless of account status, as per the funded retention reserve.</p><div class="warn">Export all your compliance data before the cancellation date if you wish to retain a local copy.</div>`
+    body:`<p>After the suspension period, the account is cancelled. Data retention policies apply. Existing compliance evidence vault archives remain in Scaleway Glacier storage for their full retention period regardless of account status, as per the funded retention reserve. This supports the CRA's 10-year documentation retention requirement (Art. 23(2)).</p><div class="warn">Export all your compliance data before the cancellation date if you wish to retain a local copy.</div>`
   }
 };
 const allIds = ["trial", "grace-trial", "subscribe", "read-only", "suspended", "cancelled"];
