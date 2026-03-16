@@ -147,7 +147,7 @@ const stations = {
     "badgeClass": "badge-teal",
     "title": "SBOM — Software Bill of Materials",
     "sub": "A complete list of every component in your product",
-    "body": "<p>An SBOM is like an <strong>ingredients list</strong> for software. Just as a food label lists every ingredient, an SBOM lists every software component (library, framework, tool) that your product depends on.</p><p>The CRA requires you to maintain an SBOM in a machine-readable format. CRANIS2 generates this automatically from your source code repository.</p><div class=\"tip\"><strong>Why it matters:</strong> If a security vulnerability is discovered in a component, the SBOM tells you immediately whether your product is affected.</div>"
+    "body": "<p>An SBOM is like an <strong>ingredients list</strong> for software. Just as a food label lists every ingredient, an SBOM lists every software component (library, framework, tool) that your product depends on.</p><p>The CRA requires you to maintain an SBOM in a machine-readable format (Art. 13(5), Annex I, Part II). CRANIS2 generates this automatically from your source code repository.</p><div class=\"tip\"><strong>Why it matters:</strong> If a security vulnerability is discovered in a component, the SBOM tells you immediately whether your product is affected.</div>"
   },
   "cve": {
     "icon": "🐛",
@@ -165,7 +165,7 @@ const stations = {
     "badgeClass": "badge-purple",
     "title": "Technical File",
     "sub": "Your product's compliance evidence package",
-    "body": "<p>The Technical File is a structured document with <strong>8 sections</strong> that proves your product meets the CRA's essential requirements. Think of it as your product's compliance CV.</p><p>The 8 sections cover:</p><ul class=\"detail-list\"><li>Product description</li><li>Design and development practices</li><li>Vulnerability handling processes</li><li>Risk assessment</li><li>Support period</li><li>Standards applied</li><li>Test reports</li><li>EU Declaration of Conformity</li></ul><p>CRANIS2's AI Copilot can draft most sections automatically from your product's data.</p>"
+    "body": "<p>The Technical File is a structured document with <strong>8 sections</strong> required by Art. 13(12) and defined in Annex VII. It proves your product meets the CRA's essential requirements. Think of it as your product's compliance CV.</p><p>The 8 sections cover:</p><ul class=\"detail-list\"><li>Product description</li><li>Design and development practices</li><li>Vulnerability handling processes</li><li>Risk assessment</li><li>Support period</li><li>Standards applied</li><li>Test reports</li><li>EU Declaration of Conformity</li></ul><p>CRANIS2's AI Copilot can draft most sections from your product's data. You review and approve each draft before it becomes part of your compliance record.</p>"
   },
   "doc": {
     "icon": "📜",
@@ -174,7 +174,7 @@ const stations = {
     "badgeClass": "badge-teal",
     "title": "EU Declaration of Conformity",
     "sub": "Your formal statement that the product meets CRA requirements",
-    "body": "<p>The Declaration of Conformity (DoC) is a legal document where the manufacturer formally states that the product meets all applicable CRA requirements. It includes:</p><ul class=\"detail-list\"><li>Your company name and address</li><li>Product identification (name, version)</li><li>A statement that the product conforms to the essential requirements</li><li>References to any standards you applied</li><li>Date and signature</li></ul><p>CRANIS2 generates this document automatically from your product and organisation data.</p>"
+    "body": "<p>The Declaration of Conformity (DoC), required by Art. 28 and structured per Annex VI, is a legal document where the manufacturer formally states that the product meets all applicable CRA requirements. It includes:</p><ul class=\"detail-list\"><li>Your company name and address</li><li>Product identification (name, version)</li><li>A statement that the product conforms to the essential requirements</li><li>References to any standards you applied</li><li>Date and signature</li></ul><p>CRANIS2 generates this document automatically from your product and organisation data.</p>"
   },
   "ce": {
     "icon": "✅",
@@ -183,7 +183,7 @@ const stations = {
     "badgeClass": "badge-green",
     "title": "CE Marking",
     "sub": "The stamp that allows market access in the EU",
-    "body": "<p>The CE marking is a symbol that indicates your product meets EU safety and compliance requirements. Under the CRA, software products that comply with all essential requirements can carry the CE marking.</p><p>Without CE marking, your product <strong>cannot lawfully be placed on the EU market</strong> after December 2027.</p><div class=\"info\">The CE marking is not a quality mark — it is a regulatory compliance indicator. It means the product meets minimum legal requirements for cybersecurity.</div>"
+    "body": "<p>The CE marking (Art. 29) is a symbol that indicates your product meets EU safety and compliance requirements. Under the CRA, software products that comply with all essential requirements can carry the CE marking.</p><p>Without CE marking, your product <strong>cannot lawfully be placed on the EU market</strong> after December 2027.</p><div class=\"info\">The CE marking is not a quality mark. It is a regulatory compliance indicator, confirming the product meets minimum legal requirements for cybersecurity.</div>"
   },
   "enisa": {
     "icon": "🏢",
@@ -192,7 +192,7 @@ const stations = {
     "badgeClass": "badge-amber",
     "title": "ENISA and CSIRT",
     "sub": "The EU agencies you report incidents to",
-    "body": "<p><strong>ENISA</strong> (European Union Agency for Cybersecurity) is the EU's cybersecurity agency. Under the CRA, you must report actively exploited vulnerabilities to ENISA.</p><p><strong>CSIRT</strong> (Computer Security Incident Response Team) is a national team that handles cybersecurity incidents. Each EU member state has one. When you report an incident, it goes to the CSIRT of the country where your company is based.</p><div class=\"tip\">CRANIS2 manages the entire ENISA reporting workflow — from the 24-hour early warning through to the 14-day final report — with deadline tracking and AI-assisted content drafting.</div>"
+    "body": "<p><strong>ENISA</strong> (European Union Agency for Cybersecurity) is the EU's cybersecurity agency. Under Art. 14, you must report actively exploited vulnerabilities to ENISA.</p><p><strong>CSIRT</strong> (Computer Security Incident Response Team) is a national team that handles cybersecurity incidents. Each EU member state has one. When you report an incident, it goes to the CSIRT of the country where your company is based.</p><div class=\"tip\">CRANIS2 manages the entire ENISA reporting workflow, from the 24-hour early warning through to the 14-day final report, with deadline tracking and AI-assisted content drafting. You review and approve all report content before submission.</div>"
   },
   "nb": {
     "icon": "🔍",
@@ -201,7 +201,7 @@ const stations = {
     "badgeClass": "badge-purple",
     "title": "Notified Body",
     "sub": "An independent assessor for higher-risk products",
-    "body": "<p>A Notified Body is an independent organisation designated by an EU member state to carry out third-party conformity assessments. Not all products need one — only those classified as <strong>Important Class II</strong> or <strong>Critical</strong>.</p><ul class=\"detail-list\"><li><strong>Default and Important Class I</strong> — self-assessment is sufficient (you assess your own product)</li><li><strong>Important Class II</strong> — requires EU-type examination by a notified body</li><li><strong>Critical</strong> — requires full quality assurance assessment by a notified body</li></ul><p>CRANIS2 includes a directory of EU notified bodies and tracks the assessment process if your product requires one.</p>"
+    "body": "<p>A Notified Body (Art. 32) is an independent organisation designated by an EU member state to carry out third-party conformity assessments. Not all products need one. Only those classified as <strong>Important Class II</strong> or <strong>Critical</strong> under Annex III require third-party assessment.</p><ul class=\"detail-list\"><li><strong>Default and Important Class I</strong> self-assessment is sufficient (you assess your own product)</li><li><strong>Important Class II</strong> requires EU-type examination by a notified body</li><li><strong>Critical</strong> requires full quality assurance assessment by a notified body</li></ul><p>CRANIS2 includes a directory of EU notified bodies and tracks the assessment process if your product requires one.</p>"
   }
 };
 const allIds = ["sbom", "cve", "techfile", "doc", "ce", "enisa", "nb"];
