@@ -75,7 +75,7 @@
     <span>›</span>
     <strong>Licence compliance</strong>
   </div>
-  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span></div>
+  <div class="audience-tags"><span class="tag">Software Engineer</span><span class="tag">Compliance Officer</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -143,8 +143,8 @@ const stations = {
     badge:"Trigger",
     badgeClass:"badge-gray",
     title:"SBOM sync triggers licence scan",
-    sub:"Automatic \u2014 runs after every sync",
-    body:`<p>Every time an SBOM sync completes — whether triggered manually, by a push event, or by the nightly scheduler — a licence scan runs automatically against the new dependency list. No manual action is required to initiate it.</p>`
+    sub:"Automatic, runs after every sync",
+    body:`<p>Every time an SBOM sync completes, whether triggered manually, by a push event, or by the nightly scheduler, a licence scan runs automatically against the new dependency list. Licence data is part of the SBOM requirement under Annex I, Part II. No manual action is required to initiate it.</p>`
   },
   "classify": {
     icon:"\ud83c\udff7\ufe0f",
@@ -198,7 +198,7 @@ const stations = {
     badgeClass:"badge-amber",
     title:"Record a waiver",
     sub:"Justification logged per dependency",
-    body:`<p>When you have reviewed a copyleft or flagged licence and determined it is acceptable for your use case, record a waiver from the licence compliance page. The waiver captures:</p><ul class="detail-list"><li>The dependency name and version</li><li>The licence type</li><li>Your justification for accepting it</li><li>The date of the review decision</li></ul><p>Waivers are included in the due diligence export and form part of your compliance evidence.</p>`
+    body:`<p>When you have reviewed a copyleft or flagged licence and determined it is acceptable for your use case, record a waiver from the licence compliance page. The waiver captures:</p><ul class="detail-list"><li>The dependency name and version</li><li>The licence type</li><li>Your justification for accepting it</li><li>The date of the review decision</li></ul><div class="info"><strong>What to write:</strong> A good waiver justification explains why the licence is compatible with your distribution model. For example: "LGPL-2.1 dependency used as a dynamically linked library in a SaaS product with no binary distribution. No copyleft obligation triggered."</div><p>Waivers are included in the due diligence export and form part of your compliance evidence.</p>`
   },
   "export": {
     icon:"\ud83d\udce4",

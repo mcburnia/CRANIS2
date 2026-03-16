@@ -75,7 +75,7 @@
     <span>›</span>
     <strong>Vulnerability scan flow</strong>
   </div>
-  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span></div>
+  <div class="audience-tags"><span class="tag">Software Engineer</span><span class="tag">Compliance Officer</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -170,7 +170,7 @@ const stations = {
     badge:"Interchange",
     badgeClass:"badge-teal",
     title:"Findings?",
-    sub:"Branch point \u2014 clean or findings",
+    sub:"Branch point: clean or findings",
     body:`<p>The scan produces one of two outcomes:</p><ul class="detail-list"><li><strong>No findings</strong> — the green branch above the line. No notifications generated, obligations engine updated with clean status</li><li><strong>Findings</strong> — the main line continues. Each finding is created with Open status and a notification is generated</li></ul>`
   },
   "clean": {
@@ -187,7 +187,7 @@ const stations = {
     iconBg:"#FAECE7",
     badge:"Step 2",
     badgeClass:"badge-coral",
-    title:"Findings created \u2014 status: Open",
+    title:"Findings created, status: Open",
     sub:"Notification generated",
     body:`<p>Each new vulnerability finding is created with <strong>Open</strong> status. Severity is assigned from the CVSS score:</p><ul class="detail-list"><li><strong>Critical</strong> — CVSS 9.0–10.0</li><li><strong>High</strong> — CVSS 7.0–8.9</li><li><strong>Medium</strong> — CVSS 4.0–6.9</li><li><strong>Low</strong> — CVSS 0.1–3.9</li></ul><p>A notification is generated for each new finding and appears in your notification inbox.</p>`
   },
@@ -198,7 +198,7 @@ const stations = {
     badgeClass:"badge-amber",
     title:"Triage the finding",
     sub:"Five-status workflow",
-    body:`<p>Each finding needs a triage decision. The five available statuses are:</p><ul class="detail-list"><li><strong>Open</strong> — new, not yet reviewed</li><li><strong>Acknowledged</strong> — aware and evaluating</li><li><strong>Mitigated</strong> — workaround applied</li><li><strong>Resolved</strong> — dependency updated and fully fixed</li><li><strong>Dismissed</strong> — not applicable, with justification recorded</li></ul><div class="tip">Pro plan users can use <strong>AI Auto-Triage</strong> to get a recommended action, confidence score, and CLI fix command for each finding.</div>`
+    body:`<p>Each finding needs a triage decision per Art. 13(6). The five available statuses are:</p><ul class="detail-list"><li><strong>Open</strong> new, not yet reviewed</li><li><strong>Acknowledged</strong> aware and evaluating</li><li><strong>Mitigated</strong> workaround applied</li><li><strong>Resolved</strong> dependency updated and fully fixed</li><li><strong>Dismissed</strong> not applicable, with justification recorded</li></ul><div class="tip">Pro plan users can use <strong>AI Auto-Triage</strong> (prompt key: <span class="code">vulnerability_triage</span>) to get a recommended action, confidence score, and CLI fix command. You review and approve each recommendation.</div>`
   },
   "enisa": {
     icon:"\u26a0\ufe0f",
