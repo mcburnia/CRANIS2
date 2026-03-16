@@ -75,7 +75,7 @@
     <span>›</span>
     <strong>Finding triage</strong>
   </div>
-  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span></div>
+  <div class="audience-tags"><span class="tag">Software Engineer</span><span class="tag">Compliance Officer</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -142,7 +142,7 @@ const stations = {
     badgeClass:"badge-amber",
     title:"Vulnerability scan creates finding",
     sub:"Nightly at 3 AM or triggered manually",
-    body:`<p>Every finding originates from a vulnerability scan — either the nightly platform-wide scan at 3 AM UTC, or a manual per-product scan you trigger from the Risk Findings tab. Each finding is automatically assigned <strong>Open</strong> status and a severity level derived from its CVSS score.</p>`
+    body:`<p>Every finding originates from a vulnerability scan, either the nightly platform-wide scan at 3 AM UTC, or a manual per-product scan you trigger from the Risk Findings tab. Triage is required under Art. 13(6), which mandates identifying and handling vulnerabilities without delay. Each finding is automatically assigned <strong>Open</strong> status and a severity level derived from its CVSS score.</p>`
   },
   "open": {
     icon:"\ud83d\udd34",
@@ -159,7 +159,7 @@ const stations = {
     badge:"Status 2",
     badgeClass:"badge-amber",
     title:"Acknowledged",
-    sub:"Aware and evaluating \u2014 not yet actioned",
+    sub:"Aware and evaluating, not yet actioned",
     body:`<p>Set a finding to <strong>Acknowledged</strong> when your team is aware of it and has reviewed it, but has not yet decided on a course of action. This is appropriate when:</p><ul class="detail-list"><li>You are investigating the impact on your specific product</li><li>A fix exists but has not yet been tested or deployed</li><li>You are waiting for an upstream patch</li></ul><p>Acknowledged findings remain visible and tracked — this status prevents them from appearing as "unreviewed" without prematurely closing them.</p>`
   },
   "mitigated": {
@@ -177,7 +177,7 @@ const stations = {
     badge:"Status 4",
     badgeClass:"badge-green",
     title:"Resolved",
-    sub:"Fully fixed \u2014 dependency updated",
+    sub:"Fully fixed, dependency updated",
     body:`<p>Set a finding to <strong>Resolved</strong> when the vulnerability has been fully addressed — typically by updating the affected dependency to a non-vulnerable version. The platform records who resolved it and when.</p><div class="tip">After marking a finding as Resolved, trigger a new vulnerability scan to confirm the fix is reflected in your SBOM. Pro plan users can use <strong>AI Auto-Triage</strong> to get the exact CLI fix command for each ecosystem.</div>`
   },
   "dismissed": {
