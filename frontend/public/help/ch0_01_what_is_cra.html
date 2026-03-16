@@ -147,7 +147,7 @@ const stations = {
     "badgeClass": "badge-amber",
     "title": "Which products are affected?",
     "sub": "Any product with digital elements sold in the EU",
-    "body": "<p>The CRA applies to <strong>any product with digital elements</strong> that is made available on the EU market. This includes:</p><ul class=\"detail-list\"><li>Software applications (desktop, mobile, web)</li><li>IoT devices and connected hardware</li><li>Operating systems and firmware</li><li>Software libraries and components used in other products</li><li>Cloud services that include downloadable software components</li></ul><p>If your company sells or distributes software to customers in the EU, the CRA almost certainly applies to you.</p>"
+    "body": "<p>The CRA applies to <strong>any product with digital elements</strong> that is made available on the EU market. This includes:</p><ul class=\"detail-list\"><li>Software applications (desktop, mobile, web)</li><li>IoT devices and connected hardware</li><li>Operating systems and firmware</li><li>Software libraries and components used in other products</li><li>Cloud services that include downloadable software components</li></ul><p>If your company sells or distributes software to customers in the EU, the CRA applies to you.</p>"
   },
   "regulation": {
     "icon": "🇪🇺",
@@ -155,8 +155,8 @@ const stations = {
     "badge": "Background",
     "badgeClass": "badge-teal",
     "title": "The EU Cyber Resilience Act",
-    "sub": "Published August 2024 — enforcement begins 2026",
-    "body": "<p>The Cyber Resilience Act (CRA) is an EU regulation that requires manufacturers of products with digital elements to meet essential cybersecurity requirements throughout the product lifecycle.</p><p>Unlike a directive, a regulation applies <strong>directly</strong> in all EU member states — no national transposition is needed. It was published in the Official Journal in November 2024.</p><div class=\"tip\">Think of the CRA as the cybersecurity equivalent of CE marking for physical product safety. It ensures software products meet a baseline security standard before being sold in Europe.</div>"
+    "sub": "Published August 2024, enforcement begins 2026",
+    "body": "<p>The Cyber Resilience Act (CRA), formally Regulation (EU) 2024/2847, requires manufacturers of products with digital elements to meet essential cybersecurity requirements throughout the product lifecycle.</p><p>Unlike a directive, a regulation applies <strong>directly</strong> in all EU member states. No national transposition is needed. It was published in the Official Journal in November 2024.</p><div class=\"info\"><strong>Regulation reference:</strong> Art. 1 defines the subject matter and scope. The full text is available in the <a href=\"https://eur-lex.europa.eu/eli/reg/2024/2847/oj\" target=\"_blank\">Official Journal</a>.</div><div class=\"tip\">Think of the CRA as the cybersecurity equivalent of CE marking for physical product safety. It ensures software products meet a baseline security standard before being sold in Europe.</div>"
   },
   "scope": {
     "icon": "🎯",
@@ -165,7 +165,7 @@ const stations = {
     "badgeClass": "badge-teal",
     "title": "Who does it apply to?",
     "sub": "Manufacturers, importers, and distributors",
-    "body": "<p>The CRA creates obligations for three types of organisation:</p><ul class=\"detail-list\"><li><strong>Manufacturers</strong> — companies that design, develop, or produce software products. This is most software companies.</li><li><strong>Importers</strong> — companies that bring products from outside the EU into the EU market</li><li><strong>Distributors</strong> — companies that resell or make products available without modifying them</li></ul><p>There is also a special category for <strong>open-source software stewards</strong> — organisations that systematically support open-source projects intended for commercial use.</p><div class=\"info\">Not sure which role applies to you? CRANIS2 asks you during organisation setup and tailors the obligations accordingly.</div>"
+    "body": "<p>The CRA creates obligations for three types of organisation, defined in Art. 3:</p><ul class=\"detail-list\"><li><strong>Manufacturers</strong> (Art. 13) design, develop, or produce software products. This is most software companies.</li><li><strong>Importers</strong> (Art. 18) bring products from outside the EU into the EU market</li><li><strong>Distributors</strong> (Art. 19) resell or make products available without modifying them</li></ul><p>There is also a special category for <strong>open-source software stewards</strong> (Art. 24), organisations that systematically support open-source projects intended for commercial use.</p><div class=\"info\">Not sure which role applies to you? CRANIS2 asks you during organisation setup and tailors the obligations accordingly.</div>"
   },
   "obligations": {
     "icon": "✔️",
@@ -174,7 +174,7 @@ const stations = {
     "badgeClass": "badge-teal",
     "title": "35 obligations — what you must do",
     "sub": "Security by design, vulnerability handling, documentation",
-    "body": "<p>The CRA defines 35 specific obligations covering:</p><ul class=\"detail-list\"><li><strong>Security by design</strong> — build products with appropriate cybersecurity from the start</li><li><strong>Vulnerability handling</strong> — identify, document, and fix vulnerabilities throughout the support period</li><li><strong>Software Bill of Materials (SBOM)</strong> — maintain a list of all components in your product</li><li><strong>Security updates</strong> — provide free security patches for at least 5 years</li><li><strong>Incident reporting</strong> — report actively exploited vulnerabilities to ENISA within 24 hours</li><li><strong>Technical documentation</strong> — maintain a Technical File with 8 sections per Annex VII</li><li><strong>EU Declaration of Conformity</strong> — formally declare your product meets the requirements</li></ul><div class=\"tip\">CRANIS2 tracks all 35 obligations for your products and automatically derives status from your platform data — so you always know where you stand.</div>"
+    "body": "<p>The CRA defines 35 specific obligations covering:</p><ul class=\"detail-list\"><li><strong>Security by design</strong> (Annex I, Part I) build products with appropriate cybersecurity from the start</li><li><strong>Vulnerability handling</strong> (Art. 13(6), Annex I, Part II) identify, document, and fix vulnerabilities throughout the support period</li><li><strong>Software Bill of Materials</strong> (Art. 13(5)) maintain a machine-readable list of all components in your product</li><li><strong>Security updates</strong> (Art. 13(8)) provide free security patches for at least 5 years</li><li><strong>Incident reporting</strong> (Art. 14) report actively exploited vulnerabilities to ENISA within 24 hours</li><li><strong>Technical documentation</strong> (Art. 13(12), Annex VII) maintain a Technical File with 8 sections</li><li><strong>EU Declaration of Conformity</strong> (Art. 28, Annex VI) formally declare your product meets the requirements</li></ul><div class=\"tip\">CRANIS2 tracks all 35 obligations for your products and automatically derives status from your platform data, so you always know where you stand.</div>"
   },
   "deadlines": {
     "icon": "📅",
@@ -183,7 +183,7 @@ const stations = {
     "badgeClass": "badge-amber",
     "title": "Two key deadlines",
     "sub": "September 2026 and December 2027",
-    "body": "<p>The CRA has two major enforcement milestones:</p><ul class=\"detail-list\"><li><strong>September 2026</strong> — vulnerability reporting obligations begin. You must report actively exploited vulnerabilities to ENISA within 24 hours.</li><li><strong>December 2027</strong> — full compliance required. All products on the EU market must meet all essential requirements, have complete Technical Files, and carry the CE marking.</li></ul><div class=\"warn\"><strong>These deadlines are legally binding.</strong> Products that do not comply cannot lawfully be placed on or remain on the EU market after December 2027.</div>"
+    "body": "<p>The CRA has two major enforcement milestones:</p><ul class=\"detail-list\"><li><strong>September 2026</strong> (Art. 14) vulnerability reporting obligations begin. You must report actively exploited vulnerabilities to ENISA within 24 hours.</li><li><strong>December 2027</strong> (Art. 69) full compliance required. All products on the EU market must meet all essential requirements, have complete Technical Files, and carry the CE marking.</li></ul><div class=\"warn\"><strong>These deadlines are legally binding.</strong> Products that do not comply cannot lawfully be placed on or remain on the EU market after December 2027.</div>"
   },
   "penalties": {
     "icon": "⚠️",
@@ -192,7 +192,7 @@ const stations = {
     "badgeClass": "badge-coral",
     "title": "Significant penalties for non-compliance",
     "sub": "Up to €15 million or 2.5% of global turnover",
-    "body": "<p>Market surveillance authorities can impose fines of up to:</p><ul class=\"detail-list\"><li><strong>€15 million</strong> or <strong>2.5% of annual worldwide turnover</strong> (whichever is higher) for failing to meet essential cybersecurity requirements</li><li><strong>€10 million</strong> or <strong>2% of turnover</strong> for other CRA obligations</li><li><strong>€5 million</strong> or <strong>1% of turnover</strong> for providing incorrect or misleading information</li></ul><p>Beyond fines, non-compliant products can be <strong>withdrawn from the EU market</strong> — meaning you lose access to 450 million consumers.</p>"
+    "body": "<p>Under Art. 53, market surveillance authorities can impose fines of up to:</p><ul class=\"detail-list\"><li><strong>€15 million</strong> or <strong>2.5% of annual worldwide turnover</strong> (whichever is higher) for failing to meet essential cybersecurity requirements</li><li><strong>€10 million</strong> or <strong>2% of turnover</strong> for other CRA obligations</li><li><strong>€5 million</strong> or <strong>1% of turnover</strong> for providing incorrect or misleading information</li></ul><p>Beyond fines, non-compliant products can be <strong>withdrawn from the EU market</strong> under Art. 49, meaning you lose access to 450 million consumers.</p>"
   },
   "cranis2": {
     "icon": "🛡️",

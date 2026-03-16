@@ -97,7 +97,7 @@ const FAQ_JSON_LD: Record<string, unknown> = {
       name: 'Is there a free trial?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Yes. Every new organisation receives a 90-day free trial with full access to all platform features. No credit card is required to start.',
+        text: 'Yes. Every new organisation receives a 90-day free trial with full access to all Standard plan features. Pro features require an upgrade. No credit card is required to start.',
       },
     },
     {
