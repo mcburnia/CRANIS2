@@ -75,7 +75,7 @@
     <span>›</span>
     <strong>CI/CD compliance gate</strong>
   </div>
-  <div class="audience-tags"><span class="tag">Developers</span><span class="tag">Staff</span></div>
+  <div class="audience-tags"><span class="tag">Software Engineer</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -176,7 +176,7 @@ const stations = {
     iconBg:"#EAF3DE",
     badge:"Pass",
     badgeClass:"badge-green",
-    title:"Gate passes \u2014 deploy proceeds",
+    title:"Gate passes, deploy proceeds",
     sub:"Exit code 0",
     body:`<p>When the compliance check passes, the gate exits with code 0 and the pipeline continues to the deployment step. No blocking findings exist at or above the configured threshold.</p>`
   },
@@ -185,7 +185,7 @@ const stations = {
     iconBg:"#FAECE7",
     badge:"Fail",
     badgeClass:"badge-coral",
-    title:"Gate fails \u2014 deploy blocked",
+    title:"Gate fails, deploy blocked",
     sub:"Non-zero exit code",
     body:`<p>When the compliance check fails, the gate exits with a non-zero exit code. The pipeline stops and the deployment is blocked. The gate output includes details of which findings are blocking the deployment.</p><p>Your CI/CD platform will mark the pipeline run as failed and notify the relevant team members according to your notification settings.</p>`
   },
@@ -196,7 +196,7 @@ const stations = {
     badgeClass:"badge-coral",
     title:"Resolve findings and retry",
     sub:"Triage findings in CRANIS2 then re-run",
-    body:`<p>To unblock a failed gate:</p><ul class="detail-list"><li>Open CRANIS2 and navigate to Risk Findings for the affected product</li><li>Review and triage the blocking Critical or High findings</li><li>Resolve or dismiss each finding with appropriate justification</li><li>Re-run the pipeline — the gate will pass once no blocking findings remain</li></ul><div class="tip">Pro plan: use AI Auto-Triage to get fix commands for each blocking finding. Run the commands, trigger a rescan, and the gate should pass on the next pipeline run.</div>`
+    body:`<p>To unblock a failed gate:</p><ul class="detail-list"><li>Open CRANIS2 and navigate to Risk Findings for the affected product</li><li>Review and triage the blocking Critical or High findings</li><li>Resolve or dismiss each finding with appropriate justification</li><li>Re-run the pipeline — the gate will pass once no blocking findings remain</li></ul><div class="tip">Pro plan: use AI Auto-Triage (prompt key: <span class="code">vulnerability_triage</span>) to get fix commands for each blocking finding. The CI/CD gate supports Art. 13(6) continuous vulnerability handling and Art. 13(2) secure development practices.</div>`
   }
 };
 const allIds = ["setup", "pipeline", "call", "decision", "pass", "fail", "resolve"];
