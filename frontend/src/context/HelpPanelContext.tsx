@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 
 interface HelpPanelState {
@@ -7,7 +7,6 @@ interface HelpPanelState {
   toggle: () => void;
   open: (page?: string) => void;
   close: () => void;
-  navigate: (page: string) => void;
 }
 
 const HelpPanelContext = createContext<HelpPanelState | null>(null);
@@ -121,12 +120,10 @@ export function HelpPanelProvider({ children }: { children: ReactNode }) {
     try { return localStorage.getItem(STORAGE_KEY) === 'open'; } catch { return false; }
   });
   const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE);
-  const userNavigatedRef = useRef(false); // tracks if user manually navigated within the help panel
   const location = useLocation();
 
-  // Update help page when route changes — but only if the user hasn't manually navigated
+  // Always update help page to match current route — context-aware selection
   useEffect(() => {
-    if (userNavigatedRef.current) return; // user is reading a specific page, don't interrupt
     const helpPage = getHelpPageForRoute(location.pathname, location.search);
     setCurrentPage(helpPage);
   }, [location.pathname, location.search]);
@@ -134,10 +131,6 @@ export function HelpPanelProvider({ children }: { children: ReactNode }) {
   const toggle = useCallback(() => {
     setIsOpen(prev => {
       const next = !prev;
-      if (next) {
-        // Opening — reset to context-aware page
-        userNavigatedRef.current = false;
-      }
       try { localStorage.setItem(STORAGE_KEY, next ? 'open' : 'closed'); } catch {}
       return next;
     });
@@ -146,9 +139,6 @@ export function HelpPanelProvider({ children }: { children: ReactNode }) {
   const open = useCallback((page?: string) => {
     if (page) {
       setCurrentPage(page);
-      userNavigatedRef.current = true; // explicit page = user-driven
-    } else {
-      userNavigatedRef.current = false; // no page = use context
     }
     setIsOpen(true);
     try { localStorage.setItem(STORAGE_KEY, 'open'); } catch {}
@@ -156,21 +146,11 @@ export function HelpPanelProvider({ children }: { children: ReactNode }) {
 
   const close = useCallback(() => {
     setIsOpen(false);
-    userNavigatedRef.current = false; // reset on close
     try { localStorage.setItem(STORAGE_KEY, 'closed'); } catch {}
   }, []);
 
-  const navigate = useCallback((page: string) => {
-    setCurrentPage(page);
-    userNavigatedRef.current = true; // explicit navigation
-    if (!isOpen) {
-      setIsOpen(true);
-      try { localStorage.setItem(STORAGE_KEY, 'open'); } catch {}
-    }
-  }, [isOpen]);
-
   return (
-    <HelpPanelContext.Provider value={{ isOpen, currentPage, toggle, open, close, navigate }}>
+    <HelpPanelContext.Provider value={{ isOpen, currentPage, toggle, open, close }}>
       {children}
     </HelpPanelContext.Provider>
   );
