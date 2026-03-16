@@ -75,7 +75,7 @@
     <span>›</span>
     <strong>Security release process</strong>
   </div>
-  <div class="audience-tags"><span class="tag">Staff</span><span class="tag">Developers</span></div>
+  <div class="audience-tags"><span class="tag">Software Engineer</span><span class="tag">Product Manager</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -161,7 +161,7 @@ const stations = {
     badge:"Step 3",
     badgeClass:"badge-amber",
     title:"Create hotfix branch from main",
-    sub:"Security fix only \u2014 no feature code",
+    sub:"Security fix only, no feature code",
     body:`<p>Branch from <span class="code">main</span> (the live production baseline). Name the branch <span class="code">sec/CVE-XXXX-YYYY</span> or <span class="code">sec/finding-ref</span>.</p><p>Apply <strong>only</strong> the security fix. No feature code, refactoring, or unrelated bug fixes are permitted on this branch. This isolation ensures the fix can be reviewed, tested, and deployed independently of any in-progress feature work.</p>`
   },
   "test": {
@@ -178,7 +178,7 @@ const stations = {
     iconBg:"#E1F5EE",
     badge:"Step 5",
     badgeClass:"badge-teal",
-    title:"Classify as security-only \u2014 apply -secN suffix",
+    title:"Classify as security-only, apply -secN suffix",
     sub:"Product Owner confirms classification",
     body:`<p>The Product Owner confirms the security-only classification before deployment. The version is tagged with the <span class="code">-secN</span> suffix to distinguish it from feature releases:</p><ul class="detail-list"><li>Feature release: <span class="code">2026.03.10.0001</span></li><li>Security release: <span class="code">2026.03.10.0001-sec1</span></li><li>Second security release: <span class="code">2026.03.10.0001-sec2</span></li></ul>`
   },

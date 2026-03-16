@@ -75,7 +75,7 @@
     <span>›</span>
     <strong>Corrective action workflow</strong>
   </div>
-  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span></div>
+  <div class="audience-tags"><span class="tag">Software Engineer</span><span class="tag">Test Engineer</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -174,7 +174,7 @@ const stations = {
     badgeClass:"badge-green",
     title:"Verified",
     sub:"Tested and confirmed effective",
-    body:`<p><strong>Verified</strong> is the final status, indicating the corrective action has been tested and confirmed effective. For a dependency update, this typically means running the vulnerability scanner and confirming the finding is no longer present.</p><p>All corrective actions on a field issue must reach Verified before the issue can be fully closed. Verified actions contribute to Met status for the Art. 13(9) obligation.</p>`
+    body:`<p><strong>Verified</strong> is the final status, indicating the corrective action has been tested and confirmed effective. For a dependency update, this typically means running the vulnerability scanner and confirming the finding is no longer present.</p><p>All corrective actions on a field issue must reach Verified before the issue can be fully closed. Verified actions contribute to Met status for the Art. 13(9) obligation.</p><div class="info"><strong>Separation of duties:</strong> The person who verifies should ideally be different from the person who implemented the fix.</div>`
   }
 };
 const allIds = ["add", "planned", "in-progress", "completed", "verified"];
