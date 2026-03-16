@@ -75,7 +75,7 @@
     <span>›</span>
     <strong>Obligations tracking</strong>
   </div>
-  <div class="audience-tags"><span class="tag">End user</span><span class="tag">Staff</span><span class="tag">Sales</span></div>
+  <div class="audience-tags"><span class="tag">Compliance Officer</span><span class="tag">Product Manager</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -188,7 +188,7 @@ const stations = {
     badge:"Status: In Progress",
     badgeClass:"badge-amber",
     title:"In Progress",
-    sub:"Partially addressed \u2014 further action needed",
+    sub:"Partially addressed, further action needed",
     body:`<p>An obligation with <strong>In Progress</strong> status is being worked on but is not yet fully met. Common reasons:</p><ul class="detail-list"><li>Open vulnerability findings are blocking Art. 13(6)</li><li>Technical file sections are incomplete for Art. 13(12)</li><li>Corrective actions are pending for Art. 13(9)</li></ul><p>The Compliance Gap Narrator on the product overview tab shows exactly what needs to change for each In Progress obligation to reach Met.</p>`
   },
   "not-started": {
@@ -197,7 +197,7 @@ const stations = {
     badge:"Status: Not Started",
     badgeClass:"badge-coral",
     title:"Not Started",
-    sub:"Action required \u2014 obligation not yet addressed",
+    sub:"Action required, obligation not yet addressed",
     body:`<p>An obligation with <strong>Not Started</strong> status has no evidence and no activity yet. Prioritise these, particularly for obligations with approaching regulatory deadlines.</p><p>Inline editing allows you to change the status directly from the Obligations tab. Add evidence notes to document what you have done to address the obligation.</p>`
   },
   "copilot": {
@@ -205,9 +205,9 @@ const stations = {
     iconBg:"#EEEDFE",
     badge:"Pro plan",
     badgeClass:"badge-purple",
-    title:"AI Copilot \u2014 evidence suggestions",
+    title:"AI Copilot, evidence suggestions",
     sub:"Pro plan \u00b7 drafts evidence notes",
-    body:`<p>Each obligation has an <strong>AI Suggest</strong> button for its evidence notes field on Pro plans. The Copilot generates suggested evidence text based on the obligation's regulatory requirements and your product's compliance data.</p><p>Suggestions are presented for review before saving. You can accept, edit, or discard them.</p>`
+    body:`<p>Each obligation has an <strong>AI Suggest</strong> button for its evidence notes field on Pro plans (prompt keys: <span class="code">obligation:*</span>, 19 obligation-specific prompts). The Copilot generates suggested evidence text based on the obligation's regulatory requirements and your product's compliance data.</p><p>Suggestions are presented for review before saving. You can accept, edit, or discard them. Rate limit: 20 suggestions per product per hour.</p>`
   }
 };
 const allIds = ["auto", "start", "roles", "status", "met", "in-progress", "not-started", "copilot"];
