@@ -83,37 +83,35 @@
     <p>OSCAL 1.1.2 exports for GRC platform integration</p>
   </div>
   <div class="map-wrap">
-    <svg viewBox="0 0 760 369" xmlns="http://www.w3.org/2000/svg"><defs><style>
+    <svg viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg"><defs><style>
   .lbl{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:11px;fill:#1A1A18;}
   .lbl-sub{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:9.5px;fill:#8C8A84;}
 </style></defs><g transform="translate(0,45.6)"><line x1="63.0" y1="115.0" x2="177.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
 <line x1="193.0" y1="115.0" x2="303.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
 <line x1="327.0" y1="115.0" x2="567.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
 <line x1="583.0" y1="115.0" x2="693.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
-<line x1="324.1" y1="107.1" x2="439.0" y2="7.7" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
-<line x1="451.0" y1="7.7" x2="569.0" y2="109.8" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
-<line x1="324.1" y1="122.9" x2="439.0" y2="222.3" stroke="#185FA5" stroke-width="4" stroke-linecap="round"/>
-<line x1="451.0" y1="222.3" x2="569.0" y2="120.2" stroke="#185FA5" stroke-width="4" stroke-linecap="round"/>
-<line x1="55.0" y1="10.4" x2="55.0" y2="107.0" stroke="#BA7517" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 4"/>
+<polyline points="315,107 367,63 523,63 575,107" fill="none" stroke="#534AB7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="315,123 367,167 523,167 575,123" fill="none" stroke="#185FA5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="55.0" y1="71" x2="55.0" y2="107" stroke="#BA7517" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 4"/>
 <g class="stn" id="ms-data" onclick="show('data')"><rect x="49.0" y="105.0" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="55.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="55.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">CRANIS2 data</text><text x="55.0" y="150.0" text-anchor="middle" class="lbl-sub">Obligations + findings</text></g>
 <g class="stn" id="ms-api" onclick="show('api')"><circle cx="185.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="185.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">API endpoint</text><text x="185.0" y="150.0" text-anchor="middle" class="lbl-sub">/oscal/{type}</text></g>
 <g class="stn" id="ms-doctype" onclick="show('doctype')"><circle cx="315.0" cy="115.0" r="12" fill="white" stroke="#1D9E75" stroke-width="3"/><circle cx="315.0" cy="115.0" r="6" fill="#1D9E75"/><text x="315.0" y="141.0" text-anchor="end" class="lbl" font-weight="600" style="fill:#1A1A18">Document type?</text><text x="315.0" y="154.0" text-anchor="end" class="lbl-sub">Interchange</text></g>
 <g class="stn" id="ms-assessment" onclick="show('assessment')"><circle cx="575.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="575.0" y="89.0" text-anchor="start" class="lbl" font-weight="600" style="fill:#1A1A18">Assessment</text><text x="575.0" y="102.0" text-anchor="start" class="lbl-sub">Compliance status</text></g>
 <g class="stn" id="ms-import" onclick="show('import')"><circle cx="705.0" cy="115.0" r="12" fill="white" stroke="#3B6D11" stroke-width="3"/><circle cx="705.0" cy="115.0" r="6" fill="#3B6D11"/><text x="705.0" y="141.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Import to GRC</text><text x="705.0" y="154.0" text-anchor="middle" class="lbl-sub">OSCAL 1.1.2</text></g>
-<g class="stn" id="ms-catalog" onclick="show('catalog')"><circle cx="445.0" cy="2.4" r="8" fill="white" stroke="#534AB7" stroke-width="3"/><text x="445.0" y="-23.6" text-anchor="middle" class="lbl" font-weight="600" style="fill:#534AB7">Catalog / Profile</text><text x="445.0" y="-10.6" text-anchor="middle" class="lbl-sub">Obligation definitions</text></g>
-<g class="stn" id="ms-component" onclick="show('component')"><circle cx="445.0" cy="227.6" r="8" fill="white" stroke="#185FA5" stroke-width="3"/><text x="445.0" y="249.6" text-anchor="middle" class="lbl" font-weight="600" style="fill:#185FA5">Component def.</text><text x="445.0" y="262.6" text-anchor="middle" class="lbl-sub">Product metadata</text></g>
-<g class="stn" id="ms-pro-req" onclick="show('pro-req')"><circle cx="55.0" cy="2.4" r="8" fill="white" stroke="#BA7517" stroke-width="2.5"/><text x="55.0" y="-23.6" text-anchor="middle" class="lbl" font-weight="600" style="fill:#BA7517">Pro plan</text><text x="55.0" y="-10.6" text-anchor="middle" class="lbl-sub">Required</text></g></g>
-  <line x1="30" y1="341.166604983954" x2="55" y2="341.166604983954" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
-  <text x="61" y="345.166604983954" class="lbl-sub">Main journey</text>
-  <line x1="150" y1="341.166604983954" x2="175" y2="341.166604983954" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
-  <text x="181" y="345.166604983954" class="lbl-sub">Error / branch</text>
-  <line x1="278" y1="341.166604983954" x2="303" y2="341.166604983954" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
-  <text x="309" y="345.166604983954" class="lbl-sub">Feeder</text>
-  <line x1="368" y1="341.166604983954" x2="393" y2="341.166604983954" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
-  <text x="399" y="345.166604983954" class="lbl-sub">Next process</text>
-  <circle cx="468" cy="341.166604983954" r="6" fill="white" stroke="#888" stroke-width="2"/>
-  <circle cx="468" cy="341.166604983954" r="3" fill="#888"/>
-  <text x="479" y="345.166604983954" class="lbl-sub">Interchange</text></svg>
+<g class="stn" id="ms-catalog" onclick="show('catalog')"><circle cx="445.0" cy="63" r="8" fill="white" stroke="#534AB7" stroke-width="3"/><text x="445.0" y="37" text-anchor="middle" class="lbl" font-weight="600" style="fill:#534AB7">Catalog / Profile</text><text x="445.0" y="50" text-anchor="middle" class="lbl-sub">Obligation definitions</text></g>
+<g class="stn" id="ms-component" onclick="show('component')"><circle cx="445.0" cy="167" r="8" fill="white" stroke="#185FA5" stroke-width="3"/><text x="445.0" y="189" text-anchor="middle" class="lbl" font-weight="600" style="fill:#185FA5">Component def.</text><text x="445.0" y="202" text-anchor="middle" class="lbl-sub">Product metadata</text></g>
+<g class="stn" id="ms-pro-req" onclick="show('pro-req')"><circle cx="55.0" cy="63" r="8" fill="white" stroke="#BA7517" stroke-width="2.5"/><text x="55.0" y="37" text-anchor="middle" class="lbl" font-weight="600" style="fill:#BA7517">Pro plan</text><text x="55.0" y="50" text-anchor="middle" class="lbl-sub">Required</text></g></g>
+  <line x1="30" y1="255" x2="55" y2="255" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
+  <text x="61" y="259" class="lbl-sub">Main journey</text>
+  <line x1="150" y1="255" x2="175" y2="255" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
+  <text x="181" y="259" class="lbl-sub">Error / branch</text>
+  <line x1="278" y1="255" x2="303" y2="255" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+  <text x="309" y="259" class="lbl-sub">Feeder</text>
+  <line x1="368" y1="255" x2="393" y2="255" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
+  <text x="399" y="259" class="lbl-sub">Next process</text>
+  <circle cx="468" cy="255" r="6" fill="white" stroke="#888" stroke-width="2"/>
+  <circle cx="468" cy="255" r="3" fill="#888"/>
+  <text x="479" y="259" class="lbl-sub">Interchange</text></svg>
   </div>
   <div class="map-hint"><div class="hint-dot"></div>Click any station to see instructions for that step</div>
 </div>

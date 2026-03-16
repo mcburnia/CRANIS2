@@ -83,39 +83,35 @@
     <p>Understanding and acting on your supply chain risk score</p>
   </div>
   <div class="map-wrap">
-    <svg viewBox="0 0 760 276" xmlns="http://www.w3.org/2000/svg"><defs><style>
+    <svg viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg"><defs><style>
   .lbl{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:11px;fill:#1A1A18;}
   .lbl-sub{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:9.5px;fill:#8C8A84;}
-</style></defs><g transform="translate(0,5.4)"><line x1="63.0" y1="115.0" x2="128.2" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+</style></defs><g transform="translate(0,10)"><line x1="63.0" y1="115.0" x2="128.2" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
 <line x1="144.2" y1="115.0" x2="205.5" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
 <line x1="229.5" y1="115.0" x2="615.8" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
 <line x1="631.8" y1="115.0" x2="693.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
-<line x1="226.6" y1="107.1" x2="292.7" y2="49.9" stroke="#185FA5" stroke-width="4" stroke-linecap="round"/>
-<line x1="306.8" y1="44.6" x2="372.0" y2="44.6" stroke="#185FA5" stroke-width="4" stroke-linecap="round"/>
-<line x1="387.7" y1="46.9" x2="616.1" y2="112.8" stroke="#185FA5" stroke-width="4" stroke-linecap="round"/>
-<line x1="229.0" y1="118.3" x2="453.6" y2="183.1" stroke="#BA7517" stroke-width="4" stroke-linecap="round"/>
-<line x1="469.2" y1="185.4" x2="534.5" y2="185.4" stroke="#BA7517" stroke-width="4" stroke-linecap="round"/>
-<line x1="548.5" y1="180.1" x2="617.7" y2="120.2" stroke="#BA7517" stroke-width="4" stroke-linecap="round"/>
+<polyline points="225.5,107 277.5,63 571.8,63 623.8,107" fill="none" stroke="#185FA5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="225.5,123 277.5,167 571.8,167 623.8,123" fill="none" stroke="#BA7517" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 <g class="stn" id="ms-open-tab" onclick="show('open-tab')"><rect x="49.0" y="105.0" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="55.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="55.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Supply Chain tab</text><text x="55.0" y="150.0" text-anchor="middle" class="lbl-sub">Product detail</text></g>
 <g class="stn" id="ms-score" onclick="show('score')"><circle cx="136.2" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="136.2" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Risk score</text><text x="136.2" y="150.0" text-anchor="middle" class="lbl-sub">0–100 scale</text></g>
 <g class="stn" id="ms-areas" onclick="show('areas')"><circle cx="217.5" cy="115.0" r="12" fill="white" stroke="#1D9E75" stroke-width="3"/><circle cx="217.5" cy="115.0" r="6" fill="#1D9E75"/><text x="217.5" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Five areas</text><text x="217.5" y="150.0" text-anchor="middle" class="lbl-sub">Breakdown</text></g>
 <g class="stn" id="ms-toprisk" onclick="show('toprisk')"><circle cx="623.8" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="623.8" y="89.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Top risks</text><text x="623.8" y="102.0" text-anchor="middle" class="lbl-sub">Worst dependencies</text></g>
 <g class="stn" id="ms-actions" onclick="show('actions')"><circle cx="705.0" cy="115.0" r="12" fill="white" stroke="#3B6D11" stroke-width="3"/><circle cx="705.0" cy="115.0" r="6" fill="#3B6D11"/><text x="705.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Take action</text><text x="705.0" y="150.0" text-anchor="middle" class="lbl-sub">Remediate</text></g>
-<g class="stn" id="ms-sbom" onclick="show('sbom')"><circle cx="298.8" cy="44.6" r="8" fill="white" stroke="#185FA5" stroke-width="3"/><text x="298.8" y="18.6" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">SBOM health</text><text x="298.8" y="31.6" text-anchor="middle" class="lbl-sub">20 points</text></g>
-<g class="stn" id="ms-vulns" onclick="show('vulns')"><circle cx="380.0" cy="44.6" r="8" fill="white" stroke="#185FA5" stroke-width="3"/><text x="380.0" y="18.6" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Vulnerabilities</text><text x="380.0" y="31.6" text-anchor="middle" class="lbl-sub">30 points</text></g>
-<g class="stn" id="ms-licence" onclick="show('licence')"><circle cx="461.2" cy="185.4" r="8" fill="white" stroke="#BA7517" stroke-width="3"/><text x="461.2" y="207.4" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Licence risk</text><text x="461.2" y="220.4" text-anchor="middle" class="lbl-sub">20 points</text></g>
-<g class="stn" id="ms-supplier" onclick="show('supplier')"><circle cx="542.5" cy="185.4" r="8" fill="white" stroke="#BA7517" stroke-width="3"/><text x="542.5" y="207.4" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Supplier coverage</text><text x="542.5" y="220.4" text-anchor="middle" class="lbl-sub">20 points</text></g></g>
-  <line x1="30" y1="248.72912811497127" x2="55" y2="248.72912811497127" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
-  <text x="61" y="252.72912811497127" class="lbl-sub">Main journey</text>
-  <line x1="150" y1="248.72912811497127" x2="175" y2="248.72912811497127" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
-  <text x="181" y="252.72912811497127" class="lbl-sub">Error / branch</text>
-  <line x1="278" y1="248.72912811497127" x2="303" y2="248.72912811497127" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
-  <text x="309" y="252.72912811497127" class="lbl-sub">Feeder</text>
-  <line x1="368" y1="248.72912811497127" x2="393" y2="248.72912811497127" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
-  <text x="399" y="252.72912811497127" class="lbl-sub">Next process</text>
-  <circle cx="468" cy="248.72912811497127" r="6" fill="white" stroke="#888" stroke-width="2"/>
-  <circle cx="468" cy="248.72912811497127" r="3" fill="#888"/>
-  <text x="479" y="252.72912811497127" class="lbl-sub">Interchange</text></svg>
+<g class="stn" id="ms-sbom" onclick="show('sbom')"><circle cx="370.0" cy="63.0" r="8" fill="white" stroke="#185FA5" stroke-width="3"/><text x="370.0" y="37.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">SBOM health</text><text x="370.0" y="50.0" text-anchor="middle" class="lbl-sub">20 points</text></g>
+<g class="stn" id="ms-vulns" onclick="show('vulns')"><circle cx="480.0" cy="63.0" r="8" fill="white" stroke="#185FA5" stroke-width="3"/><text x="480.0" y="37.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Vulnerabilities</text><text x="480.0" y="50.0" text-anchor="middle" class="lbl-sub">30 points</text></g>
+<g class="stn" id="ms-licence" onclick="show('licence')"><circle cx="370.0" cy="167.0" r="8" fill="white" stroke="#BA7517" stroke-width="3"/><text x="370.0" y="189.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Licence risk</text><text x="370.0" y="202.0" text-anchor="middle" class="lbl-sub">20 points</text></g>
+<g class="stn" id="ms-supplier" onclick="show('supplier')"><circle cx="480.0" cy="167.0" r="8" fill="white" stroke="#BA7517" stroke-width="3"/><text x="480.0" y="189.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Supplier coverage</text><text x="480.0" y="202.0" text-anchor="middle" class="lbl-sub">20 points</text></g></g>
+  <line x1="30" y1="255" x2="55" y2="255" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
+  <text x="61" y="259" class="lbl-sub">Main journey</text>
+  <line x1="150" y1="255" x2="175" y2="255" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
+  <text x="181" y="259" class="lbl-sub">Error / branch</text>
+  <line x1="278" y1="255" x2="303" y2="255" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+  <text x="309" y="259" class="lbl-sub">Feeder</text>
+  <line x1="368" y1="255" x2="393" y2="255" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
+  <text x="399" y="259" class="lbl-sub">Next process</text>
+  <circle cx="468" cy="255" r="6" fill="white" stroke="#888" stroke-width="2"/>
+  <circle cx="468" cy="255" r="3" fill="#888"/>
+  <text x="479" y="259" class="lbl-sub">Interchange</text></svg>
   </div>
   <div class="map-hint"><div class="hint-dot"></div>Click any station to see instructions for that step</div>
 </div>

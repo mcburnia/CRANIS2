@@ -83,39 +83,35 @@
     <p>Understanding and acting on platform notifications</p>
   </div>
   <div class="map-wrap">
-    <svg viewBox="0 0 760 276" xmlns="http://www.w3.org/2000/svg"><defs><style>
+    <svg viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg"><defs><style>
   .lbl{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:11px;fill:#1A1A18;}
   .lbl-sub{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:9.5px;fill:#8C8A84;}
-</style></defs><g transform="translate(0,5.4)"><line x1="63.0" y1="115.0" x2="124.2" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+</style></defs><g transform="translate(0,10)"><line x1="63.0" y1="115.0" x2="124.2" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
 <line x1="148.2" y1="115.0" x2="534.5" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
 <line x1="550.5" y1="115.0" x2="615.8" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
 <line x1="631.8" y1="115.0" x2="693.0" y2="115.0" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
-<line x1="145.3" y1="107.1" x2="211.5" y2="49.9" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
-<line x1="225.5" y1="44.6" x2="290.8" y2="44.6" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
-<line x1="306.4" y1="46.9" x2="534.8" y2="112.8" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
-<line x1="147.8" y1="118.3" x2="372.3" y2="183.1" stroke="#185FA5" stroke-width="4" stroke-linecap="round"/>
-<line x1="388.0" y1="185.4" x2="453.2" y2="185.4" stroke="#185FA5" stroke-width="4" stroke-linecap="round"/>
-<line x1="467.3" y1="180.1" x2="536.5" y2="120.2" stroke="#185FA5" stroke-width="4" stroke-linecap="round"/>
+<polyline points="144.2,107 196.2,63 340,63 490.5,63 542.5,107" fill="none" stroke="#D85A30" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="144.2,123 196.2,167 410,167 490.5,167 542.5,123" fill="none" stroke="#185FA5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 <g class="stn" id="ms-bell" onclick="show('bell')"><rect x="49.0" y="105.0" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="55.0" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="55.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Bell icon</text><text x="55.0" y="150.0" text-anchor="middle" class="lbl-sub">Notification centre</text></g>
 <g class="stn" id="ms-types" onclick="show('types')"><circle cx="136.2" cy="115.0" r="12" fill="white" stroke="#1D9E75" stroke-width="3"/><circle cx="136.2" cy="115.0" r="6" fill="#1D9E75"/><text x="136.2" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Alert types</text><text x="136.2" y="150.0" text-anchor="middle" class="lbl-sub">4 categories</text></g>
 <g class="stn" id="ms-read" onclick="show('read')"><circle cx="542.5" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="542.5" y="89.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Read &amp; act</text><text x="542.5" y="102.0" text-anchor="middle" class="lbl-sub">Click to navigate</text></g>
 <g class="stn" id="ms-email" onclick="show('email')"><circle cx="623.8" cy="115.0" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="623.8" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Email alerts</text><text x="623.8" y="150.0" text-anchor="middle" class="lbl-sub">Critical items</text></g>
 <g class="stn" id="ms-settings" onclick="show('settings')"><circle cx="705.0" cy="115.0" r="12" fill="white" stroke="#3B6D11" stroke-width="3"/><circle cx="705.0" cy="115.0" r="6" fill="#3B6D11"/><text x="705.0" y="137.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Preferences</text><text x="705.0" y="150.0" text-anchor="middle" class="lbl-sub">Configure alerts</text></g>
-<g class="stn" id="ms-vuln" onclick="show('vuln')"><circle cx="217.5" cy="44.6" r="8" fill="white" stroke="#D85A30" stroke-width="3"/><text x="217.5" y="18.6" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Vulnerability</text><text x="217.5" y="31.6" text-anchor="middle" class="lbl-sub">New finding</text></g>
-<g class="stn" id="ms-deadline" onclick="show('deadline')"><circle cx="298.8" cy="44.6" r="8" fill="white" stroke="#D85A30" stroke-width="3"/><text x="298.8" y="18.6" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Deadline</text><text x="298.8" y="31.6" text-anchor="middle" class="lbl-sub">Approaching due date</text></g>
-<g class="stn" id="ms-scan" onclick="show('scan')"><circle cx="380.0" cy="185.4" r="8" fill="white" stroke="#185FA5" stroke-width="3"/><text x="380.0" y="207.4" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Scan result</text><text x="380.0" y="220.4" text-anchor="middle" class="lbl-sub">Complete or failed</text></g>
-<g class="stn" id="ms-billing" onclick="show('billing')"><circle cx="461.2" cy="185.4" r="8" fill="white" stroke="#185FA5" stroke-width="3"/><text x="461.2" y="207.4" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Billing</text><text x="461.2" y="220.4" text-anchor="middle" class="lbl-sub">Trial, payment</text></g></g>
-  <line x1="30" y1="248.72912811497127" x2="55" y2="248.72912811497127" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
-  <text x="61" y="252.72912811497127" class="lbl-sub">Main journey</text>
-  <line x1="150" y1="248.72912811497127" x2="175" y2="248.72912811497127" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
-  <text x="181" y="252.72912811497127" class="lbl-sub">Error / branch</text>
-  <line x1="278" y1="248.72912811497127" x2="303" y2="248.72912811497127" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
-  <text x="309" y="252.72912811497127" class="lbl-sub">Feeder</text>
-  <line x1="368" y1="248.72912811497127" x2="393" y2="248.72912811497127" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
-  <text x="399" y="252.72912811497127" class="lbl-sub">Next process</text>
-  <circle cx="468" cy="248.72912811497127" r="6" fill="white" stroke="#888" stroke-width="2"/>
-  <circle cx="468" cy="248.72912811497127" r="3" fill="#888"/>
-  <text x="479" y="252.72912811497127" class="lbl-sub">Interchange</text></svg>
+<g class="stn" id="ms-vuln" onclick="show('vuln')"><circle cx="270.0" cy="63.0" r="8" fill="white" stroke="#D85A30" stroke-width="3"/><text x="270.0" y="37.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Vulnerability</text><text x="270.0" y="50.0" text-anchor="middle" class="lbl-sub">New finding</text></g>
+<g class="stn" id="ms-deadline" onclick="show('deadline')"><circle cx="400.0" cy="63.0" r="8" fill="white" stroke="#D85A30" stroke-width="3"/><text x="400.0" y="37.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Deadline</text><text x="400.0" y="50.0" text-anchor="middle" class="lbl-sub">Approaching due date</text></g>
+<g class="stn" id="ms-scan" onclick="show('scan')"><circle cx="310.0" cy="167.0" r="8" fill="white" stroke="#185FA5" stroke-width="3"/><text x="310.0" y="189.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Scan result</text><text x="310.0" y="202.0" text-anchor="middle" class="lbl-sub">Complete or failed</text></g>
+<g class="stn" id="ms-billing" onclick="show('billing')"><circle cx="420.0" cy="167.0" r="8" fill="white" stroke="#185FA5" stroke-width="3"/><text x="420.0" y="189.0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Billing</text><text x="420.0" y="202.0" text-anchor="middle" class="lbl-sub">Trial, payment</text></g></g>
+  <line x1="30" y1="255" x2="55" y2="255" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
+  <text x="61" y="259" class="lbl-sub">Main journey</text>
+  <line x1="150" y1="255" x2="175" y2="255" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
+  <text x="181" y="259" class="lbl-sub">Error / branch</text>
+  <line x1="278" y1="255" x2="303" y2="255" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+  <text x="309" y="259" class="lbl-sub">Feeder</text>
+  <line x1="368" y1="255" x2="393" y2="255" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
+  <text x="399" y="259" class="lbl-sub">Next process</text>
+  <circle cx="468" cy="255" r="6" fill="white" stroke="#888" stroke-width="2"/>
+  <circle cx="468" cy="255" r="3" fill="#888"/>
+  <text x="479" y="259" class="lbl-sub">Interchange</text></svg>
   </div>
   <div class="map-hint"><div class="hint-dot"></div>Click any station to see instructions for that step</div>
 </div>
