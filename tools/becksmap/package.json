@@ -1,0 +1,14 @@
+{
+  "name": "becksmap",
+  "version": "1.0.0",
+  "description": "Beck map diagram generator for interactive help pages",
+  "bin": {
+    "becksmap": "./bin/becksmap.js"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "author": "Andi McBurnie"
+}

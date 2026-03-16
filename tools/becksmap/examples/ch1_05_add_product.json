@@ -1,0 +1,90 @@
+{
+  "title": "Adding your first product",
+  "subtitle": "Name, type, category, and distribution model",
+  "chapter": "Chapter 1 \u00b7 Onboarding",
+  "audienceTags": ["Product Manager", "Administration User"],
+
+  "mainLine": [
+    { "id": "products", "label": "Products page", "sub": "Click Add Product", "type": "terminus" },
+    { "id": "name", "label": "Name & describe", "sub": "Product identity" },
+    { "id": "type", "label": "Product type", "sub": "Application, library..." },
+    { "id": "category", "label": "CRA category", "sub": "Risk classification", "type": "interchange" },
+    { "id": "distmodel", "label": "Distribution", "sub": "SaaS, binary, source..." },
+    { "id": "created", "label": "Product created", "sub": "Connect repo next", "type": "endpoint", "endColour": "green" }
+  ],
+
+  "feeders": [
+    { "id": "recommender", "target": "category", "label": "AI recommender", "sub": "Helps choose category" }
+  ],
+
+  "branches": {
+    "above": [],
+    "below": []
+  },
+
+  "stations": {
+    "products": {
+      "icon": "\ud83d\udce6",
+      "iconBg": "#F1EFE8",
+      "badge": "Step 1",
+      "badgeClass": "badge-gray",
+      "title": "Navigate to the Products page",
+      "sub": "Click Products in the sidebar",
+      "body": "<p>From the sidebar, click <strong>Products</strong>. This shows all products registered in your organisation. To add a new one, click the <strong>Add Product</strong> button.</p>"
+    },
+    "name": {
+      "icon": "\u270f\ufe0f",
+      "iconBg": "#E1F5EE",
+      "badge": "Step 2",
+      "badgeClass": "badge-teal",
+      "title": "Name and describe your product",
+      "sub": "Use the name your customers know it by",
+      "body": "<p>Enter your product's <strong>name</strong> and a brief <strong>description</strong> explaining what the product does. This information appears in your Technical File and Declaration of Conformity.</p><div class=\"tip\">Use the commercial product name, not an internal code name. This is what appears on compliance documents.</div>"
+    },
+    "type": {
+      "icon": "\ud83d\udcbb",
+      "iconBg": "#E1F5EE",
+      "badge": "Step 3",
+      "badgeClass": "badge-teal",
+      "title": "Select the product type",
+      "sub": "What kind of software product is it?",
+      "body": "<p>Choose the type that best describes your product:</p><ul class=\"detail-list\"><li><strong>Web Application</strong></li><li><strong>Desktop Application</strong></li><li><strong>Mobile Application</strong></li><li><strong>Library / Component</strong></li><li><strong>Firmware</strong></li><li><strong>Operating System</strong></li><li><strong>IoT Device</strong></li></ul>"
+    },
+    "category": {
+      "icon": "\ud83c\udff7\ufe0f",
+      "iconBg": "#E1F5EE",
+      "badge": "Step 4",
+      "badgeClass": "badge-teal",
+      "title": "Choose the CRA risk category",
+      "sub": "This determines your conformity assessment route",
+      "body": "<p>The CRA classifies products into four risk categories per Art. 6-8 and Annex III. This determines which conformity assessment procedure applies (Art. 32):</p><ul class=\"detail-list\"><li><strong>Default</strong> self-assessment. Most software products fall here.</li><li><strong>Important Class I</strong> self-assessment if harmonised standards are applied; otherwise third-party assessment</li><li><strong>Important Class II</strong> mandatory third-party assessment by a notified body</li><li><strong>Critical</strong> mandatory EU-level certification</li></ul><div class=\"tip\">If unsure, start with <strong>Default</strong> and use the AI Category Recommender later to verify. You can change the category at any time. Changing it recalculates your conformity assessment route and applicable obligations.</div>"
+    },
+    "distmodel": {
+      "icon": "\ud83d\udce4",
+      "iconBg": "#E1F5EE",
+      "badge": "Step 5",
+      "badgeClass": "badge-teal",
+      "title": "Set the distribution model",
+      "sub": "How your product reaches users",
+      "body": "<p>Select how your product is distributed to users:</p><ul class=\"detail-list\"><li><strong>SaaS / Hosted</strong></li><li><strong>Binary distribution</strong></li><li><strong>Source available</strong></li><li><strong>Library / Component</strong></li><li><strong>Internal only</strong></li></ul><p>The distribution model affects which licence compliance rules apply to your dependencies.</p>"
+    },
+    "created": {
+      "icon": "\u2705",
+      "iconBg": "#EAF3DE",
+      "badge": "Done",
+      "badgeClass": "badge-green",
+      "title": "Product created",
+      "sub": "Next step: connect your source code repository",
+      "body": "<p>Your product is now registered in CRANIS2. The next step is to <strong>connect your source code repository</strong>. This enables CRANIS2 to automatically generate your SBOM (Art. 13(5)), scan for vulnerabilities (Art. 13(6)), and build your compliance evidence.</p><div class=\"tip\">Navigate to the product's <strong>Overview</strong> tab and click Connect Repository. The help panel will show the connection guide.</div>"
+    },
+    "recommender": {
+      "icon": "\u2728",
+      "iconBg": "#FAEEDA",
+      "badge": "Helper",
+      "badgeClass": "badge-amber",
+      "title": "AI Category Recommender",
+      "sub": "Not sure which category? Let CRANIS2 help",
+      "body": "<p>If you are unsure which CRA category applies to your product, CRANIS2 includes a <strong>Category Recommender</strong> (prompt key: <span class=\"code\">category_recommendation</span>, Pro plan) that asks four simple questions and suggests the correct classification based on Art. 6-8 and Annex III.</p><p>You can run the recommender at any time by clicking the CRA category badge on your product's detail page. You review and approve the recommendation before it is applied.</p>"
+    }
+  }
+}
