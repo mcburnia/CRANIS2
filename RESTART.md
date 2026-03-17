@@ -166,7 +166,7 @@ tail -20 ~/cranis2/logs/nightly-tests-$(date '+%Y-%m-%d').log
 - Summary with pass/fail counts and failed test names
 - Trello notification: posts a card to the "Test Results" board (passed/failed lists) after each run
 
-### Manual Backend Tests (~1,447 tests — runs on server)
+### Manual Backend Tests (~1,957 tests — runs on server)
 
 **CRITICAL: Always use the isolated test stack, never the dev stack.**
 
@@ -184,9 +184,10 @@ cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://local
 - Tests target localhost:3011 (isolated test stack — NOT port 3001)
 - Single Cloudflare smoke test in `integration/cloudflare-tunnel.test.ts`
 - Deterministic test IDs for idempotent seeding
-- Expected result: **~1,447 passed, 1 expected infra-dependent failure** (82 test files)
+- API client retry logic for transient socket errors (eliminates flaky failures from backend memory pressure)
+- Expected result: **~1,957 passed, 1 expected infra-dependent failure** (109 test files)
 - Expected failures: category-recommendation (1, needs Anthropic API)
-- Previously failing: tier3-import-scanning (13) and webhook-e2e B5/B6 (2) now pass against local Forgejo
+- Route test coverage: 98.5% (65/66 routes tested)
 
 ### Playwright E2E Tests (~280 tests — runs locally on Mac)
 
