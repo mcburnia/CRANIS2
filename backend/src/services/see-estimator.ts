@@ -645,7 +645,7 @@ export async function runEstimateScan(
     const result = await neo4jSession.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
        OPTIONAL MATCH (p)-[:HAS_REPO]->(r:Repository)
-       RETURN p.name AS name, r.repoUrl AS repoUrl, r.defaultBranch AS branch`,
+       RETURN p.name AS name, r.url AS repoUrl, r.defaultBranch AS branch`,
       { orgId, productId }
     );
     if (result.records.length === 0) throw new Error('Product not found');
