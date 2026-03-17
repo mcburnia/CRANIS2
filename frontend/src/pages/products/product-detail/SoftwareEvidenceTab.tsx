@@ -113,6 +113,10 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
   const [graphSummary, setGraphSummary] = useState<any>(null);
   const [buildingGraph, setBuildingGraph] = useState(false);
 
+  // Phase H state
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [competence, setCompetence] = useState<any>(null);
+
   const token = localStorage.getItem('session_token');
   const headers = { Authorization: `Bearer ${token}` } as Record<string, string>;
 
@@ -198,10 +202,27 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
     } catch { /* ignore */ }
   }, [productId]);
 
+  const fetchSessions = useCallback(async () => {
+    try {
+      const [sessRes, compRes] = await Promise.all([
+        fetch(`/api/products/${productId}/see/sessions`, { headers }),
+        fetch(`/api/products/${productId}/see/competence`, { headers }),
+      ]);
+      if (sessRes.ok) {
+        const d = await sessRes.json();
+        if (d.sessions?.length > 0) setSessions(d.sessions);
+      }
+      if (compRes.ok) {
+        const d = await compRes.json();
+        if (d.sessionsAnalysed > 0) setCompetence(d);
+      }
+    } catch { /* ignore */ }
+  }, [productId]);
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchConsent(), fetchData(), fetchCommitData(), fetchBranchData(), fetchExperiments(), fetchEvolution(), fetchGraph()]).finally(() => setLoading(false));
-  }, [fetchConsent, fetchData, fetchCommitData, fetchBranchData, fetchExperiments, fetchEvolution, fetchGraph]);
+    Promise.all([fetchConsent(), fetchData(), fetchCommitData(), fetchBranchData(), fetchExperiments(), fetchEvolution(), fetchGraph(), fetchSessions()]).finally(() => setLoading(false));
+  }, [fetchConsent, fetchData, fetchCommitData, fetchBranchData, fetchExperiments, fetchEvolution, fetchGraph, fetchSessions]);
 
   const handleConsentToggle = async () => {
     setConsentUpdating(true);
@@ -1130,6 +1151,109 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Phase H: Development Sessions & Competence ─────────────────── */}
+
+      {(sessions.length > 0 || competence) && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20 }}>
+          <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text)' }}>
+            <UserCheck size={14} style={{ verticalAlign: -2, marginRight: 6 }} />Development Sessions & Competence
+          </h4>
+
+          {/* Competence profile */}
+          {competence && (
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+              <div style={{ background: 'var(--bg)', borderRadius: 6, padding: '8px 14px', fontSize: 12, fontFamily: 'Outfit, sans-serif', color: 'var(--text)' }}>
+                <strong>{competence.sessionsAnalysed}</strong> sessions recorded
+              </div>
+              <div style={{ background: 'var(--bg)', borderRadius: 6, padding: '8px 14px', fontSize: 12, fontFamily: 'Outfit, sans-serif', color: 'var(--text)' }}>
+                <strong>{competence.totalTurns}</strong> conversation turns
+              </div>
+              <div style={{
+                background: competence.competenceLevel === 'senior_architect' ? '#EAF3DE' : competence.competenceLevel === 'senior_engineer' ? '#E1F5EE' : 'var(--bg)',
+                color: competence.competenceLevel === 'senior_architect' ? '#173404' : competence.competenceLevel === 'senior_engineer' ? '#085041' : 'var(--text)',
+                borderRadius: 6, padding: '8px 14px', fontSize: 12, fontFamily: 'Outfit, sans-serif',
+              }}>
+                Competence: <strong>{competence.competenceLevel?.replace(/_/g, ' ')}</strong>
+              </div>
+              <div style={{ background: 'var(--bg)', borderRadius: 6, padding: '8px 14px', fontSize: 12, fontFamily: 'Outfit, sans-serif', color: 'var(--text)' }}>
+                <strong>{Object.keys(competence.domainsDemonstrated || {}).length}</strong> domains demonstrated
+              </div>
+            </div>
+          )}
+
+          {/* Domain breakdown */}
+          {competence?.domainsDemonstrated && Object.keys(competence.domainsDemonstrated).length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <h5 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 12, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>
+                Technical Domains
+              </h5>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {Object.entries(competence.domainsDemonstrated).sort((a: any, b: any) => b[1] - a[1]).map(([domain, count]: [string, any]) => (
+                  <span key={domain} style={{
+                    background: 'var(--bg)', borderRadius: 4, padding: '3px 10px',
+                    fontSize: 11, fontFamily: 'Outfit, sans-serif', color: 'var(--text-2)',
+                  }}>
+                    {domain} <strong>({count})</strong>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Industry references */}
+          {competence?.industryReferences?.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <h5 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 12, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>
+                Industry Standard References
+              </h5>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {competence.industryReferences.map((ref: string, i: number) => (
+                  <span key={i} style={{
+                    background: '#EEEDFE', color: '#26215C', borderRadius: 4, padding: '3px 8px',
+                    fontSize: 10, fontFamily: 'Outfit, sans-serif', fontWeight: 600,
+                  }}>
+                    {ref}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Session list */}
+          {sessions.length > 0 && (
+            <div>
+              <h5 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 12, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>
+                Recent Sessions
+              </h5>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {sessions.slice(0, 10).map((s: any) => (
+                  <div key={s.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    fontSize: 12, fontFamily: 'Outfit, sans-serif', color: 'var(--text-2)',
+                    padding: '4px 0',
+                  }}>
+                    <span style={{
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: s.status === 'active' ? 'var(--teal)' : 'var(--text-3)',
+                    }} />
+                    <span style={{ minWidth: 80, color: 'var(--text-3)', fontSize: 11 }}>
+                      {new Date(s.startedAt).toLocaleDateString('en-GB')}
+                    </span>
+                    <span>{s.developerName || 'Unknown'}</span>
+                    <span style={{ color: 'var(--text-3)' }}>{s.turnCount} turns</span>
+                    {s.domainsDemonstrated?.length > 0 && (
+                      <span style={{ color: 'var(--text-3)', fontSize: 11 }}>
+                        {s.domainsDemonstrated.slice(0, 3).join(', ')}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -47,6 +47,10 @@ import {
 import {
   buildEvidenceGraph, getGraphSummary, queryProvenance,
 } from '../services/see-graph.js';
+import {
+  startSession, recordTurn, endSession, listSessions,
+  getSessionTurns, getCompetenceProfile,
+} from '../services/see-session.js';
 
 const router = Router();
 
@@ -766,6 +770,196 @@ router.get(
     } catch (err: any) {
       console.error(`[SEE] Reports list error: ${err.message}`);
       res.status(500).json({ error: 'Failed to retrieve reports' });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// Phase H: Development Session Capture
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── POST /:productId/see/sessions/start ────────────────────────────
+
+router.post(
+  '/:productId/see/sessions/start',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const { developerName, developerEmail } = req.body;
+      const session = await startSession(productId, orgId, developerName || '', developerEmail || '');
+      res.json(session);
+    } catch (err: any) {
+      console.error(`[SEE] Session start error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to start session' });
+    }
+  }
+);
+
+// ─── POST /:productId/see/sessions/:sessionId/record ────────────────
+
+router.post(
+  '/:productId/see/sessions/:sessionId/record',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { role, content, toolCalls } = req.body;
+      if (!role || !content) return res.status(400).json({ error: 'role and content are required' });
+
+      const sessionId = req.params.sessionId as string;
+      const result = await recordTurn(sessionId, role, content, toolCalls);
+      res.json(result);
+    } catch (err: any) {
+      console.error(`[SEE] Record turn error: ${err.message}`);
+      res.status(500).json({ error: err.message || 'Failed to record turn' });
+    }
+  }
+);
+
+// ─── POST /:productId/see/sessions/:sessionId/end ───────────────────
+
+router.post(
+  '/:productId/see/sessions/:sessionId/end',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const sessionId = req.params.sessionId as string;
+      const session = await endSession(sessionId);
+      res.json(session);
+    } catch (err: any) {
+      console.error(`[SEE] Session end error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to end session' });
+    }
+  }
+);
+
+// ─── GET /:productId/see/sessions ───────────────────────────────────
+
+router.get(
+  '/:productId/see/sessions',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const sessions = await listSessions(productId);
+      res.json({ productId, sessions });
+    } catch (err: any) {
+      console.error(`[SEE] Sessions list error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to retrieve sessions' });
+    }
+  }
+);
+
+// ─── GET /:productId/see/sessions/:sessionId/turns ──────────────────
+
+router.get(
+  '/:productId/see/sessions/:sessionId/turns',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const sessionId = req.params.sessionId as string;
+      const turns = await getSessionTurns(sessionId);
+      res.json({ sessionId, turns });
+    } catch (err: any) {
+      console.error(`[SEE] Turns error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to retrieve turns' });
+    }
+  }
+);
+
+// ─── GET /:productId/see/competence ─────────────────────────────────
+
+router.get(
+  '/:productId/see/competence',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const profile = await getCompetenceProfile(productId);
+      res.json(profile);
+    } catch (err: any) {
+      console.error(`[SEE] Competence error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to retrieve competence profile' });
+    }
+  }
+);
+
+// ─── GET /:productId/see/hooks-config ───────────────────────────────
+// Returns a ready-to-use Claude Code hooks configuration
+
+router.get(
+  '/:productId/see/hooks-config',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      // Get user's API key (first active one)
+      const keyResult = await pool.query(
+        `SELECT key_prefix FROM api_keys WHERE org_id = $1 AND revoked_at IS NULL LIMIT 1`,
+        [orgId]
+      );
+
+      const baseUrl = req.headers.host?.includes('localhost')
+        ? `http://localhost:3001`
+        : `https://${req.headers.host}`;
+
+      const config = {
+        description: 'CRANIS2 Software Evidence Engine — session capture hooks for Claude Code',
+        setup: {
+          step1: 'Copy the hooks configuration below into your project\'s .claude/hooks.json file',
+          step2: 'Set the CRANIS2_API_KEY environment variable to your API key',
+          step3: 'Set CRANIS2_SESSION_ID after calling the start-session endpoint',
+          note: 'The hook fires after each assistant response and records the conversation turn',
+        },
+        startSessionCommand: `curl -s -X POST ${baseUrl}/api/products/${productId}/see/sessions/start -H 'Authorization: Bearer YOUR_API_KEY' -H 'Content-Type: application/json' -d '{"developerName":"Your Name","developerEmail":"you@example.com"}'`,
+        hooksJson: {
+          hooks: {
+            assistant_response: [
+              {
+                command: `curl -s -X POST ${baseUrl}/api/products/${productId}/see/sessions/\${CRANIS2_SESSION_ID}/record -H 'Authorization: Bearer \${CRANIS2_API_KEY}' -H 'Content-Type: application/json' -d '{"role":"assistant","content":"$CLAUDE_RESPONSE"}'`,
+                timeout: 5000,
+              }
+            ],
+          },
+        },
+        endSessionCommand: `curl -s -X POST ${baseUrl}/api/products/${productId}/see/sessions/SESSION_ID/end -H 'Authorization: Bearer YOUR_API_KEY'`,
+        apiKeyHint: keyResult.rows.length > 0
+          ? `You have an API key starting with ${keyResult.rows[0].key_prefix}...`
+          : 'No API keys found. Create one from Settings → Integrations.',
+      };
+
+      res.json(config);
+    } catch (err: any) {
+      console.error(`[SEE] Hooks config error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to generate hooks config' });
     }
   }
 );

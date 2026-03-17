@@ -2458,6 +2458,45 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_see_test_events_product ON see_test_events(product_id);
     `);
 
+    // ── SEE sessions (Phase H) ──────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS see_sessions (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id          VARCHAR(255) NOT NULL,
+        org_id              UUID NOT NULL,
+        developer_name      VARCHAR(255),
+        developer_email     VARCHAR(255),
+        started_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        ended_at            TIMESTAMPTZ,
+        turn_count          INT NOT NULL DEFAULT 0,
+        status              VARCHAR(20) NOT NULL DEFAULT 'active',
+        consent_given       BOOLEAN NOT NULL DEFAULT true,
+        -- Competence signals (populated on session end)
+        domains_demonstrated JSONB,
+        industry_refs       JSONB,
+        decision_quality    VARCHAR(20),
+        competence_level    VARCHAR(30),
+        -- Storage
+        forgejo_path        TEXT,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_see_sessions_product ON see_sessions(product_id, started_at DESC);
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS see_session_turns (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        session_id      UUID NOT NULL REFERENCES see_sessions(id) ON DELETE CASCADE,
+        turn_number     INT NOT NULL,
+        role            VARCHAR(20) NOT NULL,
+        content_preview TEXT,
+        token_count     INT NOT NULL DEFAULT 0,
+        tool_calls      JSONB,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_see_turns_session ON see_session_turns(session_id, turn_number);
+    `);
+
     // ── SEE developers (Phase B) ──────────────────────────────────────
     await client.query(`
       CREATE TABLE IF NOT EXISTS see_developers (
