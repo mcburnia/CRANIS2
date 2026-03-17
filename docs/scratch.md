@@ -1,6 +1,6 @@
 # CRANIS2 — Active Backlog
 
-Updated: 2026-03-16 (session 51)
+Updated: 2026-03-17 (session 52)
 
 For completed work history, see `.claude/projects/-home-mcburnia-cranis2/memory/completed_work.md`
 
@@ -8,21 +8,49 @@ For completed work history, see `.claude/projects/-home-mcburnia-cranis2/memory/
 
 ## Active Work
 
-### #60 — Repository Effort & Cost Estimator (R&D Tax Credits)
+### Software Evidence Engine (SEE) — Unified Plan
 
-**Status:** PLANNED — 5 phases, not started
+**Status:** PLANNED — 7 phases, not started
 
-Opt-in per product feature that analyses connected repositories to estimate development effort, cost, team size, and complexity. Primary use case: R&D tax credit evidence. Pro plan feature.
+The SEE unifies the Repository Effort & Cost Estimator (#60) and the Software Evidence Engine specification into a single staged delivery. It analyses connected repositories to extract engineering evidence, estimate effort/cost, detect experimentation, and generate multi-regulation compliance reports.
 
-| Phase | Scope | Status |
-|-------|-------|--------|
-| A | Database schema, consent model, file classification engine | TODO |
-| B | Repo scanning pipeline, LOC counting, git stats, API endpoints | TODO |
-| C | Effort/cost calculation engine (deterministic, range-based) | TODO |
-| D | Frontend: Effort Estimate tab with consent, scan, results, charts | TODO |
-| E | Markdown report (R&D tax credit quality), admin config, analytics | TODO |
+**Why:** Software companies need defensible evidence of engineering effort for R&D tax credits, due diligence, and regulatory compliance. CRANIS2 already connects to their repos. The data is there.
 
-Full spec: user provided in session 51 conversation. Implementation plan in memory.
+**Goal:** Customer enables source code analysis, runs an analysis, receives LOC/effort/cost estimates, experimentation evidence, architecture evolution timeline, developer attribution, and multi-regulation compliance reports. All deterministic, auditable, exportable as Markdown.
+
+**Primary use case:** R&D tax credit evidence (HMRC, CIR, Forschungszulage, I+D+i).
+**Secondary use cases:** Due diligence, CRA/NIS2/AI Act/DORA compliance evidence, internal estimation.
+**Billing:** Pro plan. Opt-in per product (source code consent required).
+
+**Specifications:**
+- `docs/see-specification.md` — full SEE capability specification
+- `docs/future-regulations.md` — adjacent regulatory opportunities
+
+| Phase | Delivers | User-visible outcome | Status |
+|-------|----------|---------------------|--------|
+| A | Consent + basic estimator | LOC by language, effort/cost ranges, executive report | TODO |
+| B | Commit history + developer attribution | Commit metrics, developer contribution table, timeline | TODO |
+| C | Branch analysis + commit classification | Branch types, commit categories, rewrite ratio | TODO |
+| D | Experimentation detection + R&D report | Uncertainty indicators, experiment timeline, HMRC-ready report | TODO |
+| E | Architecture evolution + test evolution | Architecture change timeline, test maturity metrics | TODO |
+| F | Full evidence graph + visualisations | SBOM/vuln integration, provenance queries, charts | TODO |
+| G | Multi-regulation reports + AI narratives | CRA, NIS2, AI Act, DORA, ISO 27001 evidence reports | TODO |
+
+### Phase detail
+
+**Phase A** — Source code consent model (Neo4j Product property), `see_analysis_runs` table, file classification engine (production/test/config/generated/vendor/docs), LOC counting with exclusions, COCOMO II-style effort/cost estimation (low/mid/high), Markdown executive report. New "Software Evidence" tab on product detail.
+
+**Phase B** — Extend repo-provider with `getCommits()` for all providers. `see_commits` and `see_developers` tables. `SEEDeveloper` and `SEECommit` Neo4j nodes. Incremental commit ingestion. Developer attribution with percentages and timeline. Commit frequency chart.
+
+**Phase C** — Extend repo-provider with `getBranches()`. `see_branches` table. `SEEBranch` Neo4j nodes. Deterministic commit classification (feature/fix/refactor/test/experiment) via message patterns. Branch type classification (feature/experimental/abandoned). Rewrite ratio per module.
+
+**Phase D** — Core R&D capability. `see_experiments` and `see_evidence_reports` tables. `SEEExperiment` Neo4j nodes. Experimentation detection: repeated implementation, algorithm replacement, prototype branches, dependency switching, refactoring waves. Narrative-style R&D evidence report with technological uncertainty indicators. Optional Copilot narrative.
+
+**Phase E** — `see_architecture_events` and `see_test_events` tables. `SEEFile`, `SEEModule`, `SEEArchitectureChange`, `SEETest` Neo4j nodes. Module restructuring detection, schema migration detection. Test lifecycle tracking (creation, modification, failure/fix correlation). Architecture evolution timeline.
+
+**Phase F** — `SEEComponent`, `SEERelease` Neo4j nodes. `see_provenance` table. Links existing SBOM/vulnerability data to evidence graph. Provenance queries ("who introduced this dependency?"). Commit activity timeline, module churn heatmap, developer contribution chart.
+
+**Phase G** — Multi-regulation report templates (CRA, NIS2, AI Act, DORA, ISO 27001, R&D Tax). Copilot AI narrative generation for reports. Admin analytics integration. Public API exposure. `see_audit_log` for immutable evidence trail.
 
 ---
 
@@ -55,22 +83,6 @@ Use `tools/becksmap/` generator for new maps. Follow `docs/HELP-GUIDE-STANDARD.m
 ### Audit Log Route Mapping
 
 `/audit-log` currently maps to ch5_05 (compliance reports) which is a stub. Either remap to an existing guide or write the ch5_05 stub.
-
----
-
-## Future Capability
-
-### Software Evidence Engine (SEE)
-
-**Status:** SPECIFIED — not yet planned or phased
-
-Automated engineering evidence extraction and lifecycle provenance generation from software repositories. Constructs a Software Evidence Graph in Neo4j from Git history, CI/CD metadata, test evolution, SBOMs, and vulnerability records.
-
-Full specification: `docs/see-specification.md`
-
-Key capabilities: commit/branch/developer attribution, experimentation detection, architecture evolution tracking, R&D tax evidence generation, multi-regulation compliance reports (CRA, NIS2, AI Act, DORA, ISO 27001, HMRC R&D).
-
-Relationship to #60 (Repo Estimator): the estimator is a pragmatic MVP that delivers LOC/effort/cost estimation. SEE is the broader strategic capability that subsumes and extends it with full lifecycle provenance and evidence graph modelling.
 
 ---
 
