@@ -35,6 +35,7 @@ The SEE unifies the Repository Effort & Cost Estimator (#60) and the Software Ev
 | E | Architecture evolution + test evolution | Architecture change timeline, test maturity metrics | TODO |
 | F | Full evidence graph + visualisations | SBOM/vuln integration, provenance queries, charts | TODO |
 | G | Multi-regulation reports + AI narratives | CRA, NIS2, AI Act, DORA, ISO 27001 evidence reports | TODO |
+| H | Development session capture + competence profiling | Conversation evidence via MCP, Forgejo storage, competence assessment | TODO |
 
 ### Phase detail
 
@@ -51,6 +52,8 @@ The SEE unifies the Repository Effort & Cost Estimator (#60) and the Software Ev
 **Phase F** — `SEEComponent`, `SEERelease` Neo4j nodes. `see_provenance` table. Links existing SBOM/vulnerability data to evidence graph. Provenance queries ("who introduced this dependency?"). Commit activity timeline, module churn heatmap, developer contribution chart.
 
 **Phase G** — Multi-regulation report templates (CRA, NIS2, AI Act, DORA, ISO 27001, R&D Tax). Copilot AI narrative generation for reports. Admin analytics integration. Public API exposure. `see_audit_log` for immutable evidence trail.
+
+**Phase H** — Development session capture via MCP/Claude Code hooks. Developer prompted for consent per session. Conversation transcripts stored in Forgejo (EU-sovereign, git-backed). Competence Evidence Profile generated from conversation analysis (domain vocabulary, design reasoning, industry awareness, decision quality). Addresses R&D tax credit "competent professional" requirement without relying on formal qualifications.
 
 ---
 

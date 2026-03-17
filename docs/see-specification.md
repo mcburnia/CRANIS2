@@ -387,20 +387,82 @@ Reports must be exportable as:
 
 ---
 
-## 19. Future Extensions
+## 19. Development Session Capture
 
-Future enhancements may include:
+The SEE module must support capture of conversations between development engineers and AI coding assistants (Claude Code, GitHub Copilot, Cursor, etc.) via the CRANIS2 MCP server.
 
-- IDE telemetry ingestion
-- AI agent activity tracking
-- build provenance attestation
-- developer skill modelling
-- software risk scoring
-- investment due diligence reports
+### Purpose
+
+- Capture evidence of human-directed engineering effort (R&D tax credit evidence)
+- Preserve intellectual property created during AI-assisted development conversations
+- Establish developer competence profiles from demonstrated expertise
+
+### Consent Model
+
+- Developer is prompted at the start of each session: "Would you like to record this development session for engineering evidence?"
+- Opt-in per session. No recording without explicit consent.
+- Developer can stop recording at any time during a session.
+- Developer can review, redact, or delete recorded sessions.
+
+### Capture Mechanism
+
+- Claude Code hooks (`assistant_response` event) POST conversation turns to CRANIS2 API
+- Each turn includes: timestamp, role (human/assistant), content, tool calls made
+- Session metadata: developer identity, product context, duration, tools used
+
+### Storage
+
+- Raw conversation transcripts stored in Forgejo (EU-sovereign, git-backed, immutable)
+- Structure: `org/{orgId}/evidence-sessions/{productId}/{date}-{sessionId}.md` (human-readable transcript) plus `.json` sidecar (structured metadata)
+- CRANIS2 Postgres/Neo4j stores the index and analysis results, not the raw conversations
+- This keeps large content in Forgejo and queryable metadata in the database
+
+### Competence Evidence Profile
+
+The system must analyse recorded conversations to produce a developer Competence Evidence Profile. This addresses the R&D tax credit requirement to demonstrate that work was conducted by "competent professionals" without relying solely on formal qualifications.
+
+**Competence indicators detected from conversation analysis:**
+
+- Domain vocabulary usage (regulatory, architectural, security terminology)
+- Problem decomposition (structured approach to complex problems)
+- Design trade-off reasoning (evaluating alternatives with justification)
+- Industry standard awareness (CRA, OWASP, ISO, NIST references)
+- Quality of technical direction given to AI (prompt sophistication)
+- Rejection of AI suggestions with valid technical reasoning
+- Architectural thinking (system design, scalability, security)
+- Risk awareness (edge cases, failure modes, compliance implications)
+
+**Output:**
+
+- Technical domains demonstrated with depth rating
+- Industry awareness indicators
+- Decision-making quality metrics
+- Equivalent professional experience level (inferred, with caveats)
+- Suitable for inclusion in R&D tax credit documentation as competence evidence
+
+### Privacy and Data Protection
+
+- All conversation data stored in EU-sovereign infrastructure (Forgejo on Infomaniak, Switzerland)
+- Developer controls their own data (view, export, redact, delete)
+- Organisation admins can see session metadata but not raw conversations without developer consent
+- No conversation data shared externally without explicit authorisation
+- GDPR Article 6(1)(a) consent basis
 
 ---
 
-## 20. Success Criteria
+## 20. Future Extensions
+
+Future enhancements may include:
+
+- build provenance attestation
+- software risk scoring
+- investment due diligence reports
+- cross-organisation benchmarking
+- regulatory readiness overlays
+
+---
+
+## 21. Success Criteria
 
 The module is considered successful when it can:
 
