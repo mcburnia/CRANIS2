@@ -644,7 +644,7 @@ export async function runEstimateScan(
   try {
     const result = await neo4jSession.run(
       `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId})
-       OPTIONAL MATCH (p)-[:HAS_REPO]->(r:GitHubRepo)
+       OPTIONAL MATCH (p)-[:HAS_REPO]->(r:Repository)
        RETURN p.name AS name, r.repoUrl AS repoUrl, r.defaultBranch AS branch`,
       { orgId, productId }
     );
