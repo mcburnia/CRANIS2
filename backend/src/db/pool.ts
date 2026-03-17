@@ -2392,6 +2392,39 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_see_branches_product ON see_branches(product_id);
     `);
 
+    // ── SEE experiments (Phase D) ────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS see_experiments (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id          VARCHAR(255) NOT NULL,
+        experiment_type     VARCHAR(50) NOT NULL,
+        title               TEXT NOT NULL,
+        description         TEXT,
+        evidence_commits    JSONB NOT NULL DEFAULT '[]',
+        start_date          TIMESTAMPTZ,
+        end_date            TIMESTAMPTZ,
+        uncertainty_indicator TEXT,
+        confidence          VARCHAR(20) NOT NULL DEFAULT 'medium',
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_see_experiments_product ON see_experiments(product_id);
+    `);
+
+    // ── SEE evidence reports (Phase D) ────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS see_evidence_reports (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id          VARCHAR(255) NOT NULL,
+        org_id              UUID NOT NULL,
+        report_type         VARCHAR(50) NOT NULL DEFAULT 'rnd_tax',
+        content_md          TEXT NOT NULL,
+        content_hash        VARCHAR(64),
+        generated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_see_reports_product ON see_evidence_reports(product_id, generated_at DESC);
+    `);
+
     // ── SEE developers (Phase B) ──────────────────────────────────────
     await client.query(`
       CREATE TABLE IF NOT EXISTS see_developers (

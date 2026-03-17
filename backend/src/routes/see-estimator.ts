@@ -34,6 +34,12 @@ import {
 import {
   runBranchAnalysis, getBranchAnalysis,
 } from '../services/see-classifier.js';
+import {
+  detectExperiments, getExperiments,
+} from '../services/see-experiment-detector.js';
+import {
+  generateRnDEvidenceReport, getLatestReport,
+} from '../services/see-report-generator.js';
 
 const router = Router();
 
@@ -414,6 +420,117 @@ router.get(
     } catch (err: any) {
       console.error(`[SEE] Branches error: ${err.message}`);
       res.status(500).json({ error: 'Failed to retrieve branch data' });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// Phase D: Experimentation Detection & R&D Evidence Report
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── POST /:productId/see/experiments/detect ────────────────────────
+
+router.post(
+  '/:productId/see/experiments/detect',
+  requireAuth,
+  requirePlan('pro'),
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const result = await detectExperiments(productId);
+      res.json(result);
+    } catch (err: any) {
+      console.error(`[SEE] Experiment detection error: ${err.message}`);
+      res.status(500).json({ error: 'Experiment detection failed', message: err.message });
+    }
+  }
+);
+
+// ─── GET /:productId/see/experiments ────────────────────────────────
+
+router.get(
+  '/:productId/see/experiments',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const result = await getExperiments(productId);
+      if (!result) return res.json({ productId, detected: false });
+      res.json({ ...result, detected: true });
+    } catch (err: any) {
+      console.error(`[SEE] Experiments error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to retrieve experiments' });
+    }
+  }
+);
+
+// ─── POST /:productId/see/reports/rnd ───────────────────────────────
+
+router.post(
+  '/:productId/see/reports/rnd',
+  requireAuth,
+  requirePlan('pro'),
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const report = await generateRnDEvidenceReport(productId, orgId, product.name);
+      res.json(report);
+    } catch (err: any) {
+      console.error(`[SEE] Report generation error: ${err.message}`);
+      res.status(500).json({ error: 'Report generation failed', message: err.message });
+    }
+  }
+);
+
+// ─── GET /:productId/see/reports/rnd/export ─────────────────────────
+
+router.get(
+  '/:productId/see/reports/rnd/export',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      let report = await getLatestReport(productId, 'rnd_tax');
+      if (!report) {
+        // Auto-generate if not yet generated
+        report = await generateRnDEvidenceReport(productId, orgId, product.name);
+      }
+
+      const filename = `rnd-evidence-${product.name.replace(/[^a-zA-Z0-9-_]/g, '_')}.md`;
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(report.contentMd);
+    } catch (err: any) {
+      console.error(`[SEE] Report export error: ${err.message}`);
+      res.status(500).json({ error: 'Export failed' });
     }
   }
 );

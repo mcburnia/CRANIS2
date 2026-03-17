@@ -100,6 +100,11 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
   const [branchData, setBranchData] = useState<any>(null);
   const [analysing, setAnalysing] = useState(false);
 
+  // Phase D state
+  const [experiments, setExperiments] = useState<any>(null);
+  const [detecting, setDetecting] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
+
   const token = localStorage.getItem('session_token');
   const headers = { Authorization: `Bearer ${token}` } as Record<string, string>;
 
@@ -155,10 +160,20 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
     } catch { /* ignore */ }
   }, [productId]);
 
+  const fetchExperiments = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/products/${productId}/see/experiments`, { headers });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.detected) setExperiments(d);
+      }
+    } catch { /* ignore */ }
+  }, [productId]);
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchConsent(), fetchData(), fetchCommitData(), fetchBranchData()]).finally(() => setLoading(false));
-  }, [fetchConsent, fetchData, fetchCommitData, fetchBranchData]);
+    Promise.all([fetchConsent(), fetchData(), fetchCommitData(), fetchBranchData(), fetchExperiments()]).finally(() => setLoading(false));
+  }, [fetchConsent, fetchData, fetchCommitData, fetchBranchData, fetchExperiments]);
 
   const handleConsentToggle = async () => {
     setConsentUpdating(true);
@@ -207,6 +222,48 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
 
   const handleExport = () => {
     window.open(`/api/products/${productId}/see/estimate/export`, '_blank');
+  };
+
+  const handleDetectExperiments = async () => {
+    setDetecting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/products/${productId}/see/experiments/detect`, {
+        method: 'POST', headers,
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setExperiments(d);
+      } else {
+        const err = await res.json();
+        setError(err.message || 'Experiment detection failed');
+      }
+    } catch {
+      setError('Experiment detection failed');
+    } finally {
+      setDetecting(false);
+    }
+  };
+
+  const handleGenerateRnDReport = async () => {
+    setGeneratingReport(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/products/${productId}/see/reports/rnd`, {
+        method: 'POST', headers,
+      });
+      if (res.ok) {
+        // Download the report
+        window.open(`/api/products/${productId}/see/reports/rnd/export`, '_blank');
+      } else {
+        const err = await res.json();
+        setError(err.message || 'Report generation failed');
+      }
+    } catch {
+      setError('Report generation failed');
+    } finally {
+      setGeneratingReport(false);
+    }
   };
 
   const handleAnalyseBranches = async () => {
@@ -680,6 +737,101 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
                 )}
               </div>
             )}
+          </div>
+        </>
+      ) : null}
+
+      {/* ── Phase D: Experimentation Detection & R&D Report ────────────── */}
+
+      {branchData && !experiments ? (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div>
+            <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+              R&D Evidence Analysis
+            </h4>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0 }}>
+              Detect experimentation patterns and technological uncertainty indicators for R&D tax credit evidence.
+            </p>
+          </div>
+          <button onClick={handleDetectExperiments} disabled={detecting} style={btnStyle}>
+            {detecting ? <><Loader2 size={14} className="spin" /> Detecting...</> : 'Detect Experiments'}
+          </button>
+        </div>
+      ) : experiments ? (
+        <>
+          {/* Uncertainty summary */}
+          <div style={{
+            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
+                Technological Uncertainty Indicators ({experiments.uncertaintySummary?.totalExperiments || 0})
+              </h4>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={handleDetectExperiments} disabled={detecting} style={{ ...btnStyle, fontSize: 11, padding: '4px 10px' }}>
+                  {detecting ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />} Re-detect
+                </button>
+                <button onClick={handleGenerateRnDReport} disabled={generatingReport} style={{
+                  ...btnStyle, background: 'var(--teal, #1D9E75)', color: '#fff', borderColor: 'var(--teal, #1D9E75)',
+                }}>
+                  {generatingReport ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+                  R&D Evidence Report
+                </button>
+              </div>
+            </div>
+
+            {/* Confidence summary */}
+            {experiments.uncertaintySummary && (
+              <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+                <div style={{ background: '#EAF3DE', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif' }}>
+                  <strong>{experiments.uncertaintySummary.highConfidence}</strong> high confidence
+                </div>
+                <div style={{ background: '#FAEEDA', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif' }}>
+                  <strong>{experiments.uncertaintySummary.mediumConfidence}</strong> medium confidence
+                </div>
+                {experiments.uncertaintySummary.lowConfidence > 0 && (
+                  <div style={{ background: '#F1EFE8', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif' }}>
+                    <strong>{experiments.uncertaintySummary.lowConfidence}</strong> low confidence
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Experiment list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(experiments.experiments || []).map((exp: any, i: number) => (
+                <div key={i} style={{
+                  background: 'var(--bg)', borderRadius: 6, padding: '10px 14px',
+                  borderLeft: `3px solid ${exp.confidence === 'high' ? 'var(--teal, #1D9E75)' : exp.confidence === 'medium' ? '#BA7517' : 'var(--text-3)'}`,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{
+                      fontSize: 10, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.04em',
+                      padding: '1px 6px', borderRadius: 3,
+                      background: exp.confidence === 'high' ? '#EAF3DE' : '#FAEEDA',
+                      color: exp.confidence === 'high' ? '#173404' : '#412402',
+                      fontFamily: 'Outfit, sans-serif',
+                    }}>
+                      {exp.experimentType?.replace(/_/g, ' ')}
+                    </span>
+                    {exp.startDate && (
+                      <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                        {new Date(exp.startDate).toLocaleDateString('en-GB')}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'Outfit, sans-serif', marginBottom: 2 }}>
+                    {exp.title}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.5 }}>
+                    {exp.uncertaintyIndicator}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </>
       ) : null}
