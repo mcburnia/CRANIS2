@@ -2425,6 +2425,39 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_see_reports_product ON see_evidence_reports(product_id, generated_at DESC);
     `);
 
+    // ── SEE architecture events (Phase E) ──────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS see_architecture_events (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id          VARCHAR(255) NOT NULL,
+        event_type          VARCHAR(50) NOT NULL,
+        title               TEXT NOT NULL,
+        description         TEXT,
+        affected_modules    JSONB NOT NULL DEFAULT '[]',
+        evidence_commits    JSONB NOT NULL DEFAULT '[]',
+        detected_at         TIMESTAMPTZ,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_see_arch_events_product ON see_architecture_events(product_id);
+    `);
+
+    // ── SEE test events (Phase E) ────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS see_test_events (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id          VARCHAR(255) NOT NULL,
+        month               VARCHAR(7) NOT NULL,
+        test_files_added    INT NOT NULL DEFAULT 0,
+        test_files_modified INT NOT NULL DEFAULT 0,
+        test_loc_added      INT NOT NULL DEFAULT 0,
+        source_commits      INT NOT NULL DEFAULT 0,
+        test_commits        INT NOT NULL DEFAULT 0,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(product_id, month)
+      );
+      CREATE INDEX IF NOT EXISTS idx_see_test_events_product ON see_test_events(product_id);
+    `);
+
     // ── SEE developers (Phase B) ──────────────────────────────────────
     await client.query(`
       CREATE TABLE IF NOT EXISTS see_developers (

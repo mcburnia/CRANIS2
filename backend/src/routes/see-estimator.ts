@@ -40,6 +40,9 @@ import {
 import {
   generateRnDEvidenceReport, getLatestReport,
 } from '../services/see-report-generator.js';
+import {
+  runEvolutionAnalysis, getEvolutionData,
+} from '../services/see-evolution.js';
 
 const router = Router();
 
@@ -531,6 +534,56 @@ router.get(
     } catch (err: any) {
       console.error(`[SEE] Report export error: ${err.message}`);
       res.status(500).json({ error: 'Export failed' });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// Phase E: Architecture & Test Evolution
+// ═══════════════════════════════════════════════════════════════════
+
+router.post(
+  '/:productId/see/evolution/analyse',
+  requireAuth,
+  requirePlan('pro'),
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const result = await runEvolutionAnalysis(productId);
+      res.json({ ...result, analysed: true });
+    } catch (err: any) {
+      console.error(`[SEE] Evolution analysis error: ${err.message}`);
+      res.status(500).json({ error: 'Evolution analysis failed', message: err.message });
+    }
+  }
+);
+
+router.get(
+  '/:productId/see/evolution',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const result = await getEvolutionData(productId);
+      if (!result) return res.json({ productId, analysed: false });
+      res.json({ ...result, analysed: true });
+    } catch (err: any) {
+      console.error(`[SEE] Evolution data error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to retrieve evolution data' });
     }
   }
 );

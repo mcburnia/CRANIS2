@@ -105,6 +105,10 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
   const [detecting, setDetecting] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
 
+  // Phase E state
+  const [evolution, setEvolution] = useState<any>(null);
+  const [analysingEvolution, setAnalysingEvolution] = useState(false);
+
   const token = localStorage.getItem('session_token');
   const headers = { Authorization: `Bearer ${token}` } as Record<string, string>;
 
@@ -170,10 +174,20 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
     } catch { /* ignore */ }
   }, [productId]);
 
+  const fetchEvolution = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/products/${productId}/see/evolution`, { headers });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.analysed) setEvolution(d);
+      }
+    } catch { /* ignore */ }
+  }, [productId]);
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchConsent(), fetchData(), fetchCommitData(), fetchBranchData(), fetchExperiments()]).finally(() => setLoading(false));
-  }, [fetchConsent, fetchData, fetchCommitData, fetchBranchData, fetchExperiments]);
+    Promise.all([fetchConsent(), fetchData(), fetchCommitData(), fetchBranchData(), fetchExperiments(), fetchEvolution()]).finally(() => setLoading(false));
+  }, [fetchConsent, fetchData, fetchCommitData, fetchBranchData, fetchExperiments, fetchEvolution]);
 
   const handleConsentToggle = async () => {
     setConsentUpdating(true);
@@ -222,6 +236,27 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
 
   const handleExport = () => {
     window.open(`/api/products/${productId}/see/estimate/export`, '_blank');
+  };
+
+  const handleAnalyseEvolution = async () => {
+    setAnalysingEvolution(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/products/${productId}/see/evolution/analyse`, {
+        method: 'POST', headers,
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setEvolution(d);
+      } else {
+        const err = await res.json();
+        setError(err.message || 'Evolution analysis failed');
+      }
+    } catch {
+      setError('Evolution analysis failed');
+    } finally {
+      setAnalysingEvolution(false);
+    }
   };
 
   const handleDetectExperiments = async () => {
@@ -833,6 +868,135 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
               ))}
             </div>
           </div>
+        </>
+      ) : null}
+
+      {/* ── Phase E: Architecture & Test Evolution ─────────────────────── */}
+
+      {experiments && !evolution ? (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div>
+            <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+              Architecture & Test Evolution
+            </h4>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0 }}>
+              Detect architectural changes, module structure, and test maturity evolution.
+            </p>
+          </div>
+          <button onClick={handleAnalyseEvolution} disabled={analysingEvolution} style={btnStyle}>
+            {analysingEvolution ? <><Loader2 size={14} className="spin" /> Analysing...</> : 'Analyse Evolution'}
+          </button>
+        </div>
+      ) : evolution ? (
+        <>
+          {/* Summary badges */}
+          <div style={{
+            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
+                Architecture & Test Evolution
+              </h4>
+              <button onClick={handleAnalyseEvolution} disabled={analysingEvolution} style={{ ...btnStyle, fontSize: 11, padding: '4px 10px' }}>
+                {analysingEvolution ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />} Update
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+              <div style={{ background: 'var(--bg)', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif', color: 'var(--text)' }}>
+                <strong>{evolution.summary?.totalModules || 0}</strong> modules
+              </div>
+              <div style={{ background: 'var(--bg)', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif', color: 'var(--text)' }}>
+                <strong>{evolution.summary?.totalArchEvents || 0}</strong> architecture events
+              </div>
+              <div style={{ background: 'var(--bg)', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif', color: 'var(--text)' }}>
+                Maturity: <strong>{evolution.summary?.architectureMaturity || '–'}</strong>
+              </div>
+              <div style={{ background: 'var(--bg)', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif', color: 'var(--text)' }}>
+                Test trend: <strong>{evolution.summary?.testGrowthTrend || '–'}</strong>
+              </div>
+            </div>
+
+            {/* Architecture timeline */}
+            {evolution.architectureEvents?.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <h5 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 12, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>
+                  Architecture Timeline
+                </h5>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {evolution.architectureEvents.map((evt: any, i: number) => (
+                    <div key={i} style={{
+                      background: 'var(--bg)', borderRadius: 6, padding: '8px 12px',
+                      borderLeft: '3px solid var(--teal, #1D9E75)',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                    }}>
+                      {evt.detectedAt && (
+                        <span style={{ fontSize: 11, color: 'var(--text-3)', minWidth: 75 }}>
+                          {new Date(evt.detectedAt).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })}
+                        </span>
+                      )}
+                      <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase' as const, color: '#534AB7', background: '#EEEDFE', padding: '1px 6px', borderRadius: 3 }}>
+                        {evt.eventType?.replace(/_/g, ' ')}
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--text-2)', flex: 1 }}>{evt.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Test evolution chart */}
+            {evolution.testEvolution?.length > 0 && (
+              <div>
+                <h5 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 12, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>
+                  Test Activity Over Time
+                </h5>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 60 }}>
+                  {evolution.testEvolution.map((point: any, i: number) => {
+                    const maxCommits = Math.max(...evolution.testEvolution.map((p: any) => p.testCommits || 0), 1);
+                    const height = Math.max(2, ((point.testCommits || 0) / maxCommits) * 52);
+                    return (
+                      <div
+                        key={i}
+                        title={`${point.month}: ${point.testCommits} test commits (${point.testRatio}% of total)`}
+                        style={{
+                          flex: 1, minWidth: 3, maxWidth: 16,
+                          height, background: '#185FA5', borderRadius: '2px 2px 0 0',
+                          opacity: 0.7,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-3)', marginTop: 4 }}>
+                  <span>{evolution.testEvolution[0]?.month}</span>
+                  <span>{evolution.testEvolution[evolution.testEvolution.length - 1]?.month}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Module list */}
+          {evolution.modules?.length > 0 && (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20 }}>
+              <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text)' }}>
+                Detected Modules ({evolution.modules.length})
+              </h4>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {evolution.modules.map((mod: any, i: number) => (
+                  <div key={i} style={{
+                    background: 'var(--bg)', borderRadius: 6, padding: '6px 12px',
+                    fontSize: 12, fontFamily: 'Outfit, sans-serif', color: 'var(--text-2)',
+                  }}>
+                    <strong style={{ color: 'var(--text)' }}>{mod.name}</strong>
+                    <span style={{ color: 'var(--text-3)', marginLeft: 6 }}>{mod.commitCount} files</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       ) : null}
 
