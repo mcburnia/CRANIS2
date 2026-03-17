@@ -1,0 +1,79 @@
+{
+  "title": "Auto-populating your Technical File",
+  "subtitle": "Batch Fill wizard: from empty sections to structured compliance evidence in minutes",
+  "chapter": "Chapter 4 \u00b7 Compliance Documentation",
+  "audienceTags": ["Compliance Officer", "Product Manager"],
+
+  "mainLine": [
+    { "id": "open", "label": "Open wizard", "sub": "Technical File tab", "type": "terminus" },
+    { "id": "scope", "label": "Review scope", "sub": "What gets filled" },
+    { "id": "configure", "label": "Configure", "sub": "Obligation evidence", "type": "interchange" },
+    { "id": "running", "label": "Batch Fill runs", "sub": "Deterministic fill" },
+    { "id": "results", "label": "Review results", "sub": "Filled vs skipped" },
+    { "id": "next", "label": "Edit and complete", "sub": "Fill remaining gaps", "type": "endpoint", "endColour": "green" }
+  ],
+
+  "feeders": [],
+
+  "branches": {
+    "above": [],
+    "below": []
+  },
+
+  "stations": {
+    "open": {
+      "icon": "\ud83d\udcc4",
+      "iconBg": "#F1EFE8",
+      "badge": "Step 1",
+      "badgeClass": "badge-gray",
+      "title": "Open the Batch Fill wizard",
+      "sub": "Find it on your product's Technical File tab",
+      "body": "<p>From the sidebar, select <strong>Products</strong> and open the product you want to populate. Navigate to the <strong>Compliance</strong> tab, then select <strong>Technical File</strong>.</p><p>At the top of the Technical File view, click the <strong>Batch Fill</strong> button (marked with a sparkle icon). This opens the wizard as a modal overlay.</p><div class=\"tip\">Batch Fill is available for any product that has at least one connected data source (repository, SBOM, or vulnerability scan). If the button is greyed out, connect a repository first.</div>"
+    },
+    "scope": {
+      "icon": "\ud83d\udccb",
+      "iconBg": "#E1F5EE",
+      "badge": "Step 2",
+      "badgeClass": "badge-teal",
+      "title": "Understand what Batch Fill does",
+      "sub": "Deterministic auto-fill from your existing platform data",
+      "body": "<p>The wizard's confirmation screen explains exactly what will happen. Batch Fill populates <strong>empty</strong> fields in four Technical File sections required by CRA Annex VII:</p><ul class=\"detail-list\"><li><strong>Product Description</strong> (Annex VII \u00a71) \u2013 intended purpose, versions, distribution model, user instructions</li><li><strong>Vulnerability Handling</strong> (Annex VII \u00a72(b)) \u2013 CVD policy, security contact, update mechanisms, SBOM reference</li><li><strong>Standards Applied</strong> (Annex VII \u00a75) \u2013 harmonised standards, common specifications, certification schemes</li><li><strong>Test Reports</strong> (Annex VII \u00a76) \u2013 penetration tests, static and dynamic analysis, audits</li></ul><div class=\"info\">No AI is involved. All content is derived deterministically from data already in the platform: your SBOM, vulnerability scans, repository metadata, and stakeholder records. This is a data assembly step, not a generative one.</div>"
+    },
+    "configure": {
+      "icon": "\u2699\ufe0f",
+      "iconBg": "#E1F5EE",
+      "badge": "Step 3",
+      "badgeClass": "badge-teal",
+      "title": "Choose whether to include obligation evidence",
+      "sub": "Optional second pass across all 19 CRA obligations",
+      "body": "<p>Below the technical file scope card, a checkbox lets you <strong>also generate obligation evidence notes</strong>. When ticked, Batch Fill makes a second pass that populates empty evidence fields for up to 19 CRA obligations (Art. 13 through Art. 32).</p><p>Evidence notes are assembled from scan results, SBOM data, and stakeholder records. They give each obligation a starting narrative that you then review and refine.</p><div class=\"tip\">If your product already has substantial evidence notes (from manual entry or a previous Batch Fill run), leave this unchecked. Batch Fill never overwrites existing content, so it will simply skip those obligations, but the extra API call adds a few seconds.</div><p>Once satisfied with your choices, click <strong>Run Batch Fill</strong> to start.</p>"
+    },
+    "running": {
+      "icon": "\u23f3",
+      "iconBg": "#E1F5EE",
+      "badge": "Step 4",
+      "badgeClass": "badge-teal",
+      "title": "Batch Fill runs",
+      "sub": "The platform assembles your compliance content",
+      "body": "<p>The wizard shows a progress indicator while it works. Two API calls execute in sequence:</p><ul class=\"detail-list\"><li><strong>Technical file sections</strong> \u2013 each of the four sections is checked for empty fields; where data exists in the platform, those fields are populated</li><li><strong>Obligation evidence</strong> (if selected) \u2013 each of the 19 obligations is checked; where the evidence note is empty and relevant data exists, a note is assembled</li></ul><p>The process typically completes in under 10 seconds. No user input is required during this step.</p><div class=\"warn\">Do not close the browser tab or navigate away while Batch Fill is running. If interrupted, partially written data is saved, but you will need to run the wizard again to complete the remaining sections.</div>"
+    },
+    "results": {
+      "icon": "\ud83d\udcca",
+      "iconBg": "#E1F5EE",
+      "badge": "Step 5",
+      "badgeClass": "badge-teal",
+      "title": "Review what was filled",
+      "sub": "Section-by-section breakdown with field counts",
+      "body": "<p>The results screen shows two groups:</p><p><strong>Technical File</strong> lists each section with its outcome:</p><ul class=\"detail-list\"><li><strong>Filled</strong> (green tick) \u2013 the section had empty fields and they were populated, with a count of fields written</li><li><strong>Already complete</strong> (grey tick) \u2013 all fields already had content; nothing changed</li><li><strong>Skipped</strong> (skip icon) \u2013 no platform data was available to populate this section</li></ul><p>A summary line reports totals, for example: <em>3 sections updated, 12 fields populated</em>.</p><p><strong>Obligation Evidence</strong> (if selected) lists each obligation that received a new evidence note and reports how many already had notes.</p><div class=\"tip\">The results screen is informational. No approval step is needed here because Batch Fill only writes to empty fields. Your existing content is untouched.</div>"
+    },
+    "next": {
+      "icon": "\u2705",
+      "iconBg": "#EAF3DE",
+      "badge": "Done",
+      "badgeClass": "badge-green",
+      "title": "Edit and complete the remaining gaps",
+      "sub": "Batch Fill gives you a head start; you finish the job",
+      "body": "<p>Click <strong>Done</strong> to close the wizard and return to the Technical File view. Your sections now show updated completion percentages.</p><p>Batch Fill typically brings a product from 0% to 50\u201380% completion. The remaining gaps require your professional judgement:</p><ul class=\"detail-list\"><li><strong>Risk Assessment</strong> (Annex VII \u00a73) is never auto-filled because it requires a product-specific cybersecurity risk analysis against Annex I Part I. See the Risk Assessment guide (ch4_07) for help with this section.</li><li><strong>Declaration of Conformity</strong> (Annex VII \u00a77) requires a formal declaration per Art. 28 and Annex VI. This is assembled from your completed sections, not auto-generated.</li><li>Any fields that were <strong>skipped</strong> because no platform data existed will need manual entry.</li></ul><p>For sections where the AI Copilot is available, you can use the <strong>AI suggest</strong> button on individual fields to generate draft content. See the AI Copilot guide (ch4_06) for details on prompt keys, cost, and the review workflow.</p><div class=\"tip\">After completing your manual edits, use the section progress indicators at the top of the Technical File to track overall completeness. A fully documented Technical File is required before you can generate your Declaration of Conformity (Art. 28).</div>"
+    }
+  }
+}

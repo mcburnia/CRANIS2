@@ -1,0 +1,100 @@
+{
+  "title": "Annex I risk assessment",
+  "subtitle": "Documenting your cybersecurity risk assessment against the 13 essential requirements",
+  "chapter": "Chapter 4 \u00b7 Compliance Documentation",
+  "audienceTags": ["Compliance Officer", "Product Manager"],
+
+  "mainLine": [
+    { "id": "what", "label": "What is Annex I?", "sub": "13 essential requirements", "type": "terminus" },
+    { "id": "where", "label": "Where to document", "sub": "Technical File \u00a73" },
+    { "id": "requirements", "label": "The 13 requirements", "sub": "What to address", "type": "interchange" },
+    { "id": "evidence", "label": "Gathering evidence", "sub": "Cross-tab sources" },
+    { "id": "draft", "label": "Draft and refine", "sub": "AI-assisted or manual" },
+    { "id": "complete", "label": "Assessment complete", "sub": "Review and maintain", "type": "endpoint", "endColour": "green" }
+  ],
+
+  "feeders": [
+    { "id": "copilot", "target": "draft", "label": "AI Copilot", "sub": "section:risk_assessment" },
+    { "id": "crypto", "target": "requirements", "label": "Crypto Inventory", "sub": "Requirement (b)" }
+  ],
+
+  "branches": {
+    "above": [],
+    "below": []
+  },
+
+  "stations": {
+    "what": {
+      "icon": "\ud83d\udcdc",
+      "iconBg": "#F1EFE8",
+      "badge": "Context",
+      "badgeClass": "badge-gray",
+      "title": "What is the Annex I risk assessment?",
+      "sub": "The CRA's core cybersecurity requirements for your product",
+      "body": "<p>CRA Annex I Part I defines <strong>13 essential cybersecurity requirements</strong> that every product with digital elements must meet. Article 13(2) requires manufacturers to undertake a cybersecurity risk assessment during design and development, considering the product's intended and reasonably foreseeable use.</p><p>Annex VII \u00a73 requires this risk assessment to be documented in your Technical File. It is the third of eight sections and, for most products, the most substantive piece of compliance writing you will produce.</p><div class=\"info\">The risk assessment is not a checkbox exercise. It must demonstrate that your product's design and development decisions were informed by a systematic analysis of cybersecurity risks, mapped against each of the 13 essential requirements. Notified bodies and market surveillance authorities will use this document to evaluate your conformity.</div><p>Unlike most other Technical File sections, this one is <strong>never auto-filled</strong> by Batch Fill (ch4_05) because it requires product-specific analysis that only your team can provide. The AI Copilot can draft a starting point, but substantive input from your engineering and security teams is essential.</p>"
+    },
+    "where": {
+      "icon": "\ud83d\udcc2",
+      "iconBg": "#E1F5EE",
+      "badge": "Location",
+      "badgeClass": "badge-teal",
+      "title": "Where to document your risk assessment",
+      "sub": "Section 3 of 8 in the Technical File",
+      "body": "<p>From the sidebar, select <strong>Products</strong> and open your product. Navigate to <strong>Compliance \u2192 Technical File</strong>. The risk assessment is the third section, titled <strong>Cybersecurity Risk Assessment</strong> with the reference <em>Annex VII \u00a73, Article 13(2)</em>.</p><p>Click the section header to expand the editor. The editor supports rich text with headings, lists, and tables. Your assessment should be structured to address each of the 13 Annex I Part I requirements systematically.</p><p>A well-structured risk assessment typically runs to 500\u20131,500 words, depending on product complexity. For products in the Important or Critical categories, expect to write more, as the conformity assessment process (Art. 32) requires proportionally deeper evidence.</p><div class=\"tip\">Use headings that mirror the 13 requirements (e.g. \"(a) Design and development security\", \"(b) Cryptographic controls\"). This structure makes it straightforward for auditors and notified bodies to verify coverage.</div>"
+    },
+    "requirements": {
+      "icon": "\ud83d\udcdd",
+      "iconBg": "#E1F5EE",
+      "badge": "Requirements",
+      "badgeClass": "badge-teal",
+      "title": "The 13 essential requirements",
+      "sub": "What each requirement means for your product",
+      "body": "<p>Annex I Part I lists these requirements. Your risk assessment must address each one, even if briefly, explaining how your product meets it or why it does not apply:</p><ul class=\"detail-list\"><li><strong>(a) Design and development security</strong> \u2013 documented SDLC, threat modelling, secure coding practices, code review processes</li><li><strong>(b) Cryptographic controls</strong> \u2013 algorithms used, key management, transport encryption. See the Crypto Inventory tab for automated analysis of your SBOM.</li><li><strong>(c) Vulnerability handling</strong> \u2013 coordinated vulnerability disclosure policy, security contact, patch distribution. Cross-reference your Vulnerability Handling section (\u00a72(b)).</li><li><strong>(d) State of the art</strong> \u2013 alignment with current industry standards, best practices, and harmonised standards. Cross-reference your Standards Applied section (\u00a75).</li><li><strong>(e) Supply chain security</strong> \u2013 dependency management, SBOM completeness, supplier due diligence. Your Supply Chain tab provides evidence here.</li><li><strong>(f) Physical security</strong> \u2013 hardware-specific controls if applicable. For pure software products, document why this is not applicable with a brief justification.</li><li><strong>(g) Personnel security</strong> \u2013 secure development team practices, access controls, training</li><li><strong>(h) Incident handling</strong> \u2013 incident response plan, ENISA reporting readiness (Art. 14), escalation procedures</li><li><strong>(i) Business continuity</strong> \u2013 redundancy, backup strategy, disaster recovery for the product's security functions</li><li><strong>(j) Accessory controls</strong> \u2013 operational security measures, monitoring, alerting</li><li><strong>(k) Operativeness</strong> \u2013 continued operation of security functions during degraded conditions</li><li><strong>(l) Logging</strong> \u2013 audit trail capability, security event logging, retention</li><li><strong>(m) Risk documentation</strong> \u2013 the risk assessment itself and how it is maintained over the product lifecycle</li></ul><div class=\"warn\">Do not mark a requirement as \"not applicable\" without justification. The CRA expects manufacturers to explain why a requirement does not apply to their specific product. A bare \"N/A\" will not satisfy a notified body.</div>"
+    },
+    "crypto": {
+      "icon": "\ud83d\udd10",
+      "iconBg": "#FAEEDA",
+      "badge": "Helper",
+      "badgeClass": "badge-amber",
+      "title": "Crypto Inventory tab",
+      "sub": "Automated evidence for requirement (b)",
+      "body": "<p>The <strong>Crypto Inventory</strong> tab (under your product's Evidence tab) automatically scans your SBOM for cryptographic algorithms and classifies them into three tiers:</p><ul class=\"detail-list\"><li><strong>Broken</strong> (red) \u2013 algorithms with known vulnerabilities (e.g. MD5, SHA-1 for signing, DES). These require immediate replacement.</li><li><strong>Quantum-Vulnerable</strong> (amber) \u2013 algorithms that are secure today but vulnerable to quantum computing attacks (e.g. RSA-2048, ECDSA). These require a migration plan.</li><li><strong>Quantum-Safe</strong> (green) \u2013 algorithms resistant to both classical and quantum attacks. No action required.</li></ul><p>Reference these findings directly in your risk assessment under requirement (b). For example: \"SBOM analysis identifies 3 quantum-vulnerable algorithms (RSA-2048 in TLS, ECDSA P-256 in JWT signing, Diffie-Hellman in key exchange). A post-quantum migration plan is documented in the product roadmap.\"</p><div class=\"tip\">The Crypto Inventory updates automatically when your SBOM is refreshed. Keep your repository connected and your SBOM current to maintain accurate cryptographic evidence.</div>"
+    },
+    "evidence": {
+      "icon": "\ud83d\udcca",
+      "iconBg": "#E1F5EE",
+      "badge": "Evidence",
+      "badgeClass": "badge-teal",
+      "title": "Gathering evidence from across the platform",
+      "sub": "Your risk assessment draws on data from multiple tabs",
+      "body": "<p>A strong risk assessment references concrete evidence rather than making general claims. CRANIS2 collects evidence across several tabs that you can cite directly:</p><ul class=\"detail-list\"><li><strong>Supply Chain tab</strong> \u2013 dependency count, licence compliance, known vulnerable components. Supports requirements (a), (d), and (e).</li><li><strong>Security tab</strong> \u2013 vulnerability scan results, open findings, triage status, severity distribution. Supports requirements (a), (c), and (h).</li><li><strong>Crypto Inventory</strong> \u2013 algorithm classification and migration status. Supports requirement (b).</li><li><strong>Technical File \u00a72(b)</strong> \u2013 your vulnerability handling process documentation. Supports requirement (c).</li><li><strong>Technical File \u00a75</strong> \u2013 standards applied. Supports requirement (d).</li><li><strong>Technical File \u00a76</strong> \u2013 test reports and audit results. Supports requirements (a), (k), and (l).</li><li><strong>Stakeholders</strong> \u2013 documented security contacts and responsible roles. Supports requirement (g).</li></ul><p>When writing your assessment, use specific numbers and references: \"47 dependencies scanned, 3 critical findings triaged and remediated, SBOM covers 98% of components\" is far stronger than \"dependencies are managed.\"</p><div class=\"tip\">The AI Copilot's risk assessment prompt (see the next station) automatically pulls data from these sources to assemble its draft. Review the draft to ensure it accurately reflects your current platform state.</div>"
+    },
+    "copilot": {
+      "icon": "\u2728",
+      "iconBg": "#FAEEDA",
+      "badge": "AI assist",
+      "badgeClass": "badge-amber",
+      "title": "AI Copilot for risk assessment",
+      "sub": "AI-drafted starting point from your platform data",
+      "body": "<p>The AI Copilot can generate a draft risk assessment using data already in the platform. Click the <strong>sparkle icon</strong> (\u2728) next to the Risk Assessment section header to trigger it.</p><p>The draft uses prompt key <span class=\"code\">section:risk_assessment</span> (Pro plan required). It pulls your SBOM analysis, vulnerability findings, standards applied, test reports, and stakeholder data to produce a structured assessment addressing each of the 13 requirements.</p><p>Typical output is 800\u20131,200 words. The Copilot flags gaps with \"[TO COMPLETE: ...]\" markers where it lacks sufficient data to make a substantive statement. These markers indicate sections that require your manual input.</p><div class=\"warn\">The AI draft is a starting point, not a finished assessment. It cannot know your product's threat model, your organisation's risk appetite, or product-specific security decisions that are not captured in platform data. Always review and supplement with context that only your team holds.</div><p>Rate limit: 3 calls per product per day. Estimated token cost: approximately 3,500 tokens per invocation. See the AI Copilot guide (ch4_06) for full details on cost, caching, and the review workflow.</p>"
+    },
+    "draft": {
+      "icon": "\u270f\ufe0f",
+      "iconBg": "#E1F5EE",
+      "badge": "Draft",
+      "badgeClass": "badge-teal",
+      "title": "Draft and refine your assessment",
+      "sub": "Combine AI output with your team's product knowledge",
+      "body": "<p>Whether you start from an AI draft or write from scratch, the risk assessment editor supports rich text formatting. Structure your document with a heading per requirement and use the evidence gathered in the previous step.</p><p>For each requirement, aim to cover three points:</p><ul class=\"detail-list\"><li><strong>What the requirement asks</strong> \u2013 a brief paraphrase of the Annex I language</li><li><strong>How your product meets it</strong> \u2013 specific controls, processes, or design decisions, with references to platform evidence where available</li><li><strong>Residual risk</strong> \u2013 any known gaps or mitigations in progress, with timelines where applicable</li></ul><p>This structure demonstrates to auditors that you have systematically considered each requirement rather than providing a general narrative.</p><div class=\"info\">If your product falls into the Important Class II or Critical category, your risk assessment will be reviewed by a notified body during third-party conformity assessment (Art. 32). The level of detail and evidence should reflect this scrutiny.</div>"
+    },
+    "complete": {
+      "icon": "\u2705",
+      "iconBg": "#EAF3DE",
+      "badge": "Done",
+      "badgeClass": "badge-green",
+      "title": "Maintain your risk assessment over time",
+      "sub": "A living document that evolves with your product",
+      "body": "<p>Save your completed assessment. The Technical File section progress indicator will update to reflect the completed section.</p><p>The risk assessment is not a one-off document. CRA Article 13(2) requires that the assessment is maintained throughout the product's expected lifetime (minimum 5 years per Art. 13(8)). Update it when:</p><ul class=\"detail-list\"><li>A new product version is released with significant architectural changes</li><li>A critical vulnerability is discovered that changes your risk profile</li><li>Your SBOM analysis reveals new cryptographic weaknesses</li><li>Industry standards evolve (e.g. post-quantum migration deadlines)</li><li>A notified body or market surveillance authority requests additional detail</li></ul><p>CRANIS2's Evidence tab tracks changes over time through the Software Evidence Engine. Each update to your risk assessment is recorded, building a compliance audit trail that demonstrates ongoing diligence.</p><div class=\"tip\">Set a calendar reminder to review your risk assessment quarterly, or after each major release. The Copilot can regenerate its draft to highlight what has changed in your platform data since the last assessment.</div>"
+    }
+  }
+}

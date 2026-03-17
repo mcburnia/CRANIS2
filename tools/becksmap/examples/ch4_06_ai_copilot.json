@@ -1,0 +1,90 @@
+{
+  "title": "Using AI suggestions",
+  "subtitle": "How the AI Copilot drafts compliance content, and how you review and approve it",
+  "chapter": "Chapter 4 \u00b7 Compliance Documentation",
+  "audienceTags": ["Compliance Officer", "Product Manager"],
+
+  "mainLine": [
+    { "id": "what", "label": "What is the Copilot?", "sub": "AI-assisted drafting", "type": "terminus" },
+    { "id": "where", "label": "Where it appears", "sub": "Five capabilities" },
+    { "id": "trigger", "label": "Trigger and review", "sub": "Human in the loop", "type": "interchange" },
+    { "id": "prompts", "label": "Prompt architecture", "sub": "Three-layer system" },
+    { "id": "cost", "label": "Cost and limits", "sub": "Budgets and rate limits" },
+    { "id": "done", "label": "Copilot in practice", "sub": "Effective use", "type": "endpoint", "endColour": "green" }
+  ],
+
+  "feeders": [
+    { "id": "admin", "target": "prompts", "label": "Admin config", "sub": "Prompt editing" }
+  ],
+
+  "branches": {
+    "above": [],
+    "below": []
+  },
+
+  "stations": {
+    "what": {
+      "icon": "\u2728",
+      "iconBg": "#F1EFE8",
+      "badge": "Overview",
+      "badgeClass": "badge-gray",
+      "title": "What is the AI Copilot?",
+      "sub": "An AI drafting assistant for compliance documentation",
+      "body": "<p>The CRANIS2 AI Copilot is an integrated drafting assistant that generates compliance content based on data already in the platform. It uses Anthropic's Claude models to produce regulatory-quality text for technical file sections, obligation evidence, vulnerability triage, incident reports, and CRA category recommendations.</p><p>The Copilot follows a strict principle: <strong>it drafts, you decide</strong>. Every suggestion requires your explicit review and approval before it is applied. The platform never auto-applies AI-generated content.</p><div class=\"info\">The Copilot requires a <strong>Pro plan</strong>. Standard plan users see all the same fields but without the AI suggest buttons. Batch Fill (ch4_05) is available on all plans because it uses deterministic data assembly, not AI generation.</div><p>All Copilot output follows a quality standard (Q1\u2013Q7) that enforces British English, canonical regulatory terminology, professional tone, substantive depth, and structured output. Admins can view and edit these rules from the Copilot administration page.</p>"
+    },
+    "where": {
+      "icon": "\ud83d\udccd",
+      "iconBg": "#E1F5EE",
+      "badge": "Capabilities",
+      "badgeClass": "badge-teal",
+      "title": "Where the Copilot appears",
+      "sub": "Five distinct capabilities across the platform",
+      "body": "<p>The Copilot appears in five places, each with its own prompt key, rate limit, and regulatory purpose:</p><ul class=\"detail-list\"><li><strong>Technical File suggestions</strong> (prompt key: <span class=\"code\">suggest</span>) \u2013 drafts content for each of the eight Annex VII sections. Triggered by the sparkle icon on any section in the Technical File tab. 20 calls per product per hour.</li><li><strong>Obligation evidence</strong> (prompt key: <span class=\"code\">suggest</span>) \u2013 generates evidence narratives for each of 19 CRA obligations (Art. 13 through Art. 32). Same rate pool as technical file suggestions.</li><li><strong>Vulnerability triage</strong> (prompt key: <span class=\"code\">vulnerability_triage</span>) \u2013 assesses CVE findings and recommends dismiss, acknowledge, or escalate with a confidence score. Available as single-finding or bulk triage (up to 20 findings per call). 5 calls per product per hour.</li><li><strong>Incident report drafting</strong> (prompt key: <span class=\"code\">incident_report_draft</span>) \u2013 drafts ENISA notification content for the three CRA Article 14 reporting stages (24-hour early warning, 72-hour notification, 14-day final report). 5 calls per report per day.</li><li><strong>Category recommendation</strong> (prompt key: <span class=\"code\">category_recommendation</span>) \u2013 analyses your product against CRA Art. 6\u20138 and Annex III to suggest the appropriate risk category (Default, Important I, Important II, or Critical). Uses Claude Opus for deeper reasoning. 5 calls per product per day.</li></ul><div class=\"tip\">Each capability uses only data already in CRANIS2: your SBOM, vulnerability scan results, repository metadata, stakeholder records, and existing documentation. The Copilot cannot access external sources or browse the internet.</div>"
+    },
+    "trigger": {
+      "icon": "\ud83d\udd0d",
+      "iconBg": "#E1F5EE",
+      "badge": "Workflow",
+      "badgeClass": "badge-teal",
+      "title": "Trigger, review, and approve",
+      "sub": "You are always the decision-maker",
+      "body": "<p>Every Copilot interaction follows the same three-step pattern:</p><p><strong>1. Trigger.</strong> Click the sparkle icon (\u2728) next to any supported field or section. For bulk operations, use the \"AI Triage All\" button (vulnerability findings) or \"Draft with AI\" button (incident reports). The button is only visible on Pro plans and only active when the field is empty or the action is available.</p><p><strong>2. Review.</strong> The Copilot generates a draft and presents it in the UI. For technical file sections and obligation evidence, the draft appears in the editor with a highlighted background. For vulnerability triage, you see the recommended action, confidence percentage, and reasoning. For incident reports, the draft populates the relevant stage fields.</p><p><strong>3. Approve or discard.</strong> You can accept the suggestion (which writes it to the field), edit it before accepting, or discard it entirely. No suggestion is saved until you explicitly confirm.</p><div class=\"warn\">Copilot suggestions are starting points, not finished compliance documentation. You are responsible for verifying accuracy, adding product-specific context, and ensuring the final text meets your organisation's quality requirements. Regulatory accountability remains with you as the manufacturer.</div><p>For vulnerability triage, an additional option exists: <strong>auto-dismiss</strong>. When enabled, findings where the Copilot's confidence is 85% or higher are automatically dismissed. This is opt-in per triage run and can be disabled at any time.</p>"
+    },
+    "prompts": {
+      "icon": "\ud83d\udcdd",
+      "iconBg": "#E1F5EE",
+      "badge": "Architecture",
+      "badgeClass": "badge-teal",
+      "title": "How prompts are structured",
+      "sub": "Three-layer system with admin-editable prompts",
+      "body": "<p>The Copilot constructs each request using three layers:</p><ul class=\"detail-list\"><li><strong>Quality Standard preamble</strong> (prompt key: <span class=\"code\">quality_standard</span>) \u2013 seven rules (Q1\u2013Q7) that govern language, terminology, tone, consistency, depth, output format, and guardrails. Applied to every request.</li><li><strong>Regulatory context</strong> \u2013 section-specific guidance (e.g. <span class=\"code\">section:risk_assessment</span>) or obligation-specific guidance (e.g. <span class=\"code\">obligation:art_13</span>) that provides the relevant CRA Articles, required content, and expected structure.</li><li><strong>Capability prompt</strong> \u2013 the operational instructions for the specific task (suggest, triage, draft, or recommend).</li></ul><p>This layered approach means the Copilot always writes in a consistent voice with accurate regulatory references, regardless of which capability is invoked.</p><p>There are <strong>32 prompts</strong> in total: 1 foundation, 5 capabilities, 8 section guidance, and 19 obligation guidance prompts. All are stored in the <span class=\"code\">copilot_prompts</span> database table with version tracking.</p><div class=\"tip\">Responses are cached for 24 hours using a SHA-256 hash of the request context. If you trigger the same suggestion twice for the same product without changing the underlying data, the cached response is returned instantly at no additional token cost.</div>"
+    },
+    "admin": {
+      "icon": "\u2699\ufe0f",
+      "iconBg": "#FAEEDA",
+      "badge": "Admin",
+      "badgeClass": "badge-amber",
+      "title": "Admin prompt configuration",
+      "sub": "Customise Copilot behaviour from the admin panel",
+      "body": "<p>Organisation admins can view and edit all Copilot prompts from <strong>Admin \u2192 Copilot</strong>. The admin panel shows four prompt categories: Foundation (quality standard), Capabilities, Section Guidance, and Obligation Guidance.</p><p>For each prompt, admins can adjust:</p><ul class=\"detail-list\"><li><strong>System prompt text</strong> \u2013 the instructions sent to the AI model</li><li><strong>Model selection</strong> \u2013 choose between Claude Sonnet, Opus, or Haiku depending on the quality and speed trade-off required</li><li><strong>Max tokens</strong> \u2013 controls the maximum length of generated responses</li><li><strong>Temperature</strong> \u2013 controls output variability (lower = more consistent, higher = more creative)</li><li><strong>Enabled/disabled toggle</strong> \u2013 turn individual capabilities on or off</li></ul><p>Changes take effect immediately for all users in the organisation. All edits are version-tracked for audit purposes.</p><div class=\"warn\">Modifying prompts affects the quality and accuracy of Copilot output across your organisation. Test changes on a single product before rolling out widely. The quality standard (Q1\u2013Q7) is particularly sensitive; altering it changes the tone and format of all generated content.</div>"
+    },
+    "cost": {
+      "icon": "\ud83d\udcb0",
+      "iconBg": "#E1F5EE",
+      "badge": "Limits",
+      "badgeClass": "badge-teal",
+      "title": "Token budgets and rate limits",
+      "sub": "Built-in cost protection at organisation and feature level",
+      "body": "<p>CRANIS2 enforces cost controls at two levels:</p><p><strong>Monthly token budget.</strong> Each organisation has a monthly token allowance (default: 500,000 tokens). This resets on the first of each month. Admins can view current usage from the billing page. When the budget is exhausted, Copilot buttons show a budget-exceeded message and no further AI calls are made until the next month or until an admin adjusts the limit.</p><p><strong>Per-feature rate limits.</strong> Each capability has its own rate limit to prevent accidental overuse:</p><ul class=\"detail-list\"><li><strong>Suggestions</strong> (technical file and obligations) \u2013 20 per product per hour</li><li><strong>Vulnerability triage</strong> \u2013 5 per product per hour</li><li><strong>Risk assessment</strong> \u2013 3 per product per day</li><li><strong>Incident report drafting</strong> \u2013 5 per report per day</li><li><strong>Category recommendation</strong> \u2013 5 per product per day</li></ul><p>When a rate limit is reached, the button remains visible but shows a cooldown timer. Usage resets automatically when the window expires.</p><div class=\"info\">The 24-hour response cache (mentioned under Prompt Architecture) further reduces token consumption. Repeated requests with identical context return cached results at zero additional cost.</div>"
+    },
+    "done": {
+      "icon": "\u2705",
+      "iconBg": "#EAF3DE",
+      "badge": "Summary",
+      "badgeClass": "badge-green",
+      "title": "Using the Copilot effectively",
+      "sub": "Practical guidance for day-to-day compliance work",
+      "body": "<p>The Copilot is most effective when used as a structured first draft that you then refine with product-specific knowledge. Here are practical patterns:</p><ul class=\"detail-list\"><li><strong>New product onboarding.</strong> Run Batch Fill first (ch4_05) to populate deterministic fields, then use Copilot suggestions on the remaining sections (risk assessment, design and development, support period). This combination typically achieves 80\u201390% completion in under 30 minutes.</li><li><strong>Vulnerability scan review.</strong> After a scan imports new findings, use \"AI Triage All\" with auto-dismiss enabled for high-confidence items. Manually review the remaining findings. This reduces triage time from hours to minutes for large scan imports.</li><li><strong>Incident reporting.</strong> When a vulnerability requires ENISA notification (Art. 14), use \"Draft with AI\" for the early warning stage, then refine for the 72-hour notification and final report as more information becomes available.</li><li><strong>Obligation evidence.</strong> Use Copilot suggestions to draft evidence notes for obligations where the platform has relevant data (SBOM completeness, vulnerability handling, security updates). Add manual evidence for obligations that depend on organisational processes (market surveillance registration, conformity assessment).</li></ul><div class=\"tip\">The Copilot works best when your product has rich platform data: a connected repository, a current SBOM, vulnerability scan results, and documented stakeholders. The more data available, the more substantive the generated content.</div>"
+    }
+  }
+}
