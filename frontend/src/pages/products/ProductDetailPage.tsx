@@ -37,20 +37,42 @@ import ActivityTab from './product-detail/ActivityTab';
 import RiskFindingsTab from './product-detail/RiskFindingsTab';
 import DependenciesTab from './product-detail/DependenciesTab';
 
-const TABS: { key: TabKey; label: string; icon: typeof Package }[] = [
-  { key: 'overview', label: 'Overview', icon: Package },
-  { key: 'obligations', label: 'Obligations', icon: Shield },
-  { key: 'technical-file', label: 'Technical File', icon: FileText },
-  { key: 'activity', label: 'Activity', icon: History },
-  { key: 'risk-findings', label: 'Risk Findings', icon: AlertTriangle },
-  { key: 'dependencies', label: 'Dependencies', icon: GitBranch },
-  { key: 'supply-chain', label: 'Supply Chain', icon: Package },
-  { key: 'crypto-inventory', label: 'Crypto Inventory', icon: Lock },
-  { key: 'field-issues', label: 'Field Issues', icon: ClipboardList },
-  { key: 'incidents', label: 'Incidents', icon: Siren },
-  { key: 'compliance-vault', label: 'Compliance Vault', icon: Archive },
-  { key: 'software-evidence', label: 'Software Evidence', icon: Calculator },
+// ── Two-tier tab groups ─────────────────────────────────────────────
+interface TabDef { key: TabKey; label: string; icon: typeof Package }
+interface TabGroup { key: string; label: string; icon: typeof Package; tabs: TabDef[] }
+
+const TAB_GROUPS: TabGroup[] = [
+  { key: 'overview', label: 'Overview', icon: Package, tabs: [
+    { key: 'overview', label: 'Overview', icon: Package },
+  ]},
+  { key: 'supply-chain-group', label: 'Supply Chain', icon: GitBranch, tabs: [
+    { key: 'dependencies', label: 'Dependencies', icon: GitBranch },
+    { key: 'supply-chain', label: 'Risk Assessment', icon: Package },
+    { key: 'crypto-inventory', label: 'Crypto Inventory', icon: Lock },
+  ]},
+  { key: 'compliance-group', label: 'Compliance', icon: Shield, tabs: [
+    { key: 'obligations', label: 'Obligations', icon: Shield },
+    { key: 'technical-file', label: 'Technical File', icon: FileText },
+    { key: 'compliance-vault', label: 'Compliance Vault', icon: Archive },
+  ]},
+  { key: 'security-group', label: 'Security', icon: AlertTriangle, tabs: [
+    { key: 'risk-findings', label: 'Risk Findings', icon: AlertTriangle },
+    { key: 'field-issues', label: 'Field Issues', icon: ClipboardList },
+    { key: 'incidents', label: 'Incidents', icon: Siren },
+  ]},
+  { key: 'evidence-group', label: 'Evidence', icon: Calculator, tabs: [
+    { key: 'software-evidence', label: 'Software Evidence', icon: Calculator },
+    { key: 'activity', label: 'Activity Log', icon: History },
+  ]},
 ];
+
+// Lookup: given a tab key, which group does it belong to?
+const TAB_TO_GROUP: Record<string, string> = {};
+for (const group of TAB_GROUPS) {
+  for (const tab of group.tabs) {
+    TAB_TO_GROUP[tab.key] = group.key;
+  }
+}
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
@@ -61,6 +83,20 @@ export default function ProductDetailPage() {
   const [searchParams] = useSearchParams();
   const initialTab = (searchParams.get('tab') as TabKey) || 'overview';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+  const activeGroup = TAB_TO_GROUP[activeTab] || 'overview';
+  const currentGroup = TAB_GROUPS.find(g => g.key === activeGroup);
+
+  const handleGroupClick = (group: TabGroup) => {
+    // When clicking a group, select its first tab
+    const firstTab = group.tabs[0].key;
+    setActiveTab(firstTab);
+    window.history.replaceState({}, '', `?tab=${firstTab}`);
+  };
+
+  const handleTabClick = (tabKey: TabKey) => {
+    setActiveTab(tabKey);
+    window.history.replaceState({}, '', `?tab=${tabKey}`);
+  };
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '', distributionModel: '', lifecycleStatus: '', marketPlacementDate: '', provider: '', instanceUrl: '' });
   const [availableProviders, setAvailableProviders] = useState<ProviderInfo[]>([]);
@@ -636,22 +672,38 @@ export default function ProductDetailPage() {
         )}
       </div>
 
-      {/* Tab bar */}
-      <div className="pd-tabs">
-        {TABS.map(tab => (
+      {/* Tab bar — tier 1: groups */}
+      <div className="pd-tab-groups">
+        {TAB_GROUPS.map(group => (
           <button
-            key={tab.key}
-            className={`pd-tab ${activeTab === tab.key ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
+            key={group.key}
+            className={`pd-tab-group ${activeGroup === group.key ? 'active' : ''}`}
+            onClick={() => handleGroupClick(group)}
           >
-            <tab.icon size={16} />
-            {tab.label}
-            {tab.key === 'dependencies' && sbomData.packageCount && sbomData.packageCount > 0 && (
-              <span className="pd-tab-count">{sbomData.packageCount}</span>
-            )}
+            <group.icon size={16} />
+            {group.label}
           </button>
         ))}
       </div>
+
+      {/* Tab bar — tier 2: tabs within group (hidden for single-tab groups) */}
+      {currentGroup && currentGroup.tabs.length > 1 && (
+        <div className="pd-tabs">
+          {currentGroup.tabs.map(tab => (
+            <button
+              key={tab.key}
+              className={`pd-tab ${activeTab === tab.key ? 'active' : ''}`}
+              onClick={() => handleTabClick(tab.key)}
+            >
+              <tab.icon size={14} />
+              {tab.label}
+              {tab.key === 'dependencies' && sbomData.packageCount && sbomData.packageCount > 0 && (
+                <span className="pd-tab-count">{sbomData.packageCount}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Tab content */}
       <div className="pd-tab-content">
