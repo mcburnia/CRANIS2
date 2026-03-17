@@ -257,8 +257,8 @@ Updated: <date>
 ### .claude/.env
 
 ```
-CRANIS2_EVIDENCE_REPO=<absolute-path-to-evidence-repo>
-CRANIS2_PROJECT_NAME=<project-name>
+EVIDENCE_REPO=<absolute-path-to-evidence-repo>
+PROJECT_NAME=<project-name>
 ```
 
 ### Evidence Repository Setup

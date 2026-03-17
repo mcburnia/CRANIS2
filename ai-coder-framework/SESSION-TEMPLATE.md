@@ -86,7 +86,7 @@ reviewed_date: <YYYY-MM-DD, if reviewed>
 ### Writing Uncertainty Statements
 
 Strong:
-> "It was uncertain whether the three-tier SBOM generation approach (API, lockfile, import scanning) would produce consistent dependency counts across all package managers, given that each tier has different visibility into transitive dependencies."
+> "It was uncertain whether the event-driven architecture would maintain message ordering guarantees under high concurrency, given that the broker does not natively support exactly-once delivery and our consumers must be idempotent."
 
 Weak:
 > "We were not sure if it would work."
@@ -94,7 +94,7 @@ Weak:
 ### Writing Advance Statements
 
 Strong:
-> "Developed a reconciliation algorithm that merges dependency data from three independent sources into a single SPDX-compliant SBOM, resolving version conflicts by preferring the most specific source. This approach was not documented in existing tooling."
+> "Developed an idempotent consumer pattern using content-based deduplication with a sliding window, allowing the system to tolerate duplicate deliveries without data corruption. This approach was not covered by the broker's documentation or existing client libraries."
 
 Weak:
 > "We built the feature successfully."

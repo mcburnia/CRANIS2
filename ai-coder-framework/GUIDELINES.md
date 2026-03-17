@@ -27,7 +27,7 @@ Key points to internalise:
 Before your first session on a project, verify that the session capture tooling is configured:
 
 1. Check that `.claude/hooks.json` exists and contains a `SessionEnd` hook
-2. Check that `.claude/.env` contains `CRANIS2_EVIDENCE_REPO` pointing to the evidence repository
+2. Check that `.claude/.env` contains `EVIDENCE_REPO` pointing to the evidence repository
 3. Verify the evidence repository exists and is a valid git repository
 4. Run a test session and confirm a transcript appears in the evidence repo
 
@@ -92,14 +92,15 @@ Each distinct piece of work gets its own commit. Do not batch unrelated changes 
 Write commit messages with a concise subject line and a detailed body:
 
 ```
-feat: add lockfile parser for pnpm workspaces
+feat: add retry logic with exponential backoff for webhook delivery
 
-Parse pnpm-lock.yaml files to extract dependency trees including
-workspace protocol references. Handles nested importers and optional
-dependencies. Required for SBOM generation on monorepo projects
-where pnpm is the package manager.
+Implement a retry queue for failed webhook deliveries using
+exponential backoff (1s, 2s, 4s, 8s, max 60s) with jitter.
+Failed deliveries are persisted to the database and retried
+up to 5 times before being marked as permanently failed.
 
-Tested against 3 real-world pnpm lockfiles with varying complexity.
+Tested against simulated 503, timeout, and connection-refused
+scenarios.
 ```
 
 The subject line says what changed. The body says why it changed and any relevant context. A future developer (or auditor) should be able to understand the change without reading the diff.
