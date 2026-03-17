@@ -411,6 +411,119 @@ export async function getLanguages(
   }
 }
 
+// ── Normalised commit type ─────────────────────────────────────────
+export interface NormalisedCommit {
+  sha: string;
+  authorName: string;
+  authorEmail: string;
+  authorLogin: string;
+  authoredAt: string;
+  messageSummary: string;
+  additions: number;
+  deletions: number;
+  filesChanged: number;
+}
+
+/** Fetch paginated commit history from a repo. */
+export async function getCommitsPaginated(
+  prov: RepoProvider | string,
+  token: string,
+  owner: string,
+  repo: string,
+  opts: { since?: string; maxPages?: number } = {},
+  instanceUrl?: string
+): Promise<NormalisedCommit[]> {
+  const maxPages = opts.maxPages || 50;
+  const since = opts.since;
+
+  if (prov === 'github') {
+    const commits = await github.getCommitsPaginated(token, owner, repo, { since, maxPages });
+    return commits.map(c => ({
+      sha: c.sha,
+      authorName: c.commit?.author?.name || '',
+      authorEmail: c.commit?.author?.email || '',
+      authorLogin: c.author?.login || '',
+      authoredAt: c.commit?.author?.date || '',
+      messageSummary: (c.commit?.message || '').split('\n')[0].slice(0, 500),
+      additions: c.stats?.additions || 0,
+      deletions: c.stats?.deletions || 0,
+      filesChanged: c.files?.length || 0,
+    }));
+  }
+
+  if (prov === 'codeberg' || prov === 'gitea' || prov === 'forgejo') {
+    const apiBase = instanceUrl
+      ? `${instanceUrl}/api/v1`
+      : prov === 'codeberg' ? 'https://codeberg.org/api/v1' : '';
+    if (!apiBase) return [];
+
+    const allCommits: NormalisedCommit[] = [];
+    for (let page = 1; page <= maxPages; page++) {
+      try {
+        const sinceParam = since ? `&since=${since}` : '';
+        const url = `${apiBase}/repos/${owner}/${repo}/commits?limit=50&page=${page}${sinceParam}`;
+        const res = await fetch(url, {
+          headers: { Authorization: `token ${token}`, Accept: 'application/json' },
+        });
+        if (!res.ok) break;
+        const commits: any[] = await res.json();
+        if (!commits || commits.length === 0) break;
+        for (const c of commits) {
+          allCommits.push({
+            sha: c.sha || '',
+            authorName: c.commit?.author?.name || '',
+            authorEmail: c.commit?.author?.email || '',
+            authorLogin: c.author?.login || c.committer?.login || '',
+            authoredAt: c.commit?.author?.date || c.created || '',
+            messageSummary: (c.commit?.message || '').split('\n')[0].slice(0, 500),
+            additions: 0, // Gitea list endpoint doesn't include stats
+            deletions: 0,
+            filesChanged: 0,
+          });
+        }
+        if (commits.length < 50) break;
+      } catch { break; }
+    }
+    return allCommits;
+  }
+
+  if (prov === 'gitlab') {
+    if (!instanceUrl) return [];
+    const apiBase = `${instanceUrl}/api/v4`;
+    const projectId = encodeURIComponent(`${owner}/${repo}`);
+    const allCommits: NormalisedCommit[] = [];
+    for (let page = 1; page <= maxPages; page++) {
+      try {
+        const sinceParam = since ? `&since=${since}` : '';
+        const url = `${apiBase}/projects/${projectId}/repository/commits?per_page=100&page=${page}${sinceParam}`;
+        const res = await fetch(url, {
+          headers: { 'PRIVATE-TOKEN': token, Accept: 'application/json' },
+        });
+        if (!res.ok) break;
+        const commits: any[] = await res.json();
+        if (!commits || commits.length === 0) break;
+        for (const c of commits) {
+          allCommits.push({
+            sha: c.id || c.short_id || '',
+            authorName: c.author_name || '',
+            authorEmail: c.author_email || '',
+            authorLogin: '',
+            authoredAt: c.authored_date || c.created_at || '',
+            messageSummary: (c.title || c.message || '').slice(0, 500),
+            additions: c.stats?.additions || 0,
+            deletions: c.stats?.deletions || 0,
+            filesChanged: 0,
+          });
+        }
+        if (commits.length < 100) break;
+      } catch { break; }
+    }
+    return allCommits;
+  }
+
+  return [];
+}
+
 /** Fetch raw file content from a repo. Returns null if file not found (404). */
 export async function getFileContent(
   prov: RepoProvider | string,

@@ -1,13 +1,15 @@
 /**
- * SoftwareEvidenceTab — Software Evidence Engine: Effort & Cost Estimation.
+ * SoftwareEvidenceTab — Software Evidence Engine.
  *
  * Phase A: consent, LOC analysis, effort/cost estimates, executive summary, Markdown export.
+ * Phase B: commit history, developer attribution, commit activity chart.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import {
   Calculator, Shield, Loader2, Download, RefreshCw,
   FileCode, Users, Clock, DollarSign, AlertTriangle, CheckCircle2, Lock,
+  GitCommit, UserCheck,
 } from 'lucide-react';
 
 interface EffortEstimate {
@@ -53,6 +55,33 @@ interface ConsentData {
   sourceCodeConsent: boolean;
 }
 
+interface CommitSummary {
+  totalCommits: number;
+  firstCommitDate: string | null;
+  lastCommitDate: string | null;
+  activeMonths: number;
+  totalAdditions: number;
+  totalDeletions: number;
+  rewriteRatio: number;
+}
+
+interface DeveloperData {
+  authorName: string;
+  authorEmail: string;
+  authorLogin: string;
+  commitCount: number;
+  additions: number;
+  deletions: number;
+  firstCommitAt: string;
+  lastCommitAt: string;
+  contributionPct: number;
+}
+
+interface CommitActivityPoint {
+  month: string;
+  commits: number;
+}
+
 export default function SoftwareEvidenceTab({ productId }: { productId: string }) {
   const [consent, setConsent] = useState<boolean | null>(null);
   const [data, setData] = useState<SEEData | null>(null);
@@ -60,6 +89,12 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
   const [scanning, setScanning] = useState(false);
   const [consentUpdating, setConsentUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Phase B state
+  const [commitSummary, setCommitSummary] = useState<CommitSummary | null>(null);
+  const [developers, setDevelopers] = useState<DeveloperData[]>([]);
+  const [commitActivity, setCommitActivity] = useState<CommitActivityPoint[]>([]);
+  const [ingesting, setIngesting] = useState(false);
 
   const token = localStorage.getItem('session_token');
   const headers = { Authorization: `Bearer ${token}` } as Record<string, string>;
@@ -84,10 +119,32 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
     } catch { /* ignore */ }
   }, [productId]);
 
+  const fetchCommitData = useCallback(async () => {
+    try {
+      const [summaryRes, devsRes, activityRes] = await Promise.all([
+        fetch(`/api/products/${productId}/see/commits`, { headers }),
+        fetch(`/api/products/${productId}/see/developers`, { headers }),
+        fetch(`/api/products/${productId}/see/commits/activity`, { headers }),
+      ]);
+      if (summaryRes.ok) {
+        const s = await summaryRes.json();
+        if (s.totalCommits > 0) setCommitSummary(s);
+      }
+      if (devsRes.ok) {
+        const d = await devsRes.json();
+        if (d.developers?.length > 0) setDevelopers(d.developers);
+      }
+      if (activityRes.ok) {
+        const a = await activityRes.json();
+        if (a.activity?.length > 0) setCommitActivity(a.activity);
+      }
+    } catch { /* ignore */ }
+  }, [productId]);
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchConsent(), fetchData()]).finally(() => setLoading(false));
-  }, [fetchConsent, fetchData]);
+    Promise.all([fetchConsent(), fetchData(), fetchCommitData()]).finally(() => setLoading(false));
+  }, [fetchConsent, fetchData, fetchCommitData]);
 
   const handleConsentToggle = async () => {
     setConsentUpdating(true);
@@ -136,6 +193,26 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
 
   const handleExport = () => {
     window.open(`/api/products/${productId}/see/estimate/export`, '_blank');
+  };
+
+  const handleIngestCommits = async () => {
+    setIngesting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/products/${productId}/see/commits/ingest`, {
+        method: 'POST', headers,
+      });
+      if (res.ok) {
+        await fetchCommitData();
+      } else {
+        const err = await res.json();
+        setError(err.message || err.error || 'Commit ingestion failed');
+      }
+    } catch {
+      setError('Commit ingestion failed');
+    } finally {
+      setIngesting(false);
+    }
   };
 
   if (loading) {
@@ -359,6 +436,129 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
         </div>
       </div>
 
+      {/* ── Phase B: Commit History & Developer Attribution ──────────── */}
+
+      {/* Ingest button (if no commits yet) or commit summary */}
+      {!commitSummary ? (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div>
+            <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+              <GitCommit size={14} style={{ verticalAlign: -2, marginRight: 6 }} />Commit History
+            </h4>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0 }}>
+              Ingest commit history to see developer attribution and activity metrics.
+            </p>
+          </div>
+          <button onClick={handleIngestCommits} disabled={ingesting} style={btnStyle}>
+            {ingesting ? <><Loader2 size={14} className="spin" /> Ingesting...</> : <><GitCommit size={14} /> Ingest Commits</>}
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Commit summary cards */}
+          <div style={{
+            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
+                <GitCommit size={14} style={{ verticalAlign: -2, marginRight: 6 }} />Commit History
+              </h4>
+              <button onClick={handleIngestCommits} disabled={ingesting} style={{ ...btnStyle, fontSize: 11, padding: '4px 10px' }}>
+                {ingesting ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />} Update
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
+              <MiniStat label="Total commits" value={commitSummary.totalCommits.toLocaleString()} />
+              <MiniStat label="Active months" value={String(commitSummary.activeMonths)} />
+              <MiniStat label="Additions" value={commitSummary.totalAdditions.toLocaleString()} />
+              <MiniStat label="Deletions" value={commitSummary.totalDeletions.toLocaleString()} />
+              <MiniStat label="Rewrite ratio" value={`${commitSummary.rewriteRatio}x`} />
+              <MiniStat label="First commit" value={commitSummary.firstCommitDate ? new Date(commitSummary.firstCommitDate).toLocaleDateString('en-GB') : '–'} />
+            </div>
+          </div>
+
+          {/* Commit activity chart */}
+          {commitActivity.length > 0 && (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20 }}>
+              <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text)' }}>
+                Commit Activity
+              </h4>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 80 }}>
+                {commitActivity.map((point, i) => {
+                  const maxCommits = Math.max(...commitActivity.map(p => p.commits), 1);
+                  const height = Math.max(2, (point.commits / maxCommits) * 72);
+                  return (
+                    <div
+                      key={i}
+                      title={`${point.month}: ${point.commits} commits`}
+                      style={{
+                        flex: 1, minWidth: 4, maxWidth: 20,
+                        height, background: 'var(--teal, #1D9E75)', borderRadius: '2px 2px 0 0',
+                        opacity: 0.7,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-3)', marginTop: 4 }}>
+                <span>{commitActivity[0]?.month}</span>
+                <span>{commitActivity[commitActivity.length - 1]?.month}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Developer attribution table */}
+          {developers.length > 0 && (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20 }}>
+              <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text)' }}>
+                <UserCheck size={14} style={{ verticalAlign: -2, marginRight: 6 }} />Developer Attribution
+              </h4>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    <th style={thStyle}>Developer</th>
+                    <th style={{ ...thStyle, textAlign: 'right' }}>Commits</th>
+                    <th style={{ ...thStyle, textAlign: 'right' }}>Additions</th>
+                    <th style={{ ...thStyle, textAlign: 'right' }}>Deletions</th>
+                    <th style={{ ...thStyle, textAlign: 'right' }}>Contribution</th>
+                    <th style={{ ...thStyle, textAlign: 'right' }}>Active period</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {developers.map((dev, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={tdStyle}>
+                        <strong>{dev.authorName}</strong>
+                        {dev.authorLogin && <span style={{ color: 'var(--text-3)', marginLeft: 6, fontSize: 11 }}>@{dev.authorLogin}</span>}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: 'right' }}>{dev.commitCount.toLocaleString()}</td>
+                      <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--teal, #1D9E75)' }}>+{dev.additions.toLocaleString()}</td>
+                      <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--coral, #D85A30)' }}>-{dev.deletions.toLocaleString()}</td>
+                      <td style={{ ...tdStyle, textAlign: 'right' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                          <div style={{ width: 60, height: 6, background: 'var(--gray-lt, #F1EFE8)', borderRadius: 3, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${dev.contributionPct}%`, background: 'var(--teal, #1D9E75)', borderRadius: 3 }} />
+                          </div>
+                          <span style={{ fontSize: 11, minWidth: 36 }}>{dev.contributionPct}%</span>
+                        </div>
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: 'right', fontSize: 11, color: 'var(--text-3)' }}>
+                        {dev.firstCommitAt ? new Date(dev.firstCommitAt).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }) : '–'}
+                        {' – '}
+                        {dev.lastCommitAt ? new Date(dev.lastCommitAt).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }) : '–'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
       {/* Consent revoke */}
       <div style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
         <CheckCircle2 size={12} /> Source code analysis enabled.
@@ -408,6 +608,15 @@ function ClassificationBar({ label, value, total, colour }: { label: string; val
       <div style={{ height: 6, background: 'var(--gray-lt)', borderRadius: 3, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pct}%`, background: colour, borderRadius: 3 }} />
       </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'Outfit, sans-serif', marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: 'Outfit, sans-serif' }}>{value}</div>
     </div>
   );
 }

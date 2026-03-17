@@ -2347,6 +2347,46 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_see_analysis_product ON see_analysis_runs(product_id, created_at DESC);
     `);
 
+    // ── SEE commits (Phase B) ────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS see_commits (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id      VARCHAR(255) NOT NULL,
+        sha             VARCHAR(64) NOT NULL,
+        author_name     VARCHAR(255),
+        author_email    VARCHAR(255),
+        author_login    VARCHAR(255),
+        authored_at     TIMESTAMPTZ,
+        message_summary TEXT,
+        additions       INT NOT NULL DEFAULT 0,
+        deletions       INT NOT NULL DEFAULT 0,
+        files_changed   INT NOT NULL DEFAULT 0,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(product_id, sha)
+      );
+      CREATE INDEX IF NOT EXISTS idx_see_commits_product ON see_commits(product_id, authored_at DESC);
+    `);
+
+    // ── SEE developers (Phase B) ──────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS see_developers (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id      VARCHAR(255) NOT NULL,
+        author_name     VARCHAR(255) NOT NULL,
+        author_email    VARCHAR(255),
+        author_login    VARCHAR(255),
+        commit_count    INT NOT NULL DEFAULT 0,
+        additions       INT NOT NULL DEFAULT 0,
+        deletions       INT NOT NULL DEFAULT 0,
+        first_commit_at TIMESTAMPTZ,
+        last_commit_at  TIMESTAMPTZ,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(product_id, author_email)
+      );
+      CREATE INDEX IF NOT EXISTS idx_see_developers_product ON see_developers(product_id);
+    `);
+
   } finally {
     client.release();
   }

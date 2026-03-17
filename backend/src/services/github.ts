@@ -125,6 +125,48 @@ export async function getContributors(token: string, owner: string, repo: string
 }
 
 /**
+ * Get commit history (paginated, READ-ONLY).
+ * Returns commits from newest to oldest, up to maxPages pages.
+ */
+export interface GitHubCommitItem {
+  sha: string;
+  commit: {
+    author: { name: string; email: string; date: string };
+    message: string;
+  };
+  author?: { login: string; avatar_url: string } | null;
+  stats?: { additions: number; deletions: number; total: number };
+  files?: { filename: string }[];
+}
+
+export async function getCommitsPaginated(
+  token: string, owner: string, repo: string,
+  opts: { since?: string; maxPages?: number; perPage?: number } = {}
+): Promise<GitHubCommitItem[]> {
+  const perPage = opts.perPage || 100;
+  const maxPages = opts.maxPages || 50;
+  const sinceParam = opts.since ? `&since=${opts.since}` : '';
+  const allCommits: GitHubCommitItem[] = [];
+
+  for (let page = 1; page <= maxPages; page++) {
+    try {
+      const commits = await githubGet<GitHubCommitItem[]>(
+        `/repos/${owner}/${repo}/commits?per_page=${perPage}&page=${page}${sinceParam}`,
+        token
+      );
+      if (!commits || commits.length === 0) break;
+      allCommits.push(...commits);
+      if (commits.length < perPage) break; // last page
+    } catch (err: any) {
+      if (err.message?.includes('409')) break; // empty repo
+      throw err;
+    }
+  }
+
+  return allCommits;
+}
+
+/**
  * Get repository language breakdown (READ-ONLY)
  * Returns { "TypeScript": 12345, "JavaScript": 6789, ... } (bytes)
  */

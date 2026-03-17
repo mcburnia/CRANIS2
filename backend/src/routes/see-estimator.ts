@@ -1,12 +1,19 @@
 /**
- * SEE Estimator Routes — Software Evidence Engine effort & cost estimation.
+ * SEE Routes — Software Evidence Engine.
  *
+ * Phase A (effort estimation):
  * POST /:productId/see/consent           – Set/revoke source code consent
  * GET  /:productId/see/consent           – Get consent status
  * POST /:productId/see/estimate          – Run effort estimation scan
  * GET  /:productId/see/estimate          – Get latest estimation result
  * GET  /:productId/see/estimate/history  – Get scan history
  * GET  /:productId/see/estimate/export   – Export Markdown report
+ *
+ * Phase B (commits & attribution):
+ * POST /:productId/see/commits/ingest    – Ingest commit history
+ * GET  /:productId/see/commits           – Get commit summary
+ * GET  /:productId/see/developers        – Get developer attribution
+ * GET  /:productId/see/commits/activity  – Get monthly commit activity
  *
  * Mount at: app.use('/api/products', seeEstimatorRoutes)
  */
@@ -21,6 +28,9 @@ import {
   getSourceCodeConsent, setSourceCodeConsent,
   generateEstimateReport,
 } from '../services/see-estimator.js';
+import {
+  ingestCommits, getCommitSummary, getDeveloperAttribution, getCommitActivity,
+} from '../services/see-commit-ingestor.js';
 
 const router = Router();
 
@@ -230,6 +240,115 @@ router.get(
     } catch (err: any) {
       console.error(`[SEE] Export error: ${err.message}`);
       res.status(500).json({ error: 'Export failed' });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// Phase B: Commit History & Developer Attribution
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── POST /:productId/see/commits/ingest ────────────────────────────
+
+router.post(
+  '/:productId/see/commits/ingest',
+  requireAuth,
+  requirePlan('pro'),
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const consent = await getSourceCodeConsent(productId, orgId);
+      if (!consent) {
+        return res.status(403).json({
+          error: 'source_code_consent_required',
+          message: 'Source code analysis requires explicit consent.',
+        });
+      }
+
+      const summary = await ingestCommits(productId, orgId, userId);
+      res.json(summary);
+    } catch (err: any) {
+      console.error(`[SEE] Commit ingest error: ${err.message}`);
+      res.status(500).json({ error: 'Commit ingestion failed', message: err.message });
+    }
+  }
+);
+
+// ─── GET /:productId/see/commits ────────────────────────────────────
+
+router.get(
+  '/:productId/see/commits',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const summary = await getCommitSummary(productId);
+      res.json(summary);
+    } catch (err: any) {
+      console.error(`[SEE] Commits error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to retrieve commit data' });
+    }
+  }
+);
+
+// ─── GET /:productId/see/developers ─────────────────────────────────
+
+router.get(
+  '/:productId/see/developers',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const developers = await getDeveloperAttribution(productId);
+      res.json({ productId, developers });
+    } catch (err: any) {
+      console.error(`[SEE] Developers error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to retrieve developer data' });
+    }
+  }
+);
+
+// ─── GET /:productId/see/commits/activity ───────────────────────────
+
+router.get(
+  '/:productId/see/commits/activity',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const activity = await getCommitActivity(productId);
+      res.json({ productId, activity });
+    } catch (err: any) {
+      console.error(`[SEE] Activity error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to retrieve commit activity' });
     }
   }
 );
