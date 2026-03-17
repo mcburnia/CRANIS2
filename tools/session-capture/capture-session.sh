@@ -54,7 +54,7 @@ fi
 
 # Extract transcript path from the JSON payload
 TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || true)
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"' 2>/dev/null || echo "unknown")
+SESSION_ID="${PROJECT_NAME}-${DATE}-$(date '+%H%M%S')"
 
 if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
   echo "[session-capture] Transcript file not found: $TRANSCRIPT_PATH. Skipping."
