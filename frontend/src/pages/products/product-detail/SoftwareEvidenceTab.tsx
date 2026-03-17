@@ -269,8 +269,20 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
     }
   };
 
-  const handleExport = () => {
-    window.open(`/api/products/${productId}/see/estimate/export`, '_blank');
+  const handleExport = async () => {
+    try {
+      const res = await fetch(`/api/products/${productId}/see/estimate/export`, { headers });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = res.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || `see-estimate-export.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('Failed to export estimate');
+    }
   };
 
   const handleBuildGraph = async () => {
@@ -344,7 +356,15 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
         method: 'POST', headers,
       });
       if (res.ok) {
-        window.open(`/api/products/${productId}/see/reports/export/${reportType}`, '_blank');
+        const exportRes = await fetch(`/api/products/${productId}/see/reports/export/${reportType}`, { headers });
+        if (!exportRes.ok) throw new Error('Export failed');
+        const blob = await exportRes.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = exportRes.headers.get('Content-Disposition')?.split('filename="')[1]?.replace('"', '') || `see-report-${reportType}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
       } else {
         const err = await res.json();
         setError(err.message || 'Report generation failed');

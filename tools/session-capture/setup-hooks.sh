@@ -62,11 +62,12 @@ HOOKS_FILE="$PROJECT_DIR/.claude/hooks.json"
 
 if [ -f "$HOOKS_FILE" ]; then
   echo "Warning: $HOOKS_FILE already exists."
-  echo "Please manually add the session_end hook to your existing config."
+  echo "Please manually add the SessionEnd hook to your existing config."
   echo ""
   echo "Add this to your hooks.json:"
-  echo '  "session_end": ['
+  echo '  "SessionEnd": ['
   echo '    {'
+  echo '      "type": "command",'
   echo "      \"command\": \"$SCRIPT_DIR/capture-session.sh\","
   echo '      "timeout": 10000'
   echo '    }'
@@ -76,8 +77,9 @@ else
   cat > "$HOOKS_FILE" << EOF
 {
   "hooks": {
-    "session_end": [
+    "SessionEnd": [
       {
+        "type": "command",
         "command": "$SCRIPT_DIR/capture-session.sh",
         "timeout": 10000
       }
