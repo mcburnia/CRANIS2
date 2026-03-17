@@ -109,6 +109,10 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
   const [evolution, setEvolution] = useState<any>(null);
   const [analysingEvolution, setAnalysingEvolution] = useState(false);
 
+  // Phase F state
+  const [graphSummary, setGraphSummary] = useState<any>(null);
+  const [buildingGraph, setBuildingGraph] = useState(false);
+
   const token = localStorage.getItem('session_token');
   const headers = { Authorization: `Bearer ${token}` } as Record<string, string>;
 
@@ -184,10 +188,20 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
     } catch { /* ignore */ }
   }, [productId]);
 
+  const fetchGraph = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/products/${productId}/see/graph`, { headers });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.nodes?.commits > 0) setGraphSummary(d);
+      }
+    } catch { /* ignore */ }
+  }, [productId]);
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchConsent(), fetchData(), fetchCommitData(), fetchBranchData(), fetchExperiments(), fetchEvolution()]).finally(() => setLoading(false));
-  }, [fetchConsent, fetchData, fetchCommitData, fetchBranchData, fetchExperiments, fetchEvolution]);
+    Promise.all([fetchConsent(), fetchData(), fetchCommitData(), fetchBranchData(), fetchExperiments(), fetchEvolution(), fetchGraph()]).finally(() => setLoading(false));
+  }, [fetchConsent, fetchData, fetchCommitData, fetchBranchData, fetchExperiments, fetchEvolution, fetchGraph]);
 
   const handleConsentToggle = async () => {
     setConsentUpdating(true);
@@ -236,6 +250,27 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
 
   const handleExport = () => {
     window.open(`/api/products/${productId}/see/estimate/export`, '_blank');
+  };
+
+  const handleBuildGraph = async () => {
+    setBuildingGraph(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/products/${productId}/see/graph/build`, {
+        method: 'POST', headers,
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setGraphSummary(d);
+      } else {
+        const err = await res.json();
+        setError(err.message || 'Graph build failed');
+      }
+    } catch {
+      setError('Graph build failed');
+    } finally {
+      setBuildingGraph(false);
+    }
   };
 
   const handleAnalyseEvolution = async () => {
@@ -998,6 +1033,69 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
             </div>
           )}
         </>
+      ) : null}
+
+      {/* ── Phase F: Evidence Graph ──────────────────────────────────────── */}
+
+      {evolution && !graphSummary ? (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div>
+            <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+              Software Evidence Graph
+            </h4>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0 }}>
+              Build the evidence graph linking developers, commits, modules, dependencies, and vulnerabilities.
+            </p>
+          </div>
+          <button onClick={handleBuildGraph} disabled={buildingGraph} style={btnStyle}>
+            {buildingGraph ? <><Loader2 size={14} className="spin" /> Building...</> : 'Build Evidence Graph'}
+          </button>
+        </div>
+      ) : graphSummary ? (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
+              Software Evidence Graph
+              <span style={{
+                fontSize: 10, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.04em',
+                padding: '2px 8px', borderRadius: 4, marginLeft: 8, verticalAlign: 'middle',
+                background: graphSummary.completeness === 'full' ? '#EAF3DE' : graphSummary.completeness === 'rich' ? '#E1F5EE' : '#FAEEDA',
+                color: graphSummary.completeness === 'full' ? '#173404' : graphSummary.completeness === 'rich' ? '#085041' : '#412402',
+              }}>
+                {graphSummary.completeness}
+              </span>
+            </h4>
+            <button onClick={handleBuildGraph} disabled={buildingGraph} style={{ ...btnStyle, fontSize: 11, padding: '4px 10px' }}>
+              {buildingGraph ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />} Rebuild
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 10 }}>
+            {[
+              { label: 'Developers', value: graphSummary.nodes?.developers || 0, colour: '#1D9E75' },
+              { label: 'Commits', value: graphSummary.nodes?.commits || 0, colour: '#534AB7' },
+              { label: 'Modules', value: graphSummary.nodes?.modules || 0, colour: '#185FA5' },
+              { label: 'Branches', value: graphSummary.nodes?.branches || 0, colour: '#BA7517' },
+              { label: 'Experiments', value: graphSummary.nodes?.experiments || 0, colour: '#E91E63' },
+              { label: 'Dependencies', value: graphSummary.nodes?.dependencies || 0, colour: '#00897B' },
+              { label: 'Vulnerabilities', value: graphSummary.nodes?.vulnerabilities || 0, colour: '#D85A30' },
+            ].map((item, i) => (
+              <div key={i} style={{ textAlign: 'center', padding: '8px 4px' }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: item.colour, fontFamily: 'Outfit, sans-serif' }}>
+                  {item.value.toLocaleString()}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'Outfit, sans-serif', marginTop: 2 }}>
+                  {item.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : null}
 
       {/* Consent revoke */}

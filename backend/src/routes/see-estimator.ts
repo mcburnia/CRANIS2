@@ -43,6 +43,9 @@ import {
 import {
   runEvolutionAnalysis, getEvolutionData,
 } from '../services/see-evolution.js';
+import {
+  buildEvidenceGraph, getGraphSummary, queryProvenance,
+} from '../services/see-graph.js';
 
 const router = Router();
 
@@ -584,6 +587,83 @@ router.get(
     } catch (err: any) {
       console.error(`[SEE] Evolution data error: ${err.message}`);
       res.status(500).json({ error: 'Failed to retrieve evolution data' });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// Phase F: Evidence Graph & Provenance Queries
+// ═══════════════════════════════════════════════════════════════════
+
+router.post(
+  '/:productId/see/graph/build',
+  requireAuth,
+  requirePlan('pro'),
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const summary = await buildEvidenceGraph(productId);
+      res.json(summary);
+    } catch (err: any) {
+      console.error(`[SEE] Graph build error: ${err.message}`);
+      res.status(500).json({ error: 'Graph build failed', message: err.message });
+    }
+  }
+);
+
+router.get(
+  '/:productId/see/graph',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const summary = await getGraphSummary(productId);
+      res.json(summary);
+    } catch (err: any) {
+      console.error(`[SEE] Graph summary error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to retrieve graph summary' });
+    }
+  }
+);
+
+router.get(
+  '/:productId/see/graph/query/:queryType',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const queryType = req.params.queryType as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const validQueries = ['developer-contributions', 'module-structure', 'dependency-exposure', 'experiment-timeline', 'architecture-timeline'];
+      if (!validQueries.includes(queryType)) {
+        return res.status(400).json({ error: 'Invalid query type', validQueries });
+      }
+
+      const result = await queryProvenance(productId, queryType);
+      res.json(result);
+    } catch (err: any) {
+      console.error(`[SEE] Provenance query error: ${err.message}`);
+      res.status(500).json({ error: 'Query failed', message: err.message });
     }
   }
 );
