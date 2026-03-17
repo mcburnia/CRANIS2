@@ -334,33 +334,36 @@ type ComplexityCategory = 'simple' | 'standard' | 'multi_tier' | 'distributed' |
 
 const COMPLEXITY_MULTIPLIERS: Record<ComplexityCategory, number> = {
   simple: 1.0,
-  standard: 1.2,
-  multi_tier: 1.4,
-  distributed: 1.6,
-  regulated: 1.8,
-  specialised: 2.0,
+  standard: 1.1,
+  multi_tier: 1.2,
+  distributed: 1.3,
+  regulated: 1.4,
+  specialised: 1.5,
 };
 
 function inferComplexity(signals: ComplexitySignals): { category: ComplexityCategory; multiplier: number } {
   let score = 0;
 
+  // Standard web app signals (common, low weight)
   if (signals.hasDocker) score += 1;
   if (signals.hasCICD) score += 1;
-  if (signals.hasIaC) score += 2;
   if (signals.hasDatabase) score += 1;
-  if (signals.hasMultipleLanguages) score += 2;
   if (signals.hasAPIRoutes) score += 1;
-  if (signals.hasGraphDB) score += 2;
   if (signals.hasTestSuite) score += 1;
+
+  // Genuine complexity signals (higher weight)
+  if (signals.hasIaC) score += 2;
+  if (signals.hasGraphDB) score += 2;
+  if (signals.hasMultipleLanguages) score += 1;
   if (signals.languageCount >= 5) score += 1;
-  if (signals.moduleCount >= 10) score += 1;
+  if (signals.moduleCount >= 15) score += 1;
 
   let category: ComplexityCategory;
-  if (score <= 2) category = 'simple';
-  else if (score <= 4) category = 'standard';
-  else if (score <= 6) category = 'multi_tier';
-  else if (score <= 8) category = 'distributed';
-  else if (score <= 10) category = 'regulated';
+  if (score <= 3) category = 'simple';
+  else if (score <= 5) category = 'standard';
+  else if (score <= 7) category = 'multi_tier';
+  else if (score <= 9) category = 'distributed';
+  else if (score <= 11) category = 'regulated';
   else category = 'specialised';
 
   return { category, multiplier: COMPLEXITY_MULTIPLIERS[category] };
@@ -370,32 +373,39 @@ function inferComplexity(signals: ComplexitySignals): { category: ComplexityCate
 
 const DEFAULT_ASSUMPTIONS = {
   // LOC per engineer-month (fully tested, production-ready)
-  locPerMonthLow: 200,    // complex/regulated
-  locPerMonthMid: 400,    // typical commercial
-  locPerMonthHigh: 700,   // greenfield, well-understood
+  // These reflect modern development with frameworks, libraries, and tooling.
+  // Traditional COCOMO estimates (200-500) assumed 1990s practices.
+  locPerMonthLow: 800,     // complex/regulated domain, thorough testing
+  locPerMonthMid: 1500,    // typical commercial SaaS with modern tooling
+  locPerMonthHigh: 3000,   // greenfield, well-understood domain, AI-assisted
 
   // Daily cost in EUR
-  dailyRateLow: 400,      // junior/nearshore
-  dailyRateMid: 650,      // mid-senior
-  dailyRateHigh: 950,     // senior specialist
+  dailyRateLow: 400,       // junior/nearshore
+  dailyRateMid: 650,       // mid-senior
+  dailyRateHigh: 950,      // senior specialist
 
   // Working days per month
   workingDaysPerMonth: 20,
 
-  // Test code effort weight (tests are less complex per line but represent effort)
-  testCodeWeight: 0.5,
+  // Test code effort weight (tests are simpler per line but represent real effort)
+  testCodeWeight: 0.3,
 
-  // Language effort adjusters (lower = more effort per line)
+  // Language effort adjusters (higher = less effort per line, i.e. more LOC per unit of effort)
+  // A value of 2.0 means this language produces 2x LOC for the same effort, so its LOC is
+  // divided by 2.0 to get "effort-equivalent LOC".
   languageAdjusters: {
     'C': 0.5, 'C++': 0.5, 'Assembly': 0.3,
-    'Java': 0.7, 'C#': 0.7, 'Kotlin': 0.8,
+    'Java': 0.8, 'C#': 0.8, 'Kotlin': 0.9,
     'Go': 0.8, 'Rust': 0.7,
     'Python': 1.0, 'Ruby': 1.0, 'PHP': 1.0,
-    'TypeScript': 0.9, 'JavaScript': 0.9,
-    'HTML': 2.0, 'CSS': 2.0, 'SCSS': 1.8, 'Sass': 1.8, 'Less': 1.8,
-    'SQL': 1.5,
-    'Shell': 1.5,
-    'YAML': 3.0, 'JSON': 5.0, 'XML': 3.0, 'TOML': 3.0,
+    'TypeScript': 1.0, 'JavaScript': 1.0,
+    'HTML': 5.0, 'CSS': 4.0, 'SCSS': 3.0, 'Sass': 3.0, 'Less': 3.0,
+    'SQL': 2.0,
+    'Shell': 2.5,
+    'YAML': 8.0, 'JSON': 10.0, 'XML': 8.0, 'TOML': 8.0,
+    'Vue': 1.2, 'Svelte': 1.2,
+    'GraphQL': 3.0, 'Protocol Buffers': 3.0,
+    'Terraform': 2.0,
   } as Record<string, number>,
 };
 
@@ -437,12 +447,14 @@ function calculateEffort(
     high: Math.round(effortMonths.high * assumptions.workingDaysPerMonth * assumptions.dailyRateHigh),
   };
 
-  // Team size estimate (assumes 18-month project)
-  const assumedDurationMonths = 18;
+  // Team size estimate — scale with effort rather than fixed duration
+  // Small projects (< 12 months effort): 1-2 people
+  // Medium projects (12-48 months): 2-5 people
+  // Large projects (48+ months): 5+ people
   const teamSize: EffortEstimate = {
-    low: Math.max(1, Math.ceil(effortMonths.low / assumedDurationMonths)),
-    mid: Math.max(1, Math.ceil(effortMonths.mid / assumedDurationMonths)),
-    high: Math.max(2, Math.ceil(effortMonths.high / assumedDurationMonths)),
+    low: Math.max(1, Math.ceil(effortMonths.low / 12)),
+    mid: Math.max(1, Math.ceil(effortMonths.mid / 12)),
+    high: Math.max(1, Math.ceil(effortMonths.high / 12)),
   };
 
   // Rebuild duration (Brooks's law efficiency: 1 / (1 + 0.1 * (team - 1)))
