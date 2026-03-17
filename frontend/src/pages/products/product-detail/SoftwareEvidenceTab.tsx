@@ -315,16 +315,15 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
     }
   };
 
-  const handleGenerateRnDReport = async () => {
+  const handleGenerateReport = async (reportType: string) => {
     setGeneratingReport(true);
     setError(null);
     try {
-      const res = await fetch(`/api/products/${productId}/see/reports/rnd`, {
+      const res = await fetch(`/api/products/${productId}/see/reports/generate/${reportType}`, {
         method: 'POST', headers,
       });
       if (res.ok) {
-        // Download the report
-        window.open(`/api/products/${productId}/see/reports/rnd/export`, '_blank');
+        window.open(`/api/products/${productId}/see/reports/export/${reportType}`, '_blank');
       } else {
         const err = await res.json();
         setError(err.message || 'Report generation failed');
@@ -840,17 +839,9 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
               <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
                 Technological Uncertainty Indicators ({experiments.uncertaintySummary?.totalExperiments || 0})
               </h4>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={handleDetectExperiments} disabled={detecting} style={{ ...btnStyle, fontSize: 11, padding: '4px 10px' }}>
-                  {detecting ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />} Re-detect
-                </button>
-                <button onClick={handleGenerateRnDReport} disabled={generatingReport} style={{
-                  ...btnStyle, background: 'var(--teal, #1D9E75)', color: '#fff', borderColor: 'var(--teal, #1D9E75)',
-                }}>
-                  {generatingReport ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
-                  R&D Evidence Report
-                </button>
-              </div>
+              <button onClick={handleDetectExperiments} disabled={detecting} style={{ ...btnStyle, fontSize: 11, padding: '4px 10px' }}>
+                {detecting ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />} Re-detect
+              </button>
             </div>
 
             {/* Confidence summary */}
@@ -1097,6 +1088,50 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
           </div>
         </div>
       ) : null}
+
+      {/* ── Phase G: Multi-Regulation Reports ─────────────────────────── */}
+
+      {(experiments || evolution) && (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20,
+        }}>
+          <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text)' }}>
+            <Download size={14} style={{ verticalAlign: -2, marginRight: 6 }} />Evidence Reports
+          </h4>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
+            Generate structured evidence reports for regulatory compliance and R&D tax credit claims.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+            {[
+              { key: 'rnd_tax', label: 'R&D Tax Evidence', desc: 'HMRC, CIR, Forschungszulage', colour: '#1D9E75' },
+              { key: 'cra', label: 'CRA Secure Development', desc: 'EU Cyber Resilience Act', colour: '#534AB7' },
+              { key: 'nis2', label: 'NIS2 Development Controls', desc: 'NIS2 Directive', colour: '#185FA5' },
+              { key: 'ai_act', label: 'AI Act Documentation', desc: 'EU AI Act', colour: '#E91E63' },
+              { key: 'dora', label: 'DORA ICT Change', desc: 'DORA Regulation', colour: '#BA7517' },
+              { key: 'iso27001', label: 'ISO 27001 Controls', desc: 'Annex A.8.25-A.8.28', colour: '#00897B' },
+            ].map(report => (
+              <button
+                key={report.key}
+                onClick={() => handleGenerateReport(report.key)}
+                disabled={generatingReport}
+                style={{
+                  background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8,
+                  padding: '12px 14px', cursor: 'pointer', textAlign: 'left',
+                  borderLeft: `3px solid ${report.colour}`,
+                  opacity: generatingReport ? 0.6 : 1,
+                }}
+              >
+                <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+                  {report.label}
+                </div>
+                <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: 11, color: 'var(--text-3)' }}>
+                  {report.desc}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Consent revoke */}
       <div style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 6 }}>

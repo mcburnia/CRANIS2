@@ -38,7 +38,8 @@ import {
   detectExperiments, getExperiments,
 } from '../services/see-experiment-detector.js';
 import {
-  generateRnDEvidenceReport, getLatestReport,
+  generateRnDEvidenceReport, getLatestReport, generateRegulationReport,
+  REPORT_TYPES, listReports,
 } from '../services/see-report-generator.js';
 import {
   runEvolutionAnalysis, getEvolutionData,
@@ -664,6 +665,107 @@ router.get(
     } catch (err: any) {
       console.error(`[SEE] Provenance query error: ${err.message}`);
       res.status(500).json({ error: 'Query failed', message: err.message });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// Phase G: Multi-Regulation Reports
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── GET /:productId/see/reports/types ───────────────────────────────
+
+router.get(
+  '/:productId/see/reports/types',
+  requireAuth,
+  async (_req: Request, res: Response) => {
+    res.json({ reportTypes: REPORT_TYPES });
+  }
+);
+
+// ─── POST /:productId/see/reports/generate/:reportType ──────────────
+
+router.post(
+  '/:productId/see/reports/generate/:reportType',
+  requireAuth,
+  requirePlan('pro'),
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const reportType = req.params.reportType as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      if (!REPORT_TYPES[reportType]) {
+        return res.status(400).json({ error: 'Invalid report type', validTypes: Object.keys(REPORT_TYPES) });
+      }
+
+      const report = await generateRegulationReport(productId, orgId, product.name, reportType);
+      res.json(report);
+    } catch (err: any) {
+      console.error(`[SEE] Report generation error: ${err.message}`);
+      res.status(500).json({ error: 'Report generation failed', message: err.message });
+    }
+  }
+);
+
+// ─── GET /:productId/see/reports/export/:reportType ─────────────────
+
+router.get(
+  '/:productId/see/reports/export/:reportType',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const reportType = req.params.reportType as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      let report = await getLatestReport(productId, reportType);
+      if (!report) {
+        report = await generateRegulationReport(productId, orgId, product.name, reportType);
+      }
+
+      const typeLabel = REPORT_TYPES[reportType]?.label || reportType;
+      const filename = `see-${reportType}-${product.name.replace(/[^a-zA-Z0-9-_]/g, '_')}.md`;
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(report.contentMd);
+    } catch (err: any) {
+      console.error(`[SEE] Report export error: ${err.message}`);
+      res.status(500).json({ error: 'Export failed' });
+    }
+  }
+);
+
+// ─── GET /:productId/see/reports ────────────────────────────────────
+
+router.get(
+  '/:productId/see/reports',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const reports = await listReports(productId);
+      res.json({ productId, reports, reportTypes: REPORT_TYPES });
+    } catch (err: any) {
+      console.error(`[SEE] Reports list error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to retrieve reports' });
     }
   }
 );

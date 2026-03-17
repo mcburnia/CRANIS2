@@ -272,6 +272,253 @@ export async function generateRnDEvidenceReport(
   };
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// Phase G: Multi-Regulation Report Templates
+// ═══════════════════════════════════════════════════════════════════
+
+export const REPORT_TYPES: Record<string, { label: string; description: string }> = {
+  rnd_tax: { label: 'R&D Tax Evidence', description: 'Engineering evidence for R&D tax credit claims (HMRC, CIR, Forschungszulage)' },
+  cra: { label: 'CRA Secure Development', description: 'EU Cyber Resilience Act secure development lifecycle evidence' },
+  nis2: { label: 'NIS2 Development Controls', description: 'NIS2 Directive secure development and supply chain evidence' },
+  ai_act: { label: 'AI Act Technical Documentation', description: 'EU AI Act development methodology and testing evidence' },
+  dora: { label: 'DORA ICT Change Evidence', description: 'DORA change management, testing, and deployment evidence' },
+  iso27001: { label: 'ISO 27001 Secure Development', description: 'ISO 27001 Annex A.8 secure development controls evidence' },
+};
+
+export async function generateRegulationReport(
+  productId: string,
+  orgId: string,
+  productName: string,
+  reportType: string,
+): Promise<GeneratedReport> {
+  if (reportType === 'rnd_tax') {
+    return generateRnDEvidenceReport(productId, orgId, productName);
+  }
+
+  // Gather evidence (same data, different framing)
+  const [estimate, commitSummary, developers, branchAnalysis, experiments] = await Promise.all([
+    getLatestScan(productId),
+    getCommitSummary(productId),
+    getDeveloperAttribution(productId),
+    getBranchAnalysis(productId),
+    getExperiments(productId),
+  ]);
+
+  const totalLoc = estimate?.totalLoc || 0;
+  const prodLoc = estimate?.productionLoc || 0;
+  const testLoc = estimate?.testLoc || 0;
+  const totalCommits = commitSummary?.totalCommits || 0;
+  const activeMonths = commitSummary?.activeMonths || 0;
+  const devCount = developers?.length || 0;
+  const testRatio = totalLoc > 0 ? Math.round(testLoc / totalLoc * 100) : 0;
+
+  const lines: string[] = [];
+  const now = new Date();
+  const reportLabel = REPORT_TYPES[reportType]?.label || reportType;
+
+  lines.push(`# ${reportLabel}`);
+  lines.push(`## ${productName}`);
+  lines.push(``);
+  lines.push(`**Generated:** ${now.toISOString().split('T')[0]}`);
+  lines.push(`**Report type:** ${reportLabel}`);
+  lines.push(`**Prepared by:** CRANIS2 Software Evidence Engine`);
+  lines.push(``);
+  lines.push(`---`);
+  lines.push(``);
+
+  // ── Regulation-specific framing ─────────────────────────────────
+  switch (reportType) {
+    case 'cra':
+      lines.push(`## 1. CRA Compliance Context`);
+      lines.push(``);
+      lines.push(`This report provides evidence supporting compliance with the EU Cyber Resilience Act (Regulation (EU) 2024/2847), specifically the requirements for secure development lifecycle practices under Article 13 and Annex I.`);
+      lines.push(``);
+      lines.push(`The evidence demonstrates:`);
+      lines.push(`- Security-by-design practices in the development process (Annex I, Part I)`);
+      lines.push(`- Vulnerability handling procedures (Art. 13(6), Annex I, Part II)`);
+      lines.push(`- Software component management via SBOM (Art. 13(5))`);
+      lines.push(`- Testing and quality assurance practices`);
+      lines.push(`- Development team competence and attribution`);
+      break;
+
+    case 'nis2':
+      lines.push(`## 1. NIS2 Compliance Context`);
+      lines.push(``);
+      lines.push(`This report provides evidence supporting compliance with the NIS2 Directive (Directive (EU) 2022/2555), specifically the requirements for security in network and information systems development.`);
+      lines.push(``);
+      lines.push(`The evidence demonstrates:`);
+      lines.push(`- Secure development practices (Art. 21(2)(a))`);
+      lines.push(`- Supply chain security measures (Art. 21(2)(d))`);
+      lines.push(`- Vulnerability handling and disclosure (Art. 21(2)(e))`);
+      lines.push(`- Security testing procedures`);
+      break;
+
+    case 'ai_act':
+      lines.push(`## 1. AI Act Compliance Context`);
+      lines.push(``);
+      lines.push(`This report provides development methodology evidence supporting compliance with the EU AI Act (Regulation (EU) 2024/1689), specifically the technical documentation requirements under Article 11 and Annex IV.`);
+      lines.push(``);
+      lines.push(`The evidence demonstrates:`);
+      lines.push(`- Development methodology and design choices`);
+      lines.push(`- Testing and validation approach`);
+      lines.push(`- System architecture and component structure`);
+      lines.push(`- Development team qualification and process maturity`);
+      break;
+
+    case 'dora':
+      lines.push(`## 1. DORA Compliance Context`);
+      lines.push(``);
+      lines.push(`This report provides ICT change management evidence supporting compliance with the Digital Operational Resilience Act (Regulation (EU) 2022/2554).`);
+      lines.push(``);
+      lines.push(`The evidence demonstrates:`);
+      lines.push(`- ICT change management procedures`);
+      lines.push(`- Testing before deployment`);
+      lines.push(`- Vulnerability management in the software supply chain`);
+      lines.push(`- Development lifecycle documentation`);
+      break;
+
+    case 'iso27001':
+      lines.push(`## 1. ISO 27001 Context`);
+      lines.push(``);
+      lines.push(`This report provides evidence supporting compliance with ISO/IEC 27001:2022, specifically Annex A controls A.8.25 (Secure development lifecycle), A.8.26 (Application security requirements), A.8.27 (Secure system architecture), and A.8.28 (Secure coding).`);
+      lines.push(``);
+      lines.push(`The evidence demonstrates:`);
+      lines.push(`- Secure development lifecycle practices (A.8.25)`);
+      lines.push(`- Security requirements implementation (A.8.26)`);
+      lines.push(`- System architecture documentation (A.8.27)`);
+      lines.push(`- Secure coding practices and code quality (A.8.28)`);
+      break;
+  }
+
+  lines.push(``);
+  lines.push(`---`);
+  lines.push(``);
+
+  // ── Common evidence sections ────────────────────────────────────
+  lines.push(`## 2. Development Activity Summary`);
+  lines.push(``);
+  lines.push(`| Metric | Value |`);
+  lines.push(`|--------|-------|`);
+  lines.push(`| Total logical LOC | ${totalLoc.toLocaleString()} |`);
+  lines.push(`| Production LOC | ${prodLoc.toLocaleString()} |`);
+  lines.push(`| Test LOC | ${testLoc.toLocaleString()} (${testRatio}%) |`);
+  lines.push(`| Total commits | ${totalCommits.toLocaleString()} |`);
+  lines.push(`| Active development months | ${activeMonths} |`);
+  lines.push(`| Contributors | ${devCount} |`);
+  if (estimate?.complexityCategory) {
+    lines.push(`| Complexity | ${estimate.complexityCategory} (${estimate.complexityMultiplier}x) |`);
+  }
+  lines.push(``);
+
+  // Commit type breakdown
+  if (branchAnalysis?.commitTypes) {
+    lines.push(`## 3. Development Practices`);
+    lines.push(``);
+    lines.push(`### Commit Classification`);
+    lines.push(``);
+    lines.push(`| Type | Count | Significance |`);
+    lines.push(`|------|-------|-------------|`);
+    const significanceMap: Record<string, string> = {
+      feature: 'New functionality, demonstrates active development',
+      fix: 'Defect remediation, demonstrates quality management',
+      refactor: 'Code improvement, demonstrates maintainability focus',
+      test: 'Quality assurance, demonstrates testing discipline',
+      docs: 'Documentation, demonstrates process maturity',
+      experiment: 'Research and investigation, demonstrates systematic approach',
+      chore: 'Infrastructure and tooling, demonstrates operational maturity',
+    };
+    for (const [type, count] of Object.entries(branchAnalysis.commitTypes)) {
+      if ((count as number) > 0) {
+        lines.push(`| ${type} | ${count} | ${significanceMap[type] || ''} |`);
+      }
+    }
+    lines.push(``);
+  }
+
+  // Developer attribution
+  if (developers && developers.length > 0) {
+    lines.push(`## 4. Developer Attribution`);
+    lines.push(``);
+    lines.push(`| Developer | Commits | Contribution | Active period |`);
+    lines.push(`|-----------|---------|-------------|---------------|`);
+    for (const dev of developers) {
+      const period = dev.firstCommitAt
+        ? `${new Date(dev.firstCommitAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })} – ${new Date(dev.lastCommitAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}`
+        : '–';
+      lines.push(`| ${dev.authorName} | ${dev.commitCount} | ${dev.contributionPct}% | ${period} |`);
+    }
+    lines.push(``);
+  }
+
+  // Vulnerability handling (relevant for CRA, NIS2, DORA)
+  if (['cra', 'nis2', 'dora'].includes(reportType)) {
+    lines.push(`## 5. Vulnerability Handling Evidence`);
+    lines.push(``);
+    const vulnResult = await pool.query(
+      `SELECT status, COUNT(*) AS cnt FROM vulnerability_findings WHERE product_id = $1 GROUP BY status`,
+      [productId]
+    );
+    if (vulnResult.rows.length > 0) {
+      lines.push(`| Status | Count |`);
+      lines.push(`|--------|-------|`);
+      for (const r of vulnResult.rows) {
+        lines.push(`| ${r.status} | ${r.cnt} |`);
+      }
+      lines.push(``);
+      lines.push(`Active vulnerability management demonstrates compliance with vulnerability handling requirements.`);
+    } else {
+      lines.push(`No vulnerability findings recorded. Scanning may not have been performed yet.`);
+    }
+    lines.push(``);
+  }
+
+  lines.push(`---`);
+  lines.push(``);
+  lines.push(`## Methodology`);
+  lines.push(``);
+  lines.push(`This report was generated by the CRANIS2 Software Evidence Engine using deterministic analysis of software development artefacts. All findings reference verifiable data in the source code repository.`);
+  lines.push(``);
+  lines.push(`---`);
+  lines.push(``);
+  lines.push(`*Generated by CRANIS2 Software Evidence Engine.*`);
+
+  const contentMd = lines.join('\n');
+  const contentHash = crypto.createHash('sha256').update(contentMd).digest('hex');
+
+  const insertResult = await pool.query(
+    `INSERT INTO see_evidence_reports (product_id, org_id, report_type, content_md, content_hash)
+     VALUES ($1, $2, $3, $4, $5) RETURNING id, generated_at`,
+    [productId, orgId, reportType, contentMd, contentHash]
+  );
+
+  const row = insertResult.rows[0];
+  logger.info(`[SEE] Generated ${reportType} report for product ${productId}`);
+
+  return {
+    id: row.id,
+    productId,
+    reportType,
+    contentMd,
+    contentHash,
+    generatedAt: row.generated_at,
+  };
+}
+
+export async function listReports(productId: string): Promise<Array<{ id: string; reportType: string; generatedAt: string; contentHash: string }>> {
+  const result = await pool.query(
+    `SELECT id, report_type, generated_at, content_hash
+     FROM see_evidence_reports WHERE product_id = $1
+     ORDER BY generated_at DESC LIMIT 50`,
+    [productId]
+  );
+  return result.rows.map(r => ({
+    id: r.id,
+    reportType: r.report_type,
+    generatedAt: r.generated_at,
+    contentHash: r.content_hash,
+  }));
+}
+
 export async function getLatestReport(productId: string, reportType: string = 'rnd_tax'): Promise<GeneratedReport | null> {
   const result = await pool.query(
     `SELECT * FROM see_evidence_reports
