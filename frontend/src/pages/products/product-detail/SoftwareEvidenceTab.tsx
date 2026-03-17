@@ -96,6 +96,10 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
   const [commitActivity, setCommitActivity] = useState<CommitActivityPoint[]>([]);
   const [ingesting, setIngesting] = useState(false);
 
+  // Phase C state
+  const [branchData, setBranchData] = useState<any>(null);
+  const [analysing, setAnalysing] = useState(false);
+
   const token = localStorage.getItem('session_token');
   const headers = { Authorization: `Bearer ${token}` } as Record<string, string>;
 
@@ -141,10 +145,20 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
     } catch { /* ignore */ }
   }, [productId]);
 
+  const fetchBranchData = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/products/${productId}/see/branches`, { headers });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.analysed) setBranchData(d);
+      }
+    } catch { /* ignore */ }
+  }, [productId]);
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchConsent(), fetchData(), fetchCommitData()]).finally(() => setLoading(false));
-  }, [fetchConsent, fetchData, fetchCommitData]);
+    Promise.all([fetchConsent(), fetchData(), fetchCommitData(), fetchBranchData()]).finally(() => setLoading(false));
+  }, [fetchConsent, fetchData, fetchCommitData, fetchBranchData]);
 
   const handleConsentToggle = async () => {
     setConsentUpdating(true);
@@ -193,6 +207,27 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
 
   const handleExport = () => {
     window.open(`/api/products/${productId}/see/estimate/export`, '_blank');
+  };
+
+  const handleAnalyseBranches = async () => {
+    setAnalysing(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/products/${productId}/see/branches/analyse`, {
+        method: 'POST', headers,
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setBranchData(d);
+      } else {
+        const err = await res.json();
+        setError(err.message || 'Branch analysis failed');
+      }
+    } catch {
+      setError('Branch analysis failed');
+    } finally {
+      setAnalysing(false);
+    }
   };
 
   const handleIngestCommits = async () => {
@@ -559,6 +594,96 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
         </>
       )}
 
+      {/* ── Phase C: Branch Analysis & Commit Classification ─────────── */}
+
+      {commitSummary && !branchData ? (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div>
+            <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+              Branch & Classification Analysis
+            </h4>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', margin: 0 }}>
+              Classify commits by type and analyse branch patterns for experimentation evidence.
+            </p>
+          </div>
+          <button onClick={handleAnalyseBranches} disabled={analysing} style={btnStyle}>
+            {analysing ? <><Loader2 size={14} className="spin" /> Analysing...</> : 'Analyse Branches'}
+          </button>
+        </div>
+      ) : branchData ? (
+        <>
+          {/* Commit type breakdown */}
+          {branchData.commitTypes && (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20 }}>
+              <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text)' }}>
+                Commit Classification
+              </h4>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {Object.entries(branchData.commitTypes as Record<string, number>)
+                  .filter(([, count]) => count > 0)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([type, count]) => (
+                    <div key={type} style={{
+                      background: 'var(--bg)', borderRadius: 6, padding: '8px 14px',
+                      display: 'flex', alignItems: 'center', gap: 8,
+                    }}>
+                      <span style={{
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: commitTypeColour(type),
+                      }} />
+                      <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 13, color: 'var(--text-2)' }}>
+                        {type}
+                      </span>
+                      <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+                        {count}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Branch summary */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
+                Branches ({branchData.totalBranches})
+              </h4>
+              <button onClick={handleAnalyseBranches} disabled={analysing} style={{ ...btnStyle, fontSize: 11, padding: '4px 10px' }}>
+                {analysing ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />} Update
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+              {Object.entries(branchData.branchTypes as Record<string, number>)
+                .filter(([, count]) => count > 0)
+                .map(([type, count]) => (
+                  <div key={type} style={{
+                    fontSize: 12, fontFamily: 'Outfit, sans-serif', color: 'var(--text-2)',
+                    background: 'var(--bg)', borderRadius: 4, padding: '4px 10px',
+                  }}>
+                    <strong>{count}</strong> {type}
+                  </div>
+                ))}
+            </div>
+            {branchData.rewriteRatio > 0 && (
+              <div style={{ fontSize: 13, color: 'var(--text-2)', fontFamily: 'Outfit, sans-serif' }}>
+                Overall rewrite ratio: <strong style={{ color: branchData.rewriteRatio > 0.5 ? 'var(--coral)' : 'var(--text)' }}>
+                  {branchData.rewriteRatio}x
+                </strong>
+                {branchData.rewriteRatio > 0.5 && (
+                  <span style={{ color: 'var(--text-3)', marginLeft: 8, fontSize: 11 }}>
+                    High rewrite ratio indicates significant experimentation or iteration
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      ) : null}
+
       {/* Consent revoke */}
       <div style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
         <CheckCircle2 size={12} /> Source code analysis enabled.
@@ -610,6 +735,15 @@ function ClassificationBar({ label, value, total, colour }: { label: string; val
       </div>
     </div>
   );
+}
+
+function commitTypeColour(type: string): string {
+  const colours: Record<string, string> = {
+    feature: '#1D9E75', fix: '#D85A30', refactor: '#534AB7',
+    test: '#185FA5', docs: '#BA7517', experiment: '#E91E63',
+    chore: '#8C8A84', style: '#00BCD4', other: '#BDBDBD',
+  };
+  return colours[type] || '#BDBDBD';
 }
 
 function MiniStat({ label, value }: { label: string; value: string }) {

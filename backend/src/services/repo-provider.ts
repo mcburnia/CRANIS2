@@ -411,6 +411,91 @@ export async function getLanguages(
   }
 }
 
+// ── Normalised branch type ─────────────────────────────────────────
+export interface NormalisedBranch {
+  name: string;
+  headSha: string;
+  isDefault: boolean;
+  isProtected: boolean;
+}
+
+export async function getBranches(
+  prov: RepoProvider | string,
+  token: string,
+  owner: string,
+  repo: string,
+  defaultBranch: string,
+  instanceUrl?: string
+): Promise<NormalisedBranch[]> {
+  if (prov === 'github') {
+    const branches = await github.getBranches(token, owner, repo);
+    return branches.map(b => ({
+      name: b.name,
+      headSha: b.commit?.sha || '',
+      isDefault: b.name === defaultBranch,
+      isProtected: b.protected || false,
+    }));
+  }
+
+  if (prov === 'codeberg' || prov === 'gitea' || prov === 'forgejo') {
+    const apiBase = instanceUrl
+      ? `${instanceUrl}/api/v1`
+      : prov === 'codeberg' ? 'https://codeberg.org/api/v1' : '';
+    if (!apiBase) return [];
+
+    const allBranches: NormalisedBranch[] = [];
+    for (let page = 1; page <= 10; page++) {
+      try {
+        const res = await fetch(`${apiBase}/repos/${owner}/${repo}/branches?limit=50&page=${page}`, {
+          headers: { Authorization: `token ${token}`, Accept: 'application/json' },
+        });
+        if (!res.ok) break;
+        const branches: any[] = await res.json();
+        if (!branches || branches.length === 0) break;
+        for (const b of branches) {
+          allBranches.push({
+            name: b.name,
+            headSha: b.commit?.id || '',
+            isDefault: b.name === defaultBranch,
+            isProtected: b.protected || false,
+          });
+        }
+        if (branches.length < 50) break;
+      } catch { break; }
+    }
+    return allBranches;
+  }
+
+  if (prov === 'gitlab') {
+    if (!instanceUrl) return [];
+    const apiBase = `${instanceUrl}/api/v4`;
+    const projectId = encodeURIComponent(`${owner}/${repo}`);
+    const allBranches: NormalisedBranch[] = [];
+    for (let page = 1; page <= 10; page++) {
+      try {
+        const res = await fetch(`${apiBase}/projects/${projectId}/repository/branches?per_page=100&page=${page}`, {
+          headers: { 'PRIVATE-TOKEN': token, Accept: 'application/json' },
+        });
+        if (!res.ok) break;
+        const branches: any[] = await res.json();
+        if (!branches || branches.length === 0) break;
+        for (const b of branches) {
+          allBranches.push({
+            name: b.name,
+            headSha: b.commit?.id || '',
+            isDefault: b.default || b.name === defaultBranch,
+            isProtected: b.protected || false,
+          });
+        }
+        if (branches.length < 100) break;
+      } catch { break; }
+    }
+    return allBranches;
+  }
+
+  return [];
+}
+
 // ── Normalised commit type ─────────────────────────────────────────
 export interface NormalisedCommit {
   sha: string;

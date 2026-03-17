@@ -2367,6 +2367,31 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_see_commits_product ON see_commits(product_id, authored_at DESC);
     `);
 
+    // Add classified_type column to see_commits if not present (Phase C)
+    await client.query(`
+      DO $$ BEGIN
+        ALTER TABLE see_commits ADD COLUMN IF NOT EXISTS classified_type VARCHAR(30);
+      EXCEPTION WHEN duplicate_column THEN NULL;
+      END $$;
+    `);
+
+    // ── SEE branches (Phase C) ────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS see_branches (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id      VARCHAR(255) NOT NULL,
+        name            VARCHAR(500) NOT NULL,
+        branch_type     VARCHAR(30) NOT NULL DEFAULT 'other',
+        is_default      BOOLEAN NOT NULL DEFAULT false,
+        is_protected    BOOLEAN NOT NULL DEFAULT false,
+        head_sha        VARCHAR(64),
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(product_id, name)
+      );
+      CREATE INDEX IF NOT EXISTS idx_see_branches_product ON see_branches(product_id);
+    `);
+
     // ── SEE developers (Phase B) ──────────────────────────────────────
     await client.query(`
       CREATE TABLE IF NOT EXISTS see_developers (

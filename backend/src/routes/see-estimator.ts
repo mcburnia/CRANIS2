@@ -31,6 +31,9 @@ import {
 import {
   ingestCommits, getCommitSummary, getDeveloperAttribution, getCommitActivity,
 } from '../services/see-commit-ingestor.js';
+import {
+  runBranchAnalysis, getBranchAnalysis,
+} from '../services/see-classifier.js';
 
 const router = Router();
 
@@ -349,6 +352,68 @@ router.get(
     } catch (err: any) {
       console.error(`[SEE] Activity error: ${err.message}`);
       res.status(500).json({ error: 'Failed to retrieve commit activity' });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// Phase C: Branch Analysis & Commit Classification
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── POST /:productId/see/branches/analyse ──────────────────────────
+
+router.post(
+  '/:productId/see/branches/analyse',
+  requireAuth,
+  requirePlan('pro'),
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const consent = await getSourceCodeConsent(productId, orgId);
+      if (!consent) {
+        return res.status(403).json({ error: 'source_code_consent_required' });
+      }
+
+      const result = await runBranchAnalysis(productId, orgId, userId);
+      res.json(result);
+    } catch (err: any) {
+      console.error(`[SEE] Branch analysis error: ${err.message}`);
+      res.status(500).json({ error: 'Branch analysis failed', message: err.message });
+    }
+  }
+);
+
+// ─── GET /:productId/see/branches ───────────────────────────────────
+
+router.get(
+  '/:productId/see/branches',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const productId = req.params.productId as string;
+      const userId = (req as any).userId;
+      const orgId = await getUserOrgId(userId);
+      if (!orgId) return res.status(400).json({ error: 'No organisation context' });
+
+      const product = await verifyProductAccess(orgId, productId);
+      if (!product) return res.status(404).json({ error: 'Product not found' });
+
+      const analysis = await getBranchAnalysis(productId);
+      if (!analysis) {
+        return res.json({ productId, analysed: false, message: 'No branch analysis available. Run analysis first.' });
+      }
+
+      res.json({ ...analysis, analysed: true });
+    } catch (err: any) {
+      console.error(`[SEE] Branches error: ${err.message}`);
+      res.status(500).json({ error: 'Failed to retrieve branch data' });
     }
   }
 );

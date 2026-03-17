@@ -254,6 +254,30 @@ export interface GitHubSBOMResponse {
 }
 
 /**
+ * Get branch list (READ-ONLY).
+ */
+export interface GitHubBranch {
+  name: string;
+  commit: { sha: string };
+  protected: boolean;
+}
+
+export async function getBranches(token: string, owner: string, repo: string): Promise<GitHubBranch[]> {
+  const allBranches: GitHubBranch[] = [];
+  for (let page = 1; page <= 10; page++) {
+    try {
+      const branches = await githubGet<GitHubBranch[]>(
+        `/repos/${owner}/${repo}/branches?per_page=100&page=${page}`, token
+      );
+      if (!branches || branches.length === 0) break;
+      allBranches.push(...branches);
+      if (branches.length < 100) break;
+    } catch { break; }
+  }
+  return allBranches;
+}
+
+/**
  * Get the SPDX SBOM from GitHub's dependency graph (READ-ONLY)
  * Returns null if the repo has no dependency data (404)
  */
