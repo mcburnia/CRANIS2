@@ -103,6 +103,18 @@ interface RequestOptions {
   timeout?: number;
 }
 
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 500;
+
+function isTransientError(err: unknown): boolean {
+  if (err instanceof TypeError && (err as any).cause) {
+    const cause = (err as any).cause;
+    const code = cause?.code || '';
+    return code === 'UND_ERR_SOCKET' || code === 'ECONNRESET' || code === 'ECONNREFUSED';
+  }
+  return false;
+}
+
 async function apiRequest(
   method: string,
   path: string,
@@ -124,30 +136,42 @@ async function apiRequest(
     headers['Authorization'] = `Bearer ${opts.auth}`;
   }
 
-  const fetchOpts: RequestInit = {
-    method,
-    headers,
-    signal: AbortSignal.timeout(opts.timeout || 15000),
-  };
+  const jsonBody = (opts.body && (method === 'POST' || method === 'PUT' || method === 'PATCH'))
+    ? JSON.stringify(opts.body) : undefined;
 
-  if (opts.body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-    fetchOpts.body = JSON.stringify(opts.body);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const fetchOpts: RequestInit = {
+        method,
+        headers,
+        signal: AbortSignal.timeout(opts.timeout || 15000),
+      };
+      if (jsonBody) fetchOpts.body = jsonBody;
+
+      const res = await fetch(url, fetchOpts);
+
+      let body: any;
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        body = await res.json();
+      } else if (contentType.includes('text/')) {
+        body = await res.text();
+      } else {
+        body = await res.arrayBuffer();
+      }
+
+      return { status: res.status, headers: res.headers, body, raw: res };
+    } catch (err) {
+      if (attempt < MAX_RETRIES && isTransientError(err)) {
+        await new Promise(r => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    }
   }
 
-  const res = await fetch(url, fetchOpts);
-
-  let body: any;
-  const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    body = await res.json();
-  } else if (contentType.includes('text/')) {
-    body = await res.text();
-  } else {
-    // Binary response (ZIP, PDF, etc.)
-    body = await res.arrayBuffer();
-  }
-
-  return { status: res.status, headers: res.headers, body, raw: res };
+  // Unreachable, but TypeScript needs it
+  throw new Error('apiRequest: max retries exceeded');
 }
 
 export const api = {
