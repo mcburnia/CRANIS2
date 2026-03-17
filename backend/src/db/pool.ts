@@ -2296,6 +2296,57 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
       CREATE INDEX IF NOT EXISTS idx_nonprofit_apps_status ON nonprofit_applications(status);
     `);
 
+    // ── SEE analysis runs (Software Evidence Engine) ─────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS see_analysis_runs (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        product_id          VARCHAR(255) NOT NULL,
+        org_id              UUID NOT NULL,
+        repo_url            TEXT,
+        repo_provider       VARCHAR(30),
+        default_branch      VARCHAR(255),
+        -- Code metrics
+        total_files         INT NOT NULL DEFAULT 0,
+        total_loc           INT NOT NULL DEFAULT 0,
+        production_loc      INT NOT NULL DEFAULT 0,
+        test_loc            INT NOT NULL DEFAULT 0,
+        config_loc          INT NOT NULL DEFAULT 0,
+        generated_loc       INT NOT NULL DEFAULT 0,
+        vendor_loc          INT NOT NULL DEFAULT 0,
+        docs_loc            INT NOT NULL DEFAULT 0,
+        -- Language breakdown (JSON: { "TypeScript": { loc: 5000, files: 42 }, ... })
+        language_breakdown  JSONB NOT NULL DEFAULT '{}',
+        -- File classification detail (JSON array of { path, language, classification, loc })
+        file_detail         JSONB NOT NULL DEFAULT '[]',
+        -- Effort estimates (low/mid/high)
+        effort_low_months   NUMERIC(8,1),
+        effort_mid_months   NUMERIC(8,1),
+        effort_high_months  NUMERIC(8,1),
+        cost_low_eur        NUMERIC(12,0),
+        cost_mid_eur        NUMERIC(12,0),
+        cost_high_eur       NUMERIC(12,0),
+        team_size_low       INT,
+        team_size_mid       INT,
+        team_size_high      INT,
+        rebuild_months_low  NUMERIC(6,1),
+        rebuild_months_mid  NUMERIC(6,1),
+        rebuild_months_high NUMERIC(6,1),
+        -- Complexity
+        complexity_category VARCHAR(50),
+        complexity_multiplier NUMERIC(4,2),
+        -- Assumptions frozen at scan time for auditability
+        assumptions         JSONB NOT NULL DEFAULT '{}',
+        -- Executive summary
+        executive_summary   TEXT,
+        -- Status
+        scan_status         VARCHAR(20) NOT NULL DEFAULT 'running',
+        error_message       TEXT,
+        completed_at        TIMESTAMPTZ,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_see_analysis_product ON see_analysis_runs(product_id, created_at DESC);
+    `);
+
   } finally {
     client.release();
   }

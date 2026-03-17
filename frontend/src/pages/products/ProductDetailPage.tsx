@@ -8,12 +8,13 @@ import CategoryRecommenderModal from '../../components/CategoryRecommenderModal'
 import SupplyChainTab from '../../components/SupplyChainTab';
 import ComplianceVaultTab from './product-detail/ComplianceVaultTab';
 import CryptoInventoryTab from './product-detail/CryptoInventoryTab';
+import SoftwareEvidenceTab from './product-detail/SoftwareEvidenceTab';
 import FieldIssuesTab from './product-detail/FieldIssuesTab';
 import IncidentsTab from './product-detail/IncidentsTab';
 import {
   ArrowLeft, Package, Shield, FileText, AlertTriangle, GitBranch, History, Trash2,
   Edit3, Save, X, RefreshCw, Loader2, Download, Archive, Sparkles, Lock, ClipboardList,
-  ExternalLink, Star, GitFork, Siren,
+  ExternalLink, Star, GitFork, Siren, Calculator,
 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './ProductDetailPage.css';
@@ -48,6 +49,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Package }[] = [
   { key: 'field-issues', label: 'Field Issues', icon: ClipboardList },
   { key: 'incidents', label: 'Incidents', icon: Siren },
   { key: 'compliance-vault', label: 'Compliance Vault', icon: Archive },
+  { key: 'software-evidence', label: 'Software Evidence', icon: Calculator },
 ];
 
 export default function ProductDetailPage() {
@@ -663,6 +665,7 @@ export default function ProductDetailPage() {
         {activeTab === 'crypto-inventory' && <CryptoInventoryTab productId={product.id} />}
         {activeTab === 'field-issues' && <FieldIssuesTab productId={product.id} />}
         {activeTab === 'incidents' && <IncidentsTab productId={product.id} />}
+        {activeTab === 'software-evidence' && <SoftwareEvidenceTab productId={product.id} />}
         {activeTab === 'compliance-vault' && <ComplianceVaultTab productId={product.id} marketPlacementDate={product.marketPlacementDate} supportEndDate={techFileData.sections.find(s => s.sectionKey === 'support_period')?.content?.fields?.end_date || null} lifecycleStatus={product.lifecycleStatus} />}
       </div>
 
