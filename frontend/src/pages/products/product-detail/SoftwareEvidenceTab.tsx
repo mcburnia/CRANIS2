@@ -786,14 +786,14 @@ export default function SoftwareEvidenceTab({ productId }: { productId: string }
             {/* Confidence summary */}
             {experiments.uncertaintySummary && (
               <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-                <div style={{ background: '#EAF3DE', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif' }}>
+                <div style={{ background: '#EAF3DE', color: '#173404', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif' }}>
                   <strong>{experiments.uncertaintySummary.highConfidence}</strong> high confidence
                 </div>
-                <div style={{ background: '#FAEEDA', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif' }}>
+                <div style={{ background: '#FAEEDA', color: '#412402', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif' }}>
                   <strong>{experiments.uncertaintySummary.mediumConfidence}</strong> medium confidence
                 </div>
                 {experiments.uncertaintySummary.lowConfidence > 0 && (
-                  <div style={{ background: '#F1EFE8', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif' }}>
+                  <div style={{ background: '#F1EFE8', color: '#2C2C2A', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: 'Outfit, sans-serif' }}>
                     <strong>{experiments.uncertaintySummary.lowConfidence}</strong> low confidence
                   </div>
                 )}
