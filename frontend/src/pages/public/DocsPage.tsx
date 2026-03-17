@@ -3,7 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
-import { Book, HelpCircle, ChevronRight, ArrowUp, Menu, X, Loader } from 'lucide-react';
+import { Book, HelpCircle, ChevronRight, ArrowUp, Menu, X, Loader, Shield, Code } from 'lucide-react';
 import GithubSlugger from 'github-slugger';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './DocsPage.css';
@@ -81,6 +81,7 @@ export default function DocsPage() {
 
   const [activeId, setActiveId] = useState('');
   const [tocOpen, setTocOpen] = useState(false);
+  const [audienceFilter, setAudienceFilter] = useState<'all' | 'admin' | 'contributor'>('all');
 
   /* Scroll to hash on mount or route change */
   useEffect(() => {
@@ -175,22 +176,55 @@ export default function DocsPage() {
         {/* TOC sidebar */}
         <aside className={`doc-toc${tocOpen ? ' doc-toc-open' : ''}`}>
           <div className="doc-toc-header">{isFaq ? 'FAQ Topics' : 'Contents'}</div>
-          <nav className="doc-toc-nav">
-            {tocItems.map((h) => (
-              <a
-                key={h.id}
-                href={`#${h.id}`}
-                className={`doc-toc-item doc-toc-level-${h.level}${
-                  activeId === h.id ? ' doc-toc-active' : ''
-                }`}
-                onClick={() => setTocOpen(false)}
+
+          {/* Audience filter (User Guide only) */}
+          {!isFaq && (
+            <div className="doc-audience-filter">
+              <button
+                className={`doc-audience-btn${audienceFilter === 'all' ? ' doc-audience-active' : ''}`}
+                onClick={() => setAudienceFilter('all')}
               >
-                {h.level === 3 && (
-                  <ChevronRight size={12} className="doc-toc-chevron" />
-                )}
-                {h.text}
-              </a>
-            ))}
+                All
+              </button>
+              <button
+                className={`doc-audience-btn${audienceFilter === 'admin' ? ' doc-audience-active' : ''}`}
+                onClick={() => setAudienceFilter('admin')}
+              >
+                <Shield size={12} /> Admin
+              </button>
+              <button
+                className={`doc-audience-btn${audienceFilter === 'contributor' ? ' doc-audience-active' : ''}`}
+                onClick={() => setAudienceFilter('contributor')}
+              >
+                <Code size={12} /> Contributor
+              </button>
+            </div>
+          )}
+
+          <nav className="doc-toc-nav">
+            {tocItems.map((h) => {
+              /* Apply audience filtering for User Guide TOC group headings */
+              if (!isFaq && audienceFilter !== 'all' && h.level === 3) {
+                const lower = h.text.toLowerCase();
+                if (audienceFilter === 'admin' && lower.includes('(contributor)')) return null;
+                if (audienceFilter === 'contributor' && lower.includes('(admin)')) return null;
+              }
+              return (
+                <a
+                  key={h.id}
+                  href={`#${h.id}`}
+                  className={`doc-toc-item doc-toc-level-${h.level}${
+                    activeId === h.id ? ' doc-toc-active' : ''
+                  }`}
+                  onClick={() => setTocOpen(false)}
+                >
+                  {h.level === 3 && (
+                    <ChevronRight size={12} className="doc-toc-chevron" />
+                  )}
+                  {h.text}
+                </a>
+              );
+            })}
           </nav>
         </aside>
 

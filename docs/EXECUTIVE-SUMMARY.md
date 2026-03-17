@@ -54,6 +54,10 @@ CRANIS2 takes the dependency and component information present in your repositor
 
 - **Product Lifecycle Management.** Tracks products through their lifecycle stages: pre-production, on-market, and end-of-life. Market placement dates drive retention calculations and obligation timelines. End-of-support dates are linked to technical file sections with automatic retention extension when updated.
 
+- **Software Evidence Engine (SEE) (Pro Plan).** Analyses connected repositories to extract structured engineering evidence for R&D tax credits, due diligence, and multi-regulation compliance. Opt-in per product (requires explicit source code consent). Repository access is strictly read-only — CRANIS2 never writes to your repository and never stores your source code. The analysis reads commit metadata, branch structures, and file classifications, then extracts structured metrics. The source content is processed transiently and discarded. What is retained: lines-of-code counts by language, effort and cost estimates (COCOMO II), commit metadata (author, date, message, classification), branch types, developer attribution percentages, experimentation indicators, and architecture evolution events. Eight analysis phases cover: LOC estimation and effort/cost calculation, commit history ingestion with developer attribution, branch analysis with deterministic commit classification (9 categories), experimentation detection for R&D evidence (refactoring waves, prototype branches, rapid iteration, algorithm replacement), architecture and test evolution tracking, an evidence graph linking development data to existing SBOM and vulnerability records, and multi-regulation report generation (R&D Tax, CRA, NIS2, AI Act, DORA, ISO 27001). Reports are deterministic, auditable, and exportable as Markdown.
+
+- **Session Capture & Competence Profiling (Pro Plan).** Records development sessions (with explicit developer consent) to build evidence of engineering competence — a requirement for R&D tax credit claims in multiple jurisdictions. Session transcripts are stored in the platform's Forgejo instance (EU-sovereign, git-backed). A Competence Evidence Profile is generated from each session, assessing 10 domains including domain vocabulary, design reasoning, industry awareness, and decision quality. This addresses the "competent professional" requirement in R&D tax relief schemes without relying on formal qualifications. Session capture integrates with Claude Code via hooks configuration, and with other AI-assisted development tools via the MCP server.
+
 ## Why Now?
 
 The Cyber Resilience Act entered into force in December 2024. Its requirements are phasing in on a strict timeline:
@@ -71,21 +75,34 @@ Companies that start now have time to build compliance into their workflow. Comp
 
 ## Who Is It For?
 
-CRANIS2 is built for **software product companies that sell into the EU market**, particularly:
+CRANIS2 is built for **software product companies that sell into the EU market**. It serves two distinct audiences within each organisation:
+
+### Organisation and Product Administrators
+
+Compliance officers, product managers, and organisation administrators who need to manage regulatory obligations, maintain technical documentation, track vulnerabilities, and demonstrate conformity to market surveillance authorities.
 
 - **SMEs and scale-ups** that lack dedicated regulatory teams but still need to demonstrate compliance
 - **B2B software vendors** whose customers are beginning to ask for SBOMs and vulnerability disclosures as part of procurement
 - **Any company with products containing software** that will be subject to CRA classification (the vast majority of digital products)
 
+### Development and Testing Contributors
+
+Software engineers, test engineers, and DevOps practitioners whose daily work generates the evidence that compliance depends on. CRANIS2 connects their development activity to the compliance programme without requiring them to change how they work.
+
+- **Engineers whose commits are analysed** by the Software Evidence Engine for R&D tax credit evidence, effort estimation, and regulatory compliance reports
+- **Developers using AI-assisted tools** (Claude Code, Cursor, VS Code) who can query compliance data directly from their IDE via the MCP server
+- **CI/CD pipeline operators** who integrate compliance gates into their deployment workflows
+- **Contributors whose competence is profiled** from development sessions to satisfy the "competent professional" requirement for R&D tax relief
+
 If you build software and have customers in Europe, this applies to you.
 
 ## "But That Means You Have Access to Our Source Code!"
 
-**CRANIS2 reads import statements but never stores, analyses or modifies your source code in any way.**
+**CRANIS2 never stores your source code and never writes to your repository. All repository access is strictly read-only.**
 
 This is the most common question we hear, and the answer is clear. Here is exactly what happens:
 
-1. You connect your source code repository. For GitHub and Codeberg, this is via OAuth (the same mechanism used by CI/CD tools and developer platforms). For Gitea, Forgejo, and GitLab (including self-hosted instances), you provide a Personal Access Token (PAT) which is encrypted at rest using AES-256-GCM.
+1. You connect your source code repository. For GitHub and Codeberg, this is via OAuth (the same mechanism used by CI/CD tools and developer platforms). For Gitea, Forgejo, and GitLab (including self-hosted instances), you provide a Personal Access Token (PAT) which is encrypted at rest using AES-256-GCM. **All connections use read-only scopes. CRANIS2 cannot push code, create branches, modify files, or change any repository settings.**
 
 2. CRANIS2 identifies your dependencies using a three-tier approach:
    - **Tier 1 (API):** For GitHub, it calls the Dependency Graph API, returning package names and versions as structured metadata
@@ -94,22 +111,30 @@ This is the most common question we hear, and the answer is clear. Here is exact
 
 3. The dependency list is what we work with. We scan it against vulnerability databases, classify licences, and track changes over time.
 
+4. **With the Software Evidence Engine (opt-in only),** CRANIS2 reads more deeply into your repository: commit history, branch structures, and file paths. This enables effort estimation, developer attribution, and R&D evidence extraction. The same two guarantees apply: **source code is never stored** (only extracted metadata such as LOC counts, commit classifications, and file type categories are retained), and **nothing is ever written back to your repository**.
+
 **What we store:**
 - Package names and versions (e.g. "express 4.18.2")
 - Licence identifiers (e.g. "MIT", "Apache-2.0")
 - Vulnerability findings linked to those packages
 - Compliance documentation you create within the platform
 - Encrypted access tokens for repository connections (AES-256-GCM)
+- With SEE consent: commit metadata (author, date, message, classification), LOC counts by language, branch types, developer attribution percentages, and architecture evolution events
 
-**What we never store or analyse:**
-- Your source code logic, algorithms, or business rules
-- Your commit history or diffs
+**What we never store:**
+- Your source code, logic, algorithms, or business rules
+- Your diffs or file contents
 - Your intellectual property
-- Your repository contents (beyond transient import scanning)
+- Your repository contents (all source file access is transient — read, extract metadata, discard)
 
-The architecture is analogous to a pharmacist reading the ingredients list on a medicine bottle and checking each one against a safety database. They can see what goes into it. They cannot see the manufacturing process, the proprietary formula, or the factory floor.
+**What we never do:**
+- Write to your repository (no pushes, no branches, no file modifications, no settings changes)
+- Share your data with other organisations (strict multi-tenant isolation)
+- Send your source code to any third party, including AI providers
 
-Your code stays in your repository. We read the labels, and in some cases glance at the import lines, but your source code is never stored, analysed or modified in any way.
+The architecture is analogous to a pharmacist reading the ingredients list on a medicine bottle and checking each one against a safety database. They can see what goes into it. They cannot see the manufacturing process, the proprietary formula, or the factory floor. The pharmacist never writes on the bottle.
+
+Your code stays in your repository. We read metadata, and in some cases scan import lines or commit history, but your source code is never stored and your repository is never modified.
 
 ## How It Works Day-to-Day
 
@@ -134,10 +159,10 @@ Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerab
 | | |
 |---|---|
 | **Problem** | EU legislation (CRA + NIS2) requires software companies to demonstrate cybersecurity compliance. Most have no tooling for this |
-| **Solution** | CRANIS2 automates SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, regulatory reporting, post-market monitoring with field issue tracking, cryptographic standards inventory with PQC readiness, source code escrow, compliance evidence vault with 10-year retention, document templates, conformity assessments (CRA, NIS2, importer, PQC), AI-powered compliance intelligence, supplier due diligence, GRC/OSCAL bridge, and external integrations (API, CI/CD, Trello, IDE) |
+| **Solution** | CRANIS2 automates SBOM management, vulnerability monitoring, licence compliance, IP proof, technical documentation, regulatory reporting, post-market monitoring with field issue tracking, cryptographic standards inventory with PQC readiness, source code escrow, compliance evidence vault with 10-year retention, document templates, conformity assessments (CRA, NIS2, importer, PQC), AI-powered compliance intelligence, supplier due diligence, GRC/OSCAL bridge, software evidence engine with R&D tax credit support, session capture with competence profiling, and external integrations (API, CI/CD, Trello, IDE, MCP) |
 | **Timing** | CRA reporting obligations begin Sept 2026; full compliance required Dec 2027 |
-| **Audience** | Software product companies selling into the EU, especially SMEs without dedicated compliance teams |
-| **Source code** | Import statements are read but source code is never stored, analysed or modified |
+| **Audience** | Organisation administrators (compliance officers, product managers) and development contributors (engineers, testers, DevOps) at software product companies selling into the EU |
+| **Source code** | Source code is never stored. Repositories are never written to. All access is strictly read-only. SEE analysis (opt-in) reads commit metadata and file classifications but retains only structured metrics |
 | **Providers** | GitHub, Codeberg, Gitea, Forgejo, GitLab (including self-hosted instances) |
 | **Deployment** | SaaS platform at cranis2.com, hosted in Switzerland (Infomaniak) |
 

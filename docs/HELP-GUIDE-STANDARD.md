@@ -1,8 +1,8 @@
 # CRANIS2 Help Guide Standard
 
-**Version:** 1.0
+**Version:** 2.0
 **Author:** Andi McBurnie
-**Last updated:** 2026-03-16
+**Last updated:** 2026-03-17
 
 This document defines the design principles, content standards, and Copilot integration requirements for all help guides, user documentation, FAQs, and contextual guidance within CRANIS2.
 
@@ -167,47 +167,65 @@ This mapping ensures the help guide can tell the user not just *what* the Copilo
 
 ---
 
-## 5. Audience Roles
+## 5. Audience Tracks
 
-CRANIS2 users fall into distinct roles. Each role has different knowledge, different responsibilities, and different tolerance for detail.
+CRANIS2 documentation, help guides, and FAQs serve two primary audience tracks. Every guide must be tagged with its audience track to enable filtering and navigation.
 
-### 5.1 Software Engineer
+### 5.1 Two-Track Model
 
-- **Needs:** How their code and dependencies affect compliance. What the SBOM and vulnerability scans found. What they need to fix.
-- **Does not need:** Regulatory Article numbers, compliance process detail, billing information.
-- **Tone:** Technical, direct, no hand-holding.
+| Track | Who | What they need |
+|-------|-----|---------------|
+| **Admin** | Organisation administrators, compliance officers, product managers | Obligations, technical files, ENISA reporting, billing, vulnerability management, conformity assessments, document templates, post-market monitoring |
+| **Contributor** | Software engineers, test engineers, DevOps practitioners | Repository connection, SEE (evidence engine), session capture, CI/CD gate, MCP/IDE tools, API keys, dependency details, vulnerability findings |
 
-### 5.2 Product Manager
+Many guides are relevant to both tracks. Where a guide is primarily for one track, it must be tagged accordingly. Where it serves both, it should present the admin perspective first (obligations, compliance decisions) followed by the contributor perspective (what this means for development activity).
 
-- **Needs:** Overall product compliance status. What decisions are pending. What the deadlines are. How to prioritise.
-- **Does not need:** Dependency-level detail, code-level vulnerability information.
-- **Tone:** Outcome-focused, decision-oriented.
+### 5.2 Chapter-to-Track Mapping
 
-### 5.3 Compliance Officer
+| Chapter | Track | Rationale |
+|---------|-------|-----------|
+| Ch 0: Foundations | Both | CRA primer and glossary are universal |
+| Ch 1: Onboarding | Both | Account setup is universal; repo connection is contributor-focused |
+| Ch 2: SBOM & Supply Chain | Both | Admin manages supply chain; contributor connects repos |
+| Ch 3: Vulnerability Triage | Both | Admin triages findings; contributor fixes them |
+| Ch 4: Technical Files & Obligations | Admin | Compliance documentation is admin-owned |
+| Ch 5: Compliance Reporting | Admin | Reports, vault, and exports are admin functions |
+| Ch 6: Post-Market Monitoring | Admin | Field issues and corrective actions are admin-managed |
+| Ch 7: Administration & Integration | Split | ch7_01-ch7_03 are Contributor (API, CI/CD, MCP); ch7_04-ch7_10 are Admin |
 
-- **Needs:** Regulatory traceability. Evidence completeness. Audit readiness. Gap analysis.
-- **Does not need:** Code-level detail, deployment information.
-- **Tone:** Regulatory-precise, evidence-oriented.
+### 5.3 Detailed Role Profiles
 
-### 5.4 Test Engineer
+Within the two tracks, five specific roles exist:
 
-- **Needs:** What tests satisfy which obligations. How to document test evidence. What the platform expects as proof of testing.
-- **Does not need:** Business-level compliance strategy, billing.
-- **Tone:** Procedural, evidence-focused.
+**Admin track:**
 
-### 5.5 Administration User
+- **Compliance Officer** — Needs regulatory traceability, evidence completeness, audit readiness, gap analysis. Tone: regulatory-precise, evidence-oriented.
+- **Product Manager** — Needs overall product compliance status, pending decisions, deadlines, prioritisation. Tone: outcome-focused, decision-oriented.
+- **Administration User** — Needs organisation setup, user management, billing, Copilot configuration, platform settings. Tone: operational, settings-oriented.
 
-- **Needs:** Organisation setup, user management, billing, Copilot configuration, platform settings.
-- **Does not need:** Product-level compliance detail unless they also hold another role.
-- **Tone:** Operational, settings-oriented.
+**Contributor track:**
 
-### 5.6 Role-Aware Content Delivery
+- **Software Engineer** — Needs how their code and dependencies affect compliance, what SBOMs and vulnerability scans found, what they need to fix, how SEE analyses their commits. Tone: technical, direct.
+- **Test Engineer** — Needs what tests satisfy which obligations, how to document test evidence, how test evolution is tracked by the SEE. Tone: procedural, evidence-focused.
 
-Where possible, help content should adapt to the user's role. This can be achieved through:
+### 5.4 Audience Tags in HTML
 
-- **Role tags** on help content sections, allowing the panel to filter or highlight relevant sections
-- **Role-specific landing pages** that surface the most relevant guides for each role
-- **Conditional depth** where the same guide offers a summary for one role and full detail for another
+Every help guide HTML file must include audience tags in the header using the standard CSS classes:
+
+```html
+<span class="audience-tag audience-admin">Admin</span>
+<span class="audience-tag audience-contributor">Contributor</span>
+```
+
+Guides relevant to both tracks include both tags. The help panel can use these tags for filtering.
+
+### 5.5 Role-Aware Content Delivery
+
+Where possible, help content should adapt to the user's track. This can be achieved through:
+
+- **Track tags** on each guide, enabling the help panel to filter by audience
+- **Track-specific section ordering** within guides that serve both tracks
+- **Conditional depth** where the same guide offers a summary for one track and full detail for another
 
 ---
 

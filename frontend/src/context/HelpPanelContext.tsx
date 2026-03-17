@@ -128,6 +128,16 @@ export function HelpPanelProvider({ children }: { children: ReactNode }) {
     setCurrentPage(helpPage);
   }, [location.pathname, location.search]);
 
+  // Listen for tab changes via replaceState (two-tier tabs dispatch this custom event)
+  useEffect(() => {
+    const handleTabChange = () => {
+      const helpPage = getHelpPageForRoute(window.location.pathname, window.location.search);
+      setCurrentPage(helpPage);
+    };
+    window.addEventListener('cranis2:tab-change', handleTabChange);
+    return () => window.removeEventListener('cranis2:tab-change', handleTabChange);
+  }, []);
+
   const toggle = useCallback(() => {
     setIsOpen(prev => {
       const next = !prev;

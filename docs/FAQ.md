@@ -1,7 +1,7 @@
 # CRANIS2 Frequently Asked Questions
 
-**Document Version:** 3.0
-**Last Updated:** 2026-03-14
+**Document Version:** 4.0
+**Last Updated:** 2026-03-17
 
 ---
 
@@ -32,6 +32,9 @@
 23. [Cryptographic Standards & Quantum Readiness](#cryptographic-standards--quantum-readiness)
 24. [Conformity Assessments](#conformity-assessments)
 25. [GRC/OSCAL Bridge](#grcooscal-bridge)
+26. [Software Evidence Engine](#software-evidence-engine)
+27. [Session Capture & Competence Profiling](#session-capture--competence-profiling)
+28. [For Development Contributors](#for-development-contributors)
 
 ---
 
@@ -291,9 +294,11 @@ See the User Guide, Section 5: Products.
 
 ### Q: Does CRANIS2 access my source code?
 
-CRANIS2 reads dependency metadata from your repositories but **never stores, analyses, or modifies your source code**. During SBOM generation, repository contents are accessed via the provider's API, parsed in memory, and only the resulting dependency metadata is persisted. Source files are not written to disk, cached, or transmitted to any third party. This applies to all three SBOM generation tiers, including the import scanner.
+CRANIS2 reads repository metadata but **never stores your source code and never writes to your repository**. All repository access is strictly read-only — no pushes, no branches, no file modifications, no settings changes. During SBOM generation, source files may be read via the provider's API, parsed in memory, and only dependency metadata is retained. Source content is discarded immediately. This applies to all three SBOM generation tiers, including the import scanner.
 
-See the User Guide, Section 14: Repository Management.
+With the Software Evidence Engine (opt-in only), CRANIS2 reads more deeply: commit metadata, branch structures, and file paths. The same guarantees apply — source code is never stored, and the repository is never written to. Only structured metrics are retained.
+
+See the User Guide, Section 43: Source Code Guarantee.
 
 ### Q: What data is stored from my repository?
 
@@ -303,8 +308,13 @@ CRANIS2 stores the following from your repository:
 - **Contributor information**: usernames and contribution counts (from the provider's API)
 - **Repository statistics**: stars, forks, open issues, and language breakdown
 - **Release and tag information**: version tags and release dates
+- **With SEE consent (opt-in)**: commit metadata (author, date, message, classification), LOC counts by language, branch types, developer attribution percentages, architecture evolution events
 
-It does **not** store source code files, commit diffs, file contents, or any proprietary business logic. See the User Guide, Section 14: Repository Management and Section 16: Dependencies.
+It does **not** store source code files, file contents, diffs, or any proprietary business logic. See the User Guide, Section 14: Repository Management, Section 16: Dependencies, and Section 43: Source Code Guarantee.
+
+### Q: Does CRANIS2 ever write to my repository?
+
+No. All repository access is strictly read-only. CRANIS2 cannot push code, create branches, modify files, or change any repository settings. Repository connections use read-only scopes (OAuth) or read-only Personal Access Tokens.
 
 ### Q: How does import scanning work without storing source code?
 
@@ -1067,6 +1077,94 @@ Any tool that supports OSCAL 1.1.2 JSON, including Trestle, Lula, Comply, and ot
 ### Q: How do I access OSCAL exports?
 
 OSCAL exports are available via the Public API (Pro plan required). Use the API endpoints for each document type: `/api/v1/products/:productId/oscal/catalog`, `/oscal/profile`, `/oscal/assessment-results`, and `/oscal/component-definition`.
+
+---
+
+## Software Evidence Engine
+
+### Q: What is the Software Evidence Engine?
+
+The Software Evidence Engine (SEE) analyses connected repositories to extract structured engineering evidence for R&D tax credits, due diligence, and multi-regulation compliance reporting. It operates in eight phases covering LOC estimation, commit history analysis, branch classification, experimentation detection, architecture evolution, evidence graph integration, multi-regulation report generation, and session capture with competence profiling.
+
+**Requires:** Pro plan. Opt-in per product (explicit source code consent required).
+
+See the User Guide, Section 41: Software Evidence Engine.
+
+### Q: Does the SEE store my source code?
+
+No. The SEE reads commit metadata, branch structures, and file paths, but never stores source code. Source files are processed transiently — read, metadata extracted, content discarded. What is retained: LOC counts by language, commit classifications, developer attribution percentages, branch types, experimentation indicators, and architecture evolution events.
+
+### Q: Does the SEE write to my repository?
+
+No. All repository access is strictly read-only. The SEE cannot push code, create branches, or modify files.
+
+### Q: What regulations does the SEE support?
+
+The SEE generates evidence reports for six regulatory frameworks: R&D Tax (HMRC, CIR, Forschungszulage, I+D+i), CRA, NIS2, AI Act, DORA, and ISO 27001. Reports are deterministic, auditable, and exportable as Markdown.
+
+### Q: How does experimentation detection work?
+
+Five algorithms identify R&D activity patterns in your commit and branch history: refactoring waves (clustered refactoring commits), prototype branches (high churn, short lifespan), rapid iteration cycles (repeated changes within short windows), high rewrite ratios (sustained rework indicating technical uncertainty), and fix-after-feature patterns (fixes closely following feature commits). These patterns are used as evidence of technological uncertainty for R&D tax credit claims.
+
+### Q: What is the COCOMO II effort model?
+
+The SEE uses a COCOMO II-style model to estimate development effort (person-months) and cost ranges from LOC counts. It produces low, mid, and high estimates based on productivity factors and project complexity. These estimates are included in the executive report.
+
+---
+
+## Session Capture & Competence Profiling
+
+### Q: What is session capture?
+
+Session capture records development sessions (via Claude Code hooks or MCP integration) to build evidence of engineering competence. This addresses the "competent professional" requirement in R&D tax relief schemes. Each developer is prompted for explicit consent before any session is recorded.
+
+**Requires:** Pro plan. Explicit developer consent per session.
+
+See the User Guide, Section 42: Session Capture & Competence Profiling.
+
+### Q: Where are session transcripts stored?
+
+Session transcripts are stored in the platform's Forgejo instance — EU-sovereign, git-backed, within the CRANIS2 infrastructure. This provides European data sovereignty and a full audit trail via git history.
+
+### Q: What is a Competence Evidence Profile?
+
+A structured assessment of engineering competence generated from a development session. It evaluates 10 domains: domain vocabulary, design reasoning, industry reference detection, decision quality, technical uncertainty identification, problem decomposition, trade-off analysis, standards awareness, security consciousness, and architecture comprehension.
+
+### Q: Why does R&D tax relief require competence evidence?
+
+R&D tax relief schemes (HMRC, CIR, Forschungszulage, I+D+i) require evidence that qualifying work was carried out by competent professionals exercising judgement in the face of technical uncertainty. Traditional evidence relies on formal qualifications. Session capture provides behavioural evidence from actual development activity, which is more defensible and does not exclude self-taught engineers.
+
+### Q: Is session capture mandatory?
+
+No. Session capture is always optional and requires explicit consent from each individual developer. No recording occurs without consent. Developers can opt out at any time.
+
+---
+
+## For Development Contributors
+
+### Q: How does CRANIS2 affect my daily work as a developer?
+
+CRANIS2 connects to your repositories and analyses your development activity to build compliance and R&D evidence. It does not require you to change how you work. Your commits, branches, and pull requests generate evidence automatically. You may also use the MCP server to query compliance data from your IDE, or integrate the CI/CD compliance gate into your deployment pipeline.
+
+### Q: Will my commits be analysed?
+
+If your product owner has enabled the Software Evidence Engine, your commits will be analysed for metadata: author, date, message, additions/deletions. The commit message is classified into one of nine categories (feature, fix, refactor, test, documentation, build, style, experiment, chore). Developer attribution is calculated as contribution percentages. Your source code is never stored.
+
+### Q: Is developer attribution a performance metric?
+
+No. Developer attribution measures evidence coverage for R&D tax credit claims, not individual performance. It shows which developers contributed to which aspects of the codebase, supporting the "competent professional" requirement for R&D tax relief. It is not used for ranking, evaluation, or comparison.
+
+### Q: Can I query compliance data from my IDE?
+
+Yes. The MCP server exposes five tools to IDE AI assistants (VS Code, Cursor, Claude Desktop, Claude Code): list products, get vulnerabilities, get mitigation commands, verify fixes, and check compliance status. Setup instructions are available in the `mcp/README.md` file and on the Integrations page within the platform.
+
+### Q: How does the CI/CD compliance gate work?
+
+The compliance gate is a pipeline step that queries the CRANIS2 Public API and fails the build if open critical or high vulnerability findings exist for the product. Ready-made snippets are provided for GitHub Actions, GitLab CI, and generic bash scripts. See the User Guide, Section 34: CI/CD Compliance Gate.
+
+### Q: Can I opt out of session capture?
+
+Yes. Session capture always requires explicit consent from each individual developer. No recording occurs without your consent. You can opt out at any time, and existing session data does not affect your ability to continue contributing.
 
 ---
 

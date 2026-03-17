@@ -1,17 +1,33 @@
 # CRANIS2 User Guide
 
-**Document Version:** 3.0
-**Last Updated:** 2026-03-14
-**Covers:** Sections 1–40 plus Appendices A–E
+**Document Version:** 4.0
+**Last Updated:** 2026-03-17
+**Covers:** Sections 1–43 plus Appendices A–E
+
+---
+
+## How This Guide Is Organised
+
+This guide serves two audiences. Sections are tagged so you can focus on what is relevant to your role:
+
+- **Admin** — Organisation administrators, compliance officers, and product managers who configure products, manage obligations, and maintain compliance documentation.
+- **Contributor** — Software engineers, test engineers, and DevOps practitioners whose development activity generates compliance and R&D evidence.
+
+Most sections are relevant to both audiences. Where a section is primarily for one audience, it is marked accordingly.
 
 ---
 
 ## Table of Contents
 
+### Foundations (Admin + Contributor)
+
 1. [Introduction](#1-introduction)
 2. [Regulatory Context](#2-regulatory-context)
 3. [Getting Started](#3-getting-started)
 4. [Navigating the Platform](#4-navigating-the-platform)
+
+### Product & Compliance Management (Admin)
+
 5. [Products](#5-products)
 6. [Compliance Timeline](#6-compliance-timeline)
 7. [Escrow](#7-escrow)
@@ -21,10 +37,16 @@
 11. [Licence Compliance](#11-licence-compliance)
 12. [IP Proof](#12-ip-proof)
 13. [Due Diligence Export](#13-due-diligence-export)
+
+### Supply Chain & Development (Admin + Contributor)
+
 14. [Repository Management](#14-repository-management)
 15. [Contributors](#15-contributors)
 16. [Dependencies](#16-dependencies)
 17. [Risk Findings (Vulnerability Management)](#17-risk-findings-vulnerability-management)
+
+### Organisation & Billing (Admin)
+
 18. [Billing](#18-billing)
 19. [Marketplace](#19-marketplace)
 20. [Stakeholders](#20-stakeholders)
@@ -33,6 +55,9 @@
 23. [Feedback System](#23-feedback-system)
 24. [Platform Administration](#24-platform-administration)
 25. [Automated Background Processes](#25-automated-background-processes)
+
+### AI Intelligence (Admin)
+
 26. [AI Copilot](#26-ai-copilot)
 27. [AI Auto-Triage](#27-ai-auto-triage)
 28. [AI Risk Assessment](#28-ai-risk-assessment)
@@ -40,14 +65,29 @@
 30. [CRA Category Recommender](#30-cra-category-recommender)
 31. [Supplier Due Diligence](#31-supplier-due-diligence)
 32. [Compliance Gap Narrator](#32-compliance-gap-narrator)
+
+### Developer Tools & Integrations (Contributor)
+
 33. [Public API & API Keys](#33-public-api--api-keys)
 34. [CI/CD Compliance Gate](#34-cicd-compliance-gate)
 35. [Integrations (Trello, MCP, IDE)](#35-integrations-trello-mcp-ide)
 36. [Copilot Usage & Cost Protection](#36-copilot-usage--cost-protection)
+
+### Post-Market & Monitoring (Admin)
+
 37. [Post-Market Monitoring & Field Issues](#37-post-market-monitoring--field-issues)
 38. [Cryptographic Standards Inventory](#38-cryptographic-standards-inventory)
 39. [Conformity Assessments](#39-conformity-assessments)
 40. [GRC/OSCAL Bridge](#40-grcooscal-bridge)
+
+### Software Evidence Engine (Contributor + Admin)
+
+41. [Software Evidence Engine](#41-software-evidence-engine)
+42. [Session Capture & Competence Profiling](#42-session-capture--competence-profiling)
+43. [Source Code Guarantee](#43-source-code-guarantee)
+
+### Appendices
+
 - [Appendix A: CRA Product Categories](#appendix-a-cra-product-categories)
 - [Appendix B: Supported Repository Providers](#appendix-b-supported-repository-providers)
 - [Appendix C: Supported Lockfile Formats](#appendix-c-supported-lockfile-formats)
@@ -62,16 +102,24 @@
 
 CRANIS2 is a compliance platform that helps software companies meet the requirements of two major pieces of EU legislation: the **Cyber Resilience Act (CRA)** and the **NIS2 Directive**.
 
-It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see. CRANIS2 reads dependency metadata from your repositories but never stores, analyses or modifies your source code. The platform automates a comprehensive set of compliance functions: SBOM management, vulnerability monitoring, licence compliance, intellectual property proof, CRA technical documentation, ENISA reporting, source code escrow, post-market monitoring with field issue tracking, cryptographic standards inventory with PQC readiness, compliance evidence vault, document templates, conformity assessments, AI-powered compliance intelligence, supplier due diligence, GRC/OSCAL bridge, and external integrations.
+It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see. CRANIS2 never stores your source code and never writes to your repositories — all access is strictly read-only. The platform automates a comprehensive set of compliance functions: SBOM management, vulnerability monitoring, licence compliance, intellectual property proof, CRA technical documentation, ENISA reporting, source code escrow, post-market monitoring with field issue tracking, cryptographic standards inventory with PQC readiness, compliance evidence vault, document templates, conformity assessments, AI-powered compliance intelligence, supplier due diligence, GRC/OSCAL bridge, software evidence engine with R&D tax credit support, session capture with competence profiling, and external integrations (API, CI/CD, Trello, IDE, MCP).
 
 ### Who This Guide Is For
 
-This guide is written for four audiences:
+This guide serves two primary audiences:
 
-- **Organisation Admins** – Users who set up and manage their company's CRANIS2 account, configure products, and oversee compliance activities.
-- **Organisation Members** – Team members who work within the platform: reviewing findings, updating technical files, filing reports.
-- **Platform Admins** – Users with platform-level access who manage organisations, monitor system health, and administer the vulnerability database. Platform admin functions are covered in the second half of this guide.
+**Organisation and Product Administrators** — Compliance officers, product managers, and organisation administrators who configure products, manage obligations, maintain technical documentation, track vulnerabilities, and demonstrate conformity to market surveillance authorities.
+
+**Development and Testing Contributors** — Software engineers, test engineers, and DevOps practitioners whose daily development activity generates the evidence that compliance depends on. This includes engineers whose commits are analysed by the Software Evidence Engine, developers using AI-assisted tools (Claude Code, Cursor, VS Code) via the MCP server, CI/CD pipeline operators integrating compliance gates, and contributors whose competence is profiled from development sessions.
+
+The guide is also relevant to:
+
+- **Platform Admins** – Users with platform-level access who manage organisations, monitor system health, and administer the vulnerability database. Platform admin functions are covered in section 24.
 - **Evaluators and Auditors** – Individuals assessing whether CRANIS2 meets their organisation's compliance needs, or reviewing the compliance evidence it produces.
+
+### Source Code Guarantee
+
+CRANIS2 never stores your source code and never writes to your repository. All repository access is strictly read-only. Source files may be read transiently (for dependency detection or Software Evidence Engine analysis), but the content is processed in memory and discarded immediately. Only structured metadata is retained: package names, LOC counts, commit classifications, and developer attribution. Your code, logic, algorithms, and business rules are never stored.
 
 ### Key Terminology
 
@@ -94,6 +142,10 @@ This guide is written for four audiences:
 | **CVSS** | Common Vulnerability Scoring System – a numerical scale (0.0–10.0) rating the severity of a vulnerability |
 | **OSV** | Open Source Vulnerabilities – a distributed vulnerability database covering all major ecosystems, used by CRANIS2 |
 | **NVD** | National Vulnerability Database – the US government repository of CVE data, used by CRANIS2 alongside OSV |
+| **SEE** | Software Evidence Engine – the CRANIS2 module that analyses repositories to extract engineering evidence for R&D tax credits, due diligence, and multi-regulation compliance |
+| **COCOMO II** | Constructive Cost Model – a software cost estimation model used by the SEE to calculate effort and cost ranges from LOC counts |
+| **LOC** | Lines of Code – a count of source code lines, used by the SEE for effort estimation (excludes generated, vendor, and blank lines) |
+| **MCP** | Model Context Protocol – a standard for IDE AI assistants to interact with external tools, used by CRANIS2 to expose compliance data to development environments |
 
 ---
 
@@ -1847,6 +1899,124 @@ GET /api/v1/products/:productId/oscal/component-definition
 ```
 
 All endpoints return JSON conforming to the OSCAL 1.1.2 schema. The exports can be imported into GRC platforms such as Trestle, Lula, or Comply.
+
+---
+
+## 41. Software Evidence Engine
+
+*Audience: Contributor + Admin | Plan: Pro*
+
+The Software Evidence Engine (SEE) analyses connected repositories to extract structured engineering evidence for R&D tax credits, due diligence, and multi-regulation compliance reporting.
+
+### Source Code Guarantee
+
+All repository access is strictly read-only. CRANIS2 never writes to your repository and never stores your source code. The SEE reads commit metadata, branch structures, and file classifications. Source files are processed transiently — read, metadata extracted, content discarded. What is retained: LOC counts, commit classifications, developer attribution percentages, branch types, and architecture evolution events.
+
+### Enabling SEE
+
+SEE is opt-in per product and requires explicit source code consent from the product owner.
+
+1. Navigate to the product detail page
+2. Open the **Evidence** tab group
+3. On the **Software Evidence** tab, grant source code consent
+4. Run the first analysis
+
+### Analysis Phases
+
+The SEE operates in eight phases, each building on the previous:
+
+**Phase A — Estimation.** File classification engine categorises repository files (production, test, configuration, generated, vendor, documentation). LOC counting produces per-language totals. A COCOMO II-style model generates effort and cost estimates (low, mid, high ranges). An executive report summarises findings.
+
+**Phase B — Commit History.** Paginated, incremental commit ingestion via the provider API. Each commit is stored as metadata (SHA, author, date, message, additions, deletions). Developer attribution is calculated as contribution percentages. SEEDeveloper and SEECommit nodes appear in the evidence graph.
+
+**Phase C — Branch Analysis.** Branch metadata is ingested. A deterministic classifier assigns each commit to one of nine categories: feature, fix, refactor, test, documentation, build, style, experiment, or chore. Branch types (feature, experimental, release, maintenance, abandoned) are inferred. Rewrite ratio is calculated per module.
+
+**Phase D — Experimentation Detection.** Five algorithms identify R&D activity: refactoring waves, prototype branches, rapid iteration cycles, high rewrite ratios, and fix-after-feature patterns. An R&D evidence report is generated with SHA-256 content hashing for tamper detection.
+
+**Phase E — Architecture & Test Evolution.** Detects module restructuring, migration events, API changes, and decomposition patterns. Tracks test creation, modification, and failure-fix correlation. SEEModule nodes represent inferred module boundaries.
+
+**Phase F — Evidence Graph Integration.** Links SEE data to existing CRANIS2 records (SBOMs, vulnerabilities, dependencies). Five provenance query types answer questions such as "who introduced this dependency?" and "what experiments preceded this architecture change?"
+
+**Phase G — Multi-Regulation Reports.** Generates evidence reports for six regulatory frameworks: R&D Tax (HMRC, CIR, Forschungszulage, I+D+i), CRA, NIS2, AI Act, DORA, and ISO 27001. Reports are deterministic, auditable, immutably stored, and exportable as Markdown.
+
+**Phase H — Session Capture.** Development sessions are recorded (with consent) via Claude Code hooks or MCP. See section 42 for details.
+
+### What Contributors Need to Know
+
+- Your commits, branches, and development sessions may be analysed if the product owner has enabled SEE
+- Only metadata is retained — your source code is never stored
+- Developer attribution shows contribution percentages (not a performance metric — it measures evidence coverage)
+- Experimentation detection identifies R&D activity patterns for tax credit claims
+- You may be asked to consent to session capture for competence profiling (always optional)
+
+---
+
+## 42. Session Capture & Competence Profiling
+
+*Audience: Contributor | Plan: Pro*
+
+Session capture records development sessions to build evidence of engineering competence — a requirement for R&D tax credit claims in multiple jurisdictions (HMRC, CIR, Forschungszulage, I+D+i).
+
+### How It Works
+
+1. **Explicit consent.** Each developer is prompted for consent before any session is recorded. No recording occurs without consent.
+2. **Session recording.** Development conversations (via Claude Code hooks or MCP integration) are captured.
+3. **Forgejo storage.** Session transcripts are stored in the platform's Forgejo instance — EU-sovereign, git-backed, within the CRANIS2 infrastructure.
+4. **Competence profiling.** A Competence Evidence Profile is generated from each session, assessing 10 domains:
+   - Domain vocabulary depth
+   - Design reasoning quality
+   - Industry reference detection
+   - Decision quality assessment
+   - Technical uncertainty identification
+   - Problem decomposition
+   - Trade-off analysis
+   - Standards awareness
+   - Security consciousness
+   - Architecture comprehension
+
+### Why This Matters
+
+R&D tax relief schemes require evidence that work was carried out by "competent professionals" exercising judgement in the face of technical uncertainty. Traditional evidence relies on formal qualifications (degrees, certifications). Session capture provides behavioural evidence of competence from actual development activity, which is more defensible and does not exclude self-taught engineers.
+
+### Setup
+
+Session capture integrates with:
+- **Claude Code** via hooks configuration (automatic transcript capture)
+- **Other AI-assisted tools** via the MCP server
+
+Setup instructions are available in the CONTRIBUTING.md file and in the `tools/session-capture/` directory.
+
+---
+
+## 43. Source Code Guarantee
+
+*Audience: Admin + Contributor*
+
+This section consolidates the guarantees that CRANIS2 makes regarding your source code and repository access.
+
+### What CRANIS2 Never Does
+
+| Guarantee | Detail |
+|-----------|--------|
+| **Never stores source code** | All source file access is transient — files are read, metadata is extracted, content is discarded immediately. No source code is stored in any database, file system, or cache. |
+| **Never writes to repositories** | All repository access is strictly read-only. No pushes, no branches, no file modifications, no settings changes. Connections use read-only scopes. |
+| **Never sends source code to AI** | The AI Copilot and other AI features receive only compliance metadata (dependency lists, vulnerability findings, obligation statuses). Source code is never included in AI prompts. |
+| **Never shares data between organisations** | Strict multi-tenant isolation. Every query is scoped to the authenticated user's organisation. |
+
+### What CRANIS2 Reads (and When)
+
+| Access Level | When | What Is Read | What Is Retained |
+|-------------|------|-------------|-----------------|
+| **Dependency discovery** | All products, automatic | Lockfiles, import statements | Package names and versions only |
+| **SEE analysis** | Opt-in products, on demand | Commit metadata, branch structures, file paths, LOC counts | Structured metrics: LOC, commit classifications, developer attribution, architecture events |
+| **Session capture** | Opt-in per developer | Development session transcripts | Session records stored in Forgejo (EU-sovereign) |
+
+### Repository Connection Security
+
+- **GitHub / Codeberg:** OAuth with read-only scopes
+- **Gitea / Forgejo / GitLab:** Personal Access Tokens encrypted at rest (AES-256-GCM)
+- All connections are verified via the provider's API before any data access
+- Tokens can be revoked at any time from the Integrations page
 
 ---
 

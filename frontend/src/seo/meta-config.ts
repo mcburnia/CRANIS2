@@ -17,7 +17,7 @@ export interface PageMeta {
 export const SITE_NAME = 'CRANIS2';
 export const SITE_URL = 'https://cranis2.com';
 export const DEFAULT_DESCRIPTION =
-  'CRANIS2 is an EU compliance platform for the Cyber Resilience Act (CRA) and NIS2 Directive. Automated SBOMs, vulnerability monitoring, license compliance, technical documentation, and ENISA reporting.';
+  'CRANIS2 is an EU compliance platform for the Cyber Resilience Act (CRA) and NIS2 Directive. Automated SBOMs, vulnerability monitoring, licence compliance, technical documentation, ENISA reporting, software evidence engine for R&D tax credits, and session capture with competence profiling. Source code is never stored. Repositories are never written to.';
 export const DEFAULT_OG_IMAGE = '/branding/cranis2-logo-wide.png';
 
 /* ── JSON-LD schemas ── */
@@ -55,12 +55,20 @@ const SOFTWARE_JSON_LD: Record<string, unknown> = {
   featureList: [
     'Automated SBOM generation (CycloneDX, SPDX)',
     'Vulnerability monitoring (OSV, NVD, GitHub Advisory)',
-    'License compliance scanning',
+    'Licence compliance scanning',
     'CRA Technical File management (Annex VII)',
     'ENISA incident & vulnerability reporting',
     'IP Proof via RFC 3161 timestamping',
     'Source code escrow (EU-hosted Forgejo)',
-    'Due diligence export (PDF + SBOM + CSV)',
+    'Compliance evidence vault with 10-year retention',
+    'Software Evidence Engine for R&D tax credits',
+    'Session capture with competence profiling',
+    'Post-market monitoring with field issue tracking',
+    'Cryptographic standards inventory with PQC readiness',
+    'AI Copilot for compliance documentation',
+    'Multi-regulation reports (CRA, NIS2, AI Act, DORA, ISO 27001)',
+    'Public API, CI/CD gate, MCP server for IDE integration',
+    'Due diligence export (Markdown + SBOM + CSV)',
   ],
 };
 
@@ -89,7 +97,7 @@ const FAQ_JSON_LD: Record<string, unknown> = {
       name: 'How much does CRANIS2 cost?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'CRANIS2 uses contributor-based pricing at EUR 6 per month per active contributor across your organisation. No per-product fees, no feature tiers, and no hidden charges.',
+        text: 'CRANIS2 offers two tiers: Standard at EUR 6 per contributor per month (all core compliance features), and Pro at EUR 9 per product per month plus EUR 6 per contributor per month (adds AI Copilot, Software Evidence Engine, session capture, public API, CI/CD gate, and MCP server). Both plans include a 90-day free trial.',
       },
     },
     {
@@ -121,7 +129,15 @@ const FAQ_JSON_LD: Record<string, unknown> = {
       name: 'Does CRANIS2 access my source code?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'No. CRANIS2 reads dependency metadata (lockfiles, manifest files) from your repositories but never stores, analyses, or modifies your source code.',
+        text: 'CRANIS2 never stores your source code and never writes to your repository. All repository access is strictly read-only. Source files may be read transiently for dependency detection or Software Evidence Engine analysis, but the content is processed in memory and discarded immediately. Only structured metadata is retained.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is the Software Evidence Engine?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'The Software Evidence Engine (SEE) analyses connected repositories to extract structured engineering evidence for R&D tax credits, due diligence, and multi-regulation compliance reporting. It covers LOC estimation, commit history analysis, experimentation detection, architecture evolution, and multi-regulation report generation. Available on the Pro plan, opt-in per product.',
       },
     },
     {
@@ -169,13 +185,13 @@ export const ROUTE_META: Record<string, PageMeta> = {
   '/docs': {
     title: 'Documentation – CRANIS2',
     description:
-      'Complete user guide for CRANIS2. Learn how to set up your organisation, register products, generate SBOMs, manage vulnerabilities, file ENISA reports, and achieve CRA compliance.',
+      'Complete user guide for CRANIS2. Covers organisation setup, product management, SBOMs, vulnerability monitoring, ENISA reporting, Software Evidence Engine, session capture, CI/CD integration, and CRA compliance. Organised by audience: administrators and development contributors.',
     canonical: '/docs',
   },
   '/docs/faq': {
     title: 'FAQ – CRANIS2',
     description:
-      'Frequently asked questions about CRANIS2, the Cyber Resilience Act, NIS2, SBOMs, vulnerability reporting, license compliance, and pricing.',
+      'Frequently asked questions about CRANIS2, the Cyber Resilience Act, NIS2, SBOMs, vulnerability reporting, licence compliance, Software Evidence Engine, R&D tax credits, session capture, and pricing.',
     canonical: '/docs/faq',
     jsonLd: FAQ_JSON_LD,
   },

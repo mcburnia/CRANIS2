@@ -91,11 +91,13 @@ export default function ProductDetailPage() {
     const firstTab = group.tabs[0].key;
     setActiveTab(firstTab);
     window.history.replaceState({}, '', `?tab=${firstTab}`);
+    window.dispatchEvent(new Event('cranis2:tab-change'));
   };
 
   const handleTabClick = (tabKey: TabKey) => {
     setActiveTab(tabKey);
     window.history.replaceState({}, '', `?tab=${tabKey}`);
+    window.dispatchEvent(new Event('cranis2:tab-change'));
   };
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', description: '', version: '', productType: '', craCategory: '', repoUrl: '', distributionModel: '', lifecycleStatus: '', marketPlacementDate: '', provider: '', instanceUrl: '' });

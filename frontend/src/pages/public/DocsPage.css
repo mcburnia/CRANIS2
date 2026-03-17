@@ -123,6 +123,41 @@
   color: var(--muted);
 }
 
+/* ── Audience filter ── */
+
+.doc-audience-filter {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 1.25rem 0.75rem;
+}
+
+.doc-audience-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.doc-audience-btn:hover {
+  color: var(--text);
+  border-color: var(--text-dim, #555);
+}
+
+.doc-audience-active {
+  background: rgba(168, 85, 247, 0.12);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .doc-toc-nav {
   display: flex;
   flex-direction: column;
