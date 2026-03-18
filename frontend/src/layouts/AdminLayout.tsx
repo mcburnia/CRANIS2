@@ -3,7 +3,7 @@ import { Outlet, Navigate, NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Building2, Users, ScrollText, Activity, CreditCard,
-  ArrowLeft, Menu, X, Loader, Shield, Database, MessageSquareMore, FlaskConical, FileText, Compass, Settings, Bot, Archive, BarChart3
+  ArrowLeft, Menu, X, Loader, Shield, Database, MessageSquareMore, FlaskConical, FileText, Compass, Settings, Bot, Archive, BarChart3, Mail
 } from 'lucide-react';
 import './AdminLayout.css';
 
@@ -43,6 +43,7 @@ const adminNavSections = [
     label: 'Support',
     items: [
       { to: '/admin/feedback', icon: MessageSquareMore, label: 'User Feedback' },
+      { to: '/admin/welcome-leads', icon: Mail, label: 'Welcome Leads' },
       { to: '/admin/docs', icon: FileText, label: 'Documentation' },
     ],
   },

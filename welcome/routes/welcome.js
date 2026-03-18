@@ -56,49 +56,6 @@ router.get('/access-log', (req, res) => {
   }
 });
 
-/* ── Admin: contact submissions ────────────────────────────────────── */
-
-router.get('/welcome-admin/contact-submissions', async (req, res) => {
-  if (!isAuthenticated(req)) return res.redirect('/login');
-  const pool = getPool();
-  if (!pool) return res.json({ total: 0, submissions: [] });
-
-  try {
-    const { rows } = await pool.query(
-      `SELECT id, name, email, position, status, lead_notified, lead_notify_error,
-              ip, country, created_at, verified_at, updated_at
-       FROM contact_submissions
-       ORDER BY created_at DESC
-       LIMIT 200`
-    );
-    res.json({ total: rows.length, submissions: rows });
-  } catch (err) {
-    console.error('Admin contact submissions error:', err);
-    res.status(500).json({ error: 'Failed to fetch submissions.' });
-  }
-});
-
-/* ── Admin: disposable email log ──────────────────────────────────── */
-
-router.get('/welcome-admin/disposable-emails', async (req, res) => {
-  if (!isAuthenticated(req)) return res.redirect('/login');
-  const pool = getPool();
-  if (!pool) return res.json({ total: 0, entries: [] });
-
-  try {
-    const { rows } = await pool.query(
-      `SELECT id, email, name, domain, ip, country, source, created_at
-       FROM disposable_email_log
-       ORDER BY created_at DESC
-       LIMIT 200`
-    );
-    res.json({ total: rows.length, entries: rows });
-  } catch (err) {
-    console.error('Admin disposable email log error:', err);
-    res.status(500).json({ error: 'Failed to fetch disposable email log.' });
-  }
-});
-
 /* ── Contact form — Step 1: submit details & send verification code ── */
 
 router.post('/contact', async (req, res) => {
