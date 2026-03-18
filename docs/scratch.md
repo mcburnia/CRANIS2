@@ -1,64 +1,39 @@
 # CRANIS2 — Active Backlog
 
-Updated: 2026-03-17 (session 54)
+Updated: 2026-03-18 (session 55)
 
 For completed work history, see `.claude/projects/-home-mcburnia-cranis2/memory/completed_work.md`
 
 ---
 
-## Completed This Session
+## Launch Blockers (must-fix before go-live)
 
-- P0 help guides written — ch4_05 (Batch Fill), ch4_06 (AI Copilot), ch4_07 (Risk Assessment)
-- SVG fixes — ch4_02 "Open Obligations" label collision, ch1_03 branch tracks not reaching station
-- SEE report export auth fix — replaced window.open with fetch+blob for Bearer token
-- Session capture rewrite — correct hook event name, explicit env sourcing, JSONL transcript parsing
-- AI Coder Framework — 6-document Gibbs Consulting framework (principles, policy, standards, guidelines, session template, project scaffold)
-
----
-
-## Help Guide System
-
-### 15 Stub Files — Complete Rewrites Needed
-
-Priority order (from `docs/HELP-GUIDE-REVIEW.md`):
-
-| Priority | File | Feature |
-|----------|------|---------|
-| P1 | ch6_05 | Incident lifecycle |
-| P1 | ch5_06 | Compliance vault |
-| P1 | ch5_05 | Compliance reports |
-| P1 | ch7_07 | Organisation settings |
-| P2 | ch5_07 | Due diligence package |
-| P2 | ch2_05 | Supplier due diligence |
-| P2 | ch3_04 | Batch triage wizard |
-| P2 | ch3_05 | Understanding severity |
-| P2 | ch7_10 | Document templates |
-| P3 | ch7_06 | Stakeholders |
-| P3 | ch7_08 | Trello integration |
-| P4 | ch7_09 | Marketplace (feature not built — Coming Soon placeholder) |
-
-Use `tools/becksmap/` generator for new maps. Follow `docs/HELP-GUIDE-STANDARD.md` and `docs/BECK-MAP-DESIGN-SPEC.md`.
-
-### Audit Log Route Mapping
-
-`/audit-log` currently maps to ch5_05 (compliance reports) which is a stub. Either remap to an existing guide or write the ch5_05 stub.
-
-### SVG Issues to Investigate
-
-- Compliance Timeline guide — ENISA reporting workflow visual issue (deferred, needs clarification)
+| # | Item | Status |
+|---|------|--------|
+| 1 | `FRONTEND_URL` migration — change from `dev.cranis2.dev` to production URL | TODO |
+| 2 | Remove `/api/dev/*` routes — destructive endpoints still present | TODO |
+| 3 | Remove SBOM debug logging — `console.log` in `services/github.ts` | TODO |
+| 4 | DKIM verification for `poste.cranis2.com` — emails landing in spam without it | TODO |
+| 5 | Production infrastructure — Infomaniak hosting, `cranis2.com` domain, Cloudflare Tunnel | TODO |
+| 6 | Privacy Policy — GDPR requirement for personal data collection | TODO |
+| 7 | Terms of Service — contractual basis for the platform | TODO |
+| 8 | Cookie consent — if any non-essential cookies used | TODO |
+| 9 | Stripe production keys — switch from test mode | TODO |
+| 10 | Resend production domain — verify `cranis2.com` | TODO |
+| 11 | Docker Compose orphan container cleanup (CRN-14) | TODO |
+| 12 | `DEV_SKIP_EMAIL` confirmed `false` in production | TODO |
+| 13 | Production `LOG_LEVEL` — set appropriately (not debug) | TODO |
 
 ---
 
-## Test Depth
+## Parked (post-launch)
 
-### Service unit tests (7/71)
+Everything below is deferred until after launch. No work on these until the 13 launch blockers are resolved.
 
-Route tests cover all critical API paths (98.5% coverage). Service unit tests add depth for pure-function logic. Current service tests: lockfile-parsers, obligation-engine-roles, alert-emails, see-classifier, see-estimator, see-session, crypto-inventory. Candidates for next batch: compliance-gaps, see-report-generator, see-evolution, see-experiment-detector.
-
----
-
-## Parked
-
-- **P4 #24/#25** — Chat ops / Slack notifications (post-launch)
-- **P5** — Supplier marketplace (post-launch, 0/7 features)
-- **#59** — Multi-language i18n (scope TBD)
+- **15 help guide stub rewrites** — prioritised in `docs/HELP-GUIDE-REVIEW.md`. P1 guides next (ch6_05, ch5_06, ch5_05, ch7_07).
+- **Audit log route mapping** — `/audit-log` maps to ch5_05 which is a stub. Remap or write the stub.
+- **Compliance Timeline SVG issue** — ENISA reporting visual issue deferred, needs clarification.
+- **Service unit test depth** — only 7/71 services have unit tests. Route tests cover critical paths but pure-function services would benefit from isolated tests.
+- **P4 #24/#25** — Chat ops / Slack notifications.
+- **P5 Supplier Marketplace** — 7 features (#28-34), not started.
+- **#59 Multi-language i18n** — scope TBD.

@@ -1096,12 +1096,13 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-14 (session 49)
+**Last updated:** 2026-03-18 (session 55)
 
 **Recently completed:**
-- **Post-market monitoring & field issue tracking (#46)** — Full CRA Art. 13(2)/13(9) post-market surveillance. 4 phases: `field_issues` + `corrective_actions` tables with full CRUD API (A), `FieldIssuesTab` frontend component (B), corrective action tracking + obligation engine wiring for `art_13_6`/`art_13_9` (C), surveillance report export + dashboard/analytics integration (D). 33 tests.
-- **Cryptographic Standards & Quantum Readiness Inventory (#53)** — 4-phase feature. Phase A: backend crypto library registry (37 algorithms classified as broken/quantum-vulnerable/quantum-safe), scanner service, API endpoints (scan, findings, summary). Phase B: CryptoInventoryTab in product detail page with scan trigger, findings table, posture summary. Phase C: public PQC Readiness Assessment at `/pqc-readiness-assessment` on welcome site (18 questions, 6 sections covering asymmetric crypto, symmetric/hashing, key management, cryptographic agility, data sensitivity, migration planning; 4 readiness levels; email report; CRANIS2 CTA). Phase D: crypto scan results wired into obligation engine derivations (art_13_3 and annex_i_part_i), PQC assessment + crypto health metrics in admin analytics, crypto posture in dashboard product enrichment.
-- **Importer/distributor obligation workflows (#45)** — Role-aware obligation engine (35 obligations: 19 manufacturer, 10 importer, 6 distributor), compliance checklist with role-specific steps, technical file guidance for importers/distributors, public importer assessment at `/importer-assessment` on welcome site, admin analytics for assessment completions. 4 phases (A–D).
+- **Welcome site email verification and traceability** — Root cause analysis on lost contact form submission. Two-step email verification (6-digit code) added to contact form and all 4 assessment subscribe flows. `contact_submissions` table with full status tracking (pending_verification, verified, lead_notified, lead_failed). Disposable email honeypot (37 domains) with silent fake flow logged to `disposable_email_log` table. Position field made optional on contact form. Access log entries enriched with form data. Lead notification results explicitly checked and logged.
+- **Admin Welcome Leads page** — New admin page at `/admin/welcome-leads` with two tabs: Contact Submissions (status badges, email search, status filters, stat cards) and Disposable Email Log (domain frequency grid, source filter). Backend: `admin/welcome-leads.ts` with paginated, filterable endpoints. Protected by `requirePlatformAdmin`.
+- **Launch readiness plan** — Comprehensive 5-workstream, 8-session plan approved: (1) Database backup and restore, (2) PQC readiness with hybrid Ed25519+ML-DSA-65 signing, (3) Security audit and hardening, (4) GDPR compliance, (5) Visual automated testing. Full plan at `.claude/plans/fizzy-plotting-bear.md`.
+- **Backlog reprioritised for launch** — 13 launch blockers identified. All other work (help guide stubs, i18n, supplier marketplace, service unit tests) parked for post-launch.
 - **Forgejo test infrastructure fix** — Resolved 15 previously-expected test failures. Fixed `sbom_source` VARCHAR(50) overflow (widened to 255), dual-secret HMAC webhook verification (Forgejo sends GitHub-compatible headers), Forgejo `ALLOWED_HOST_LIST` for Docker-internal webhook delivery, backend_test `FRONTEND_URL` changed to Docker DNS name.
 - **Platform Analytics Dashboard (#57)** — Admin-only analytics page at `/admin/analytics`. KPI snapshot, growth metrics, revenue breakdown, market intelligence, assessment completions. Recharts charts + data tables.
 
@@ -1480,7 +1481,30 @@ sudo systemctl restart cloudflared
   - **Phase E:** Weekly background re-evaluation via scheduler (Monday 6:00 UTC). Auto-promotes provisional → trusted when score exceeds threshold.
   - **Phase F:** Billing integration — `requireActiveBilling` bypasses restrictions for free classifications, `requirePlan` updated for trust-aware gating, billing status API returns trust_classification.
 
+**Session 55 (2026-03-18):**
+- **Welcome site email verification and traceability** — Root cause analysis on lost contact form submission revealed lead notification failures were silently swallowed and no database persistence existed. Implemented:
+  - Two-step email verification (6-digit code, 10-min expiry, 3/hr rate limit) on contact form and all 4 assessment subscribe flows (CRA, NIS2, Importer, PQC)
+  - `contact_submissions` table with full audit trail: status (pending_verification → verified → lead_notified/lead_failed), IP, country, user agent, timestamps
+  - `disposable_email_log` table for honeypot analysis
+  - Disposable email honeypot: 37 known domains, silent fake flow indistinguishable from real (shows code screen, accepts any code, shows success), logged for analysis
+  - Contact form position field made optional (less friction)
+  - Access log entries enriched with form data (name, email, position)
+  - Lead notification results explicitly checked and logged (no more silent failures)
+  - Admin Welcome Leads page at `/admin/welcome-leads` with Contact Submissions tab (status badges, email search, status filters, stat cards) and Disposable Email Log tab (domain frequency grid, source filter)
+  - Backend: `admin/welcome-leads.ts` (paginated, filterable endpoints), `welcome/lib/disposable-domains.js` (37 domains)
+  - Files changed: 19 files across backend, frontend, welcome site, nginx
+- **Launch readiness plan approved** — 5 workstreams across 8 sessions:
+  1. Database backup and restore (automated daily Postgres + Neo4j dumps, tested restore, verification)
+  2. PQC readiness (Node.js 24 for native ML-DSA-65, hybrid Ed25519+ML-DSA-65 signing, explicit JWT algorithm, HKDF)
+  3. Security hardening (database ports to 127.0.0.1, credentials to .env, npm audit, auth rate limiting, OWASP ZAP)
+  4. GDPR compliance (data map, data export, account deletion with PII purge, retention policy, scheduled cleanup)
+  5. Visual automated testing (15-test confidence suite with headed Playwright + video recording)
+- **Backlog reprioritised** — 13 launch blockers identified (FRONTEND_URL migration, dev route removal, DKIM verification, privacy policy, terms of service, cookie consent, Stripe production keys, etc.). All other work parked for post-launch.
+- **Cryptographic audit completed** — All symmetric/hash primitives PQC-safe (AES-256-GCM, HMAC-SHA256, bcrypt, SHA-256). One critical finding: Ed25519 document signing is quantum-vulnerable, scheduled for hybrid replacement in WS2.
+
 **Next Steps:**
-- #59 Multi-language support — i18n/localisation (scope TBD)
-- Production deployment planning (Infomaniak hosting, cranis2.com)
-- P5 — Supplier marketplace (post-launch)
+- **Session 56:** Workstream 1 — Database Backup & Restore (scripts, cron, docs)
+- **Session 57:** Workstream 2 Part 1 — PQC Foundation (Node.js 24, JWT hardening, HKDF)
+- **Session 58:** Workstream 2 Part 2 — Hybrid Signing (Ed25519+ML-DSA-65)
+- Full plan: `.claude/plans/fizzy-plotting-bear.md`
+- Post-launch: #59 i18n, P5 supplier marketplace, help guide stubs

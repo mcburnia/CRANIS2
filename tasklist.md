@@ -146,17 +146,45 @@ All five MVP features are built, tested, and shipped.
 
 ---
 
-## Pre-Production
+## Pre-Production (Complete)
 
 - [x] #58 Trusted Open Source & Non-Profit Access Model — trust scoring, OSI licence detection, abuse protection, non-profit verification, admin dashboard, scheduler, billing integration
-- [ ] #59 Multi-language support — i18n/localisation of platform UI and public-facing welcome site (scope TBD)
-- [ ] Production deployment — Infomaniak hosting, `cranis2.com` domain, DNS, SSL
-- [ ] Update OAuth callback URLs and `FRONTEND_URL` for production
+- [x] Welcome site email verification — two-step verified contact form + subscribe flow, disposable email honeypot, DB persistence, admin Welcome Leads page
+
+---
+
+## Launch Blockers (must-fix before go-live)
+
+1. [ ] `FRONTEND_URL` migration — change from `dev.cranis2.dev` to production URL (affects all email links, OAuth callbacks)
+2. [ ] Remove `/api/dev/*` routes — destructive endpoints still present
+3. [ ] Remove SBOM debug logging — `console.log` in `services/github.ts`
+4. [ ] DKIM verification for `poste.cranis2.com` — emails landing in spam without it
+5. [ ] Production infrastructure — Infomaniak hosting, `cranis2.com` domain, Cloudflare Tunnel
+6. [ ] Privacy Policy — GDPR requirement for personal data collection
+7. [ ] Terms of Service — contractual basis for the platform
+8. [ ] Cookie consent — if any non-essential cookies used
+9. [ ] Stripe production keys — switch from test mode
+10. [ ] Resend production domain — verify `cranis2.com`
+11. [ ] Docker Compose orphan container cleanup (CRN-14)
+12. [ ] `DEV_SKIP_EMAIL` confirmed `false` in production
+13. [ ] Production `LOG_LEVEL` — set appropriately (not debug)
+
+---
+
+## Parked (post-launch)
+
+- [ ] #59 Multi-language support — i18n/localisation (scope TBD)
+- [ ] P4 #24/#25 — Chat ops / Slack notifications
+- [ ] P5 — Supplier Marketplace (7 features, #28-34)
+- [ ] 15 help guide stub rewrites
+- [ ] Service unit test depth (7/71 services)
+- [ ] Audit log route mapping
+- [ ] Compliance Timeline SVG issue
 
 ---
 
 ## Test Suite
 
-- **Backend (Vitest):** ~1,611 tests (92 files), ~1,610 pass, 1 expected failure (category-recommendation needs Anthropic API)
+- **Backend (Vitest):** ~1,957 tests (109 files), ~1,956 pass, 1 expected failure (category-recommendation needs Anthropic API)
 - **E2E (Playwright):** ~280 tests
 - **Nightly runner:** cron at 22:00 CEST, 14-day log retention, Trello notifications
