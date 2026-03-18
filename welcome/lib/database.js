@@ -82,12 +82,45 @@ async function initDatabase() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS contact_submissions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        position VARCHAR(255),
+        status VARCHAR(30) NOT NULL DEFAULT 'pending_verification',
+        lead_notified BOOLEAN NOT NULL DEFAULT FALSE,
+        lead_notify_error TEXT,
+        ip VARCHAR(100),
+        country VARCHAR(10),
+        user_agent TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        verified_at TIMESTAMPTZ,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS disposable_email_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) NOT NULL,
+        name VARCHAR(255),
+        domain VARCHAR(255) NOT NULL,
+        ip VARCHAR(100),
+        country VARCHAR(10),
+        user_agent TEXT,
+        source VARCHAR(50) NOT NULL DEFAULT 'contact',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_assessments_email ON cra_assessments(email)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_verification_codes_email ON cra_verification_codes(email, used)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_nis2_assessments_email ON nis2_assessments(email)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_importer_assessments_email ON importer_assessments(email)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_pqc_assessments_email ON pqc_assessments(email)`);
-    console.log('[WELCOME] Assessment tables ready (CRA + NIS2 + Importer + PQC)');
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_contact_submissions_email ON contact_submissions(email)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_contact_submissions_status ON contact_submissions(status)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_disposable_email_log_domain ON disposable_email_log(domain)`);
+    console.log('[WELCOME] Assessment tables ready (CRA + NIS2 + Importer + PQC + Contact + Disposable log)');
   } finally {
     client.release();
   }

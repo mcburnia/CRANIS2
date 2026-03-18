@@ -1181,22 +1181,42 @@
           and we will be in touch shortly.
         </p>
 
+        <!-- Step 1: Collect details -->
         <div id="contact-form-container">
           <form id="contact-form" class="contact-form">
             <div class="contact-field">
-              <label for="contact-name">Name</label>
+              <label for="contact-name">Name <span style="color:#ef4444;">*</span></label>
               <input type="text" id="contact-name" name="name" required placeholder="Your full name">
             </div>
             <div class="contact-field">
-              <label for="contact-email">Email</label>
+              <label for="contact-email">Email <span style="color:#ef4444;">*</span></label>
               <input type="email" id="contact-email" name="email" required placeholder="you@company.com">
             </div>
             <div class="contact-field">
-              <label for="contact-position">Position</label>
-              <input type="text" id="contact-position" name="position" required placeholder="e.g. CTO, Head of Engineering">
+              <label for="contact-position">Position <span style="color:#52525b; font-weight:400; text-transform:none;">(optional)</span></label>
+              <input type="text" id="contact-position" name="position" placeholder="e.g. CTO, Head of Engineering">
             </div>
             <button type="submit" class="hero-cta contact-submit" id="contact-submit">
               Send Enquiry &rarr;
+            </button>
+          </form>
+        </div>
+
+        <!-- Step 2: Verify email -->
+        <div id="contact-verify-container" style="display:none;">
+          <div class="callout" style="border-color:#a855f7; background:rgba(168,85,247,0.06);">
+            <p style="margin-bottom:0.75rem;">We have sent a <strong>6-digit verification code</strong> to <span id="contact-verify-email" style="color:#a855f7; font-weight:600;"></span>.</p>
+            <p style="font-size:0.85rem; color:#a1a1aa;">Please check your inbox (and spam folder) and enter the code below. The code expires in 10 minutes.</p>
+          </div>
+          <form id="contact-verify-form" class="contact-form" style="margin-top:1rem;">
+            <div class="contact-field">
+              <label for="contact-code">Verification Code</label>
+              <input type="text" id="contact-code" name="code" required placeholder="123456"
+                     maxlength="6" pattern="[0-9]{6}" inputmode="numeric"
+                     style="font-size:1.4rem; letter-spacing:0.3em; text-align:center; max-width:200px;">
+            </div>
+            <button type="submit" class="hero-cta contact-submit" id="contact-verify-submit">
+              Verify &amp; Submit &rarr;
             </button>
           </form>
         </div>
@@ -1244,11 +1264,16 @@
   sections.forEach(function(s) { observer.observe(s); });
 })();
 
-// Contact form submission
+// Contact form — two-step verified submission
 (function() {
   var form = document.getElementById('contact-form');
+  var verifyForm = document.getElementById('contact-verify-form');
   if (!form) return;
 
+  var contactEmail = '';
+  var contactSubmissionId = '';
+
+  // Step 1: Submit details and request verification code
   form.addEventListener('submit', function(e) {
     e.preventDefault();
     var btn = document.getElementById('contact-submit');
@@ -1260,8 +1285,9 @@
     var data = {
       name: form.querySelector('[name="name"]').value.trim(),
       email: form.querySelector('[name="email"]').value.trim(),
-      position: form.querySelector('[name="position"]').value.trim()
+      position: form.querySelector('[name="position"]').value.trim() || undefined
     };
+    contactEmail = data.email;
 
     fetch('/contact', {
       method: 'POST',
@@ -1270,10 +1296,13 @@
     })
     .then(function(res) { return res.json().then(function(j) { return { ok: res.ok, body: j }; }); })
     .then(function(result) {
-      if (result.ok) {
+      if (result.ok && result.body.step === 'verify') {
+        contactSubmissionId = result.body.submissionId || '';
         document.getElementById('contact-form-container').style.display = 'none';
-        document.getElementById('contact-success').style.display = 'block';
-      } else {
+        document.getElementById('contact-verify-email').textContent = contactEmail;
+        document.getElementById('contact-verify-container').style.display = 'block';
+        document.getElementById('contact-code').focus();
+      } else if (!result.ok) {
         errEl.textContent = result.body.error || 'Something went wrong. Please try again.';
         errEl.style.display = 'block';
         btn.disabled = false;
@@ -1285,6 +1314,46 @@
       errEl.style.display = 'block';
       btn.disabled = false;
       btn.innerHTML = 'Send Enquiry &rarr;';
+    });
+  });
+
+  // Step 2: Verify code
+  verifyForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('contact-verify-submit');
+    var errEl = document.getElementById('contact-error');
+    btn.disabled = true;
+    btn.textContent = 'Verifying\u2026';
+    errEl.style.display = 'none';
+
+    var data = {
+      email: contactEmail,
+      code: verifyForm.querySelector('[name="code"]').value.trim(),
+      submissionId: contactSubmissionId
+    };
+
+    fetch('/contact/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(function(res) { return res.json().then(function(j) { return { ok: res.ok, body: j }; }); })
+    .then(function(result) {
+      if (result.ok) {
+        document.getElementById('contact-verify-container').style.display = 'none';
+        document.getElementById('contact-success').style.display = 'block';
+      } else {
+        errEl.textContent = result.body.error || 'Invalid code. Please try again.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = 'Verify &amp; Submit &rarr;';
+      }
+    })
+    .catch(function() {
+      errEl.textContent = 'Network error. Please check your connection and try again.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = 'Verify &amp; Submit &rarr;';
     });
   });
 })();

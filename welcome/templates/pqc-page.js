@@ -472,6 +472,11 @@ function showResults(scores, readinessLevel) {
   html += '<input type="email" class="email-input" id="subscribe-email" value="' + escapeHtmlJS(sessionEmail) + '" placeholder="you@company.com">';
   html += '<button class="btn btn-primary" id="subscribe-btn" onclick="subscribeLaunch()">Notify Me at Launch</button>';
   html += '</div>';
+  html += '<div class="report-form hidden" id="subscribe-verify-form" style="margin-top:12px;">';
+  html += '<p style="font-size:13px;color:#6b7280;margin-bottom:8px;">We\\u2019ve sent a 6-digit code to your email. Enter it below:</p>';
+  html += '<input type="text" class="email-input" id="subscribe-code" placeholder="123456" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" style="font-size:1.2rem;letter-spacing:0.3em;text-align:center;max-width:180px;">';
+  html += '<button class="btn btn-primary" id="subscribe-verify-btn" onclick="verifySubscribe()">Verify</button>';
+  html += '</div>';
   html += '<p style="font-size:11px;color:#9ca3af;margin-top:12px;line-height:1.5;">We will only use your email to notify you when CRANIS2 launches.<br>No spam, no sharing your information. Ever.</p>';
   html += '</div>';
 
@@ -569,15 +574,18 @@ async function sendReport() {
   }
 }
 
+var subscribeEmail = '';
+
 async function subscribeLaunch() {
   var email = document.getElementById('subscribe-email').value.trim();
   if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
     showMsg('subscribe-msg', 'Please enter a valid email address.', 'error');
     return;
   }
+  subscribeEmail = email;
   var btn = document.getElementById('subscribe-btn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Subscribing\u2026';
+  btn.innerHTML = '<span class="spinner"></span>Sending code\u2026';
   showMsg('subscribe-msg', '', '');
 
   try {
@@ -593,12 +601,46 @@ async function subscribeLaunch() {
       btn.textContent = 'Notify Me at Launch';
       return;
     }
-    showMsg('subscribe-msg', 'You\\u2019re on the list! We\\u2019ll be in touch when CRANIS2 launches.', 'success');
     document.getElementById('subscribe-form').classList.add('hidden');
+    document.getElementById('subscribe-verify-form').classList.remove('hidden');
+    document.getElementById('subscribe-code').focus();
   } catch (err) {
     showMsg('subscribe-msg', 'Network error. Please try again.', 'error');
     btn.disabled = false;
     btn.textContent = 'Notify Me at Launch';
+  }
+}
+
+async function verifySubscribe() {
+  var code = document.getElementById('subscribe-code').value.trim();
+  if (!code || code.length !== 6) {
+    showMsg('subscribe-msg', 'Please enter the 6-digit code from your email.', 'error');
+    return;
+  }
+  var btn = document.getElementById('subscribe-verify-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Verifying\u2026';
+  showMsg('subscribe-msg', '', '');
+
+  try {
+    var res = await fetch('/conformity-assessment/subscribe/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: subscribeEmail, code: code }),
+    });
+    var data = await res.json();
+    if (!res.ok) {
+      showMsg('subscribe-msg', data.error || 'Invalid code. Please try again.', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Verify';
+      return;
+    }
+    showMsg('subscribe-msg', 'You\\u2019re on the list! We\\u2019ll be in touch when CRANIS2 launches.', 'success');
+    document.getElementById('subscribe-verify-form').classList.add('hidden');
+  } catch (err) {
+    showMsg('subscribe-msg', 'Network error. Please try again.', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Verify';
   }
 }
 
