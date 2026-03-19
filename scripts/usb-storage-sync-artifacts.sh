@@ -46,4 +46,28 @@ tar -czf "${ROOT_DIR}/backups/repo-snapshots/cranis2-repo-${STAMP}.tgz" \
   -C "${PROJECT_ROOT}" .
 
 echo "Created repo snapshot: cranis2-repo-${STAMP}.tgz"
+
+# ── Copy latest database backup to USB ───────────────────────────────
+
+DB_DUMPS_DIR="${ROOT_DIR}/backups/db-dumps"
+mkdir -p "${DB_DUMPS_DIR}"
+
+LATEST_BACKUP="$(find "${PROJECT_ROOT}/backups/daily" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -r | head -1)"
+if [ -n "$LATEST_BACKUP" ] && [ -d "$LATEST_BACKUP" ]; then
+  BACKUP_NAME="$(basename "$LATEST_BACKUP")"
+  cp -a "$LATEST_BACKUP" "${DB_DUMPS_DIR}/${BACKUP_NAME}"
+  echo "Copied database backup: ${BACKUP_NAME}"
+
+  # Keep only 4 most recent db dumps on USB
+  DB_COUNT=$(find "${DB_DUMPS_DIR}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+  if [ "$DB_COUNT" -gt 4 ]; then
+    find "${DB_DUMPS_DIR}" -mindepth 1 -maxdepth 1 -type d \
+      | sort | head -n "$((DB_COUNT - 4))" \
+      | xargs rm -rf
+    echo "Cleaned old USB database backups (kept 4)"
+  fi
+else
+  echo "No database backup found to copy (run backup-databases.sh first)"
+fi
+
 echo "Sync complete at ${ROOT_DIR}"
