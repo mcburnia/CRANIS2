@@ -37,6 +37,7 @@ interface SnapshotResult {
   rfc3161Token: Buffer | null;
   rfc3161TsaUrl: string | null;
   signature: Buffer | null;
+  mldsaSignature: Buffer | null;
   signatureAlgorithm: string | null;
   signatureKeyId: string | null;
 }
@@ -629,19 +630,27 @@ against the \`content_hash\` stored in the compliance snapshot record.
 
 ## Signature Verification
 
-If a \`.sig\` file accompanies this archive, it is an Ed25519 signature issued by CRANIS2.
-To verify:
+This archive may include two signature files:
+
+- \`.sig\` — Ed25519 (classical)
+- \`.sig.mldsa\` — ML-DSA-65 (post-quantum, FIPS 204)
 
 \`\`\`bash
-# Download the CRANIS2 public key:
+# Download the CRANIS2 public keys:
 curl -o cranis2-signing-key.pem https://dev.cranis2.dev/.well-known/cranis2-signing-key.pem
+curl -o cranis2-signing-key-mldsa.pem https://dev.cranis2.dev/.well-known/cranis2-signing-key-mldsa.pem
 
-# Verify the signature:
+# Verify the Ed25519 signature:
 openssl pkeyutl -verify -pubin -inkey cranis2-signing-key.pem \\
   -sigfile archive.sig -rawin -in archive.zip
+
+# Verify the ML-DSA-65 signature (requires OpenSSL 3.5+):
+openssl pkeyutl -verify -pubin -inkey cranis2-signing-key-mldsa.pem \\
+  -sigfile archive.sig.mldsa -rawin -in archive.zip
 \`\`\`
 
-This proves the archive was issued by CRANIS2 and has not been modified since signing.
+Both signatures must verify for full hybrid assurance. The Ed25519 signature provides
+classical security; the ML-DSA-65 signature provides quantum resistance.
 
 ---
 
@@ -857,22 +866,30 @@ export async function generateComplianceSnapshot(
     // Continue without timestamp – the archive is still valid
   }
 
-  // Ed25519 signature of the archive
+  // Digital signatures of the archive
   let signature: Buffer | null = null;
+  let mldsaSignature: Buffer | null = null;
   let signatureAlgorithm: string | null = null;
   let signatureKeyId: string | null = null;
   try {
     const sigResult = signDocument(zipBuffer);
     if (sigResult) {
       signature = sigResult.signature;
+      mldsaSignature = sigResult.mldsaSignature;
       signatureAlgorithm = sigResult.algorithm;
       signatureKeyId = sigResult.keyId;
 
-      // Save the .sig file alongside the ZIP
+      // Save the Ed25519 .sig file alongside the ZIP
       const sigPath = filepath.replace(/\.zip$/, '.sig');
       await writeFile(sigPath, signature);
-
       console.log(`[COMPLIANCE-SNAPSHOT] Ed25519 signature saved: ${sigPath} (${signature.length} bytes, key: ${signatureKeyId})`);
+
+      // Save the ML-DSA-65 .sig.mldsa file if hybrid signing is configured
+      if (mldsaSignature) {
+        const mldsaSigPath = filepath.replace(/\.zip$/, '.sig.mldsa');
+        await writeFile(mldsaSigPath, mldsaSignature);
+        console.log(`[COMPLIANCE-SNAPSHOT] ML-DSA-65 signature saved: ${mldsaSigPath} (${mldsaSignature.length} bytes, key: ${sigResult.mldsaKeyId})`);
+      }
     }
   } catch (err: any) {
     console.error('[COMPLIANCE-SNAPSHOT] Signing failed (non-blocking):', err.message);
@@ -888,6 +905,7 @@ export async function generateComplianceSnapshot(
     rfc3161Token,
     rfc3161TsaUrl,
     signature,
+    mldsaSignature,
     signatureAlgorithm,
     signatureKeyId,
   };

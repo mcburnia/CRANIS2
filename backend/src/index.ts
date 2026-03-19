@@ -54,7 +54,7 @@ import fieldIssuesRoutes from "./routes/field-issues.js";
 import { startScheduler } from './services/scheduler.js';
 import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
-import { getPublicKeyPem } from './services/signing.js';
+import { getPublicKeyPem, getMldsaPublicKeyPem } from './services/signing.js';
 import { seedNotifiedBodies } from './services/notified-bodies-seed.js';
 import { seedMarketSurveillanceAuthorities } from './services/market-surveillance-seed.js';
 
@@ -150,6 +150,18 @@ app.get('/.well-known/cranis2-signing-key.pem', (_req, res) => {
   const pem = getPublicKeyPem();
   if (!pem) {
     res.status(404).json({ error: 'Signing key not configured' });
+    return;
+  }
+  res.setHeader('Content-Type', 'application/x-pem-file');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.send(pem);
+});
+
+// CRANIS2 ML-DSA-65 (post-quantum) signing public key
+app.get('/.well-known/cranis2-signing-key-mldsa.pem', (_req, res) => {
+  const pem = getMldsaPublicKeyPem();
+  if (!pem) {
+    res.status(404).json({ error: 'ML-DSA-65 signing key not configured' });
     return;
   }
   res.setHeader('Content-Type', 'application/x-pem-file');

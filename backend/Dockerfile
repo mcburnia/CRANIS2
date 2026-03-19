@@ -1,4 +1,4 @@
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY src ./src
 
 RUN npx tsc
 
-FROM node:22-alpine
+FROM node:24-alpine
 
 RUN apk add --no-cache unzip xz
 
