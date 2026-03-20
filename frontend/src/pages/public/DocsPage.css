@@ -437,6 +437,20 @@
   border-top: 1px solid var(--border);
   background: var(--surface);
 }
+.doc-footer-links {
+  margin-top: 0.5rem;
+}
+.doc-footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.doc-footer-links a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.doc-footer-links span {
+  margin: 0 0.4rem;
+}
 
 /* ══════════════════════════════════════
    Responsive

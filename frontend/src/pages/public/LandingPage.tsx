@@ -412,6 +412,11 @@ export default function LandingPage() {
       {/* ── Footer ── */}
       <footer className="landing-footer">
         CRANIS2 &copy; 2026 &middot; Software Compliance &amp; Governance Platform &middot; EU hosted, customer-owned evidence
+        <div className="landing-footer-links">
+          <Link to="/docs/privacy-policy">Privacy Policy</Link>
+          <span>&middot;</span>
+          <Link to="/docs/terms-of-service">Terms of Service</Link>
+        </div>
       </footer>
     </div>
   );

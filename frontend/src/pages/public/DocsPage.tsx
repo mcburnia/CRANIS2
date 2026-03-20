@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
@@ -53,7 +53,12 @@ function parseHeadings(markdown: string): TocItem[] {
 export default function DocsPage() {
   usePageMeta();
   const location = useLocation();
-  const isFaq = location.pathname === '/docs/faq';
+  const { slug: routeSlug } = useParams<{ slug?: string }>();
+
+  /* Map route to API slug */
+  const slug = routeSlug || 'user-guide';
+  const isFaq = slug === 'faq';
+  const isLegal = slug === 'privacy-policy' || slug === 'terms-of-service';
 
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
@@ -61,7 +66,6 @@ export default function DocsPage() {
   /* Fetch content from API */
   useEffect(() => {
     setLoading(true);
-    const slug = isFaq ? 'faq' : 'user-guide';
     fetch(`/api/docs/${slug}`)
       .then(r => r.json())
       .then(data => {
@@ -72,7 +76,7 @@ export default function DocsPage() {
         setContent('');
         setLoading(false);
       });
-  }, [isFaq]);
+  }, [slug]);
 
   const headings = useMemo(() => parseHeadings(content), [content]);
 
@@ -140,7 +144,7 @@ export default function DocsPage() {
         <div className="doc-nav-tabs">
           <Link
             to="/docs"
-            className={`doc-nav-tab${!isFaq ? ' doc-nav-tab-active' : ''}`}
+            className={`doc-nav-tab${slug === 'user-guide' ? ' doc-nav-tab-active' : ''}`}
           >
             <Book size={16} />
             User Guide
@@ -175,10 +179,12 @@ export default function DocsPage() {
       <div className="doc-layout">
         {/* TOC sidebar */}
         <aside className={`doc-toc${tocOpen ? ' doc-toc-open' : ''}`}>
-          <div className="doc-toc-header">{isFaq ? 'FAQ Topics' : 'Contents'}</div>
+          <div className="doc-toc-header">
+            {isFaq ? 'FAQ Topics' : slug === 'privacy-policy' ? 'Privacy Policy' : slug === 'terms-of-service' ? 'Terms of Service' : 'Contents'}
+          </div>
 
           {/* Audience filter (User Guide only) */}
-          {!isFaq && (
+          {!isFaq && !isLegal && (
             <div className="doc-audience-filter">
               <button
                 className={`doc-audience-btn${audienceFilter === 'all' ? ' doc-audience-active' : ''}`}
@@ -256,6 +262,11 @@ export default function DocsPage() {
       <footer className="doc-footer">
         CRANIS2 &copy; 2026 &middot; Software Compliance &amp; Governance Platform
         &middot; EU hosted, customer-owned evidence
+        <div className="doc-footer-links">
+          <Link to="/docs/privacy-policy">Privacy Policy</Link>
+          <span>&middot;</span>
+          <Link to="/docs/terms-of-service">Terms of Service</Link>
+        </div>
       </footer>
     </div>
   );

@@ -874,6 +874,8 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     const docsToSeed: Array<{ slug: string; title: string; path: string }> = [
       { slug: 'user-guide', title: 'User Guide', path: join(__dirname, '../../docs/USER-GUIDE.md') },
       { slug: 'faq', title: 'FAQ', path: join(__dirname, '../../docs/FAQ.md') },
+      { slug: 'privacy-policy', title: 'Privacy Policy', path: join(__dirname, '../../docs/PRIVACY-POLICY.md') },
+      { slug: 'terms-of-service', title: 'Terms of Service', path: join(__dirname, '../../docs/TERMS-OF-SERVICE.md') },
     ];
     for (const doc of docsToSeed) {
       if (!existing.has(doc.slug) && existsSync(doc.path)) {

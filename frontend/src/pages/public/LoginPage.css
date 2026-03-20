@@ -88,3 +88,20 @@
 .auth-footer a {
   color: var(--accent);
 }
+.auth-legal-links {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.auth-legal-links a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.auth-legal-links a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.auth-legal-links span {
+  margin: 0 0.4rem;
+}

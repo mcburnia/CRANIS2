@@ -237,6 +237,20 @@
   color: var(--muted);
   font-size: 0.8rem;
 }
+.landing-footer-links {
+  margin-top: 0.5rem;
+}
+.landing-footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.landing-footer-links a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.landing-footer-links span {
+  margin: 0 0.4rem;
+}
 
 
 /* ══════════════════════════════════════

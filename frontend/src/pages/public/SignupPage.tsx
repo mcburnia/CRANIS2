@@ -207,6 +207,11 @@ export default function SignupPage() {
           <div className="auth-footer">
             Already have an account? <Link to="/login">Log in</Link>
           </div>
+          <div className="auth-legal-links">
+            <Link to="/docs/privacy-policy">Privacy Policy</Link>
+            <span>&middot;</span>
+            <Link to="/docs/terms-of-service">Terms of Service</Link>
+          </div>
         </div>
       </div>
     </div>
