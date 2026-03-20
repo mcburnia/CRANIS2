@@ -1096,17 +1096,25 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-18 (session 55)
+**Last updated:** 2026-03-20 (session 57)
 
-**Recently completed:**
-- **Welcome site email verification and traceability** — Root cause analysis on lost contact form submission. Two-step email verification (6-digit code) added to contact form and all 4 assessment subscribe flows. `contact_submissions` table with full status tracking (pending_verification, verified, lead_notified, lead_failed). Disposable email honeypot (37 domains) with silent fake flow logged to `disposable_email_log` table. Position field made optional on contact form. Access log entries enriched with form data. Lead notification results explicitly checked and logged.
-- **Admin Welcome Leads page** — New admin page at `/admin/welcome-leads` with two tabs: Contact Submissions (status badges, email search, status filters, stat cards) and Disposable Email Log (domain frequency grid, source filter). Backend: `admin/welcome-leads.ts` with paginated, filterable endpoints. Protected by `requirePlatformAdmin`.
-- **Launch readiness plan** — Comprehensive 5-workstream, 8-session plan approved: (1) Database backup and restore, (2) PQC readiness with hybrid Ed25519+ML-DSA-65 signing, (3) Security audit and hardening, (4) GDPR compliance, (5) Visual automated testing. Full plan at `.claude/plans/fizzy-plotting-bear.md`.
-- **Backlog reprioritised for launch** — 13 launch blockers identified. All other work (help guide stubs, i18n, supplier marketplace, service unit tests) parked for post-launch.
-- **Forgejo test infrastructure fix** — Resolved 15 previously-expected test failures. Fixed `sbom_source` VARCHAR(50) overflow (widened to 255), dual-secret HMAC webhook verification (Forgejo sends GitHub-compatible headers), Forgejo `ALLOWED_HOST_LIST` for Docker-internal webhook delivery, backend_test `FRONTEND_URL` changed to Docker DNS name.
-- **Platform Analytics Dashboard (#57)** — Admin-only analytics page at `/admin/analytics`. KPI snapshot, growth metrics, revenue breakdown, market intelligence, assessment completions. Recharts charts + data tables.
+**Recently completed (session 57):**
+- **Ownership rebranding** — Replaced all "Gibbs Consulting" references with "Loman Cavendish Limited" across 6 ai-coder-framework documents. Removed `/tmp/gibbs-ai-development-framework` from `.claude/settings.json`. CRANIS2 is a personal product owned by Loman Cavendish Limited.
+- **Privacy Policy (Beta)** — Comprehensive GDPR-compliant privacy policy drafted from full data audit of the codebase. Covers all personal data categories (account, billing, telemetry, repository, stakeholder, AI Copilot, escrow, feedback), names all sub-processors (Stripe, Resend, Anthropic, Git providers), specifies retention periods, documents data subject rights under UK GDPR. Served via doc_pages system at `/docs/privacy-policy`.
+- **Terms of Service (Beta)** — Full terms covering account responsibilities, acceptable use, subscription billing, AI Copilot disclaimers, data ownership, liability limitations, beta service notice, governing law (England and Wales). Served at `/docs/terms-of-service`.
+- **Dynamic docs routing** — DocsPage.tsx converted from hardcoded user-guide/faq to dynamic `/docs/:slug` routing. Privacy and Terms links added to login, signup, accept-invite, landing, and docs page footers.
+- **SBOM debug logging removed** — Removed `console.log` calls from `getSBOM()` in `services/github.ts`. Error logs converted to `console.error`.
+- **Docker Compose orphan cleanup (CRN-14)** — `test-stack.sh stop_stack()` now removes containers after stopping (`docker compose rm -f`), preventing exited test containers from lingering.
+- **Audit log help guide** — Created `ch7_11_audit_log.html` with 6 interactive stations (navigate, event types, filtering, event details, retention, CRA compliance context). Updated `HelpPanelContext.tsx` mapping from incorrect `ch5_05` to new guide.
+- **Dev routes confirmed removed** — `/api/dev/*` routes already absent from prior session.
+- **Compliance Timeline SVG reviewed** — No code defect found; component uses Recharts correctly. Needs visual browser review for any cosmetic issues.
 
-**Test suite:** ~1,497 tests (84 files), ~1,496 pass, 1 expected failure (category-recommendation needs Anthropic API).
+**Previously completed (sessions 55-56):**
+- WS1-WS3 launch readiness workstreams (backup/restore, PQC, security hardening)
+- Welcome site email verification, admin leads page, platform analytics dashboard
+- Forgejo test infrastructure fix, backlog reprioritised for launch
+
+**Test suite:** ~2,135 tests (114 files), ~2,134 pass, 1 expected failure (category-recommendation needs Anthropic API).
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
 - Assistant operating protocol formalised in `Workflow Rules` (propose-first flow, test gates, push handoff, British English)
 - **CLAUDE.md created** — project-level instructions file (auto-loaded by Claude Code each session); contains operating protocol, environment notes, NGINX gotchas, port map
