@@ -40,6 +40,7 @@ start_stack() {
 stop_stack() {
   echo "Stopping test stack..."
   docker compose --profile test stop neo4j_test backend_test
+  docker compose --profile test rm -f neo4j_test backend_test 2>/dev/null
   echo "Test stack stopped."
 }
 

@@ -283,12 +283,10 @@ export async function getBranches(token: string, owner: string, repo: string): P
  */
 export async function getSBOM(token: string, owner: string, repo: string): Promise<GitHubSBOMResponse | null> {
   try {
-    console.log(`[SBOM] Fetching from /repos/${owner}/${repo}/dependency-graph/sbom`);
     const result = await githubGet<GitHubSBOMResponse>(`/repos/${owner}/${repo}/dependency-graph/sbom`, token);
-    console.log(`[SBOM] Success - got ${result?.sbom?.packages?.length || 0} packages`);
     return result;
   } catch (err: any) {
-    console.log(`[SBOM] Error: ${err.message}`);
+    console.error(`[SBOM] Error fetching ${owner}/${repo}: ${err.message}`);
     // 404 means no dependency data available – not an error
     if (err.message?.includes('404')) return null;
     // 403 can mean dependency graph not enabled
@@ -319,7 +317,7 @@ export async function getReleases(token: string, owner: string, repo: string): P
   try {
     return await githubGet<GitHubRelease[]>(`/repos/${owner}/${repo}/releases?per_page=100`, token);
   } catch (err: any) {
-    console.log(`[RELEASES] Error fetching releases: ${err.message}`);
+    console.error(`[RELEASES] Error fetching releases: ${err.message}`);
     return [];
   }
 }
@@ -328,7 +326,7 @@ export async function getTags(token: string, owner: string, repo: string): Promi
   try {
     return await githubGet<GitHubTag[]>(`/repos/${owner}/${repo}/tags?per_page=100`, token);
   } catch (err: any) {
-    console.log(`[TAGS] Error fetching tags: ${err.message}`);
+    console.error(`[TAGS] Error fetching tags: ${err.message}`);
     return [];
   }
 }
