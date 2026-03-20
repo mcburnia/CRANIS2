@@ -109,13 +109,10 @@ export function authRateLimit(category: string) {
     }
 
     if (entry.count >= config.maxAttempts) {
-      const retryAfterMs = config.windowMs - (now - entry.windowStart);
-      const retryAfterSec = Math.ceil(retryAfterMs / 1000);
-
-      res.setHeader('Retry-After', String(retryAfterSec));
+      // No Retry-After header — revealing the exact window expiry helps
+      // attackers schedule their next brute-force batch precisely.
       res.status(429).json({
         error: 'Too many attempts. Please try again later.',
-        retryAfter: retryAfterSec,
       });
       return;
     }

@@ -127,7 +127,16 @@ describe('Auth rate limiting', () => {
     expect(middleware).toContain('maxAttempts: 3');
     // 429 response
     expect(middleware).toContain('status(429)');
-    expect(middleware).toContain('Retry-After');
+  });
+
+  it('rate limiter does NOT leak timing via Retry-After header', () => {
+    const middleware = fs.readFileSync(
+      path.join(PROJECT_ROOT, 'backend/src/middleware/authRateLimit.ts'),
+      'utf-8'
+    );
+    // Should not set Retry-After header — it reveals window expiry to attackers
+    expect(middleware).not.toContain("setHeader('Retry-After'");
+    expect(middleware).not.toContain('retryAfter');
   });
 
   it('register endpoint has rate limiting middleware', () => {
