@@ -1,8 +1,32 @@
 # CRANIS2 — Active Backlog
 
-Updated: 2026-03-18 (session 55)
+Updated: 2026-03-20 (session 56)
 
 For completed work history, see `.claude/projects/-home-mcburnia-cranis2/memory/completed_work.md`
+
+---
+
+## Launch Readiness Workstreams
+
+| WS | Workstream | Status |
+|----|-----------|--------|
+| 1 | Database Backup & Restore | **COMPLETE** (session 56) |
+| 2 | PQC Readiness (JWT, HKDF, hybrid signing, Node.js 24) | **COMPLETE** (session 56) |
+| 3 | Security Hardening (ports, rate limiting, CORS, key rotation) | **COMPLETE** (session 56) |
+| 4 | GDPR Compliance | **NEXT** (session 57) |
+| 5 | Visual Testing | Pending (session 58) |
+
+---
+
+## WS4 Scope (GDPR Compliance — approved)
+
+1. **Data export endpoint** (Art. 20) — `GET /api/account/data-export` returning all personal data as JSON/ZIP
+2. **Account deletion endpoint** (Art. 17) — `DELETE /api/account` with PII hard-delete, audit trail anonymisation, Neo4j cleanup, Stripe cancellation
+3. **Statistical aggregation before deletion** — convert telemetry to anonymous statistics (GDPR Recital 26: anonymised data is outside scope) before purging personal data
+4. **Data retention policy + scheduled cleanup** — telemetry 90 days, welcome contacts 12 months, assessments 12 months, verification codes 24 hours, audit trail 10 years (CRA Art. 13(10))
+5. **Tests** for all of the above
+
+**Session 58 (legal/docs — may need legal input):** Privacy Policy, DPA templates, localStorage disclosure
 
 ---
 
@@ -37,3 +61,4 @@ Everything below is deferred until after launch. No work on these until the 13 l
 - **P4 #24/#25** — Chat ops / Slack notifications.
 - **P5 Supplier Marketplace** — 7 features (#28-34), not started.
 - **#59 Multi-language i18n** — scope TBD.
+- **#60 Bitbucket integration** — PAT-based initially (App Passwords), OAuth 2.0 follow-up. All 3 SBOM tiers. Beta pilot partner confirmed (brother's company CTO).

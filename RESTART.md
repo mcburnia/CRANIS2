@@ -1502,9 +1502,71 @@ sudo systemctl restart cloudflared
 - **Backlog reprioritised** — 13 launch blockers identified (FRONTEND_URL migration, dev route removal, DKIM verification, privacy policy, terms of service, cookie consent, Stripe production keys, etc.). All other work parked for post-launch.
 - **Cryptographic audit completed** — All symmetric/hash primitives PQC-safe (AES-256-GCM, HMAC-SHA256, bcrypt, SHA-256). One critical finding: Ed25519 document signing is quantum-vulnerable, scheduled for hybrid replacement in WS2.
 
+**Session 56 (2026-03-20):**
+Massive session — completed 3 full workstreams of the launch readiness plan (8 commits, 169 new tests).
+
+- **WS1: Database Backup & Restore** (complete)
+  - `backup-databases.sh` — Postgres (cranis2 + forgejo) + Neo4j dumps, retention (7 daily, 4 weekly, 3 monthly, 30-day pre-upgrade)
+  - `restore-databases.sh` — interactive restore with confirmation, safety backup, health checks
+  - `verify-backup.sh` — temp container verification (weekly cron)
+  - `upgrade-system.sh` — full upgrade pipeline with auto-rollback on failure
+  - `apply-security-patch.sh` — npm audit + fix with test verification and auto-revert
+  - `rollback-upgrade.sh` — manual rollback (code, DB, or both)
+  - `usb-storage-sync-artifacts.sh` — now copies latest DB backup to USB
+  - `docs/backup-and-restore.md` + `docs/upgrade-and-patching.md` — full runbooks
+  - 51 tests (integration/system-scripts.test.ts)
+
+- **WS2 Part 1: PQC Foundation** (complete)
+  - JWT algorithm pinned to HS256 in both sign() and verify() — prevents alg:none and algorithm confusion attacks
+  - HKDF key derivation module (`key-derivation.ts`) — SHA-256 with purpose-specific info strings for domain separation
+  - JWT secret derived via HKDF (cached per process)
+  - Versioned encryption — v2 format (v2:iv:tag:ciphertext) uses HKDF-derived key; v1 legacy auto-detected for backwards compat
+  - 25 tests (security/pqc-foundation.test.ts)
+
+- **WS2 Part 2: Hybrid Signing + Node.js 24** (complete)
+  - Dockerfile upgraded from node:22-alpine to node:24-alpine (native ML-DSA-65 via OpenSSL 3.5+)
+  - `signing.ts` rewritten for hybrid Ed25519 + ML-DSA-65 dual signatures
+  - signDocument() returns both Ed25519 (64 bytes) and ML-DSA-65 (3,309 bytes) signatures
+  - verifyHybridSignature() — AND logic (both must pass)
+  - Graceful degradation if CRANIS2_SIGNING_KEY_MLDSA not set
+  - compliance-snapshot.ts writes .sig + .sig.mldsa alongside ZIPs
+  - `/.well-known/cranis2-signing-key-mldsa.pem` endpoint
+  - `generate-signing-keys.sh` — generates both key pairs for .env
+  - 23 tests (security/hybrid-signing.test.ts)
+
+- **WS3: Security Hardening** (complete)
+  - Database ports bound to 127.0.0.1 (Postgres 5433, Neo4j 7475/7688, Forgejo 3003)
+  - Forgejo credentials moved to .env + rotated (old password in git history now dead)
+  - Auth rate limiting — login 5/15min, register 3/hr, verify 10/hr, invite 5/hr (no Retry-After timing leak)
+  - CORS restricted to FRONTEND_URL only
+  - Welcome site default credentials removed (requireEnv, process exits if missing)
+  - npm audit — 0 vulnerabilities across all workspaces
+  - Org isolation audit confirmed secure (557 parameterised queries, all org_id-filtered)
+  - 29 tests (security/hardening.test.ts)
+
+- **WS3 Part 2: Key Rotation Tooling** (complete)
+  - `rotate-credentials.sh` — monthly DB passwords, JWT, welcome secret
+  - `rotate-encryption-key.sh` — annual, decrypts/re-encrypts PATs on lab server
+  - `apply-key-rotation.sh` — production deployment of rotation packages
+  - `rotate-signing-keys.sh` — annual, new Ed25519+ML-DSA-65, archives old public keys
+  - `check-rotation-age.sh` — weekly cron, reports days since last rotation, warns when overdue
+  - Lab-based operational model: re-encryption on isolated dev server, deploy to production during maintenance window
+  - `docs/key-rotation.md` — full runbook with HNDL context
+  - 41 tests (security/key-rotation.test.ts)
+
+- **Documentation overhaul** — all public-facing content updated with security hardening and PQC capabilities:
+  - Welcome site: Platform Security capability card, security commitment callout
+  - PQC assessment page: "practises what it preaches" trust banner
+  - EXECUTIVE-SUMMARY.md: new Platform Security section
+  - CRANIS2-CAPABILITIES-AND-SAFEGUARDS.md: new sections 4.5 (Cryptographic Security) and 4.6 (Infrastructure Hardening)
+  - FAQ.md: 5 new security Q&As
+  - meta-config.ts: PQC and HKDF in SEO feature list
+  - Help guide ch6_04: CRANIS2 as real-world PQC implementation example
+
+- **Beta partner confirmed** — brother's company CTO agreed to join beta pilot. They use Bitbucket (not currently supported). Bitbucket integration added to backlog as #60.
+
 **Next Steps:**
-- **Session 56:** Workstream 1 — Database Backup & Restore (scripts, cron, docs)
-- **Session 57:** Workstream 2 Part 1 — PQC Foundation (Node.js 24, JWT hardening, HKDF)
-- **Session 58:** Workstream 2 Part 2 — Hybrid Signing (Ed25519+ML-DSA-65)
-- Full plan: `.claude/plans/fizzy-plotting-bear.md`
-- Post-launch: #59 i18n, P5 supplier marketplace, help guide stubs
+- **Session 57:** WS4 — GDPR Compliance (data export endpoint, account deletion with PII purge + statistical aggregation, data retention policy with scheduled cleanup, anonymised statistics table)
+- **Session 58:** WS5 — Visual Testing (15-test Playwright confidence suite)
+- Then: 13 launch blockers (FRONTEND_URL, dev routes, privacy policy, terms of service, Stripe, etc.)
+- Post-launch: #59 i18n, #60 Bitbucket, P5 supplier marketplace, help guide stubs
