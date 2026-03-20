@@ -1,7 +1,7 @@
-# Gibbs Consulting — Developer Guide to AI-Assisted Development
+# Loman Cavendish Limited — Developer Guide to AI-Assisted Development
 
 **Document type:** Guidelines
-**Owner:** Gibbs Consulting
+**Owner:** Loman Cavendish Limited
 **Version:** 1.0
 **Last reviewed:** March 2026
 
@@ -267,4 +267,4 @@ When removing code, remove it completely:
 
 ---
 
-*Gibbs Consulting — Practical guidance for professional AI-assisted development.*
+*Loman Cavendish Limited — Practical guidance for professional AI-assisted development.*

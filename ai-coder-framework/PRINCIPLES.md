@@ -1,7 +1,7 @@
-# Gibbs Consulting — AI-Assisted Development Principles
+# Loman Cavendish Limited — AI-Assisted Development Principles
 
 **Document type:** Principles
-**Owner:** Gibbs Consulting
+**Owner:** Loman Cavendish Limited
 **Version:** 1.0
 **Last reviewed:** March 2026
 
@@ -9,7 +9,7 @@
 
 ## 1. Purpose
 
-These principles establish the intellectual framework for all AI-assisted development and research work undertaken by Gibbs Consulting. They apply to internal projects and client engagements alike.
+These principles establish the intellectual framework for all AI-assisted development and research work undertaken by Loman Cavendish Limited. They apply to internal projects and client engagements alike.
 
 AI-assisted development is a professional discipline, not a convenience shortcut. These principles exist to ensure that every engagement produces traceable, defensible, high-quality work — regardless of whether AI tools were involved in its creation.
 
@@ -50,9 +50,9 @@ The threshold is straightforward: if you cannot explain why the AI's output is c
 
 ## 4. Intellectual Property
 
-All work product created during Gibbs Consulting engagements is owned by Gibbs Consulting or the client, as defined by the applicable contract.
+All work product created during Loman Cavendish Limited engagements is owned by Loman Cavendish Limited or the client, as defined by the applicable contract.
 
-AI-generated output is treated as raw material. It becomes Gibbs Consulting work product only after a competent professional has reviewed, refined, and approved it. The act of directing the AI, selecting from its output, and integrating the result into the deliverable constitutes the creative and professional contribution.
+AI-generated output is treated as raw material. It becomes Loman Cavendish Limited work product only after a competent professional has reviewed, refined, and approved it. The act of directing the AI, selecting from its output, and integrating the result into the deliverable constitutes the creative and professional contribution.
 
 Session transcripts, which record the human direction and decision-making process, form part of the IP evidence base. They demonstrate that the work was human-directed and that professional judgement was applied throughout.
 
@@ -103,4 +103,4 @@ Feedback from developers, auditors, and clients informs revisions. Lessons learn
 
 ---
 
-*Gibbs Consulting — Established principles for professional AI-assisted development.*
+*Loman Cavendish Limited — Established principles for professional AI-assisted development.*

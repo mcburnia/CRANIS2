@@ -1,7 +1,7 @@
-# Gibbs Consulting — R&D Evidence and Documentation Standards
+# Loman Cavendish Limited — R&D Evidence and Documentation Standards
 
 **Document type:** Standard
-**Owner:** Gibbs Consulting
+**Owner:** Loman Cavendish Limited
 **Version:** 1.0
 **Last reviewed:** March 2026
 **Regulatory basis:** HMRC R&D Tax Relief (Corporation Tax), BEIS Guidelines on the Meaning of Research and Development
@@ -10,7 +10,7 @@
 
 ## 1. Purpose
 
-This standard defines the evidence requirements for R&D tax credit claims made by Gibbs Consulting under the UK R&D tax relief scheme. It ensures that development and research activities are documented to the level required by HMRC, contemporaneously and as a natural byproduct of disciplined work.
+This standard defines the evidence requirements for R&D tax credit claims made by Loman Cavendish Limited under the UK R&D tax relief scheme. It ensures that development and research activities are documented to the level required by HMRC, contemporaneously and as a natural byproduct of disciplined work.
 
 AI-assisted development produces uniquely strong R&D evidence because every session is captured as a verbatim transcript. This standard explains how to structure that evidence so it directly supports the four-part test.
 
@@ -56,7 +56,7 @@ Uncertainty arises when:
 
 The work must be conducted systematically. This means planned, structured activity with clear objectives — not trial and error without direction.
 
-AI-assisted development is inherently systematic when conducted under the Gibbs Consulting Guidelines:
+AI-assisted development is inherently systematic when conducted under the Loman Cavendish Limited Guidelines:
 
 - Sessions begin with a stated objective
 - Plans are proposed and approved before implementation
@@ -246,4 +246,4 @@ The evidence repository is a separate git repository from the project source cod
 
 ---
 
-*Gibbs Consulting — Evidence standards for R&D tax credit claims and professional development practice.*
+*Loman Cavendish Limited — Evidence standards for R&D tax credit claims and professional development practice.*

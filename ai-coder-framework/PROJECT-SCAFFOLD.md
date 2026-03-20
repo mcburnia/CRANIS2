@@ -1,7 +1,7 @@
-# Gibbs Consulting — Project Scaffold
+# Loman Cavendish Limited — Project Scaffold
 
 **Document type:** Standard
-**Owner:** Gibbs Consulting
+**Owner:** Loman Cavendish Limited
 **Version:** 1.0
 **Last reviewed:** March 2026
 
@@ -9,7 +9,7 @@
 
 ## 1. Purpose
 
-Every software project initiated by Gibbs Consulting includes a standard set of files that enable AI-assisted development, session capture, and R&D evidence collection from day one. This document defines those files, explains their purpose, and provides starter templates.
+Every software project initiated by Loman Cavendish Limited includes a standard set of files that enable AI-assisted development, session capture, and R&D evidence collection from day one. This document defines those files, explains their purpose, and provides starter templates.
 
 These files are not bureaucratic overhead. They are working documents that the AI reads at the start of each session. They eliminate the "catch-up" problem where context is lost between sessions, reduce onboarding time for new team members, and produce the evidence trail required for R&D tax credit claims.
 
@@ -57,7 +57,7 @@ The AI reads this file at the start of every session. It defines how the AI shou
 - Architectural decisions (those go in `RESTART.md`)
 - Task lists (those go in `BACKLOG.md`)
 - User preferences or feedback (those go in `MEMORY.md`)
-- General Gibbs Consulting policies (those are in the framework documents)
+- General Loman Cavendish Limited policies (those are in the framework documents)
 
 ### Anti-Patterns
 
@@ -338,4 +338,4 @@ When starting a new project:
 
 ---
 
-*Gibbs Consulting — Standard project file structure for AI-assisted development.*
+*Loman Cavendish Limited — Standard project file structure for AI-assisted development.*

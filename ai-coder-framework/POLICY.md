@@ -1,7 +1,7 @@
-# Gibbs Consulting — AI-Assisted Development Policy
+# Loman Cavendish Limited — AI-Assisted Development Policy
 
 **Document type:** Policy
-**Owner:** Gibbs Consulting
+**Owner:** Loman Cavendish Limited
 **Version:** 1.0
 **Last reviewed:** March 2026
 **Review cycle:** Quarterly, or when tools, regulations, or contractual requirements change
@@ -10,27 +10,27 @@
 
 ## 1. Scope
 
-This policy applies to all development and research work undertaken by Gibbs Consulting, including:
+This policy applies to all development and research work undertaken by Loman Cavendish Limited, including:
 
 - Internal product development
 - Client engagements (where contractually permitted)
 - Research and prototyping activities
-- Open-source contributions made in a Gibbs Consulting capacity
+- Open-source contributions made in a Loman Cavendish Limited capacity
 
-All employees, contractors, and associates performing development work under the Gibbs Consulting banner must comply with this policy.
+All employees, contractors, and associates performing development work under the Loman Cavendish Limited banner must comply with this policy.
 
 ---
 
 ## 2. Authorised Tools
 
-The following AI tools are approved for use in Gibbs Consulting development work:
+The following AI tools are approved for use in Loman Cavendish Limited development work:
 
 | Tool | Approved Use | Notes |
 |------|-------------|-------|
 | Claude Code (Anthropic) | Code generation, analysis, documentation, research | Primary AI development tool |
 | GitHub Copilot | Inline code completion | IDE integration only |
 
-Additional tools may be approved by submitting a request to the managing director. The request must include the tool name, vendor, data handling policy, and intended use case. Unapproved tools must not be used on any Gibbs Consulting or client project.
+Additional tools may be approved by submitting a request to the managing director. The request must include the tool name, vendor, data handling policy, and intended use case. Unapproved tools must not be used on any Loman Cavendish Limited or client project.
 
 ---
 
@@ -38,7 +38,7 @@ Additional tools may be approved by submitting a request to the managing directo
 
 ### 3.1 What may be shared with AI tools
 
-- Source code owned by Gibbs Consulting (subject to client restrictions per Section 4)
+- Source code owned by Loman Cavendish Limited (subject to client restrictions per Section 4)
 - Technical documentation and specifications
 - Publicly available information (standards, regulations, open-source code)
 - Anonymised or synthetic data
@@ -153,7 +153,7 @@ This is consistent with existing professional standards. A developer who uses a 
 Failure to comply with this policy may result in:
 
 - Removal of AI tool access
-- Disciplinary action under Gibbs Consulting's employment or contractor terms
+- Disciplinary action under Loman Cavendish Limited's employment or contractor terms
 - Liability for any client or regulatory consequences arising from the non-compliance
 
 Concerns about the policy or its application should be raised with the managing director. The policy is intended to protect both the company and the individual; constructive feedback is welcomed.
@@ -174,4 +174,4 @@ All amendments are versioned and dated. Previous versions are retained for audit
 
 ---
 
-*Gibbs Consulting — Professional standards for AI-assisted development.*
+*Loman Cavendish Limited — Professional standards for AI-assisted development.*

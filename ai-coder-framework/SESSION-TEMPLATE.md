@@ -1,7 +1,7 @@
-# Gibbs Consulting — Session Record Template
+# Loman Cavendish Limited — Session Record Template
 
 **Document type:** Template
-**Owner:** Gibbs Consulting
+**Owner:** Loman Cavendish Limited
 **Version:** 1.0
 
 ---
@@ -112,4 +112,4 @@ Routine development (bug fixes, UI adjustments, configuration changes) does not 
 
 ---
 
-*Gibbs Consulting — Template for AI-assisted development session records.*
+*Loman Cavendish Limited — Template for AI-assisted development session records.*
