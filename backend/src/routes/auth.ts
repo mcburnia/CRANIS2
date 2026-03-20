@@ -5,13 +5,14 @@ import { generateVerificationToken, generateSessionToken } from '../utils/token.
 import { sendVerificationEmail } from '../services/email.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { getDriver } from '../db/neo4j.js';
+import { authRateLimit } from '../middleware/authRateLimit.js';
 
 const router = Router();
 
 const DEV_MODE = process.env.DEV_SKIP_EMAIL === 'true';
 
 // POST /api/auth/register
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', authRateLimit('register'), async (req: Request, res: Response) => {
   try {
     const { email, password, browserLanguage, browserTimezone, referrer: clientReferrer } = req.body;
 
@@ -155,7 +156,7 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // POST /api/auth/login
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', authRateLimit('login'), async (req: Request, res: Response) => {
   try {
     const { email, password, browserLanguage, browserTimezone } = req.body;
 
@@ -303,7 +304,7 @@ router.get('/me', async (req: Request, res: Response) => {
 });
 
 // GET /api/auth/verify-email?token=xxx
-router.get('/verify-email', async (req: Request, res: Response) => {
+router.get('/verify-email', authRateLimit('verify'), async (req: Request, res: Response) => {
   try {
     const { token } = req.query;
 
@@ -360,7 +361,7 @@ router.get('/verify-email', async (req: Request, res: Response) => {
 
 
 // POST /api/auth/accept-invite – Accept an invitation and set password
-router.post('/accept-invite', async (req: Request, res: Response) => {
+router.post('/accept-invite', authRateLimit('invite'), async (req: Request, res: Response) => {
   try {
     const { token, password } = req.body;
 

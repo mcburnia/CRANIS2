@@ -197,8 +197,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      FORGEJO_DB_USER: ${FORGEJO_DB_USER}
+      FORGEJO_DB_PASSWD: ${FORGEJO_DB_PASSWD}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     command: ["postgres", "-c", "shared_buffers=512MB", "-c", "work_mem=4MB", "-c", "effective_cache_size=1536MB", "-c", "maintenance_work_mem=128MB"]
     deploy:
       resources:
@@ -230,8 +232,8 @@ services:
         limits:
           memory: 1536M
     ports:
-      - "7475:7474"
-      - "7688:7687"
+      - "127.0.0.1:7475:7474"
+      - "127.0.0.1:7688:7687"
     volumes:
       - cranis2_neo4j_data:/data
       - cranis2_neo4j_logs:/logs
@@ -284,8 +286,8 @@ services:
       - FORGEJO__database__DB_TYPE=postgres
       - FORGEJO__database__HOST=postgres:5432
       - FORGEJO__database__NAME=forgejo
-      - FORGEJO__database__USER=forgejo
-      - FORGEJO__database__PASSWD=forgejo_dev_2026
+      - FORGEJO__database__USER=${FORGEJO_DB_USER}
+      - FORGEJO__database__PASSWD=${FORGEJO_DB_PASSWD}
       - FORGEJO__server__ROOT_URL=https://escrow.cranis2.dev
       - FORGEJO__server__HTTP_PORT=3000
       - FORGEJO__server__DISABLE_SSH=true
@@ -299,7 +301,7 @@ services:
     networks:
       - cranis2_net
     ports:
-      - "3003:3000"
+      - "127.0.0.1:3003:3000"
 
 volumes:
   cranis2_welcome_data:

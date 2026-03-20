@@ -61,7 +61,12 @@ import { seedMarketSurveillanceAuthorities } from './services/market-surveillanc
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3002',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+}));
 app.use(express.json({
   verify: (req: any, _res, buf) => {
     req.rawBody = buf;
