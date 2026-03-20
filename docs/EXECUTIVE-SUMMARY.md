@@ -154,6 +154,22 @@ Once connected, CRANIS2 runs largely on autopilot:
 
 Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerability finding, updating a compliance obligation, or submitting an ENISA report. The rest happens in the background.
 
+## Platform Security
+
+CRANIS2 is a compliance platform — the security of the platform itself must be beyond reproach. We apply the same standards we help our customers achieve.
+
+**Post-Quantum Cryptography (PQC)**
+All compliance archives and certificates are signed with hybrid Ed25519 + ML-DSA-65 signatures (NIST FIPS 204). This means document integrity is provable even against future quantum computing threats. CRANIS2 runs on Node.js 24 with native PQC support — no third-party dependencies for cryptographic operations.
+
+**Encryption and Key Management**
+Repository access tokens are encrypted at rest using AES-256-GCM with HKDF-derived keys (RFC 5869). Each cryptographic purpose uses a domain-separated key, so even if one key were compromised, others remain secure. JWT session tokens are algorithm-pinned to HS256 to prevent algorithm confusion attacks. All encryption keys are rotated on a defined schedule — monthly for credentials, annually for encryption and signing keys — using an air-gapped rotation process.
+
+**Infrastructure Hardening**
+All database services are bound to localhost only — there is no external access to any database port. Authentication endpoints are rate-limited to prevent brute-force attacks. Cross-origin requests are restricted to the CRANIS2 domain. Security headers (HSTS, Content-Security-Policy, X-Frame-Options) are enforced on every response. Dependencies are continuously audited for vulnerabilities.
+
+**Audit and Verification**
+Over 2,100 automated tests verify the platform's security controls on every build. The security hardening programme is validated by dedicated test suites covering port binding, rate limiting, CORS policy, credential management, and cryptographic operations.
+
 ## Summary
 
 | | |
@@ -165,6 +181,7 @@ Your team interacts with CRANIS2 when action is needed: reviewing a new vulnerab
 | **Source code** | Source code is never stored. Repositories are never written to. All access is strictly read-only. SEE analysis (opt-in) reads commit metadata and file classifications but retains only structured metrics |
 | **Providers** | GitHub, Codeberg, Gitea, Forgejo, GitLab (including self-hosted instances) |
 | **Deployment** | SaaS platform at cranis2.com, hosted in Switzerland (Infomaniak) |
+| **Security** | Post-quantum hybrid signing (Ed25519 + ML-DSA-65), AES-256-GCM with HKDF, automated key rotation, auth rate limiting, localhost-only database access, 2,100+ automated security tests |
 
 ---
 

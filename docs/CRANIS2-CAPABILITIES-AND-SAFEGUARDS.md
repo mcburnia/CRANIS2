@@ -394,8 +394,8 @@ When a product owner explicitly consents to source code analysis, the SEE reads 
 
 | Layer | Mechanism |
 |---|---|
-| **User authentication** | JWT session tokens, bcrypt password hashing, email verification required |
-| **Repository authentication** | OAuth (GitHub, Codeberg) or encrypted PAT tokens (Gitea, Forgejo, GitLab). PATs encrypted at rest using AES-256-GCM |
+| **User authentication** | JWT session tokens (HS256 algorithm-pinned, HKDF-derived secret), bcrypt password hashing (12 rounds), email verification required, IP-based rate limiting |
+| **Repository authentication** | OAuth (GitHub, Codeberg) or encrypted PAT tokens (Gitea, Forgejo, GitLab). PATs encrypted at rest using AES-256-GCM with HKDF domain-separated key derivation |
 | **Organisation isolation** | Every database query is scoped to the user's `org_id`. There is no query path that returns another organisation's data |
 | **Product ownership** | Neo4j graph relationship verification: a product must have a `BELONGS_TO` relationship to the user's organisation before any operation is permitted |
 | **Role-based access** | Organisation admins vs members; platform admin middleware for system operations |
@@ -447,7 +447,41 @@ This is the primary defence against account mimicry and cross-tenant data leakag
 - System events (scheduled tasks) are logged with NULL user_id via LEFT JOIN, distinguishable from human actions
 - This creates a forensic trail for investigating suspicious activity
 
-### 4.5 What About Someone Impersonating a Company?
+### 4.5 Cryptographic Security
+
+**Post-Quantum Hybrid Signing:**
+All compliance archives and retention certificates are signed with dual signatures:
+- **Ed25519** — fast, compact classical signatures (64 bytes) for immediate verification
+- **ML-DSA-65** (NIST FIPS 204) — post-quantum signatures (~3,309 bytes) that remain secure against quantum computing attacks
+
+Both signatures must verify for full assurance (AND logic). This means an attacker who breaks Ed25519 with a future quantum computer still cannot forge the ML-DSA-65 signature. Public keys are published at `/.well-known/` endpoints for independent verification.
+
+**Encryption and Key Derivation:**
+- Repository access tokens are encrypted at rest using AES-256-GCM (quantum-safe at 256-bit security)
+- All encryption keys are derived via HKDF-SHA256 (RFC 5869) with purpose-specific info strings, providing cryptographic domain separation — each key derivation purpose is independent
+- JWT session tokens are algorithm-pinned to HS256. This prevents "alg: none" bypass attacks and algorithm confusion attacks where an attacker substitutes a different signing method
+- Versioned encryption format (v2) enables transparent key rotation without breaking existing encrypted data
+
+**Key Rotation:**
+Credentials and cryptographic keys are rotated on a defined schedule:
+- **Monthly:** Database passwords, JWT signing secret, session secrets
+- **Annually:** Encryption keys (with offline re-encryption of stored data), signing key pairs (with public key archiving for historical document verification)
+
+All rotations are recorded in an auditable ledger. A weekly automated check warns when any key approaches its rotation threshold.
+
+### 4.6 Infrastructure Hardening
+
+| Control | Detail |
+|---------|--------|
+| **Database port isolation** | Postgres, Neo4j, and Forgejo ports are bound to localhost only (127.0.0.1). No external network access to any database service |
+| **Authentication rate limiting** | Login, registration, email verification, and invite acceptance endpoints are rate-limited per IP address to prevent brute-force attacks |
+| **CORS restriction** | Cross-origin requests are restricted to the CRANIS2 frontend domain only. No wildcard origins |
+| **Security headers** | HSTS (1 year, includeSubDomains), Content-Security-Policy, X-Frame-Options (SAMEORIGIN), X-Content-Type-Options (nosniff), Referrer-Policy, Permissions-Policy |
+| **Dependency auditing** | All npm dependencies are continuously audited. Zero known vulnerabilities maintained |
+| **Credential management** | No credentials in version control. All secrets managed via environment variables |
+| **Rate limit opacity** | Authentication rate limiters do not reveal timing information (no Retry-After headers) to prevent attackers from scheduling brute-force batches |
+
+### 4.7 What About Someone Impersonating a Company?
 
 This is a legitimate concern. Here is how CRANIS2 addresses it:
 

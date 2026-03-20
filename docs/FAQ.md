@@ -1168,4 +1168,47 @@ Yes. Session capture always requires explicit consent from each individual devel
 
 ---
 
+## Platform Security
+
+### Q: How does CRANIS2 protect my data?
+
+CRANIS2 applies defence-in-depth across multiple layers:
+- **Encryption:** All sensitive data (such as repository access tokens) is encrypted at rest using AES-256-GCM with HKDF-derived keys. Each encryption purpose uses a domain-separated key.
+- **Authentication:** JWT tokens are algorithm-pinned to prevent bypass attacks. Passwords are hashed with bcrypt (12 rounds). All authentication endpoints are rate-limited per IP address.
+- **Infrastructure:** Database services are bound to localhost only — no external network access. Cross-origin requests are restricted to the CRANIS2 domain. Comprehensive security headers (HSTS, CSP, X-Frame-Options) are enforced.
+- **Key rotation:** Credentials are rotated monthly. Encryption and signing keys are rotated annually.
+- **Testing:** Over 2,100 automated tests verify security controls on every build.
+
+### Q: What is post-quantum cryptography and why does CRANIS2 use it?
+
+Post-quantum cryptography (PQC) uses algorithms that are resistant to attacks from quantum computers. Classical algorithms like RSA and ECDSA will eventually be broken by sufficiently powerful quantum computers — a risk known as "Harvest Now, Decrypt Later" (HNDL), where adversaries capture encrypted data today and decrypt it when quantum computers mature.
+
+CRANIS2 uses hybrid signing: every compliance archive is signed with both Ed25519 (classical) and ML-DSA-65 (post-quantum, NIST FIPS 204). Both signatures must verify. This means your compliance evidence remains tamper-proof even against future quantum threats.
+
+For a compliance platform, this matters: the documents we sign today must remain verifiable for years — potentially beyond the point where classical cryptography is broken.
+
+### Q: Is CRANIS2 quantum-ready?
+
+Yes. All symmetric cryptography (AES-256-GCM, HMAC-SHA256, bcrypt, SHA-256) is already quantum-safe. The one vulnerability — Ed25519 document signing — has been upgraded to hybrid Ed25519 + ML-DSA-65. Key derivation uses HKDF-SHA256 (RFC 5869), which is quantum-resistant.
+
+CRANIS2 runs on Node.js 24 with native PQC support via OpenSSL 3.5+. No third-party cryptographic dependencies are required.
+
+### Q: How often are cryptographic keys rotated?
+
+| Key Type | Rotation Frequency |
+|----------|-------------------|
+| Database passwords | Monthly |
+| JWT signing secret | Monthly |
+| Session secrets | Monthly |
+| Encryption keys | Annually (with offline re-encryption) |
+| Signing keys (Ed25519 + ML-DSA-65) | Annually (with public key archiving) |
+
+All rotations are recorded in an auditable ledger. A weekly automated check warns when any key is approaching its rotation threshold.
+
+### Q: Where is my data hosted?
+
+CRANIS2 is hosted in Switzerland (Infomaniak) within the European Union data sovereignty framework. Source code escrow uses a self-hosted Forgejo instance. No data leaves the EU.
+
+---
+
 *For detailed guidance on any topic covered in this FAQ, refer to the [CRANIS2 User Guide](USER-GUIDE.md).*

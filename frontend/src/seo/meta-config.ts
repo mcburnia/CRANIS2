@@ -69,6 +69,8 @@ const SOFTWARE_JSON_LD: Record<string, unknown> = {
     'Multi-regulation reports (CRA, NIS2, AI Act, DORA, ISO 27001)',
     'Public API, CI/CD gate, MCP server for IDE integration',
     'Due diligence export (Markdown + SBOM + CSV)',
+    'Post-quantum hybrid signing (Ed25519 + ML-DSA-65, NIST FIPS 204)',
+    'AES-256-GCM encryption with HKDF key derivation and automated key rotation',
   ],
 };
 

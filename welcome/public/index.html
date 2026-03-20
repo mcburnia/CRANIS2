@@ -902,6 +902,7 @@
               <li>Migration guidance for quantum-vulnerable algorithms</li>
               <li>Feeds Art. 13(2) cryptographic requirements obligation</li>
               <li>Annex I risk assessment integration</li>
+              <li>CRANIS2 practises what it preaches &mdash; see Platform Security below</li>
             </ul>
           </div>
           <div class="cap-card">
@@ -933,6 +934,19 @@
               <li>Addresses R&amp;D tax &ldquo;competent professional&rdquo; requirement</li>
               <li>EU-sovereign storage via Forgejo (git-backed)</li>
               <li>Claude Code hooks and MCP integration</li>
+            </ul>
+          </div>
+          <div class="cap-card">
+            <h3>Platform Security</h3>
+            <ul>
+              <li>Post-quantum hybrid document signing (Ed25519 + ML-DSA-65, FIPS 204)</li>
+              <li>AES-256-GCM encryption with HKDF domain-separated key derivation</li>
+              <li>Automated key rotation &mdash; monthly for credentials, annually for encryption and signing keys</li>
+              <li>Authentication rate limiting to prevent brute-force attacks</li>
+              <li>Database services isolated to localhost &mdash; no external access</li>
+              <li>All API access restricted to authorised origins only</li>
+              <li>Comprehensive security headers (HSTS, CSP, X-Frame-Options)</li>
+              <li>Zero npm vulnerabilities &mdash; continuously audited dependencies</li>
             </ul>
           </div>
         </div>
@@ -1061,6 +1075,10 @@
             writes to your repository. All repository access is strictly read-only. The Software Evidence
             Engine reads commit metadata, branch structures, and file classifications to produce structured
             metrics. Source files are processed transiently and discarded immediately.</p>
+          <p><strong>Security commitment:</strong> Your data is protected by post-quantum cryptography
+            (NIST FIPS 204), encrypted at rest with AES-256-GCM, and signed with hybrid Ed25519 + ML-DSA-65
+            signatures that remain secure even against future quantum computing threats. Credentials are
+            rotated monthly. All infrastructure is hosted in the EU (Switzerland).</p>
         </div>
       </section>
 

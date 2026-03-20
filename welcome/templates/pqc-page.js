@@ -106,6 +106,13 @@ function assessmentPage() {
     <strong>Takes about 8 minutes.</strong> You can save your progress and return later.
   </p>
 
+  <div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:14px 18px;margin-bottom:24px;font-size:13px;color:#94a3b8;">
+    <strong style="color:#a78bfa;">CRANIS2 practises what it preaches.</strong>
+    Our own platform uses hybrid Ed25519 + ML-DSA-65 signatures (NIST FIPS 204),
+    AES-256-GCM encryption with HKDF key derivation, and automated monthly key rotation.
+    We don\u2019t just assess PQC readiness \u2014 we implement it.
+  </div>
+
   <!-- Phase 1: Email verification -->
   <div id="phase-email" class="card">
     <h2 style="font-size:18px;margin-bottom:4px;">Enter your email to begin</h2>
