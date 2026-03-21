@@ -74,11 +74,11 @@
   <div class="logo">CRANIS<span>2</span></div>
   <div class="sep"></div>
   <div class="breadcrumb">
-    <span>Chapter 6 · Post-Market & Security</span>
+    <span>Chapter 6 · Post-Market &amp; Security</span>
     <span>\u203a</span>
     <strong>Internal incident management</strong>
   </div>
-  <div class="audience-tags"><span class="tag">Security lead</span><span class="tag">Compliance officer</span></div>
+  <div class="audience-tags"><span class="tag">Compliance Officer</span><span class="tag">Product Manager</span></div>
 </header>
 <div class="map-section">
   <div class="map-header">
@@ -86,35 +86,81 @@
     <p>Detection through to post-incident review</p>
   </div>
   <div class="map-wrap">
-    <svg viewBox="0 0 760 206" xmlns="http://www.w3.org/2000/svg"><defs><style>
+    <svg viewBox="0 0 760 206" xmlns="http://www.w3.org/2000/svg">
+<defs><style>
   .lbl{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:11px;fill:#1A1A18;}
   .lbl-sub{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:9.5px;fill:#8C8A84;}
-</style></defs><line x1="63.0" y1="104" x2="209.5" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
-<line x1="225.5" y1="104" x2="372.0" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
-<line x1="388.0" y1="104" x2="534.5" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
-<line x1="550.5" y1="104" x2="693.0" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
-<g class="stn" id="ms-s1" onclick="show('s1')"><rect x="49.0" y="94" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="55.0" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="55.0" y="130" text-anchor="start" class="lbl" font-weight="600" style="fill:#1A1A18">Step 1</text><text x="55.0" y="143" text-anchor="start" class="lbl-sub">Navigate</text></g>
-<g class="stn" id="ms-s2" onclick="show('s2')"><circle cx="217.5" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="217.5" y="130" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Step 2</text><text x="217.5" y="143" text-anchor="middle" class="lbl-sub">Configure</text></g>
-<g class="stn" id="ms-s3" onclick="show('s3')"><circle cx="380.0" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="380.0" y="130" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Step 3</text><text x="380.0" y="143" text-anchor="middle" class="lbl-sub">Review</text></g>
-<g class="stn" id="ms-s4" onclick="show('s4')"><circle cx="542.5" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="542.5" y="130" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Step 4</text><text x="542.5" y="143" text-anchor="middle" class="lbl-sub">Apply</text></g>
-<g class="stn" id="ms-s5" onclick="show('s5')"><circle cx="705.0" cy="104" r="12" fill="white" stroke="#3B6D11" stroke-width="3"/><circle cx="705.0" cy="104" r="6" fill="#3B6D11"/><text x="705.0" y="130" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Complete</text><text x="705.0" y="143" text-anchor="middle" class="lbl-sub">Done</text></g>
+</style></defs>
+<g transform="translate(0,12)">
+<line x1="63" y1="104" x2="177" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="193" y1="104" x2="303" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="327" y1="104" x2="437" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="453" y1="104" x2="567" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="583" y1="104" x2="693" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="315" y1="34" x2="315" y2="96" stroke="#BA7517" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 4"/>
+<line x1="445" y1="34" x2="445" y2="96" stroke="#BA7517" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 4"/>
+<g class="stn" id="ms-what" onclick="show('what')">
+<rect x="49" y="94" width="12" height="20" rx="2" fill="#1D9E75"/>
+<circle cx="55" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/>
+<text x="55" y="130" text-anchor="start" class="lbl" font-weight="600" style="fill:#1A1A18">What are incidents?</text>
+<text x="55" y="143" text-anchor="start" class="lbl-sub">Internal tracking</text>
+</g>
+<g class="stn" id="ms-create" onclick="show('create')">
+<circle cx="185" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/>
+<text x="185" y="78" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Log an incident</text>
+<text x="185" y="91" text-anchor="middle" class="lbl-sub">Detection phase</text>
+</g>
+<g class="stn" id="ms-assess" onclick="show('assess')">
+<circle cx="315" cy="104" r="12" fill="white" stroke="#1D9E75" stroke-width="3"/>
+<circle cx="315" cy="104" r="6" fill="#1D9E75"/>
+<text x="315" y="130" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Assess and contain</text>
+<text x="315" y="143" text-anchor="middle" class="lbl-sub">Severity and scope</text>
+</g>
+<g class="stn" id="ms-remediate" onclick="show('remediate')">
+<circle cx="445" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/>
+<text x="445" y="130" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Remediate</text>
+<text x="445" y="143" text-anchor="middle" class="lbl-sub">Fix and recover</text>
+</g>
+<g class="stn" id="ms-review" onclick="show('review')">
+<circle cx="575" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/>
+<text x="575" y="78" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Post-incident review</text>
+<text x="575" y="91" text-anchor="middle" class="lbl-sub">Lessons and closure</text>
+</g>
+<g class="stn" id="ms-done" onclick="show('done')">
+<circle cx="705" cy="104" r="12" fill="white" stroke="#3B6D11" stroke-width="3"/>
+<circle cx="705" cy="104" r="6" fill="#3B6D11"/>
+<text x="705" y="130" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Lifecycle complete</text>
+<text x="705" y="143" text-anchor="middle" class="lbl-sub">Closed with evidence</text>
+</g>
+<g class="stn" id="ms-escalate" onclick="show('escalate')">
+<circle cx="315" cy="26" r="8" fill="white" stroke="#BA7517" stroke-width="2.5"/>
+<text x="315" y="0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#BA7517">ENISA escalation</text>
+<text x="315" y="13" text-anchor="middle" class="lbl-sub">CRA Art. 14 report</text>
+</g>
+<g class="stn" id="ms-copilot" onclick="show('copilot')">
+<circle cx="445" cy="26" r="8" fill="white" stroke="#BA7517" stroke-width="2.5"/>
+<text x="445" y="0" text-anchor="middle" class="lbl" font-weight="600" style="fill:#BA7517">AI Copilot</text>
+<text x="445" y="13" text-anchor="middle" class="lbl-sub">Report drafting</text>
+</g>
+</g>
   <line x1="30" y1="194" x2="55" y2="194" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
   <text x="61" y="198" class="lbl-sub">Main journey</text>
   <line x1="150" y1="194" x2="175" y2="194" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
   <text x="181" y="198" class="lbl-sub">Error / branch</text>
-  <line x1="278" y1="194" x2="303" y2="194" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+  <line x1="278" y1="194" x2="303" y2="194" stroke="#BA7517" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 4"/>
   <text x="309" y="198" class="lbl-sub">Feeder</text>
   <line x1="368" y1="194" x2="393" y2="194" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
   <text x="399" y="198" class="lbl-sub">Next process</text>
   <circle cx="468" cy="194" r="6" fill="white" stroke="#888" stroke-width="2"/>
   <circle cx="468" cy="194" r="3" fill="#888"/>
-  <text x="479" y="198" class="lbl-sub">Interchange</text></svg>
+  <text x="479" y="198" class="lbl-sub">Interchange</text>
+</svg>
   </div>
   <div class="map-hint"><div class="hint-dot"></div>Click any station to see instructions for that step</div>
 </div>
 <div class="instructions-wrap">
   <div class="prompt-state" id="prompt">
-    <div class="prompt-icon">🗺️</div>
+    <div class="prompt-icon">\ud83d\uddfa\ufe0f</div>
     <h2>Select a station to begin</h2>
     <p>Click any station on the map above to read the instructions for that step.</p>
   </div>
@@ -134,53 +180,80 @@
 </footer>
 <script>
 const stations = {
-  "s1": {
-    "icon": "📍",
+  "what": {
+    "icon": "🚨",
     "iconBg": "#F1EFE8",
-    "badge": "Step 1",
+    "badge": "Overview",
     "badgeClass": "badge-gray",
-    "title": "Navigate to internal incident management",
-    "sub": "Find the feature in the platform",
-    "body": "<p>This guide covers <strong>Internal incident management</strong>. Navigate to the relevant page using the sidebar or product detail tabs.</p><div class=\"tip\">Full content for this guide is being prepared. The navigation and structure are in place — detailed step-by-step instructions will follow.</div>"
+    "title": "What is incident management?",
+    "sub": "Internal lifecycle for security incidents and exploited vulnerabilities",
+    "body": "<p>The incident management feature provides a structured lifecycle for tracking security incidents from detection through to post-incident review. It satisfies the internal record-keeping requirements of <strong>CRA Article 14</strong> (vulnerability and incident reporting) and supports <strong>NIS2 Article 23</strong> (incident handling for essential and important entities).</p><p>Each incident moves through seven phases in a defined order:</p><ul class=\"detail-list\"><li><strong>Detection</strong> – a potential incident has been identified</li><li><strong>Assessment</strong> – the incident is being evaluated for severity and scope</li><li><strong>Containment</strong> – measures are in place to prevent further impact</li><li><strong>Remediation</strong> – the root cause is being addressed</li><li><strong>Recovery</strong> – normal operations are being restored</li><li><strong>Review</strong> – lessons learned and preventive actions are documented</li><li><strong>Closed</strong> – the incident is resolved and the record is retained</li></ul><div class=\"info\">Incidents are tracked per product. Each incident has a severity rating (P1 critical through P4 low), a title, a description, and a full timeline of events. The timeline is immutable – entries cannot be edited or deleted after creation.</div>"
   },
-  "s2": {
-    "icon": "⚙️",
+  "create": {
+    "icon": "✍️",
     "iconBg": "#E1F5EE",
-    "badge": "Step 2",
+    "badge": "Detection",
     "badgeClass": "badge-teal",
-    "title": "Configure or set up",
-    "sub": "Initial configuration steps",
-    "body": "<p>Configure the settings required for <strong>internal incident management</strong>. Each option is explained with its impact on your compliance workflow.</p>"
+    "title": "Log a new incident",
+    "sub": "Create an incident record when a potential issue is identified",
+    "body": "<p>Navigate to your product's <strong>Security</strong> tab group and select the <strong>Incidents</strong> tab. Click <strong>New Incident</strong> to create a record.</p><p>You will need to provide:</p><ul class=\"detail-list\"><li><strong>Title</strong> – a concise description (e.g. \"Unauthorised access to staging API endpoint\")</li><li><strong>Description</strong> – what was observed, when it was detected, and the initial impact assessment</li><li><strong>Severity</strong> – P1 (critical, active exploitation or data breach), P2 (high, potential for significant impact), P3 (medium, contained risk), or P4 (low, minimal impact)</li></ul><p>The incident is created in the <strong>detection</strong> phase. A timeline entry is automatically recorded showing who created the incident and when.</p><div class=\"warn\">P1 and P2 incidents involving actively exploited vulnerabilities may trigger ENISA reporting obligations under CRA Article 14. Assess whether escalation is required at the next phase.</div><p><strong>Reversibility:</strong> incidents in the detection phase can be deleted if logged in error. Once the phase advances beyond detection, the record becomes permanent to preserve the audit trail.</p>"
   },
-  "s3": {
+  "assess": {
     "icon": "🔍",
     "iconBg": "#E1F5EE",
-    "badge": "Step 3",
+    "badge": "Assessment",
     "badgeClass": "badge-teal",
-    "title": "Review the results",
-    "sub": "Check what was generated or configured",
-    "body": "<p>Review the output to ensure it meets your needs. Make any necessary adjustments before proceeding.</p>"
+    "title": "Assess severity and decide on escalation",
+    "sub": "Evaluate scope, determine if ENISA notification is required",
+    "body": "<p>Open the incident and update the phase to <strong>Assessment</strong>. The platform automatically logs the phase transition with a timestamp and the user who made the change.</p><p>During assessment, determine:</p><ul class=\"detail-list\"><li><strong>Scope</strong> – which users, systems, or data are affected</li><li><strong>Root cause hypothesis</strong> – what is the suspected origin (vulnerability, misconfiguration, supply chain compromise)</li><li><strong>ENISA trigger check</strong> – does this incident involve an actively exploited vulnerability or a severe security incident as defined by CRA Article 14(1)?</li></ul><p>Add notes and evidence to the timeline using the <strong>Add Timeline Entry</strong> button. You can attach notes, actions taken, or evidence references. Each entry is timestamped and attributed to the user who created it.</p><div class=\"warn\">If the incident involves an actively exploited vulnerability, you have <strong>24 hours from awareness</strong> to submit an early warning to your designated CSIRT under CRA Article 14(2)(a). Use the <strong>Escalate to CRA Report</strong> button to create a linked Article 14 report immediately.</div><p>The escalation creates a CRA report (see the ENISA Reporting guide, ch5_01) that is linked to this incident. The report inherits the incident's product context, severity, and description.</p>"
   },
-  "s4": {
-    "icon": "✔️",
+  "remediate": {
+    "icon": "🛠️",
     "iconBg": "#E1F5EE",
-    "badge": "Step 4",
+    "badge": "Response",
     "badgeClass": "badge-teal",
-    "title": "Apply or save",
-    "sub": "Confirm your changes",
-    "body": "<p>Apply your changes. The platform updates your compliance status accordingly.</p>"
+    "title": "Contain, remediate, and recover",
+    "sub": "Fix the root cause and restore normal operations",
+    "body": "<p>Progress the incident through three response phases as appropriate:</p><p><strong>Containment</strong> – implement immediate measures to prevent further impact. Document each containment action as a timeline entry with the type \"action taken\". Examples: disabling a compromised endpoint, revoking access tokens, isolating an affected service.</p><p><strong>Remediation</strong> – address the root cause. This might involve deploying a patch, updating a dependency, reconfiguring access controls, or rotating credentials. Record each remediation step in the timeline.</p><p><strong>Recovery</strong> – verify that normal operations have been restored and that the remediation was effective. Confirm that monitoring is in place to detect recurrence.</p><div class=\"tip\">If this incident has a linked CRA Article 14 report, the AI Copilot can help draft the notification and final report stages. Open the linked CRA report and use <strong>Draft with AI</strong> (prompt key: <span class=\"code\">incident_report_draft</span>). The Copilot uses the incident's product data, linked vulnerability findings, and timeline context to generate regulatory-quality report content. 5 calls per report per day.</div><p>Phase transitions are sequential – you cannot skip phases. Each transition records who made the change and when, creating an immutable compliance evidence trail per CRA Article 13(10).</p>"
   },
-  "s5": {
+  "review": {
+    "icon": "📝",
+    "iconBg": "#E1F5EE",
+    "badge": "Review",
+    "badgeClass": "badge-teal",
+    "title": "Post-incident review",
+    "sub": "Document lessons learned and preventive actions",
+    "body": "<p>Move the incident to the <strong>Review</strong> phase after recovery is confirmed. This phase serves two regulatory purposes:</p><ul class=\"detail-list\"><li><strong>CRA Article 14(2)(c)</strong> – the final report must include a root cause analysis and corrective measures. The post-incident review provides this content.</li><li><strong>NIS2 Article 23(4)</strong> – operators must provide a final report including a detailed description of the incident, the type of threat or root cause, and mitigation measures applied.</li></ul><p>Document the following in timeline entries:</p><ul class=\"detail-list\"><li>Root cause analysis – what happened and why</li><li>Corrective actions – what has been done to prevent recurrence</li><li>Process improvements – whether detection, escalation, or response procedures need updating</li><li>Stakeholder communication – whether users, partners, or authorities were notified</li></ul><div class=\"tip\">The complete incident timeline – from detection through review – constitutes compliance evidence under CRA Article 13(10). This record is retained for 10 years as part of the product's compliance documentation.</div>"
+  },
+  "done": {
     "icon": "✅",
     "iconBg": "#EAF3DE",
-    "badge": "Complete",
+    "badge": "Closed",
     "badgeClass": "badge-green",
-    "title": "Process complete",
-    "sub": "Internal incident management is now configured",
-    "body": "<p><strong>Internal incident management</strong> is now set up and contributing to your compliance evidence.</p>"
+    "title": "Close the incident",
+    "sub": "Incident resolved and retained as compliance evidence",
+    "body": "<p>Move the incident to the <strong>Closed</strong> phase when the post-incident review is complete. Closure is final – the incident cannot be reopened once closed.</p><p>The closed incident record includes:</p><ul class=\"detail-list\"><li>Full immutable timeline from detection to closure</li><li>All phase transitions with timestamps and attributed users</li><li>Linked CRA Article 14 report (if escalated)</li><li>Severity classification and resolution summary</li></ul><p>This record satisfies the evidence retention requirement of CRA Article 13(10), which mandates that compliance documentation be kept for at least 10 years after market placement or the support period, whichever is longer.</p><div class=\"info\">The incident summary page shows aggregated counts by phase and severity across all products. Use this dashboard to monitor open incidents and track resolution metrics for your organisation.</div>"
+  },
+  "escalate": {
+    "icon": "⚠️",
+    "iconBg": "#FAECE7",
+    "badge": "Escalation",
+    "badgeClass": "badge-coral",
+    "title": "Escalate to ENISA (CRA Article 14)",
+    "sub": "Create a linked CRA report for mandatory notification",
+    "body": "<p>When an incident involves an actively exploited vulnerability or a severe security incident, CRA Article 14 requires notification to your designated CSIRT within strict deadlines:</p><ul class=\"detail-list\"><li><strong>Early warning</strong> – within 24 hours of becoming aware</li><li><strong>Notification</strong> – within 72 hours with technical details</li><li><strong>Final report</strong> – within 14 days (vulnerabilities) or 1 month (incidents)</li></ul><p>Click <strong>Escalate to CRA Report</strong> on the incident detail page. This creates a CRA Article 14 report that is linked to the incident and pre-populated with the product context, severity, and description.</p><p>The linked CRA report appears in both the incident timeline and the ENISA Reporting page (ch5_01). Changes to either are reflected in both views.</p><div class=\"warn\">The 24-hour early warning deadline starts from the moment you become <strong>aware</strong> of the actively exploited vulnerability or severe incident – not from when you create the incident record in CRANIS2. Log incidents promptly to preserve an accurate timeline.</div>"
+  },
+  "copilot": {
+    "icon": "✨",
+    "iconBg": "#FAEEDA",
+    "badge": "AI assist",
+    "badgeClass": "badge-amber",
+    "title": "AI Copilot for incident reports",
+    "sub": "Draft ENISA notification content with AI assistance",
+    "body": "<p>The AI Copilot can draft content for each of the three CRA Article 14 reporting stages. This capability is available from the linked CRA report (not directly from the incident page).</p><p><strong>How to use:</strong></p><ul class=\"detail-list\"><li>Open the linked CRA report from the incident timeline</li><li>Navigate to the reporting stage you need to draft (early warning, notification, or final report)</li><li>Click <strong>Draft with AI</strong></li><li>Review the generated content, edit as needed, and confirm</li></ul><p><strong>Copilot specification:</strong></p><ul class=\"detail-list\"><li>Prompt key: <span class=\"code\">incident_report_draft</span></li><li>Rate limit: 5 calls per report per day</li><li>Model: Claude Sonnet</li><li>Lifecycle: per-incident, per-stage (typically used once per stage)</li><li>Admin customisation: <span class=\"code\">/admin/copilot</span></li></ul><div class=\"tip\">The Copilot drafts are most effective when the incident has detailed timeline entries. Add notes about scope, root cause, containment actions, and affected systems before triggering the AI draft – the more context available, the more substantive the generated report content.</div>"
   }
 };
-const allIds = ["s1", "s2", "s3", "s4", "s5"];
+const allIds = ["what","create","assess","remediate","review","done","escalate","copilot"];
 function show(id) {
   const s = stations[id];
   if (!s) return;

@@ -1,0 +1,100 @@
+{
+  "title": "Internal incident management",
+  "subtitle": "Detection through to post-incident review",
+  "chapter": "Chapter 6 \u00b7 Post-Market & Security",
+  "audienceTags": ["Compliance Officer", "Product Manager"],
+
+  "mainLine": [
+    { "id": "what", "label": "What are incidents?", "sub": "Internal tracking", "type": "terminus" },
+    { "id": "create", "label": "Log an incident", "sub": "Detection phase" },
+    { "id": "assess", "label": "Assess and contain", "sub": "Severity and scope", "type": "interchange" },
+    { "id": "remediate", "label": "Remediate", "sub": "Fix and recover" },
+    { "id": "review", "label": "Post-incident review", "sub": "Lessons and closure" },
+    { "id": "done", "label": "Lifecycle complete", "sub": "Closed with evidence", "type": "endpoint", "endColour": "green" }
+  ],
+
+  "feeders": [
+    { "id": "escalate", "target": "assess", "label": "ENISA escalation", "sub": "CRA Art. 14 report" },
+    { "id": "copilot", "target": "remediate", "label": "AI Copilot", "sub": "Report drafting" }
+  ],
+
+  "branches": {
+    "above": [],
+    "below": []
+  },
+
+  "stations": {
+    "what": {
+      "icon": "\ud83d\udea8",
+      "iconBg": "#F1EFE8",
+      "badge": "Overview",
+      "badgeClass": "badge-gray",
+      "title": "What is incident management?",
+      "sub": "Internal lifecycle for security incidents and exploited vulnerabilities",
+      "body": "<p>The incident management feature provides a structured lifecycle for tracking security incidents from detection through to post-incident review. It satisfies the internal record-keeping requirements of <strong>CRA Article 14</strong> (vulnerability and incident reporting) and supports <strong>NIS2 Article 23</strong> (incident handling for essential and important entities).</p><p>Each incident moves through seven phases in a defined order:</p><ul class=\"detail-list\"><li><strong>Detection</strong> \u2013 a potential incident has been identified</li><li><strong>Assessment</strong> \u2013 the incident is being evaluated for severity and scope</li><li><strong>Containment</strong> \u2013 measures are in place to prevent further impact</li><li><strong>Remediation</strong> \u2013 the root cause is being addressed</li><li><strong>Recovery</strong> \u2013 normal operations are being restored</li><li><strong>Review</strong> \u2013 lessons learned and preventive actions are documented</li><li><strong>Closed</strong> \u2013 the incident is resolved and the record is retained</li></ul><div class=\"info\">Incidents are tracked per product. Each incident has a severity rating (P1 critical through P4 low), a title, a description, and a full timeline of events. The timeline is immutable \u2013 entries cannot be edited or deleted after creation.</div>"
+    },
+    "create": {
+      "icon": "\u270d\ufe0f",
+      "iconBg": "#E1F5EE",
+      "badge": "Detection",
+      "badgeClass": "badge-teal",
+      "title": "Log a new incident",
+      "sub": "Create an incident record when a potential issue is identified",
+      "body": "<p>Navigate to your product's <strong>Security</strong> tab group and select the <strong>Incidents</strong> tab. Click <strong>New Incident</strong> to create a record.</p><p>You will need to provide:</p><ul class=\"detail-list\"><li><strong>Title</strong> \u2013 a concise description (e.g. \"Unauthorised access to staging API endpoint\")</li><li><strong>Description</strong> \u2013 what was observed, when it was detected, and the initial impact assessment</li><li><strong>Severity</strong> \u2013 P1 (critical, active exploitation or data breach), P2 (high, potential for significant impact), P3 (medium, contained risk), or P4 (low, minimal impact)</li></ul><p>The incident is created in the <strong>detection</strong> phase. A timeline entry is automatically recorded showing who created the incident and when.</p><div class=\"warn\">P1 and P2 incidents involving actively exploited vulnerabilities may trigger ENISA reporting obligations under CRA Article 14. Assess whether escalation is required at the next phase.</div><p><strong>Reversibility:</strong> incidents in the detection phase can be deleted if logged in error. Once the phase advances beyond detection, the record becomes permanent to preserve the audit trail.</p>"
+    },
+    "assess": {
+      "icon": "\ud83d\udd0d",
+      "iconBg": "#E1F5EE",
+      "badge": "Assessment",
+      "badgeClass": "badge-teal",
+      "title": "Assess severity and decide on escalation",
+      "sub": "Evaluate scope, determine if ENISA notification is required",
+      "body": "<p>Open the incident and update the phase to <strong>Assessment</strong>. The platform automatically logs the phase transition with a timestamp and the user who made the change.</p><p>During assessment, determine:</p><ul class=\"detail-list\"><li><strong>Scope</strong> \u2013 which users, systems, or data are affected</li><li><strong>Root cause hypothesis</strong> \u2013 what is the suspected origin (vulnerability, misconfiguration, supply chain compromise)</li><li><strong>ENISA trigger check</strong> \u2013 does this incident involve an actively exploited vulnerability or a severe security incident as defined by CRA Article 14(1)?</li></ul><p>Add notes and evidence to the timeline using the <strong>Add Timeline Entry</strong> button. You can attach notes, actions taken, or evidence references. Each entry is timestamped and attributed to the user who created it.</p><div class=\"warn\">If the incident involves an actively exploited vulnerability, you have <strong>24 hours from awareness</strong> to submit an early warning to your designated CSIRT under CRA Article 14(2)(a). Use the <strong>Escalate to CRA Report</strong> button to create a linked Article 14 report immediately.</div><p>The escalation creates a CRA report (see the ENISA Reporting guide, ch5_01) that is linked to this incident. The report inherits the incident's product context, severity, and description.</p>"
+    },
+    "remediate": {
+      "icon": "\ud83d\udee0\ufe0f",
+      "iconBg": "#E1F5EE",
+      "badge": "Response",
+      "badgeClass": "badge-teal",
+      "title": "Contain, remediate, and recover",
+      "sub": "Fix the root cause and restore normal operations",
+      "body": "<p>Progress the incident through three response phases as appropriate:</p><p><strong>Containment</strong> \u2013 implement immediate measures to prevent further impact. Document each containment action as a timeline entry with the type \"action taken\". Examples: disabling a compromised endpoint, revoking access tokens, isolating an affected service.</p><p><strong>Remediation</strong> \u2013 address the root cause. This might involve deploying a patch, updating a dependency, reconfiguring access controls, or rotating credentials. Record each remediation step in the timeline.</p><p><strong>Recovery</strong> \u2013 verify that normal operations have been restored and that the remediation was effective. Confirm that monitoring is in place to detect recurrence.</p><div class=\"tip\">If this incident has a linked CRA Article 14 report, the AI Copilot can help draft the notification and final report stages. Open the linked CRA report and use <strong>Draft with AI</strong> (prompt key: <span class=\"code\">incident_report_draft</span>). The Copilot uses the incident's product data, linked vulnerability findings, and timeline context to generate regulatory-quality report content. 5 calls per report per day.</div><p>Phase transitions are sequential \u2013 you cannot skip phases. Each transition records who made the change and when, creating an immutable compliance evidence trail per CRA Article 13(10).</p>"
+    },
+    "review": {
+      "icon": "\ud83d\udcdd",
+      "iconBg": "#E1F5EE",
+      "badge": "Review",
+      "badgeClass": "badge-teal",
+      "title": "Post-incident review",
+      "sub": "Document lessons learned and preventive actions",
+      "body": "<p>Move the incident to the <strong>Review</strong> phase after recovery is confirmed. This phase serves two regulatory purposes:</p><ul class=\"detail-list\"><li><strong>CRA Article 14(2)(c)</strong> \u2013 the final report must include a root cause analysis and corrective measures. The post-incident review provides this content.</li><li><strong>NIS2 Article 23(4)</strong> \u2013 operators must provide a final report including a detailed description of the incident, the type of threat or root cause, and mitigation measures applied.</li></ul><p>Document the following in timeline entries:</p><ul class=\"detail-list\"><li>Root cause analysis \u2013 what happened and why</li><li>Corrective actions \u2013 what has been done to prevent recurrence</li><li>Process improvements \u2013 whether detection, escalation, or response procedures need updating</li><li>Stakeholder communication \u2013 whether users, partners, or authorities were notified</li></ul><div class=\"tip\">The complete incident timeline \u2013 from detection through review \u2013 constitutes compliance evidence under CRA Article 13(10). This record is retained for 10 years as part of the product's compliance documentation.</div>"
+    },
+    "done": {
+      "icon": "\u2705",
+      "iconBg": "#EAF3DE",
+      "badge": "Closed",
+      "badgeClass": "badge-green",
+      "title": "Close the incident",
+      "sub": "Incident resolved and retained as compliance evidence",
+      "body": "<p>Move the incident to the <strong>Closed</strong> phase when the post-incident review is complete. Closure is final \u2013 the incident cannot be reopened once closed.</p><p>The closed incident record includes:</p><ul class=\"detail-list\"><li>Full immutable timeline from detection to closure</li><li>All phase transitions with timestamps and attributed users</li><li>Linked CRA Article 14 report (if escalated)</li><li>Severity classification and resolution summary</li></ul><p>This record satisfies the evidence retention requirement of CRA Article 13(10), which mandates that compliance documentation be kept for at least 10 years after market placement or the support period, whichever is longer.</p><div class=\"info\">The incident summary page shows aggregated counts by phase and severity across all products. Use this dashboard to monitor open incidents and track resolution metrics for your organisation.</div>"
+    },
+    "escalate": {
+      "icon": "\u26a0\ufe0f",
+      "iconBg": "#FAECE7",
+      "badge": "Escalation",
+      "badgeClass": "badge-coral",
+      "title": "Escalate to ENISA (CRA Article 14)",
+      "sub": "Create a linked CRA report for mandatory notification",
+      "body": "<p>When an incident involves an actively exploited vulnerability or a severe security incident, CRA Article 14 requires notification to your designated CSIRT within strict deadlines:</p><ul class=\"detail-list\"><li><strong>Early warning</strong> \u2013 within 24 hours of becoming aware</li><li><strong>Notification</strong> \u2013 within 72 hours with technical details</li><li><strong>Final report</strong> \u2013 within 14 days (vulnerabilities) or 1 month (incidents)</li></ul><p>Click <strong>Escalate to CRA Report</strong> on the incident detail page. This creates a CRA Article 14 report that is linked to the incident and pre-populated with the product context, severity, and description.</p><p>The linked CRA report appears in both the incident timeline and the ENISA Reporting page (ch5_01). Changes to either are reflected in both views.</p><div class=\"warn\">The 24-hour early warning deadline starts from the moment you become <strong>aware</strong> of the actively exploited vulnerability or severe incident \u2013 not from when you create the incident record in CRANIS2. Log incidents promptly to preserve an accurate timeline.</div>"
+    },
+    "copilot": {
+      "icon": "\u2728",
+      "iconBg": "#FAEEDA",
+      "badge": "AI assist",
+      "badgeClass": "badge-amber",
+      "title": "AI Copilot for incident reports",
+      "sub": "Draft ENISA notification content with AI assistance",
+      "body": "<p>The AI Copilot can draft content for each of the three CRA Article 14 reporting stages. This capability is available from the linked CRA report (not directly from the incident page).</p><p><strong>How to use:</strong></p><ul class=\"detail-list\"><li>Open the linked CRA report from the incident timeline</li><li>Navigate to the reporting stage you need to draft (early warning, notification, or final report)</li><li>Click <strong>Draft with AI</strong></li><li>Review the generated content, edit as needed, and confirm</li></ul><p><strong>Copilot specification:</strong></p><ul class=\"detail-list\"><li>Prompt key: <span class=\"code\">incident_report_draft</span></li><li>Rate limit: 5 calls per report per day</li><li>Model: Claude Sonnet</li><li>Lifecycle: per-incident, per-stage (typically used once per stage)</li><li>Admin customisation: <span class=\"code\">/admin/copilot</span></li></ul><div class=\"tip\">The Copilot drafts are most effective when the incident has detailed timeline entries. Add notes about scope, root cause, containment actions, and affected systems before triggering the AI draft \u2013 the more context available, the more substantive the generated report content.</div>"
+    }
+  }
+}
