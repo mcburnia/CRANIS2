@@ -92,7 +92,7 @@ export function authRateLimit(category: string) {
 
   return (req: Request, res: Response, next: NextFunction): void => {
     // Skip rate limiting in test mode — tests make many rapid logins
-    if (process.env.CRANIS2_TEST_MODE === 'true') {
+    if (process.env.CRANIS2_TEST_MODE === 'true' || process.env.CRANIS2_E2E_MODE === 'true') {
       next();
       return;
     }

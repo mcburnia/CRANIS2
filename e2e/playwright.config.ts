@@ -22,15 +22,25 @@ export default defineConfig({
     baseURL: BASE_URL,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
-    video: 'retain-on-failure',
+    video: {
+      mode: 'on',
+      size: { width: 1280, height: 720 },
+    },
+    launchOptions: {
+      slowMo: 400,
+    },
     ignoreHTTPSErrors: true,
   },
 
   projects: [
     // ── Auth setup — runs first, generates storageState files ──
+    // No slowMo for auth setup — API logins don't need visual pacing
     {
       name: 'auth-setup',
       testMatch: 'auth/setup.ts',
+      use: {
+        launchOptions: { slowMo: 0 },
+      },
     },
 
     // ── Smoke tests ──
