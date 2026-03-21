@@ -51,6 +51,7 @@ import complianceSnapshotRoutes from "./routes/compliance-snapshots.js";
 import cryptoInventoryRoutes from "./routes/crypto-inventory.js";
 import seeEstimatorRoutes from "./routes/see-estimator.js";
 import fieldIssuesRoutes from "./routes/field-issues.js";
+import accountRoutes from "./routes/account.js";
 import { startScheduler } from './services/scheduler.js';
 import { ensureStripePrices } from './services/billing.js';
 import { requireActiveBilling } from './middleware/requireActiveBilling.js';
@@ -75,7 +76,7 @@ app.use(express.json({
 
 // Global billing gate – blocks write operations for restricted accounts
 // Skips: auth, billing, admin, health, webhooks, and all GET/OPTIONS requests
-const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs', '/api/v1', '/api/conformity-assessment', '/api/notified-bodies', '/api/market-surveillance-authorities'];
+const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs', '/api/v1', '/api/conformity-assessment', '/api/notified-bodies', '/api/market-surveillance-authorities', '/api/account'];
 app.use('/api', (req, res, next) => {
   // Only gate write operations
   if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
@@ -144,6 +145,7 @@ app.use('/api/market-surveillance-authorities', publicMarketSurveillanceRouter);
 app.use('/api/products', productMsRegistrationRouter);
 app.use('/api/products', incidentRoutes);
 app.use('/api/org', nonprofitUserRouter);
+app.use('/api/account', accountRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

@@ -1096,9 +1096,21 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-20 (session 57)
+**Last updated:** 2026-03-21 (session 58)
 
-**Recently completed (session 57):**
+**Recently completed (session 58):**
+- **WS4 GDPR endpoints — COMPLETE** — Three GDPR data subject rights endpoints implementing the commitments in the Privacy Policy:
+  - `GET /api/account/data-export` — Right to data portability (Art. 20 GDPR). Returns structured JSON export of all personal data: account, organisation, billing, repo connections (tokens excluded), products, stakeholders, feedback, API keys (secrets excluded), telemetry (90-day window), copilot usage, notifications, SEE sessions. Documents excluded categories with reasons (password hash, OAuth tokens, audit trail, billing invoices).
+  - `DELETE /api/account` — Right to erasure (Art. 17 GDPR). Requires password confirmation. Blocks sole org admins (409). Cascade: immediately deletes user record, events, repo connections, feedback, API keys, copilot cache, notifications, Neo4j User node. Anonymises billing records and audit trail entries for legal retention. Nullifies FK references across 11 tables.
+  - `POST /api/admin/data-retention/run` — Manual retention cleanup trigger (platform admin). Enforces documented retention periods: user_events > 90 days, feedback > 2 years, expired verification tokens, copilot_cache > 24 hours.
+  - Comprehensive interface documentation (DataExportResponse, DeleteAccountRequest, DeleteAccountResponse, RetentionCleanupResponse) with JSDoc on all endpoints.
+  - `/api/account` added to billing-exempt paths (GDPR rights apply regardless of billing status).
+  - Test helper updated to send request body with DELETE method.
+  - 27 integration tests covering auth, validation, cascade deletion, Neo4j cleanup, anonymisation, retention enforcement.
+- **Loman Cavendish capabilities document** — `docs/loman-cavendish-capabilities.md` defining company service lines, proof points, and engagement models for website development.
+- **Production deployment plan** — `docs/deployment-plan.md` with 5-phase plan for cranis2-prod (Infomaniak VPS, 83.228.241.168).
+
+**Previously completed (session 57):**
 - **Ownership rebranding** — Replaced all "Gibbs Consulting" references with "Loman Cavendish Limited" across 6 ai-coder-framework documents. Removed `/tmp/gibbs-ai-development-framework` from `.claude/settings.json`. CRANIS2 is a personal product owned by Loman Cavendish Limited.
 - **Privacy Policy (Beta)** — Comprehensive GDPR-compliant privacy policy drafted from full data audit of the codebase. Covers all personal data categories (account, billing, telemetry, repository, stakeholder, AI Copilot, escrow, feedback), names all sub-processors (Stripe, Resend, Anthropic, Git providers), specifies retention periods, documents data subject rights under UK GDPR. Served via doc_pages system at `/docs/privacy-policy`.
 - **Terms of Service (Beta)** — Full terms covering account responsibilities, acceptable use, subscription billing, AI Copilot disclaimers, data ownership, liability limitations, beta service notice, governing law (England and Wales). Served at `/docs/terms-of-service`.
@@ -1114,7 +1126,7 @@ sudo systemctl restart cloudflared
 - Welcome site email verification, admin leads page, platform analytics dashboard
 - Forgejo test infrastructure fix, backlog reprioritised for launch
 
-**Test suite:** ~2,135 tests (114 files), ~2,134 pass, 1 expected failure (category-recommendation needs Anthropic API).
+**Test suite:** ~2,162 tests (115 files), ~2,161 pass, 1 expected failure (category-recommendation needs Anthropic API).
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
 - Assistant operating protocol formalised in `Workflow Rules` (propose-first flow, test gates, push handoff, British English)
 - **CLAUDE.md created** — project-level instructions file (auto-loaded by Claude Code each session); contains operating protocol, environment notes, NGINX gotchas, port map

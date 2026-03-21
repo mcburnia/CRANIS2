@@ -136,7 +136,7 @@ async function apiRequest(
     headers['Authorization'] = `Bearer ${opts.auth}`;
   }
 
-  const jsonBody = (opts.body && (method === 'POST' || method === 'PUT' || method === 'PATCH'))
+  const jsonBody = (opts.body && (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE'))
     ? JSON.stringify(opts.body) : undefined;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {

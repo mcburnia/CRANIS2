@@ -31,10 +31,12 @@ interface RateLimitConfig {
 
 /** Rate limit configurations by endpoint category. */
 export const AUTH_RATE_LIMITS: Record<string, RateLimitConfig> = {
-  login:    { maxAttempts: 5,  windowMs: 15 * 60 * 1000 },  // 5 per 15 min
-  register: { maxAttempts: 3,  windowMs: 60 * 60 * 1000 },  // 3 per hour
-  verify:   { maxAttempts: 10, windowMs: 60 * 60 * 1000 },  // 10 per hour
-  invite:   { maxAttempts: 5,  windowMs: 60 * 60 * 1000 },  // 5 per hour
+  login:        { maxAttempts: 5,  windowMs: 15 * 60 * 1000 },  // 5 per 15 min
+  register:     { maxAttempts: 3,  windowMs: 60 * 60 * 1000 },  // 3 per hour
+  verify:       { maxAttempts: 10, windowMs: 60 * 60 * 1000 },  // 10 per hour
+  invite:       { maxAttempts: 5,  windowMs: 60 * 60 * 1000 },  // 5 per hour
+  data_export:  { maxAttempts: 5,  windowMs: 60 * 60 * 1000 },  // 5 per hour
+  account_delete: { maxAttempts: 3,  windowMs: 60 * 60 * 1000 },  // 3 per hour
 };
 
 /** In-memory store: key = "category:ip" → entry */
