@@ -1,6 +1,6 @@
 # CRANIS2 — Active Backlog
 
-Updated: 2026-03-20 (session 57)
+Updated: 2026-03-24 (session 59)
 
 For completed work history, see `.claude/projects/-home-mcburnia-cranis2/memory/completed_work.md`
 
@@ -13,20 +13,14 @@ For completed work history, see `.claude/projects/-home-mcburnia-cranis2/memory/
 | 1 | Database Backup & Restore | **COMPLETE** (session 56) |
 | 2 | PQC Readiness (JWT, HKDF, hybrid signing, Node.js 24) | **COMPLETE** (session 56) |
 | 3 | Security Hardening (ports, rate limiting, CORS, key rotation) | **COMPLETE** (session 56) |
-| 4 | GDPR Compliance | **PARTIAL** (session 57) — Privacy Policy + ToS done; data export/deletion endpoints pending |
-| 5 | Visual Testing | Pending |
+| 4 | GDPR Compliance | **COMPLETE** (session 57) — Privacy Policy, ToS, data export, account deletion, retention cleanup |
+| 5 | Visual Testing | **COMPLETE** (session 58) — E2E video recording, rate limit bypass |
 
 ---
 
-## WS4 Remaining Scope (GDPR Compliance)
+## WS4 — COMPLETE (session 57)
 
-Privacy Policy and Terms of Service are **done** (session 57). Remaining WS4 items:
-
-1. **Data export endpoint** (Art. 20) — `GET /api/account/data-export` returning all personal data as JSON/ZIP
-2. **Account deletion endpoint** (Art. 17) — `DELETE /api/account` with PII hard-delete, audit trail anonymisation, Neo4j cleanup, Stripe cancellation
-3. **Statistical aggregation before deletion** — convert telemetry to anonymous statistics (GDPR Recital 26)
-4. **Data retention policy + scheduled cleanup** — telemetry 90 days, welcome contacts 12 months, verification codes 24 hours, audit trail 10 years (CRA Art. 13(10))
-5. **Tests** for all of the above
+All GDPR items done: Privacy Policy, Terms of Service, data export, account deletion with PII purge + statistical aggregation, data retention cleanup. 27 tests.
 
 **User action required:** Register with ICO (ico.org.uk/registration, £40/year) and update `[Pending]` placeholder in Privacy Policy. Legal review of both documents before production launch.
 
@@ -52,19 +46,18 @@ Privacy Policy and Terms of Service are **done** (session 57). Remaining WS4 ite
 
 **Summary:** 7 of 13 blockers resolved. Remaining 6 are infrastructure/config (user-side).
 
+### Server Maintenance (session 59)
+- Ubuntu 24.04.4 fully patched (30 packages including Docker CE 29.3)
+- Neo4j 2026.x deferred (major version jump from 5.x LTS, held via `apt-mark hold`)
+- 0 npm vulnerabilities across all workspaces
+- Dependency updates: @aws-sdk, pg, stripe, react-router-dom, recharts, typescript-eslint
+
 ---
 
-## In Progress — First-Impression Quality
+## First-Impression Quality — COMPLETE
 
-These items were promoted from post-launch to pre-launch to ensure beta pilot quality.
-
-- **Help guide stub rewrites (top 5)** — prioritised by user impact:
-  1. `ch4_06_ai_copilot.html` — primary Copilot reference
-  2. `ch4_05_batch_fill.html` — core Copilot feature
-  3. `ch4_07_risk_assessment.html` — Annex I risk assessment
-  4. `ch6_05_incident_lifecycle.html` — 8-endpoint feature, no docs
-  5. `ch5_06_compliance_vault.html` — major P8 feature, no docs
-- **Compliance Timeline SVG** — reviewed in code, no defect found. Needs visual browser check.
+- ~~Help guide stub rewrites (top 5)~~ — all done (sessions 54 + 58)
+- ~~Compliance Timeline SVG~~ — reviewed, confirmed correct (session 58)
 
 ---
 
@@ -75,4 +68,11 @@ These items were promoted from post-launch to pre-launch to ensure beta pilot qu
 - **P4 #24/#25** — Chat ops / Slack notifications.
 - **P5 Supplier Marketplace** — 7 features (#28-34), not started.
 - **#59 Multi-language i18n** — scope TBD.
-- **#60 Bitbucket integration** — beta pilot partner uses Bitbucket.
+- ~~#60 Bitbucket integration~~ — **DONE** (session 59). Needs OAuth consumer registration before beta partner can use it.
+- **#61 SSO and GMAIL | Github sign in etc.** — must have moving forward.
+
+## TODO
+
+- **#62 Remove the GitHub auth from the login page** — add this and others (Gmail, etc.) after launch
+- ~~#63 Remember verified emails across welcome site flows~~ — **DONE** (session 59). 90-day TTL, cross-flow + cross-system recognition, 13 files changed.
+- **#64 Beck map navigation guidance** — maps don't inform users how to navigate them. Team suggestion: animated glow on current station (first on page) to show where they are. Also consider a dismissible one-line instruction on each page.
