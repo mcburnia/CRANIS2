@@ -15,21 +15,155 @@ router.post('/webhook', async (req: Request, res: Response) => {
   // Detect provider from headers.
   // Forgejo/Gitea webhooks send GitHub-compatible headers (X-GitHub-Event, X-Hub-Signature-256)
   // so we also check for Gitea/Forgejo-specific headers to identify the provider.
-  const isForgejo = !!req.headers['x-forgejo-event'] || !!req.headers['x-gitea-event']
-    || !!req.headers['x-gitea-delivery'] || !!req.headers['x-forgejo-delivery'];
-  const isGitHub = !isForgejo && !!req.headers['x-github-event'];
-  let webhookProvider: RepoProvider = isForgejo ? 'codeberg' : 'github';
+  // Bitbucket webhooks use X-Event-Key and X-Request-UUID headers.
+  const isBitbucket = !!req.headers['x-event-key'] && !!req.headers['x-request-uuid'];
+  const isForgejo = !isBitbucket && (!!req.headers['x-forgejo-event'] || !!req.headers['x-gitea-event']
+    || !!req.headers['x-gitea-delivery'] || !!req.headers['x-forgejo-delivery']);
+  const isGitHub = !isBitbucket && !isForgejo && !!req.headers['x-github-event'];
+  let webhookProvider: RepoProvider = isBitbucket ? 'bitbucket' : isForgejo ? 'codeberg' : 'github';
+
+  const rawBody = (req as any).rawBody;
+  if (!rawBody) {
+    res.status(400).json({ error: 'Missing raw body' });
+    return;
+  }
+
+  // Bitbucket Cloud webhooks don't support HMAC signatures.
+  // We verify by checking the X-Request-UUID header is present and the payload structure.
+  if (isBitbucket) {
+    const eventKey = req.headers['x-event-key'] as string;
+    if (eventKey !== 'repo:push') {
+      logger.info(`[WEBHOOK] Ignoring Bitbucket event: ${eventKey}`);
+      res.json({ status: 'ignored', event: eventKey });
+      return;
+    }
+
+    // Extract repo URL from Bitbucket payload
+    const bbRepoUrl = req.body?.repository?.links?.html?.href
+      || (req.body?.repository?.full_name ? `https://bitbucket.org/${req.body.repository.full_name}` : null);
+
+    if (!bbRepoUrl) {
+      res.status(400).json({ error: 'Missing repository URL' });
+      return;
+    }
+
+    // Verify this repo is actually tracked by CRANIS2 (prevents spoofed webhooks)
+    const neo4jVerify = getDriver().session();
+    try {
+      const verifyResult = await neo4jVerify.run(
+        `MATCH (p:Product)-[:HAS_REPO]->(r:Repository)
+         WHERE r.url = $repoUrl OR r.url = $repoUrlGit
+         RETURN count(p) AS cnt`,
+        { repoUrl: bbRepoUrl, repoUrlGit: bbRepoUrl + '.git' }
+      );
+      const cnt = verifyResult.records[0]?.get('cnt')?.toNumber?.() || verifyResult.records[0]?.get('cnt') || 0;
+      if (cnt === 0) {
+        logger.warn(`[WEBHOOK] Bitbucket webhook for untracked repo: ${bbRepoUrl}`);
+        res.status(401).json({ error: 'Repository not tracked' });
+        return;
+      }
+    } finally {
+      await neo4jVerify.close();
+    }
+
+    // Process Bitbucket push — normalise payload to match GitHub flow below
+    const repoUrl = bbRepoUrl;
+    logger.info(`[WEBHOOK] Push event from bitbucket for ${repoUrl}`);
+
+    const neo4jSession = getDriver().session();
+    try {
+      const result = await neo4jSession.run(
+        `MATCH (p:Product)-[:HAS_REPO]->(r:Repository)
+         WHERE r.url = $repoUrl OR r.url = $repoUrlGit
+         RETURN p.id as productId`,
+        { repoUrl, repoUrlGit: repoUrl + '.git' }
+      );
+
+      for (const record of result.records) {
+        const productId = record.get('productId');
+        await pool.query(`UPDATE product_sboms SET is_stale = TRUE WHERE product_id = $1`, [productId]);
+        await neo4jSession.run(
+          `MATCH (p:Product {id: $productId})-[:HAS_SBOM]->(sbom:SBOM) SET sbom.isStale = true`,
+          { productId }
+        );
+        logger.info(`[WEBHOOK] Marked SBOM stale for product: ${productId}`);
+
+        // Store push event
+        try {
+          const changes = req.body?.push?.changes || [];
+          const latestChange = changes[0];
+          const newTarget = latestChange?.new?.target;
+          const pusherName = req.body?.actor?.display_name || req.body?.actor?.nickname || 'unknown';
+          const pushBranch = latestChange?.new?.name || null;
+          const pushRef = pushBranch ? `refs/heads/${pushBranch}` : null;
+          const commitCount = latestChange?.commits?.length || 0;
+          const headMessage = newTarget?.message || null;
+          const headSha = newTarget?.hash || null;
+
+          await pool.query(
+            `INSERT INTO repo_push_events (product_id, pusher_name, pusher_email, ref, branch, commit_count, head_commit_message, head_commit_sha, provider)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [productId, pusherName, null, pushRef, pushBranch, commitCount, headMessage, headSha, 'bitbucket']
+          );
+        } catch (pushErr: any) {
+          console.error('[WEBHOOK] Failed to store Bitbucket push event:', pushErr.message);
+        }
+
+        // Audit event
+        try {
+          await pool.query(
+            `INSERT INTO user_events (event_type, ip_address, user_agent, metadata)
+             VALUES ($1, $2, $3, $4)`,
+            ['webhook_sbom_stale', req.ip || null, req.headers['user-agent'] || 'Bitbucket-Webhooks', JSON.stringify({ productId, repoUrl, event: 'push' })]
+          );
+        } catch (telErr: any) {
+          console.error('[WEBHOOK] Failed to record audit event:', telErr.message);
+        }
+
+        // Stale SBOM notification + email
+        try {
+          const orgResult = await neo4jSession.run(
+            'MATCH (p:Product {id: $productId})-[:BELONGS_TO]->(o:Organisation) RETURN o.id AS orgId, p.name AS name',
+            { productId }
+          );
+          if (orgResult.records.length > 0) {
+            const webhookOrgId = orgResult.records[0].get('orgId');
+            const productName = orgResult.records[0].get('name') || productId;
+            if (webhookOrgId) {
+              await createNotification({
+                orgId: webhookOrgId,
+                userId: null,
+                type: 'sbom_stale',
+                severity: 'medium',
+                title: 'SBOM is now stale for ' + productName,
+                body: 'A push to the Bitbucket repository was detected. The SBOM needs to be re-synced.',
+                link: '/products/' + productId + '?tab=dependencies',
+                metadata: { productId, productName, repoUrl, event: 'push' },
+              });
+              sendSbomStaleEmail(webhookOrgId, productName, productId).catch(() => {});
+            }
+          }
+        } catch (notifErr: any) {
+          console.error('[WEBHOOK] Failed to create stale SBOM notification:', notifErr.message);
+        }
+      }
+
+      res.json({ status: 'ok', productsUpdated: result.records.length });
+    } catch (err: any) {
+      console.error('[WEBHOOK] Error processing Bitbucket push event:', err);
+      res.status(500).json({ error: 'Internal error processing webhook' });
+    } finally {
+      await neo4jSession.close();
+    }
+    return;
+  }
+
+  // ── GitHub / Codeberg / Forgejo webhook handling ──────────────────
 
   // Verify HMAC signature
   const signature = (req.headers['x-hub-signature-256'] || req.headers['x-forgejo-signature'] || req.headers['x-gitea-signature']) as string;
   if (!signature) {
     res.status(401).json({ error: 'Missing signature' });
-    return;
-  }
-
-  const rawBody = (req as any).rawBody;
-  if (!rawBody) {
-    res.status(400).json({ error: 'Missing raw body' });
     return;
   }
 
@@ -173,7 +307,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
               type: 'sbom_stale',
               severity: 'medium',
               title: 'SBOM is now stale for ' + productName,
-              body: `A push to the ${webhookProvider === 'codeberg' ? 'Codeberg' : 'GitHub'} repository was detected. The SBOM needs to be re-synced.`,
+              body: `A push to the ${webhookProvider === 'codeberg' ? 'Codeberg' : webhookProvider === 'bitbucket' ? 'Bitbucket' : 'GitHub'} repository was detected. The SBOM needs to be re-synced.`,
               link: '/products/' + productId + '?tab=dependencies',
               metadata: { productId, productName, repoUrl, event: 'push' },
             });

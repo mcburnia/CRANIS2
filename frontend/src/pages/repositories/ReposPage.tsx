@@ -71,7 +71,7 @@ interface Connection {
   instanceUrl: string | null;
 }
 
-type Filter = 'all' | 'connected' | 'disconnected' | 'github' | 'codeberg';
+type Filter = 'all' | 'connected' | 'disconnected' | 'github' | 'codeberg' | 'bitbucket';
 
 function formatTimeAgo(dateStr: string | null): string {
   if (!dateStr) return 'Never';
@@ -98,6 +98,7 @@ function detectProvider(url: string): string {
   try {
     const hostname = new URL(url.includes('://') ? url : `https://${url}`).hostname;
     if (hostname === 'codeberg.org') return 'codeberg';
+    if (hostname === 'bitbucket.org') return 'bitbucket';
   } catch { /* ignore */ }
   return 'github';
 }
@@ -325,12 +326,14 @@ export default function ReposPage() {
     if (filter === 'disconnected') return p.repo === null;
     if (filter === 'github') return p.repo !== null && (p.repo.provider || detectProvider(p.repo.url)) === 'github';
     if (filter === 'codeberg') return p.repo !== null && (p.repo.provider || detectProvider(p.repo.url)) === 'codeberg';
+    if (filter === 'bitbucket') return p.repo !== null && (p.repo.provider || detectProvider(p.repo.url)) === 'bitbucket';
     return true;
   });
 
   // Count providers for filter badges
   const githubCount = products.filter(p => p.repo && (p.repo.provider || detectProvider(p.repo.url)) === 'github').length;
   const codebergCount = products.filter(p => p.repo && (p.repo.provider || detectProvider(p.repo.url)) === 'codeberg').length;
+  const bitbucketCount = products.filter(p => p.repo && (p.repo.provider || detectProvider(p.repo.url)) === 'bitbucket').length;
 
   return (
     <>
@@ -351,6 +354,7 @@ export default function ReposPage() {
           { key: 'disconnected' as Filter, label: 'Not Connected' },
           { key: 'github' as Filter, label: `GitHub${githubCount > 0 ? ` (${githubCount})` : ''}` },
           { key: 'codeberg' as Filter, label: `Codeberg${codebergCount > 0 ? ` (${codebergCount})` : ''}` },
+          { key: 'bitbucket' as Filter, label: `Bitbucket${bitbucketCount > 0 ? ` (${bitbucketCount})` : ''}` },
         ]).map(f => (
           <button key={f.key} className={`rp-filter-btn ${filter === f.key ? 'active' : ''}`} onClick={() => setFilter(f.key)}>
             {f.key === 'github' && <Github size={13} />}
@@ -372,8 +376,8 @@ export default function ReposPage() {
               {product.repo ? (
                 <>
                   <span className={`rp-badge rp-badge-provider rp-badge-${repoProvider}`}>
-                    {repoProvider === 'codeberg' ? <CodebergIcon size={11} /> : <Github size={11} />}
-                    {repoProvider === 'codeberg' ? 'Codeberg' : repoProvider === 'github' ? 'GitHub' : repoProvider}
+                    {repoProvider === 'codeberg' ? <CodebergIcon size={11} /> : repoProvider !== 'bitbucket' ? <Github size={11} /> : null}
+                    {repoProvider === 'codeberg' ? 'Codeberg' : repoProvider === 'bitbucket' ? 'Bitbucket' : repoProvider === 'github' ? 'GitHub' : repoProvider}
                   </span>
                   <span className={`rp-badge ${product.repo.isPrivate ? 'private' : 'public'}`}>
                     {product.repo.visibility}

@@ -4,8 +4,9 @@
 
 import * as github from './github.js';
 import * as codeberg from './codeberg.js';
+import * as bitbucket from './bitbucket.js';
 
-export type RepoProvider = 'github' | 'codeberg' | 'gitea' | 'forgejo' | 'gitlab';
+export type RepoProvider = 'github' | 'codeberg' | 'gitea' | 'forgejo' | 'gitlab' | 'bitbucket';
 
 // ══════════════════════════════════════════════════════════════════
 // PROVIDER REGISTRY – data-driven, adding a provider = one entry
@@ -72,6 +73,16 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
     supportsApiSbom: false,
     authHeader: (t) => ({ 'PRIVATE-TOKEN': t }),
     oauthSupported: false,
+  },
+  {
+    id: 'bitbucket',
+    label: 'Bitbucket',
+    baseUrl: 'https://bitbucket.org',
+    apiBase: 'https://api.bitbucket.org/2.0',
+    selfHosted: false,
+    supportsApiSbom: false,
+    authHeader: (t) => ({ Authorization: `Bearer ${t}` }),
+    oauthSupported: true,
   },
 ];
 
@@ -153,6 +164,7 @@ export function detectProvider(
     const url = new URL(repoUrl.includes('://') ? repoUrl : `https://${repoUrl}`);
     if (url.hostname === 'github.com') return 'github';
     if (url.hostname === 'codeberg.org') return 'codeberg';
+    if (url.hostname === 'bitbucket.org') return 'bitbucket';
 
     // Check self-hosted instances
     if (knownInstances) {
@@ -240,6 +252,7 @@ export function parseRepoUrl(
   switch (prov) {
     case 'github': return github.parseRepoUrl(url);
     case 'codeberg': return codeberg.parseRepoUrl(url);
+    case 'bitbucket': return bitbucket.parseRepoUrl(url);
     case 'gitea':
     case 'forgejo':
     case 'gitlab':
@@ -287,6 +300,23 @@ export async function getRepo(
         default_branch: r.default_branch,
         pushed_at: r.updated_at,
         private: r.private,
+      };
+    }
+    case 'bitbucket': {
+      const r = await bitbucket.getRepo(token, owner, repo);
+      return {
+        html_url: r.links?.html?.href || `https://bitbucket.org/${r.full_name}`,
+        full_name: r.full_name,
+        name: r.name || r.slug,
+        description: r.description || '',
+        language: r.language || '',
+        stargazers_count: 0,  // Bitbucket doesn't expose star count via API
+        forks_count: 0,
+        open_issues_count: 0,
+        visibility: r.is_private ? 'private' : 'public',
+        default_branch: r.mainbranch?.name || 'main',
+        pushed_at: r.updated_on || '',
+        private: r.is_private,
       };
     }
     case 'gitea':
@@ -342,6 +372,18 @@ export async function getContributors(
   switch (prov) {
     case 'github': return github.getContributors(token, owner, repo);
     case 'codeberg': return codeberg.getContributors(token, owner, repo);
+    case 'bitbucket': {
+      try {
+        const contributors = await bitbucket.getContributors(token, owner, repo);
+        return contributors.map(c => ({
+          id: hashString(c.uuid || c.nickname),
+          login: c.nickname || c.display_name,
+          avatar_url: c.avatar || '',
+          html_url: `https://bitbucket.org/${c.nickname || ''}`,
+          contributions: c.count,
+        }));
+      } catch { return []; }
+    }
     case 'gitea':
     case 'forgejo': {
       if (!instanceUrl) return [];
@@ -385,6 +427,17 @@ export async function getLanguages(
   switch (prov) {
     case 'github': return github.getLanguages(token, owner, repo);
     case 'codeberg': return codeberg.getLanguages(token, owner, repo);
+    case 'bitbucket': {
+      try {
+        const langs = await bitbucket.getLanguages(token, owner, repo);
+        // Bitbucket returns percentages — convert to approximate bytes
+        const result: Record<string, number> = {};
+        for (const [lang, pct] of Object.entries(langs)) {
+          result[lang] = Math.round(pct * 1000);
+        }
+        return result;
+      } catch { return {}; }
+    }
     case 'gitea':
     case 'forgejo': {
       if (!instanceUrl) return {};
@@ -435,6 +488,28 @@ export async function getBranches(
       isDefault: b.name === defaultBranch,
       isProtected: b.protected || false,
     }));
+  }
+
+  if (prov === 'bitbucket') {
+    const allBranches: NormalisedBranch[] = [];
+    try {
+      const url = `https://api.bitbucket.org/2.0/repositories/${owner}/${repo}/refs/branches?pagelen=100`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      });
+      if (res.ok) {
+        const data = await res.json() as { values: Array<{ name: string; target: { hash: string } }> };
+        for (const b of data.values || []) {
+          allBranches.push({
+            name: b.name,
+            headSha: b.target?.hash || '',
+            isDefault: b.name === defaultBranch,
+            isProtected: false,
+          });
+        }
+      }
+    } catch { /* return empty */ }
+    return allBranches;
   }
 
   if (prov === 'codeberg' || prov === 'gitea' || prov === 'forgejo') {
@@ -520,6 +595,50 @@ export async function getCommitsPaginated(
 ): Promise<NormalisedCommit[]> {
   const maxPages = opts.maxPages || 50;
   const since = opts.since;
+
+  if (prov === 'bitbucket') {
+    const allCommits: NormalisedCommit[] = [];
+    let url: string | null = `https://api.bitbucket.org/2.0/repositories/${owner}/${repo}/commits?pagelen=100`;
+    let pageCount = 0;
+    while (url && pageCount < maxPages) {
+      try {
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        });
+        if (!res.ok) break;
+        const data = await res.json() as {
+          values: Array<{
+            hash: string;
+            date: string;
+            message: string;
+            author: { raw: string; user?: { nickname: string } };
+          }>;
+          next?: string;
+        };
+        for (const c of data.values || []) {
+          // Parse "Name <email>" from author.raw
+          const rawAuthor = c.author?.raw || '';
+          const emailMatch = rawAuthor.match(/<(.+?)>/);
+          const nameMatch = rawAuthor.match(/^(.+?)\s*</);
+          allCommits.push({
+            sha: c.hash || '',
+            authorName: nameMatch?.[1] || rawAuthor,
+            authorEmail: emailMatch?.[1] || '',
+            authorLogin: c.author?.user?.nickname || '',
+            authoredAt: c.date || '',
+            messageSummary: (c.message || '').split('\n')[0].slice(0, 500),
+            additions: 0,
+            deletions: 0,
+            filesChanged: 0,
+          });
+        }
+        url = data.next || null;
+        pageCount++;
+        if ((data.values || []).length < 100) break;
+      } catch { break; }
+    }
+    return allCommits;
+  }
 
   if (prov === 'github') {
     const commits = await github.getCommitsPaginated(token, owner, repo, { since, maxPages });
@@ -621,6 +740,7 @@ export async function getFileContent(
 ): Promise<string | null> {
   if (prov === 'github') return github.getFileContent(token, owner, repo, branch, filepath);
   if (prov === 'codeberg') return codeberg.getRawFile(token, owner, repo, branch, filepath);
+  if (prov === 'bitbucket') return bitbucket.getRawFile(token, owner, repo, branch, filepath);
   // Self-hosted Gitea/Forgejo – use Gitea API
   if (prov === 'gitea' || prov === 'forgejo') {
     if (!instanceUrl) return null;
@@ -655,6 +775,7 @@ export async function getSBOM(
   switch (prov) {
     case 'github': return github.getSBOM(token, owner, repo);
     case 'codeberg': return null;
+    case 'bitbucket': return null;  // No SBOM API — uses lockfile/import scan fallback
     case 'gitea':
     case 'forgejo':
     case 'gitlab':
@@ -671,6 +792,22 @@ export async function getReleases(
 ): Promise<NormalisedRelease[]> {
   switch (prov) {
     case 'github': return github.getReleases(token, owner, repo);
+    case 'bitbucket': {
+      // Bitbucket doesn't have releases — return tags as pseudo-releases
+      try {
+        const tags = await bitbucket.getTags(token, owner, repo);
+        return tags.map(t => ({
+          tag_name: t.name,
+          name: t.name,
+          body: '',
+          draft: false,
+          prerelease: false,
+          published_at: t.target?.date || '',
+          target_commitish: t.target?.hash || '',
+          html_url: `https://bitbucket.org/${owner}/${repo}/commits/tag/${t.name}`,
+        }));
+      } catch { return []; }
+    }
     case 'codeberg': {
       const releases = await codeberg.getReleases(token, owner, repo);
       return releases.map(r => ({
@@ -735,6 +872,10 @@ export async function getTags(
       const tags = await github.getTags(token, owner, repo);
       return tags.map(t => ({ name: t.name, commit: { sha: t.commit.sha } }));
     }
+    case 'bitbucket': {
+      const tags = await bitbucket.getTags(token, owner, repo);
+      return tags.map(t => ({ name: t.name, commit: { sha: t.target?.hash || '' } }));
+    }
     case 'codeberg': {
       const tags = await codeberg.getTags(token, owner, repo);
       return tags.map(t => ({ name: t.name, commit: { sha: t.commit.sha } }));
@@ -786,6 +927,8 @@ export async function createWebhook(
       return github.createWebhook(token, owner, repo, callbackUrl, secret);
     case 'codeberg':
       return codeberg.createWebhook(token, owner, repo, callbackUrl, secret);
+    case 'bitbucket':
+      return bitbucket.createWebhook(token, owner, repo, callbackUrl, secret);
     case 'gitea':
     case 'forgejo': {
       if (!instanceUrl) throw new Error(`${prov} requires instanceUrl for webhook creation`);
@@ -813,6 +956,8 @@ export async function deleteWebhook(
       return github.deleteWebhook(token, owner, repo, webhookId);
     case 'codeberg':
       return codeberg.deleteWebhook(token, owner, repo, webhookId);
+    case 'bitbucket':
+      return bitbucket.deleteWebhook(token, owner, repo, webhookId);
     case 'gitea':
     case 'forgejo': {
       if (!instanceUrl) throw new Error(`${prov} requires instanceUrl for webhook deletion`);
@@ -836,6 +981,8 @@ export function getWebhookSecret(prov: RepoProvider): string | null {
     case 'gitea':
     case 'forgejo':
       return process.env.CODEBERG_WEBHOOK_SECRET || null;
+    case 'bitbucket':
+      return null;  // Bitbucket Cloud webhooks don't support HMAC signatures
     case 'gitlab':
       return null;
   }
@@ -849,6 +996,7 @@ export async function exchangeCodeForToken(
   switch (prov) {
     case 'github': return github.exchangeCodeForToken(code);
     case 'codeberg': return codeberg.exchangeCodeForToken(code, redirectUri);
+    case 'bitbucket': return bitbucket.exchangeCodeForToken(code, redirectUri);
     case 'gitea':
     case 'forgejo':
     case 'gitlab':
@@ -870,6 +1018,14 @@ export async function getAuthenticatedUser(
       const u = await codeberg.getAuthenticatedUser(token);
       return { id: u.id, login: u.login, avatar_url: u.avatar_url };
     }
+    case 'bitbucket': {
+      const u = await bitbucket.getAuthenticatedUser(token);
+      return {
+        id: hashString(u.uuid || u.account_id),
+        login: u.nickname || u.display_name,
+        avatar_url: u.links?.avatar?.href || '',
+      };
+    }
     case 'gitea':
     case 'forgejo':
     case 'gitlab': {
@@ -877,6 +1033,16 @@ export async function getAuthenticatedUser(
       return validatePAT(prov, token, instanceUrl);
     }
   }
+}
+
+// ── String hash helper ──────────────────────────────────────────
+/** Convert a string (e.g. Bitbucket UUID) to a stable numeric ID for compatibility. */
+function hashString(s: string): number {
+  let hash = 0;
+  for (let i = 0; i < s.length; i++) {
+    hash = ((hash << 5) - hash + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -897,6 +1063,9 @@ export async function listRepoFiles(
   try {
     if (prov === 'github') {
       return await listGitHubFiles(token, owner, repo, branch);
+    }
+    if (prov === 'bitbucket') {
+      return await bitbucket.listFiles(token, owner, repo, branch, MAX_TREE_FILES);
     }
     if (prov === 'codeberg' || prov === 'gitea' || prov === 'forgejo') {
       const apiBase = prov === 'codeberg'

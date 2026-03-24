@@ -117,8 +117,14 @@ router.post('/connect-init', requireAuth, async (req: Request, res: Response) =>
       res.status(500).json({ error: 'Codeberg OAuth not configured. Please set CODEBERG_CLIENT_ID in .env' });
       return;
     }
+  } else if (repoProvider === 'bitbucket') {
+    const clientId = process.env.BITBUCKET_CLIENT_ID;
+    if (!clientId) {
+      res.status(500).json({ error: 'Bitbucket OAuth not configured. Please set BITBUCKET_CLIENT_ID in .env' });
+      return;
+    }
   } else {
-    res.status(400).json({ error: 'Unsupported provider. Use "github" or "codeberg".' });
+    res.status(400).json({ error: 'Unsupported provider. Use "github", "codeberg", or "bitbucket".' });
     return;
   }
 
@@ -170,6 +176,15 @@ router.get('/connect/{:provider}', async (req: Request, res: Response) => {
     const redirectUri = `${frontendUrl}/api/repo/callback/codeberg`;
     const codebergAuthUrl = `https://codeberg.org/login/oauth/authorize?client_id=${clientId}&response_type=code&state=${state}&redirect_uri=${encodeURIComponent(redirectUri)}`;
     res.redirect(codebergAuthUrl);
+  } else if (repoProvider === 'bitbucket') {
+    const clientId = process.env.BITBUCKET_CLIENT_ID;
+    if (!clientId) {
+      res.status(500).send(renderOAuthResultPage(frontendUrl, false, 'Bitbucket OAuth not configured.', 'bitbucket'));
+      return;
+    }
+    const redirectUri = `${frontendUrl}/api/repo/callback/bitbucket`;
+    const bitbucketAuthUrl = `https://bitbucket.org/site/oauth2/authorize?client_id=${clientId}&response_type=code&state=${state}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    res.redirect(bitbucketAuthUrl);
   } else {
     const clientId = process.env.GITHUB_CLIENT_ID;
     if (!clientId) {
@@ -206,6 +221,8 @@ router.get('/callback/{:provider}', async (req: Request, res: Response) => {
   try {
     const redirectUri = repoProvider === 'codeberg'
       ? `${frontendUrl}/api/repo/callback/codeberg`
+      : repoProvider === 'bitbucket'
+      ? `${frontendUrl}/api/repo/callback/bitbucket`
       : `${frontendUrl}/api/github/callback`;
     const tokenData = await provider.exchangeCodeForToken(repoProvider, code, redirectUri);
     const providerUser = await provider.getAuthenticatedUser(repoProvider, tokenData.access_token);
@@ -245,7 +262,7 @@ router.get('/callback/{:provider}', async (req: Request, res: Response) => {
 
 function renderOAuthResultPage(frontendUrl: string, success: boolean, message: string, repoProvider: string = 'github'): string {
   const escapedMessage = message.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-  const providerLabel = repoProvider === 'codeberg' ? 'Codeberg' : 'GitHub';
+  const providerLabel = repoProvider === 'codeberg' ? 'Codeberg' : repoProvider === 'bitbucket' ? 'Bitbucket' : 'GitHub';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -381,7 +398,7 @@ router.delete('/disconnect/{:provider}', requireAuth, async (req: Request, res: 
     metadata: { username: result.rows[0].provider_username, provider: disconnectProvider },
   });
 
-  const providerLabels = { github: 'GitHub', codeberg: 'Codeberg', gitea: 'Gitea', forgejo: 'Forgejo', gitlab: 'GitLab' };
+  const providerLabels: Record<string, string> = { github: 'GitHub', codeberg: 'Codeberg', bitbucket: 'Bitbucket', gitea: 'Gitea', forgejo: 'Forgejo', gitlab: 'GitLab' };
     res.json({ message: `${providerLabels[disconnectProvider] || disconnectProvider} disconnected` });
 });
 

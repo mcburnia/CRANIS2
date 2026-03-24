@@ -348,6 +348,7 @@ export default function ProductDetailPage() {
     try {
       const hostname = new URL(url.includes('://') ? url : `https://${url}`).hostname;
       if (hostname === 'codeberg.org') return 'codeberg';
+      if (hostname === 'bitbucket.org') return 'bitbucket';
       if (hostname === 'gitlab.com') return 'gitlab';
     } catch { /* ignore */ }
     return 'github';
