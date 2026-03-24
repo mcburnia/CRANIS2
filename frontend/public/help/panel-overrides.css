@@ -38,3 +38,105 @@ footer {
 .audience-tags {
   display: none !important;
 }
+
+/* ── Station label background — semi-transparent so track lines show through ── */
+
+.stn .lbl,
+.stn .lbl-sub {
+  paint-order: stroke fill !important;
+  stroke: rgba(244, 242, 238, 0.55) !important;
+  stroke-width: 10px !important;
+  stroke-linejoin: round !important;
+  stroke-linecap: round !important;
+}
+
+/* ── Active station glow animation ─────────────────────────────── */
+/* Works with existing inline drop-shadow filter set by show() */
+
+.stn.active circle,
+.stn.active rect {
+  animation: station-glow 2s ease-in-out infinite !important;
+  filter: none !important;
+}
+
+@keyframes station-glow {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(29,158,117,.5)) drop-shadow(0 0 2px rgba(29,158,117,.3)); }
+  50% { filter: drop-shadow(0 0 14px rgba(29,158,117,.9)) drop-shadow(0 0 4px rgba(29,158,117,.6)); }
+}
+
+/* ── Enhanced map hint banner ──────────────────────────────────── */
+
+.map-hint {
+  background: #F59E0B !important;
+  border: 1px solid #D97706 !important;
+  border-radius: 8px !important;
+  padding: 10px 16px !important;
+  font-size: 13.5px !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  position: relative !important;
+  margin-top: 12px !important;
+}
+
+/* Make the hint-dot white to stand out on amber */
+.hint-dot {
+  animation: none !important;
+  background: #fff !important;
+}
+
+.hint-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #fff;
+  cursor: pointer;
+  padding: 0 0 0 10px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.hint-close:hover {
+  opacity: 1;
+}
+
+/* ── "You are here" arrow indicator ────────────────────────────── */
+
+.you-are-here {
+  position: absolute;
+  pointer-events: none;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, 0);
+  transition: left 0.3s ease, top 0.3s ease;
+}
+
+.you-are-here-arrow {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+}
+
+/* Arrow pointing up (label is above, arrow below station) */
+.you-are-here-arrow.yah-up {
+  border-bottom: 8px solid #F59E0B;
+}
+
+/* Arrow pointing down (label is below, arrow above station) */
+.you-are-here-arrow.yah-down {
+  border-top: 8px solid #F59E0B;
+}
+
+.you-are-here-label {
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: #F59E0B;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}

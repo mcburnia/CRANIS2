@@ -94,15 +94,85 @@ export default function HelpPanel() {
               const link = doc.createElement('link');
               link.id = 'panel-overrides';
               link.rel = 'stylesheet';
-              link.href = '/help/panel-overrides.css';
+              link.href = '/help/panel-overrides.css?v=7';
               doc.head.appendChild(link);
             }
-            // Auto-select the first station so instructions show immediately.
-            // Use script injection since const/let top-level vars aren't on window.
+            // Auto-select first station, add active class toggling, and hint dismissal.
             if (!doc.getElementById('panel-autoselect')) {
               const script = doc.createElement('script');
               script.id = 'panel-autoselect';
-              script.textContent = 'if(typeof allIds!=="undefined"&&typeof show==="function"&&allIds.length>0){setTimeout(function(){show(allIds[0])},100);}';
+              script.textContent = [
+                // Create "You are here" arrow element
+                'var _yah=document.createElement("div");',
+                '_yah.className="you-are-here";',
+                '_yah.id="you-are-here";',
+                '_yah.innerHTML=\'<div class="you-are-here-arrow"></div><div class="you-are-here-label">YOU ARE HERE</div>\';',
+                '_yah.style.display="none";',
+                'var _mapWrap=document.querySelector(".map-wrap");',
+                'if(_mapWrap){_mapWrap.style.position="relative";_mapWrap.appendChild(_yah);}',
+
+                // Position the arrow on the opposite side from the label
+                'function _positionArrow(id){',
+                '  var el=document.getElementById("ms-"+id);',
+                '  if(!el||!_mapWrap){_yah.style.display="none";return;}',
+                '  var circle=el.querySelector("circle")||el.querySelector("rect");',
+                '  if(!circle){_yah.style.display="none";return;}',
+                '  var svg=_mapWrap.querySelector("svg");',
+                '  if(!svg){_yah.style.display="none";return;}',
+                // Detect label position: compare label y to circle cy
+                '  var lbl=el.querySelector(".lbl");',
+                '  var labelAbove=true;',
+                '  if(lbl&&circle){',
+                '    var lblY=parseFloat(lbl.getAttribute("y")||"0");',
+                '    var circY=parseFloat(circle.getAttribute("cy")||circle.getAttribute("y")||"0");',
+                '    labelAbove=lblY<circY;',
+                '  }',
+                '  var svgRect=svg.getBoundingClientRect();',
+                '  var cRect=circle.getBoundingClientRect();',
+                '  var left=cRect.left-svgRect.left+cRect.width/2;',
+                '  if(labelAbove){',
+                // Label is above → arrow goes below, pointing up
+                '    _yah.style.top=(cRect.top-svgRect.top+cRect.height+2)+"px";',
+                '    _yah.style.transform="translate(-50%, 0)";',
+                '    _yah.innerHTML=\'<div class="you-are-here-arrow yah-up"></div><div class="you-are-here-label">YOU ARE HERE</div>\';',
+                '  }else{',
+                // Label is below → arrow goes above, pointing down
+                '    _yah.style.top=(cRect.top-svgRect.top-2)+"px";',
+                '    _yah.style.transform="translate(-50%, -100%)";',
+                '    _yah.innerHTML=\'<div class="you-are-here-label">YOU ARE HERE</div><div class="you-are-here-arrow yah-down"></div>\';',
+                '  }',
+                '  _yah.style.left=left+"px";',
+                '  _yah.style.display="flex";',
+                '}',
+
+                // Wrap show() to position arrow on active station
+                'if(typeof show==="function"&&!show._wrapped){',
+                '  var _origShow=show;',
+                '  show=function(id){',
+                '    _origShow(id);',
+                '    _positionArrow(id);',
+                '  };',
+                '  show._wrapped=true;',
+                '}',
+
+                // Auto-select first station
+                'if(typeof allIds!=="undefined"&&typeof show==="function"&&allIds.length>0){setTimeout(function(){show(allIds[0])},150);}',
+
+                // Reposition arrow on window resize (SVG scales)
+                'var _currentId=null;',
+                'if(typeof show==="function"&&!show._trackId){',
+                '  var _prevShow=show;',
+                '  show=function(id){_currentId=id;_prevShow(id);};',
+                '  show._wrapped=true;show._trackId=true;',
+                '}',
+                'window.addEventListener("resize",function(){if(_currentId)_positionArrow(_currentId);});',
+
+                // Hint dismissal
+                'window.dismissHint=function(){var h=document.getElementById("map-hint");if(h)h.style.display="none";try{localStorage.setItem("cranis2-beck-hint-dismissed","1")}catch(e){}};',
+                'if(localStorage.getItem("cranis2-beck-hint-dismissed")==="1"){var h=document.getElementById("map-hint");if(h)h.style.display="none";}',
+                // Add close button to existing hint if not already present
+                'setTimeout(function(){var h=document.getElementById("map-hint");if(h&&!h.querySelector(".hint-close")){var b=document.createElement("button");b.className="hint-close";b.setAttribute("aria-label","Dismiss");b.innerHTML="\\u00d7";b.onclick=window.dismissHint;h.appendChild(b);}},50);',
+              ].join('');
               doc.body.appendChild(script);
             }
           } catch { /* cross-origin safety — ignore */ }

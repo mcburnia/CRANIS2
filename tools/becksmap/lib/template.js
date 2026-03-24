@@ -46,7 +46,7 @@ ${CSS}
   <div class="map-wrap">
     ${svg}
   </div>
-  <div class="map-hint"><div class="hint-dot"></div>Click any station to see instructions for that step</div>
+  <div class="map-hint" id="map-hint"><div class="hint-dot"></div>Click any station on the map to read step-by-step guidance<button class="hint-close" onclick="dismissHint()" aria-label="Dismiss">\u00d7</button></div>
 </div>
 <div class="instructions-wrap">
   <div class="prompt-state" id="prompt">
@@ -71,18 +71,21 @@ ${CSS}
 <script>
 const stations = ${stationsJS};
 const allIds = ${allIds};
+function dismissHint(){var h=document.getElementById('map-hint');if(h)h.style.display='none';try{localStorage.setItem('cranis2-beck-hint-dismissed','1')}catch(e){}}
+if(localStorage.getItem('cranis2-beck-hint-dismissed')==='1'){var _h=document.getElementById('map-hint');if(_h)_h.style.display='none';}
 function show(id) {
   const s = stations[id];
   if (!s) return;
   allIds.forEach(k => {
     const el = document.getElementById('ms-' + k);
     if (!el) return;
+    el.classList.remove('active');
     el.querySelectorAll('circle,rect').forEach(c => { c.style.filter = ''; });
   });
   const active = document.getElementById('ms-' + id);
-  if (active) active.querySelectorAll('circle').forEach(c => {
-    c.style.filter = 'drop-shadow(0 0 6px rgba(29,158,117,.6))';
-  });
+  if (active) {
+    active.classList.add('active');
+  }
   document.getElementById('card-icon').textContent = s.icon;
   document.getElementById('card-icon').style.background = s.iconBg;
   document.getElementById('card-title').innerHTML = s.title + '<span class="line-badge ' + s.badgeClass + '">' + s.badge + '</span>';
@@ -219,8 +222,12 @@ const CSS = `  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   .map-wrap svg{display:block;min-width:700px}
   .map-hint{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px}
   .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s ease-in-out infinite}
+  .hint-close{background:none;border:none;font-size:18px;color:var(--text-3);cursor:pointer;padding:0 0 0 10px;line-height:1;opacity:.6}
+  .hint-close:hover{opacity:1}
   @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
   .stn{cursor:pointer;transition:opacity .15s}.stn:hover{opacity:.75}
+  .stn.active circle,.stn.active rect{animation:station-glow 2s ease-in-out infinite}
+  @keyframes station-glow{0%,100%{filter:drop-shadow(0 0 6px rgba(29,158,117,.5)) drop-shadow(0 0 2px rgba(29,158,117,.3))}50%{filter:drop-shadow(0 0 14px rgba(29,158,117,.9)) drop-shadow(0 0 4px rgba(29,158,117,.6))}}
   .stn .lbl,.stn .lbl-sub{transition:font-size .15s ease,font-weight .15s ease}
   .stn:hover .lbl{font-size:15px;font-weight:700}
   .stn:hover .lbl-sub{font-size:13px;font-weight:500}
