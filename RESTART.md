@@ -1620,8 +1620,27 @@ Massive session — completed 3 full workstreams of the launch readiness plan (8
 - **0 vulnerabilities** remaining across all packages (was 3)
 - **2,143 tests pass** (115 files), 1 expected failure (category-recommendation)
 
+**Session 59 continued (2026-03-24):**
+- **Bitbucket Cloud integration (#60)** — 6th supported repository provider:
+  - New `backend/src/services/bitbucket.ts` — full API client (OAuth 2.0, repo metadata, contributors from commits, languages, tags, raw file content, webhooks, file tree listing)
+  - Added `'bitbucket'` to `RepoProvider` type and all 16 dispatcher functions in `repo-provider.ts`
+  - OAuth flow in `oauth.ts` (redirect to `bitbucket.org/site/oauth2/authorize`, callback with token exchange)
+  - Webhook handling in `webhook.ts` (Bitbucket uses `X-Event-Key: repo:push`, no HMAC — verified by checking repo is tracked in Neo4j)
+  - Frontend: `bitbucket.org` hostname detection in `ProductDetailPage.tsx` and `ReposPage.tsx`, filter tab with count badge
+  - Pre-requisite: register Bitbucket OAuth consumer, add `BITBUCKET_CLIENT_ID` and `BITBUCKET_CLIENT_SECRET` to `.env`
+- **Verified emails across welcome site flows** — frictionless repeat visits:
+  - New `verified_emails` table (90-day TTL, UNIQUE on email, source tracking)
+  - New `welcome/lib/verified-emails.js` shared module (`isEmailVerified`, `markEmailVerified`)
+  - All 6 welcome site flows updated (CRA, NIS2, Importer, PQC assessments + contact form + subscribe)
+  - `/send-code` returns `{ alreadyVerified: true }` for previously verified emails
+  - `/verify` accepts `skipCode: true` with server-side re-validation
+  - Cross-system: main app `users.email_verified = TRUE` recognised on welcome site (read-only)
+  - Security: no enumeration vector, disposable emails never get verified status, server-side validation on skipCode path
+  - 13 files changed across welcome site routes, templates, and index.html
+
 **Next Steps:**
 - Remaining 6 launch blockers are infrastructure/config (user-side): FRONTEND_URL migration, DKIM verification, production infrastructure (Infomaniak), Stripe production keys, Resend production domain, DEV_SKIP_EMAIL/LOG_LEVEL config
+- Register Bitbucket OAuth consumer for beta partner
 - ICO registration (ico.org.uk, £40/year) + update Privacy Policy placeholder
 - Legal review of Privacy Policy and Terms of Service
-- Post-launch: #59 i18n, #60 Bitbucket, P5 supplier marketplace, remaining help guide stubs, major version bumps (TypeScript 6, Vite 8, Resend 6, ESLint 10)
+- Post-launch: #59 i18n, P5 supplier marketplace, remaining help guide stubs, major version bumps (TypeScript 6, Vite 8, Resend 6, ESLint 10)
