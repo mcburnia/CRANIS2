@@ -1638,6 +1638,13 @@ Massive session — completed 3 full workstreams of the launch readiness plan (8
   - Security: no enumeration vector, disposable emails never get verified status, server-side validation on skipCode path
   - 13 files changed across welcome site routes, templates, and index.html
 
+- **Beck map navigation guidance (#64):**
+  - "YOU ARE HERE" amber arrow on active station, positioned opposite the label (auto-detected from SVG)
+  - Bold amber dismissible hint banner with localStorage persistence
+  - Semi-transparent station label backgrounds (paint-order stroke)
+  - Works on all 48 help files via panel-overrides.css + HelpPanel.tsx injection
+- **Login/signup cleanup (#62)** — removed non-functional GitHub auth stub buttons
+
 **Next Steps:**
 - Remaining 6 launch blockers are infrastructure/config (user-side): FRONTEND_URL migration, DKIM verification, production infrastructure (Infomaniak), Stripe production keys, Resend production domain, DEV_SKIP_EMAIL/LOG_LEVEL config
 - Register Bitbucket OAuth consumer for beta partner
