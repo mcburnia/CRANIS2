@@ -188,6 +188,27 @@ async function sendCode() {
       return;
     }
     sessionEmail = email;
+
+    if (data.alreadyVerified) {
+      btn.innerHTML = '<span class="spinner"></span>Verifying\u2026';
+      const vRes = await fetch('/importer-obligations-assessment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: sessionEmail, skipCode: true }),
+      });
+      const vData = await vRes.json();
+      if (vRes.ok && vData.ok) {
+        assessmentId = vData.assessmentId;
+        answers = vData.answers || {};
+        currentSection = vData.currentSection || 0;
+        if (currentSection >= SECTIONS.length) { currentSection = 0; answers = {}; }
+        startQuestionnaire();
+        btn.disabled = false;
+        btn.textContent = 'Send Verification Code';
+        return;
+      }
+    }
+
     document.getElementById('code-email-display').textContent = email;
     document.getElementById('email-step').classList.add('hidden');
     document.getElementById('code-step').classList.remove('hidden');
@@ -546,6 +567,22 @@ async function subscribeLaunch() {
       btn.disabled = false;
       btn.textContent = 'Notify Me at Launch';
       return;
+    }
+    if (data.alreadyVerified) {
+      btn.innerHTML = '<span class="spinner"></span>Subscribing\u2026';
+      var vRes = await fetch('/conformity-assessment/subscribe/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: subscribeEmail, skipCode: true }),
+      });
+      var vData = await vRes.json();
+      if (vRes.ok && vData.ok) {
+        showMsg('subscribe-msg', 'You\\u2019re on the list! We\\u2019ll be in touch when CRANIS2 launches.', 'success');
+        document.getElementById('subscribe-form').classList.add('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Notify Me at Launch';
+        return;
+      }
     }
     document.getElementById('subscribe-form').classList.add('hidden');
     document.getElementById('subscribe-verify-form').classList.remove('hidden');

@@ -4,6 +4,7 @@ const fs = require('fs');
 const { WELCOME_USER, WELCOME_PASS, RESEND_API_KEY } = require('../config');
 const { makeToken, isAuthenticated, escapeHtml, generateCode } = require('../lib/auth');
 const { logAccess } = require('../lib/logging');
+const { isEmailVerified, markEmailVerified } = require('../lib/verified-emails');
 const { sendEmail, sendVerificationCode } = require('../lib/email');
 const { getPool } = require('../lib/database');
 const { isDisposableEmail, getEmailDomain } = require('../lib/disposable-domains');
@@ -109,14 +110,21 @@ router.post('/contact', async (req, res) => {
   }
 
   try {
-    // Insert submission record
+    // Check if email was already verified — skip code step if so
+    const { verified } = await isEmailVerified(trimmedEmail);
+
+    // Insert submission record (always — even for verified emails)
     const { rows } = await pool.query(
       `INSERT INTO contact_submissions (name, email, position, status, ip, country, user_agent)
-       VALUES ($1, $2, $3, 'pending_verification', $4, $5, $6)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id`,
-      [trimmedName, trimmedEmail, trimmedPosition, ip, country, userAgent]
+      [trimmedName, trimmedEmail, trimmedPosition, verified ? 'verified' : 'pending_verification', ip, country, userAgent]
     );
     const submissionId = rows[0].id;
+
+    if (verified) {
+      return res.json({ ok: true, step: 'verify', submissionId, alreadyVerified: true });
+    }
 
     // Rate-limit: max 3 codes per email per hour
     const { rows: recent } = await pool.query(
@@ -154,11 +162,11 @@ router.post('/contact', async (req, res) => {
 /* ── Contact form — Step 2: verify code & complete submission ──────── */
 
 router.post('/contact/verify', async (req, res) => {
-  const { email, code, submissionId } = req.body || {};
+  const { email, code, submissionId, skipCode } = req.body || {};
   const trimmedEmail = (email || '').trim().toLowerCase();
   const trimmedCode = (code || '').trim();
 
-  if (!trimmedEmail || !trimmedCode) {
+  if (!trimmedEmail || (!trimmedCode && !skipCode)) {
     return res.status(400).json({ error: 'Email and verification code are required.' });
   }
 
@@ -171,16 +179,27 @@ router.post('/contact/verify', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Service temporarily unavailable.' });
 
   try {
-    // Verify code
-    const { rows } = await pool.query(
-      `UPDATE cra_verification_codes
-       SET used = TRUE
-       WHERE email = $1 AND code = $2 AND used = FALSE AND expires_at > NOW()
-       RETURNING id`,
-      [trimmedEmail, trimmedCode]
-    );
-    if (rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid or expired code. Please try again.' });
+    if (skipCode) {
+      // Server-side re-validation
+      const { verified } = await isEmailVerified(trimmedEmail);
+      if (!verified) {
+        return res.status(401).json({ error: 'Email verification required.' });
+      }
+    } else {
+      // Verify code
+      const { rows } = await pool.query(
+        `UPDATE cra_verification_codes
+         SET used = TRUE
+         WHERE email = $1 AND code = $2 AND used = FALSE AND expires_at > NOW()
+         RETURNING id`,
+        [trimmedEmail, trimmedCode]
+      );
+      if (rows.length === 0) {
+        return res.status(400).json({ error: 'Invalid or expired code. Please try again.' });
+      }
+
+      // Remember this email as verified
+      await markEmailVerified(trimmedEmail, 'contact');
     }
 
     // Update submission status

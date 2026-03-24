@@ -2,6 +2,7 @@ const express = require('express');
 const { getPool } = require('../lib/database');
 const { escapeHtml, verifyUnsubscribeToken, getUnsubscribeUrl, generateCode } = require('../lib/auth');
 const { logAccess } = require('../lib/logging');
+const { isEmailVerified, markEmailVerified } = require('../lib/verified-emails');
 const { sendEmail, sendVerificationCode, isConfigured } = require('../lib/email');
 const { isDisposableEmail, getEmailDomain } = require('../lib/disposable-domains');
 const { unsubscribePage } = require('../templates/landing-page');
@@ -47,6 +48,12 @@ router.post('/subscribe', async (req, res) => {
   }
 
   try {
+    // Skip verification if email was already verified
+    const { verified } = await isEmailVerified(trimmedEmail);
+    if (verified) {
+      return res.json({ ok: true, step: 'verify', alreadyVerified: true });
+    }
+
     // Rate-limit: max 3 codes per email per hour
     const { rows: recent } = await pool.query(
       `SELECT COUNT(*) FROM cra_verification_codes
@@ -81,11 +88,11 @@ router.post('/subscribe', async (req, res) => {
 /* ── Subscribe — Step 2: verify code & complete subscription ───────── */
 
 router.post('/subscribe/verify', async (req, res) => {
-  const { email, code } = req.body || {};
+  const { email, code, skipCode } = req.body || {};
   const trimmedEmail = (email || '').trim().toLowerCase();
   const trimmedCode = (code || '').trim();
 
-  if (!trimmedEmail || !trimmedCode) {
+  if (!trimmedEmail || (!trimmedCode && !skipCode)) {
     return res.status(400).json({ error: 'Email and verification code are required.' });
   }
 
@@ -98,16 +105,25 @@ router.post('/subscribe/verify', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Database not available.' });
 
   try {
-    // Verify code
-    const { rows } = await pool.query(
-      `UPDATE cra_verification_codes
-       SET used = TRUE
-       WHERE email = $1 AND code = $2 AND used = FALSE AND expires_at > NOW()
-       RETURNING id`,
-      [trimmedEmail, trimmedCode]
-    );
-    if (rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid or expired code. Please try again.' });
+    if (skipCode) {
+      const { verified } = await isEmailVerified(trimmedEmail);
+      if (!verified) {
+        return res.status(401).json({ error: 'Email verification required.' });
+      }
+    } else {
+      // Verify code
+      const { rows } = await pool.query(
+        `UPDATE cra_verification_codes
+         SET used = TRUE
+         WHERE email = $1 AND code = $2 AND used = FALSE AND expires_at > NOW()
+         RETURNING id`,
+        [trimmedEmail, trimmedCode]
+      );
+      if (rows.length === 0) {
+        return res.status(400).json({ error: 'Invalid or expired code. Please try again.' });
+      }
+
+      await markEmailVerified(trimmedEmail, 'subscribe');
     }
 
     // Add to subscriber list

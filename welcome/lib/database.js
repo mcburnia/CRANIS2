@@ -112,6 +112,17 @@ async function initDatabase() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS verified_emails (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) NOT NULL,
+        verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        verified_until TIMESTAMPTZ NOT NULL,
+        source VARCHAR(50) NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_verified_emails_email ON verified_emails(email)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_assessments_email ON cra_assessments(email)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_verification_codes_email ON cra_verification_codes(email, used)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_nis2_assessments_email ON nis2_assessments(email)`);
@@ -120,7 +131,7 @@ async function initDatabase() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_contact_submissions_email ON contact_submissions(email)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_contact_submissions_status ON contact_submissions(status)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_disposable_email_log_domain ON disposable_email_log(domain)`);
-    console.log('[WELCOME] Assessment tables ready (CRA + NIS2 + Importer + PQC + Contact + Disposable log)');
+    console.log('[WELCOME] Assessment tables ready (CRA + NIS2 + Importer + PQC + Contact + Disposable log + Verified emails)');
   } finally {
     client.release();
   }

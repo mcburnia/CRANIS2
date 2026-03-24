@@ -1316,6 +1316,28 @@
     .then(function(result) {
       if (result.ok && result.body.step === 'verify') {
         contactSubmissionId = result.body.submissionId || '';
+        if (result.body.alreadyVerified) {
+          // Email already verified — skip code step, go straight to verify
+          fetch('/contact/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: contactEmail, skipCode: true, submissionId: contactSubmissionId })
+          })
+          .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, body: j }; }); })
+          .then(function(vResult) {
+            if (vResult.ok) {
+              document.getElementById('contact-form-container').style.display = 'none';
+              document.getElementById('contact-success').style.display = 'block';
+            } else {
+              // Fallback to code flow if verify fails
+              document.getElementById('contact-form-container').style.display = 'none';
+              document.getElementById('contact-verify-email').textContent = contactEmail;
+              document.getElementById('contact-verify-container').style.display = 'block';
+              document.getElementById('contact-code').focus();
+            }
+          });
+          return;
+        }
         document.getElementById('contact-form-container').style.display = 'none';
         document.getElementById('contact-verify-email').textContent = contactEmail;
         document.getElementById('contact-verify-container').style.display = 'block';

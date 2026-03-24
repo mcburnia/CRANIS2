@@ -2,6 +2,7 @@ const express = require('express');
 const { getPool } = require('../lib/database');
 const { escapeHtml, generateCode, getUnsubscribeUrl } = require('../lib/auth');
 const { logAccess } = require('../lib/logging');
+const { isEmailVerified, markEmailVerified } = require('../lib/verified-emails');
 const { sendVerificationCode, sendEmail, sendLeadNotification, isConfigured } = require('../lib/email');
 const { SECTIONS, ENTITY_LABELS } = require('../data/nis2-questions');
 const { computeScores, determineEntityClass, getEntityDetails, getTopRecommendations } = require('../lib/nis2-scoring');
@@ -29,6 +30,12 @@ router.post('/send-code', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Database not available.' });
 
   try {
+    // Skip verification if email was already verified (any flow, within 90 days)
+    const { verified } = await isEmailVerified(email);
+    if (verified) {
+      return res.json({ ok: true, alreadyVerified: true });
+    }
+
     const recentCodes = await pool.query(
       `SELECT COUNT(*) FROM cra_verification_codes
        WHERE email = $1 AND created_at > NOW() - INTERVAL '1 hour'`,
@@ -67,8 +74,8 @@ router.post('/send-code', async (req, res) => {
 /* ── Verify code ────────────────────────────────────────────────────── */
 
 router.post('/verify', async (req, res) => {
-  const { email, code } = req.body || {};
-  if (!email || !code) {
+  const { email, code, skipCode } = req.body || {};
+  if (!email || (!code && !skipCode)) {
     return res.status(400).json({ error: 'Email and code are required.' });
   }
 
@@ -76,18 +83,26 @@ router.post('/verify', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Database not available.' });
 
   try {
-    const result = await pool.query(
-      `SELECT id FROM cra_verification_codes
-       WHERE email = $1 AND code = $2 AND used = FALSE AND expires_at > NOW()
-       ORDER BY created_at DESC LIMIT 1`,
-      [email.toLowerCase(), code]
-    );
+    if (skipCode) {
+      const { verified } = await isEmailVerified(email);
+      if (!verified) {
+        return res.status(401).json({ error: 'Email verification required.' });
+      }
+    } else {
+      const result = await pool.query(
+        `SELECT id FROM cra_verification_codes
+         WHERE email = $1 AND code = $2 AND used = FALSE AND expires_at > NOW()
+         ORDER BY created_at DESC LIMIT 1`,
+        [email.toLowerCase(), code]
+      );
 
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid or expired code. Please request a new one.' });
+      if (result.rows.length === 0) {
+        return res.status(401).json({ error: 'Invalid or expired code. Please request a new one.' });
+      }
+
+      await pool.query(`UPDATE cra_verification_codes SET used = TRUE WHERE id = $1`, [result.rows[0].id]);
+      await markEmailVerified(email, 'nis2');
     }
-
-    await pool.query(`UPDATE cra_verification_codes SET used = TRUE WHERE id = $1`, [result.rows[0].id]);
 
     const existing = await pool.query(
       `SELECT id, answers, current_section, completed_at FROM nis2_assessments
