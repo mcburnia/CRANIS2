@@ -73,6 +73,6 @@ All GDPR items done: Privacy Policy, Terms of Service, data export, account dele
 
 ## TODO
 
-- **#62 Remove the GitHub auth from the login page** — add this and others (Gmail, etc.) after launch
+- ~~#62 Remove GitHub auth from login page~~ — **DONE** (session 59). Stub buttons removed from login + signup.
 - ~~#63 Remember verified emails across welcome site flows~~ — **DONE** (session 59). 90-day TTL, cross-flow + cross-system recognition, 13 files changed.
 - **#64 Beck map navigation guidance** — maps don't inform users how to navigate them. Team suggestion: animated glow on current station (first on page) to show where they are. Also consider a dismissible one-line instruction on each page.
