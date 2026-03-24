@@ -166,7 +166,7 @@ tail -20 ~/cranis2/logs/nightly-tests-$(date '+%Y-%m-%d').log
 - Summary with pass/fail counts and failed test names
 - Trello notification: posts a card to the "Test Results" board (passed/failed lists) after each run
 
-### Manual Backend Tests (~1,957 tests — runs on server)
+### Manual Backend Tests (~2,144 tests — runs on server)
 
 **CRITICAL: Always use the isolated test stack, never the dev stack.**
 
@@ -185,9 +185,9 @@ cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://local
 - Single Cloudflare smoke test in `integration/cloudflare-tunnel.test.ts`
 - Deterministic test IDs for idempotent seeding
 - API client retry logic for transient socket errors (eliminates flaky failures from backend memory pressure)
-- Expected result: **~1,957 passed, 1 expected infra-dependent failure** (109 test files)
+- Expected result: **~2,143 passed, 1 expected infra-dependent failure** (115 test files)
 - Expected failures: category-recommendation (1, needs Anthropic API)
-- Route test coverage: 98.5% (65/66 routes tested)
+- Route test coverage: 98.5% (66/67 routes tested)
 
 ### Playwright E2E Tests (~280 tests — runs locally on Mac)
 
@@ -320,7 +320,7 @@ cd ~/CRANIS2/e2e && npm run push-results
         docs.ts            ← Public + admin documentation page CRUD
         field-issues.ts    ← Post-market monitoring (field issues + corrective actions CRUD + export)
         crypto-inventory.ts ← Cryptographic standards inventory (scan, findings, summary)
-        dev.ts             ← Dev-only routes (nuke button — MUST REMOVE BEFORE PRODUCTION)
+        dev.ts             ← Dev-only routes (removed before production)
         marketplace.ts     ← Marketplace endpoints (listings, profile, contact, admin)
       db/
         pool.ts            ← Postgres pool + schema init (all tables including vuln_db_* and CPE index)
@@ -1585,8 +1585,43 @@ Massive session — completed 3 full workstreams of the launch readiness plan (8
 
 - **Beta partner confirmed** — brother's company CTO agreed to join beta pilot. They use Bitbucket (not currently supported). Bitbucket integration added to backlog as #60.
 
+**Session 57 (2026-03-20):**
+- **WS4: GDPR Compliance** (complete)
+  - Privacy Policy (Beta) — comprehensive GDPR-compliant policy based on full data audit, served at `/docs/privacy-policy`
+  - Terms of Service (Beta) — full terms with beta disclaimer, AI Copilot limitations, governing law (England and Wales), served at `/docs/terms-of-service`
+  - Cookie/storage assessment — essential-only (JWT + help panel width), no consent banner needed
+  - Dynamic docs routing — DocsPage.tsx converted to `/docs/:slug`
+  - Footer links — Privacy Policy + Terms of Service on login, signup, accept-invite, landing, and docs pages
+  - Data export endpoint — `GET /api/account/export` (GDPR Art. 15/20), JSON bundle of all user PII
+  - Account deletion — `DELETE /api/account` with PII purge + statistical aggregation preservation
+  - Data retention cleanup — scheduled background job, retention policy per data type
+  - 27 tests
+- **Launch blocker fixes:**
+  - SBOM debug logging removed
+  - Docker Compose orphan cleanup — `test-stack.sh stop` now runs `docker compose rm -f`
+  - Audit log help guide — new ch7_11_audit_log.html (6 stations)
+  - Dev routes confirmed already removed
+- **Ownership rebranding** — all "Gibbs Consulting" references replaced with "Loman Cavendish Limited"
+- 7 of 13 launch blockers resolved. Remaining 6 are infrastructure/config (user-side).
+
+**Session 58 (2026-03-21):**
+- **Help guide stub rewrites** — ch6_05 (incident lifecycle) and ch5_06 (compliance vault) rewritten with full Beck map routes
+- **Compliance Timeline SVG** — reviewed, confirmed correct
+- **E2E video recording** — Playwright tests now record video on failure for debugging
+- **Rate limit bypass for test runs** — test harness bypasses auth rate limiting
+
+**Session 59 (2026-03-24):**
+- **Ubuntu server security updates** — all 30 pending packages applied (2 security: libtiff6, python3-openssl; Docker CE 29.2→29.3, Compose 5.0→5.1, containerd 2.2.1→2.2.2, plus 25 general updates)
+- **Neo4j upgrade deferred** — apt package 2026.02.3 is a major version jump from 5.x LTS (not a minor bump). Breaking changes include Cypher 25 as default language. Neo4j 5.x LTS supported until mid-2026. Packages held via `apt-mark hold neo4j cypher-shell`.
+- **Dependency updates** — all 3 workspaces updated:
+  - Backend: fixed moderate fast-xml-parser vulnerability (GHSA-jp2q-39xq-3w4g), updated @aws-sdk, pg, stripe, pkijs
+  - Frontend: fixed high-severity flatted vulnerabilities (prototype pollution + DoS), updated react-router-dom, recharts, typescript-eslint
+  - E2E: updated pg
+- **0 vulnerabilities** remaining across all packages (was 3)
+- **2,143 tests pass** (115 files), 1 expected failure (category-recommendation)
+
 **Next Steps:**
-- **Session 57:** WS4 — GDPR Compliance (data export endpoint, account deletion with PII purge + statistical aggregation, data retention policy with scheduled cleanup, anonymised statistics table)
-- **Session 58:** WS5 — Visual Testing (15-test Playwright confidence suite)
-- Then: 13 launch blockers (FRONTEND_URL, dev routes, privacy policy, terms of service, Stripe, etc.)
-- Post-launch: #59 i18n, #60 Bitbucket, P5 supplier marketplace, help guide stubs
+- Remaining 6 launch blockers are infrastructure/config (user-side): FRONTEND_URL migration, DKIM verification, production infrastructure (Infomaniak), Stripe production keys, Resend production domain, DEV_SKIP_EMAIL/LOG_LEVEL config
+- ICO registration (ico.org.uk, £40/year) + update Privacy Policy placeholder
+- Legal review of Privacy Policy and Terms of Service
+- Post-launch: #59 i18n, #60 Bitbucket, P5 supplier marketplace, remaining help guide stubs, major version bumps (TypeScript 6, Vite 8, Resend 6, ESLint 10)
