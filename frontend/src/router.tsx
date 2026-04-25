@@ -61,6 +61,8 @@ import AdminVulnScanPage from './pages/admin/AdminVulnScanPage';
 import AdminVulnDbPage from './pages/admin/AdminVulnDbPage';
 import AdminFeedbackPage from './pages/admin/AdminFeedbackPage';
 import AdminBillingPage from './pages/admin/AdminBillingPage';
+import AdminAffiliatesPage from './pages/admin/AdminAffiliatesPage';
+import AdminAffiliateDetailPage from './pages/admin/AdminAffiliateDetailPage';
 import AdminTestResultsPage from "./pages/admin/AdminTestResultsPage";
 import AdminDocsPage from "./pages/admin/AdminDocsPage";
 import AdminStrategyPage from "./pages/admin/AdminStrategyPage";
@@ -149,6 +151,8 @@ const router = createBrowserRouter([
           { path: '/admin/vuln-db', element: <AdminVulnDbPage /> },
           { path: '/admin/feedback', element: <AdminFeedbackPage /> },
           { path: '/admin/billing', element: <AdminBillingPage /> },
+          { path: '/admin/affiliates', element: <AdminAffiliatesPage /> },
+          { path: '/admin/affiliates/:id', element: <AdminAffiliateDetailPage /> },
           { path: '/admin/test-results', element: <AdminTestResultsPage /> },
           { path: '/admin/docs', element: <AdminDocsPage /> },
           { path: '/admin/strategy', element: <AdminStrategyPage /> },
