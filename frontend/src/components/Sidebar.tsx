@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Bell, Package, ClipboardList, FileText,
   FolderGit2, Users, Box, AlertTriangle, CreditCard,
   BarChart3, UserCircle, Settings, ScrollText, LogOut, Shield, MessageSquareMore, Scale, Fingerprint, FileBarChart2, Store, Plug,
-  ChevronRight, BookOpen, FileDown
+  ChevronRight, BookOpen, FileDown, UserCheck
 } from 'lucide-react';
 import FeedbackModal from './FeedbackModal';
 import { useHelpPanel } from '../context/HelpPanelContext';
@@ -83,15 +83,30 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
   const [showFeedback, setShowFeedback] = useState(false);
   const helpPanel = useHelpPanel();
 
+  // Affiliate section is conditional: only shown to users bound to an affiliate.
+  // Built inside the component so the visibility tracks user.affiliate.
+  const visibleSections: typeof navSections = useMemo(() => {
+    if (!user?.affiliate) return navSections;
+    const affiliateSection: typeof navSections[number] = {
+      label: 'Affiliate',
+      items: [{ to: '/affiliate', icon: UserCheck, label: 'Affiliate dashboard' }],
+    };
+    // Insert before Settings so it lives near Billing/Reports.
+    const settingsIdx = navSections.findIndex(s => s.label === 'Settings');
+    return settingsIdx === -1
+      ? [...navSections, affiliateSection]
+      : [...navSections.slice(0, settingsIdx), affiliateSection, ...navSections.slice(settingsIdx)];
+  }, [user?.affiliate?.id]);
+
   // Determine which section the current route belongs to
   const activeSection = useMemo(() => {
-    for (const section of navSections) {
+    for (const section of visibleSections) {
       if (section.items.some(item => location.pathname === item.to || location.pathname.startsWith(item.to + '/'))) {
         return section.label;
       }
     }
-    return navSections[0].label; // default to Overview
-  }, [location.pathname]);
+    return visibleSections[0].label; // default to Overview
+  }, [location.pathname, visibleSections]);
 
   const [expandedSection, setExpandedSection] = useState<string>(activeSection);
 
@@ -109,7 +124,7 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
     <>
       <Link to="/" className="sidebar-logo">CRANIS<span>2</span></Link>
       <div className="sidebar-org">{orgName || 'My Organisation'}</div>
-      {navSections.map((section) => {
+      {visibleSections.map((section) => {
         const isExpanded = expandedSection === section.label;
         const hasActive = section.items.some(item => location.pathname === item.to || location.pathname.startsWith(item.to + '/'));
         return (

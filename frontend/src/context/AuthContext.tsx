@@ -8,6 +8,7 @@ interface User {
   preferredLanguage: string | null;
   isPlatformAdmin: boolean;
   orgPlan: string;
+  affiliate: { id: string; bonusCode: string } | null;
 }
 
 interface AuthContextType {

@@ -158,10 +158,13 @@ router.get('/affiliates/:id', requirePlatformAdmin, async (req: Request, res: Re
   const { id } = req.params;
   try {
     const affResult = await pool.query(
-      `SELECT id, bonus_code, display_name, contact_email, commission_rate,
-              commission_window_months, enabled, payout_method, invite_sent_at,
-              created_at, updated_at
-       FROM affiliates WHERE id = $1`,
+      `SELECT a.id, a.bonus_code, a.display_name, a.contact_email, a.commission_rate,
+              a.commission_window_months, a.enabled, a.payout_method, a.invite_sent_at,
+              a.user_id, u.email AS linked_user_email,
+              a.created_at, a.updated_at
+       FROM affiliates a
+       LEFT JOIN users u ON u.id = a.user_id
+       WHERE a.id = $1`,
       [id]
     );
     if (affResult.rows.length === 0) {
@@ -221,6 +224,8 @@ router.get('/affiliates/:id', requirePlatformAdmin, async (req: Request, res: Re
         enabled: a.enabled,
         payoutMethod: a.payout_method,
         inviteSentAt: a.invite_sent_at,
+        userId: a.user_id,
+        linkedUserEmail: a.linked_user_email,
         createdAt: a.created_at,
         updatedAt: a.updated_at,
       },
@@ -384,6 +389,67 @@ router.post('/affiliates/:id/ledger', requirePlatformAdmin, async (req: Request,
   } catch (err) {
     console.error('[ADMIN AFFILIATES] Ledger entry failed:', err);
     res.status(500).json({ error: 'Failed to record ledger entry' });
+  }
+});
+
+// ── PUT /api/admin/affiliates/:id/link-user — bind affiliate to a user account ──
+//
+// Body: { email: "sam@example.com" } — looks up the user by email and writes
+// affiliates.user_id = <that user>. Once linked the affiliate can log in and
+// see /affiliate. Email-based identification keeps the admin from having to
+// know UUIDs. Pass null/empty email to unlink.
+
+router.put('/affiliates/:id/link-user', requirePlatformAdmin, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { email } = req.body;
+
+  try {
+    const exists = await pool.query('SELECT id FROM affiliates WHERE id = $1', [id]);
+    if (exists.rows.length === 0) {
+      res.status(404).json({ error: 'Affiliate not found' });
+      return;
+    }
+
+    if (!email) {
+      // Unlink
+      await pool.query(`UPDATE affiliates SET user_id = NULL, updated_at = NOW() WHERE id = $1`, [id]);
+      res.json({ linked: false });
+      return;
+    }
+
+    const userResult = await pool.query(
+      `SELECT id, email FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+      [String(email).trim()]
+    );
+    if (userResult.rows.length === 0) {
+      res.status(404).json({ error: 'No user found with that email. They must register first.' });
+      return;
+    }
+    const linkedUserId = userResult.rows[0].id;
+
+    // Reject if another affiliate already owns that user.
+    const conflict = await pool.query(
+      `SELECT id FROM affiliates WHERE user_id = $1 AND id != $2`,
+      [linkedUserId, id]
+    );
+    if (conflict.rows.length > 0) {
+      res.status(409).json({ error: 'That user is already linked to another affiliate' });
+      return;
+    }
+
+    await pool.query(`UPDATE affiliates SET user_id = $1, updated_at = NOW() WHERE id = $2`, [linkedUserId, id]);
+
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: (req as any).userId, email: (req as any).email,
+      eventType: 'admin_affiliate_linked_user', ...reqData,
+      metadata: { affiliateId: id, linkedUserId, linkedEmail: userResult.rows[0].email },
+    });
+
+    res.json({ linked: true, userId: linkedUserId, email: userResult.rows[0].email });
+  } catch (err) {
+    console.error('[ADMIN AFFILIATES] Link user failed:', err);
+    res.status(500).json({ error: 'Failed to link user' });
   }
 });
 

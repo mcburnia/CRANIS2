@@ -1,0 +1,330 @@
+/* AffiliatePage.css — aff- prefix */
+
+.aff-page {
+  padding: 1.5rem 2rem;
+}
+
+/* Hero block — bonus code + share link */
+.aff-hero {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.5rem;
+  background: linear-gradient(135deg, var(--surface) 0%, rgba(167,139,250,0.06) 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.25rem 0;
+}
+@media (max-width: 720px) {
+  .aff-hero { grid-template-columns: 1fr; }
+}
+.aff-hero-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+.aff-hero-code {
+  display: inline-block;
+  font-size: 1.85rem;
+  font-weight: 700;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  color: var(--purple);
+  background: rgba(167,139,250,0.12);
+  padding: 0.25rem 0.85rem;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+.aff-hero-rate {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0.6rem 0 0;
+}
+.aff-hero-link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.55rem 0.7rem;
+}
+.aff-hero-link code {
+  font-size: 0.85rem;
+  color: var(--text);
+  font-family: 'DM Mono', ui-monospace, monospace;
+  flex: 1;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.aff-hero-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0.55rem 0 0;
+  line-height: 1.5;
+}
+.aff-hero-hint code {
+  color: var(--purple);
+  font-family: 'DM Mono', ui-monospace, monospace;
+}
+
+/* Stats grid */
+.aff-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Callout when accrued > 0 */
+.aff-callout {
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 8px;
+  padding: 0.85rem 1.1rem;
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+.aff-callout strong { color: var(--amber); }
+
+/* Sections */
+.aff-section { margin-bottom: 1.75rem; }
+.aff-section h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+  color: var(--text);
+}
+
+.aff-empty {
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.aff-empty code {
+  background: rgba(167,139,250,0.12);
+  color: var(--purple);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-family: 'DM Mono', ui-monospace, monospace;
+}
+
+.aff-anonymisation-note {
+  margin: 0.75rem 0 0;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: var(--bg);
+  border-left: 2px solid var(--border);
+}
+
+.aff-payment {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+.aff-payment p { margin: 0; color: var(--text); }
+.aff-payment p + p { margin-top: 0.6rem; }
+.aff-payment-detail { font-size: 0.8rem; color: var(--muted) !important; }
+.aff-payment code {
+  background: rgba(167,139,250,0.12);
+  color: var(--purple);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-family: 'DM Mono', ui-monospace, monospace;
+}
+
+/* Tables */
+.aff-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.aff-table th {
+  background: rgba(0,0,0,0.15);
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+.aff-table td {
+  padding: 0.7rem 0.85rem;
+  font-size: 0.83rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.aff-table tr:last-child td { border-bottom: none; }
+.aff-amount { font-weight: 500; }
+.aff-notes { color: var(--muted); }
+.aff-ref { font-family: 'DM Mono', ui-monospace, monospace; font-size: 0.8rem; color: var(--muted); }
+
+.aff-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.18rem 0.5rem;
+  border-radius: 4px;
+}
+.aff-pill-in_window      { background: rgba(34,197,94,0.15);  color: var(--green); }
+.aff-pill-expired        { background: rgba(139,141,152,0.15); color: var(--muted); }
+.aff-pill-commission_accrued { background: rgba(34,197,94,0.15);  color: var(--green); }
+.aff-pill-invoice_received   { background: rgba(59,130,246,0.15); color: var(--accent); }
+.aff-pill-payment_made       { background: rgba(167,139,250,0.15); color: var(--purple); }
+.aff-pill-adjustment         { background: rgba(245,158,11,0.15); color: var(--amber); }
+
+/* States */
+.aff-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.aff-state.aff-error { color: var(--red); flex-direction: row; }
+.aff-state.aff-no-account h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+.aff-state.aff-no-account p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 360px;
+}
+
+.aff-spin { animation: aff-spin 1s linear infinite; }
+@keyframes aff-spin { to { transform: rotate(360deg); } }
+
+/* Buttons */
+.aff-btn-primary, .aff-btn-secondary, .aff-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s;
+  border: 1px solid transparent;
+}
+.aff-btn-primary { background: var(--accent); color: #fff; padding: 0.5rem 0.9rem; }
+.aff-btn-primary:hover:not(:disabled) { opacity: 0.9; }
+.aff-btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+  padding: 0.5rem 0.9rem;
+  text-decoration: none;
+}
+.aff-btn-secondary:hover:not(:disabled) { border-color: var(--accent); }
+.aff-btn-icon {
+  padding: 0.4rem;
+  background: var(--surface);
+  color: var(--muted);
+  border-color: var(--border);
+}
+.aff-btn-icon:hover { color: var(--text); border-color: var(--accent); }
+.aff-btn-primary:disabled, .aff-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Modal */
+.aff-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  padding: 1.5rem;
+}
+.aff-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.aff-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.aff-modal-head h3 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+.aff-modal-close {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; padding: 0.25rem; border-radius: 4px;
+}
+.aff-modal-close:hover:not(:disabled) { color: var(--text); }
+
+.aff-form {
+  padding: 1.1rem 1.25rem 1.25rem;
+  display: flex; flex-direction: column; gap: 0.95rem;
+}
+.aff-form-intro {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+}
+.aff-form-intro strong { color: var(--amber); }
+
+.aff-field { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
+.aff-field label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.aff-field input,
+.aff-field textarea {
+  padding: 0.55rem 0.7rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+  font-family: inherit;
+}
+.aff-field input:focus,
+.aff-field textarea:focus { border-color: var(--accent); }
+.aff-field textarea { resize: vertical; min-height: 70px; }
+
+.aff-field-row { display: flex; gap: 0.85rem; }
+
+.aff-error, .aff-success {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.82rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 6px;
+}
+.aff-error   { color: var(--red);   background: rgba(239,68,68,0.08); }
+.aff-success { color: var(--green); background: rgba(34,197,94,0.08); }
+
+.aff-actions {
+  display: flex; justify-content: flex-end; gap: 0.55rem;
+  margin-top: 0.4rem;
+}

@@ -307,6 +307,15 @@ router.get('/me', async (req: Request, res: Response) => {
       }
     }
 
+    // Surface affiliate binding so the sidebar can show /affiliate conditionally.
+    const affRes = await pool.query(
+      `SELECT id, bonus_code FROM affiliates WHERE user_id = $1 AND enabled = TRUE LIMIT 1`,
+      [user.id]
+    );
+    const affiliate = affRes.rows[0]
+      ? { id: affRes.rows[0].id, bonusCode: affRes.rows[0].bonus_code }
+      : null;
+
     res.json({
       user: {
         id: user.id,
@@ -316,6 +325,7 @@ router.get('/me', async (req: Request, res: Response) => {
         preferredLanguage: user.preferred_language || null,
         isPlatformAdmin: user.is_platform_admin || false,
         orgPlan,
+        affiliate,
       },
     });
   } catch {

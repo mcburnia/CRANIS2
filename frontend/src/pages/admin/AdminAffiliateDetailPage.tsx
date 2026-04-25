@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Loader, Plus, X, AlertCircle, Edit2, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Loader, Plus, X, AlertCircle, Edit2, ChevronDown, Link2, Unlink } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -15,6 +15,8 @@ interface Affiliate {
   commissionWindowMonths: number;
   enabled: boolean;
   inviteSentAt: string | null;
+  userId: string | null;
+  linkedUserEmail: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -117,6 +119,12 @@ export default function AdminAffiliateDetailPage() {
     enabled: true,
   });
 
+  // Link-user modal
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkError, setLinkError] = useState('');
+  const [linkEmail, setLinkEmail] = useState('');
+
   useEffect(() => { if (id) void load(); }, [id]);
 
   async function load() {
@@ -172,6 +180,31 @@ export default function AdminAffiliateDetailPage() {
     }
   }
 
+  async function linkUser(unlink: boolean = false) {
+    setLinkBusy(true);
+    setLinkError('');
+    try {
+      const token = localStorage.getItem('session_token');
+      const res = await fetch(`/api/admin/affiliates/${id}/link-user`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(unlink ? { email: null } : { email: linkEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setLinkError(data.error || 'Failed to link');
+        return;
+      }
+      setLinkOpen(false);
+      setLinkEmail('');
+      await load();
+    } catch {
+      setLinkError('Network error');
+    } finally {
+      setLinkBusy(false);
+    }
+  }
+
   async function saveEdits() {
     setEditBusy(true);
     setEditError('');
@@ -219,6 +252,15 @@ export default function AdminAffiliateDetailPage() {
       </Link>
 
       <PageHeader title={a.displayName}>
+        {a.userId ? (
+          <button className="aad-btn-secondary" onClick={() => linkUser(true)} disabled={linkBusy} title={`Linked to ${a.linkedUserEmail}`}>
+            <Unlink size={14} /> Unlink user
+          </button>
+        ) : (
+          <button className="aad-btn-secondary" onClick={() => { setLinkEmail(a.contactEmail); setLinkOpen(true); }}>
+            <Link2 size={14} /> Link user
+          </button>
+        )}
         <button className="aad-btn-secondary" onClick={() => setEditOpen(true)}>
           <Edit2 size={14} /> Edit
         </button>
@@ -234,6 +276,11 @@ export default function AdminAffiliateDetailPage() {
         <div><span className="aad-meta-label">Window</span> {a.commissionWindowMonths} months</div>
         <div><span className="aad-meta-label">Status</span>
           <span className={`aad-pill ${a.enabled ? 'aad-pill-on' : 'aad-pill-off'}`}>{a.enabled ? 'Enabled' : 'Disabled'}</span>
+        </div>
+        <div><span className="aad-meta-label">Linked user</span>
+          {a.linkedUserEmail
+            ? <span style={{ color: 'var(--green)' }}>{a.linkedUserEmail}</span>
+            : <span style={{ color: 'var(--muted)' }}>Not linked yet</span>}
         </div>
       </div>
 
@@ -318,6 +365,39 @@ export default function AdminAffiliateDetailPage() {
           </table>
         )}
       </div>
+
+      {linkOpen && (
+        <div className="aad-modal-overlay" onClick={() => !linkBusy && setLinkOpen(false)}>
+          <div className="aad-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="aad-modal-head">
+              <h3>Link affiliate to a CRANIS2 user</h3>
+              <button className="aad-modal-close" onClick={() => setLinkOpen(false)} disabled={linkBusy}><X size={18} /></button>
+            </div>
+            <div className="aad-form">
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)', lineHeight: 1.5 }}>
+                Once linked, this user will see <code style={{ color: 'var(--purple)' }}>/affiliate</code> in their account and can submit invoices, view statements, and copy their referral link. The user must already have a CRANIS2 account.
+              </p>
+              <div className="aad-field">
+                <label>User email</label>
+                <input
+                  type="email"
+                  value={linkEmail}
+                  onChange={(e) => setLinkEmail(e.target.value)}
+                  placeholder="affiliate@example.com"
+                />
+                <span className="aad-hint">Defaults to the affiliate's contact email — change if their CRANIS2 login is different.</span>
+              </div>
+              {linkError && <div className="aad-error"><AlertCircle size={14} /> {linkError}</div>}
+              <div className="aad-actions">
+                <button className="aad-btn-secondary" onClick={() => setLinkOpen(false)} disabled={linkBusy}>Cancel</button>
+                <button className="aad-btn-primary" onClick={() => linkUser(false)} disabled={linkBusy || !linkEmail.trim()}>
+                  {linkBusy ? 'Linking...' : 'Link user'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {entryOpen && (
         <div className="aad-modal-overlay" onClick={() => !entryBusy && setEntryOpen(false)}>

@@ -26,6 +26,7 @@ import ipProofRoutes from "./routes/ip-proof.js";
 import dueDiligenceRoutes from "./routes/due-diligence.js";
 import billingRoutes from './routes/billing.js';
 import bonusCodeRoutes from './routes/bonus-code.js';
+import affiliateRoutes from './routes/affiliate.js';
 import trustCentreRoutes from "./routes/trust-centre.js";
 import complianceTimelineRoutes from "./routes/compliance-timeline.js";
 import escrowRoutes from "./routes/escrow.js";
@@ -77,7 +78,7 @@ app.use(express.json({
 
 // Global billing gate – blocks write operations for restricted accounts
 // Skips: auth, billing, admin, health, webhooks, and all GET/OPTIONS requests
-const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/bonus-code', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs', '/api/v1', '/api/conformity-assessment', '/api/notified-bodies', '/api/market-surveillance-authorities', '/api/account'];
+const BILLING_EXEMPT_PATHS = ['/api/auth', '/api/billing', '/api/bonus-code', '/api/affiliate', '/api/admin', '/api/health', '/api/github/webhook', '/api/repo/webhook', '/api/docs', '/api/v1', '/api/conformity-assessment', '/api/notified-bodies', '/api/market-surveillance-authorities', '/api/account'];
 app.use('/api', (req, res, next) => {
   // Only gate write operations
   if (req.method === 'GET' || req.method === 'OPTIONS' || req.method === 'HEAD') {
@@ -118,6 +119,7 @@ app.use('/api/ip-proof', ipProofRoutes);
 app.use('/api/due-diligence', dueDiligenceRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/bonus-code', bonusCodeRoutes);
+app.use('/api/affiliate', affiliateRoutes);
 app.use('/api/trust-centre', trustCentreRoutes);
 app.use('/api/compliance-timeline', complianceTimelineRoutes);
 app.use('/api/escrow', escrowRoutes);

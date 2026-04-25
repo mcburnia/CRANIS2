@@ -63,6 +63,7 @@ import AdminFeedbackPage from './pages/admin/AdminFeedbackPage';
 import AdminBillingPage from './pages/admin/AdminBillingPage';
 import AdminAffiliatesPage from './pages/admin/AdminAffiliatesPage';
 import AdminAffiliateDetailPage from './pages/admin/AdminAffiliateDetailPage';
+import AffiliatePage from './pages/AffiliatePage';
 import AdminTestResultsPage from "./pages/admin/AdminTestResultsPage";
 import AdminDocsPage from "./pages/admin/AdminDocsPage";
 import AdminStrategyPage from "./pages/admin/AdminStrategyPage";
@@ -117,6 +118,7 @@ const router = createBrowserRouter([
           { path: '/dependencies', element: <DependenciesPage /> },
           { path: '/risk-findings', element: <RiskFindingsPage /> },
           { path: '/billing', element: <BillingPage /> },
+          { path: '/affiliate', element: <AffiliatePage /> },
           { path: '/reports', element: <ReportsPage /> },
           { path: '/reports/compliance-summary', element: <ComplianceSummaryReport /> },
           { path: '/reports/vulnerability-trends', element: <VulnerabilityTrendsReport /> },
