@@ -32,11 +32,11 @@ describe('/api/repo', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should return 5 providers', async () => {
+    it('should return 6 providers', async () => {
       const res = await api.get('/api/repo/providers', { auth: token });
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBe(5);
+      expect(res.body.length).toBe(6);
     });
 
     it('should include expected fields on each provider', async () => {

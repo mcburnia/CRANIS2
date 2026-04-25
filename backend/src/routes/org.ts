@@ -4,6 +4,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
+import { DEFAULT_TRIAL_DAYS, BONUS_TRIAL_DAYS } from '../services/billing.js';
 
 const router = Router();
 
@@ -52,12 +53,34 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   }
 
   try {
-    // Check if user already has an org
-    const existingUser = await pool.query('SELECT org_id FROM users WHERE id = $1', [userId]);
+    // Check if user already has an org. Also pull the bonus code captured at
+    // registration so we can apply the right trial duration and write the
+    // affiliate attribution row.
+    const existingUser = await pool.query(
+      'SELECT org_id, bonus_code_used FROM users WHERE id = $1',
+      [userId]
+    );
     if (existingUser.rows[0]?.org_id) {
       res.status(409).json({ error: 'User already belongs to an organisation' });
       return;
     }
+    const userBonusCode: string | null = existingUser.rows[0]?.bonus_code_used || null;
+
+    // Resolve the affiliate behind the bonus code (if any). If the code was
+    // valid at register time but the affiliate has since been disabled, treat
+    // it as no code (default trial), but keep the code on record.
+    let resolvedAffiliate: { id: string; commission_window_months: number } | null = null;
+    if (userBonusCode) {
+      const lookup = await pool.query(
+        `SELECT id, commission_window_months FROM affiliates
+         WHERE LOWER(bonus_code) = LOWER($1) AND enabled = TRUE LIMIT 1`,
+        [userBonusCode]
+      );
+      if (lookup.rows.length > 0) {
+        resolvedAffiliate = lookup.rows[0];
+      }
+    }
+    const trialDays = resolvedAffiliate ? BONUS_TRIAL_DAYS : DEFAULT_TRIAL_DAYS;
 
     const orgId = uuidv4();
 
@@ -92,12 +115,23 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       [orgId, 'admin', userId]
     );
 
-    // Initialise billing record for the new org (free trial)
+    // Initialise billing record for the new org (free trial). Trial length
+    // depends on whether a valid bonus code was captured at registration.
     await pool.query(
       `INSERT INTO org_billing (org_id, status, trial_ends_at, trial_duration_days)
-       VALUES ($1, 'trial', NOW() + INTERVAL '90 days', 90)`,
-      [orgId]
+       VALUES ($1, 'trial', NOW() + ($2::int * INTERVAL '1 day'), $2)`,
+      [orgId, trialDays]
     );
+
+    // Record affiliate attribution if the bonus code resolved to a live affiliate.
+    if (resolvedAffiliate) {
+      await pool.query(
+        `INSERT INTO affiliate_attributions
+           (affiliate_id, org_id, bonus_code_used, commission_window_ends_at)
+         VALUES ($1, $2, $3, NOW() + ($4::int * INTERVAL '1 month'))`,
+        [resolvedAffiliate.id, orgId, userBonusCode, resolvedAffiliate.commission_window_months]
+      );
+    }
 
     // Record org creation event
     const reqData = extractRequestData(req);
@@ -108,7 +142,12 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       ipAddress: reqData.ipAddress,
       userAgent: reqData.userAgent,
       acceptLanguage: reqData.acceptLanguage,
-      metadata: { orgId, orgName: name, country, companySize, craRole, industry: industry || '' },
+      metadata: {
+        orgId, orgName: name, country, companySize, craRole, industry: industry || '',
+        trialDays,
+        bonusCodeUsed: userBonusCode,
+        affiliateId: resolvedAffiliate?.id ?? null,
+      },
     });
 
     res.status(201).json({

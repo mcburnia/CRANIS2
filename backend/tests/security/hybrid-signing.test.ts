@@ -19,9 +19,16 @@ import { execSync } from 'child_process';
 const TEST_BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3011';
 const PROJECT_ROOT = path.resolve(__dirname, '../../..');
 
+// ml-dsa-65 is a post-quantum key type requiring Node.js 23+ (stabilised in 24).
+// Host Node versions below 23 throw at generateKeyPairSync; skip the suite cleanly instead.
+const ML_DSA_SUPPORTED = (() => {
+  try { crypto.generateKeyPairSync('ml-dsa-65' as any); return true; }
+  catch { return false; }
+})();
+
 // ── ML-DSA-65 Availability ─────────────────────────────────────────
 
-describe('ML-DSA-65 availability', () => {
+describe.skipIf(!ML_DSA_SUPPORTED)('ML-DSA-65 availability', () => {
   it('Node.js supports ml-dsa-65 key generation', () => {
     const { publicKey, privateKey } = crypto.generateKeyPairSync('ml-dsa-65' as any);
     expect(publicKey).toBeTruthy();
@@ -97,10 +104,10 @@ describe('ML-DSA-65 availability', () => {
 
 // ── Hybrid Signing Logic ────────────────────────────────────────────
 
-describe('Hybrid signing logic', () => {
+describe.skipIf(!ML_DSA_SUPPORTED)('Hybrid signing logic', () => {
   // Generate test key pairs
   const ed25519 = crypto.generateKeyPairSync('ed25519');
-  const mldsa = crypto.generateKeyPairSync('ml-dsa-65' as any);
+  const mldsa = ML_DSA_SUPPORTED ? crypto.generateKeyPairSync('ml-dsa-65' as any) : { privateKey: null, publicKey: null };
   const data = Buffer.from('CRANIS2 compliance archive content');
 
   it('hybrid sign produces both signatures', () => {
@@ -180,7 +187,7 @@ describe('Signature sizes', () => {
     expect(sig.length).toBe(64);
   });
 
-  it('ML-DSA-65 signature is approximately 3309 bytes', () => {
+  it.skipIf(!ML_DSA_SUPPORTED)('ML-DSA-65 signature is approximately 3309 bytes', () => {
     const { privateKey } = crypto.generateKeyPairSync('ml-dsa-65' as any);
     const sig = crypto.sign(null, Buffer.from('test'), privateKey);
     // FIPS 204 ML-DSA-65 signature is exactly 3309 bytes

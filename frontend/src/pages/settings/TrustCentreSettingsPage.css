@@ -1,12 +1,12 @@
-/* -- Marketplace Settings Page (ms- prefix) ---------- */
+/* -- Trust Centre Settings Page (ts- prefix) ---------- */
 
-.ms-page {
+.ts-page {
   padding: 0;
   max-width: 800px;
 }
 
 /* Loading */
-.ms-loading {
+.ts-loading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,10 +16,10 @@
   font-size: 0.875rem;
 }
 
-.ms-spin {
-  animation: ms-spin 1s linear infinite;
+.ts-spin {
+  animation: ts-spin 1s linear infinite;
 }
-@keyframes ms-spin {
+@keyframes ts-spin {
   to { transform: rotate(360deg); }
 }
 
@@ -33,7 +33,7 @@
 .ai-upgrade-banner a { color: #60a5fa; text-decoration: underline; }
 
 /* Messages */
-.ms-error {
+.ts-error {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
   color: var(--red);
@@ -43,7 +43,7 @@
   margin-bottom: 1rem;
 }
 
-.ms-success {
+.ts-success {
   background: rgba(34, 197, 94, 0.1);
   border: 1px solid rgba(34, 197, 94, 0.2);
   color: var(--green);
@@ -53,7 +53,7 @@
   margin-bottom: 1rem;
 }
 
-.ms-info-banner {
+.ts-info-banner {
   background: rgba(245, 158, 11, 0.08);
   border: 1px solid rgba(245, 158, 11, 0.2);
   color: var(--amber);
@@ -64,11 +64,11 @@
 }
 
 /* Sections */
-.ms-section {
+.ts-section {
   margin-bottom: 1.5rem;
 }
 
-.ms-section-header {
+.ts-section-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -76,13 +76,13 @@
   margin-bottom: 0.25rem;
 }
 
-.ms-section-header h3 {
+.ts-section-header h3 {
   font-size: 1rem;
   font-weight: 600;
   margin: 0;
 }
 
-.ms-section-desc {
+.ts-section-desc {
   color: var(--muted);
   font-size: 0.8125rem;
   margin: 0 0 1rem;
@@ -90,7 +90,7 @@
 }
 
 /* Toggle row */
-.ms-toggle-row {
+.ts-toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -101,32 +101,32 @@
   padding: 1rem 1.25rem;
 }
 
-.ms-toggle-info {
+.ts-toggle-info {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   color: var(--text);
 }
 
-.ms-toggle-info > div {
+.ts-toggle-info > div {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
 }
 
-.ms-toggle-label {
+.ts-toggle-label {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text);
 }
 
-.ms-toggle-desc {
+.ts-toggle-desc {
   font-size: 0.8125rem;
   color: var(--muted);
 }
 
 /* Custom toggle switch */
-.ms-toggle {
+.ts-toggle {
   position: relative;
   display: inline-block;
   width: 44px;
@@ -135,14 +135,14 @@
   cursor: pointer;
 }
 
-.ms-toggle input {
+.ts-toggle input {
   opacity: 0;
   width: 0;
   height: 0;
   position: absolute;
 }
 
-.ms-toggle-slider {
+.ts-toggle-slider {
   position: absolute;
   inset: 0;
   background: var(--border);
@@ -150,7 +150,7 @@
   transition: background 0.2s;
 }
 
-.ms-toggle-slider::before {
+.ts-toggle-slider::before {
   content: '';
   position: absolute;
   width: 18px;
@@ -162,20 +162,20 @@
   transition: transform 0.2s;
 }
 
-.ms-toggle input:checked + .ms-toggle-slider {
+.ts-toggle input:checked + .ts-toggle-slider {
   background: var(--accent);
 }
 
-.ms-toggle input:checked + .ms-toggle-slider::before {
+.ts-toggle input:checked + .ts-toggle-slider::before {
   transform: translateX(20px);
 }
 
-.ms-toggle input:focus-visible + .ms-toggle-slider {
+.ts-toggle input:focus-visible + .ts-toggle-slider {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
 /* Form */
-.ms-form {
+.ts-form {
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -183,11 +183,11 @@
 }
 
 /* Field */
-.ms-field {
+.ts-field {
   margin-bottom: 1.5rem;
 }
 
-.ms-field label {
+.ts-field label {
   display: block;
   font-size: 0.85rem;
   font-weight: 600;
@@ -196,7 +196,7 @@
 }
 
 /* Input */
-.ms-input {
+.ts-input {
   width: 100%;
   padding: 0.625rem 0.875rem;
   background: var(--surface);
@@ -210,17 +210,17 @@
   box-sizing: border-box;
 }
 
-.ms-input:focus {
+.ts-input:focus {
   border-color: var(--accent);
 }
 
-.ms-input::placeholder {
+.ts-input::placeholder {
   color: var(--muted);
   opacity: 0.5;
 }
 
 /* Textarea */
-.ms-textarea {
+.ts-textarea {
   width: 100%;
   padding: 0.625rem 0.875rem;
   background: var(--surface);
@@ -236,37 +236,37 @@
   box-sizing: border-box;
 }
 
-.ms-textarea:focus {
+.ts-textarea:focus {
   border-color: var(--accent);
 }
 
-.ms-textarea::placeholder {
+.ts-textarea::placeholder {
   color: var(--muted);
   opacity: 0.5;
 }
 
 /* Character count */
-.ms-char-count {
+.ts-char-count {
   text-align: right;
   font-size: 0.75rem;
   color: var(--muted);
   margin-top: 0.375rem;
 }
 
-.ms-char-warn {
+.ts-char-warn {
   color: var(--amber);
   font-weight: 500;
 }
 
 /* Checkbox grid */
-.ms-checkbox-grid {
+.ts-checkbox-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
 }
 
 /* Custom checkbox */
-.ms-checkbox {
+.ts-checkbox {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -279,19 +279,19 @@
   user-select: none;
 }
 
-.ms-checkbox:hover {
+.ts-checkbox:hover {
   border-color: rgba(59, 130, 246, 0.3);
   background: rgba(59, 130, 246, 0.03);
 }
 
-.ms-checkbox input {
+.ts-checkbox input {
   position: absolute;
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.ms-checkbox-mark {
+.ts-checkbox-mark {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
@@ -302,7 +302,7 @@
   position: relative;
 }
 
-.ms-checkbox-mark::after {
+.ts-checkbox-mark::after {
   content: '';
   position: absolute;
   display: none;
@@ -315,22 +315,22 @@
   transform: rotate(45deg);
 }
 
-.ms-checkbox input:checked ~ .ms-checkbox-mark {
+.ts-checkbox input:checked ~ .ts-checkbox-mark {
   background: var(--accent);
   border-color: var(--accent);
 }
 
-.ms-checkbox input:checked ~ .ms-checkbox-mark::after {
+.ts-checkbox input:checked ~ .ts-checkbox-mark::after {
   display: block;
 }
 
-.ms-checkbox-label {
+.ts-checkbox-label {
   font-size: 0.8125rem;
   color: var(--text);
 }
 
 /* Preview link */
-.ms-preview-link {
+.ts-preview-link {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -342,18 +342,18 @@
   transition: opacity 0.15s;
 }
 
-.ms-preview-link:hover {
+.ts-preview-link:hover {
   opacity: 0.8;
 }
 
 /* Compliance badges */
-.ms-badges {
+.ts-badges {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 0.75rem;
 }
 
-.ms-badge-card {
+.ts-badge-card {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -363,24 +363,24 @@
   padding: 0.875rem 1rem;
 }
 
-.ms-badge-value {
+.ts-badge-value {
   font-size: 1.25rem;
   font-weight: 700;
 }
 
-.ms-badge-label {
+.ts-badge-label {
   font-size: 0.75rem;
   color: var(--muted);
 }
 
-.ms-badge-green .ms-badge-value { color: var(--green); }
-.ms-badge-amber .ms-badge-value { color: var(--amber); }
-.ms-badge-red .ms-badge-value { color: var(--red); }
-.ms-badge-blue .ms-badge-value { color: var(--accent); }
-.ms-badge-muted .ms-badge-value { color: var(--muted); }
+.ts-badge-green .ts-badge-value { color: var(--green); }
+.ts-badge-amber .ts-badge-value { color: var(--amber); }
+.ts-badge-red .ts-badge-value { color: var(--red); }
+.ts-badge-blue .ts-badge-value { color: var(--accent); }
+.ts-badge-muted .ts-badge-value { color: var(--muted); }
 
 /* Actions */
-.ms-actions {
+.ts-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -390,7 +390,7 @@
 }
 
 /* Save button */
-.ms-save-btn {
+.ts-save-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -406,36 +406,36 @@
   white-space: nowrap;
 }
 
-.ms-save-btn:hover {
+.ts-save-btn:hover {
   background: var(--accent-hover, #2563eb);
 }
 
-.ms-save-btn:disabled {
+.ts-save-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* Responsive */
 @media (max-width: 640px) {
-  .ms-toggle-row {
+  .ts-toggle-row {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .ms-checkbox-grid {
+  .ts-checkbox-grid {
     grid-template-columns: 1fr;
   }
 
-  .ms-badges {
+  .ts-badges {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .ms-actions {
+  .ts-actions {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .ms-save-btn {
+  .ts-save-btn {
     justify-content: center;
   }
 }

@@ -3,7 +3,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
-import { computeComplianceBadges } from '../services/marketplace.js';
+import { computeComplianceBadges } from '../services/trust-centre.js';
 import { requirePlatformAdmin } from '../middleware/requirePlatformAdmin.js';
 import { requirePlan } from '../middleware/requirePlan.js';
 
@@ -33,7 +33,7 @@ async function getOrgId(userId: string): Promise<string | null> {
 
 // ── Static categories ──
 
-const MARKETPLACE_CATEGORIES = [
+const TRUST_CENTRE_CATEGORIES = [
   { value: 'iot', label: 'IoT & Connected Devices' },
   { value: 'industrial', label: 'Industrial & Manufacturing' },
   { value: 'automotive', label: 'Automotive' },
@@ -46,18 +46,18 @@ const MARKETPLACE_CATEGORIES = [
   { value: 'other', label: 'Other' },
 ];
 
-const VALID_CATEGORIES = new Set(MARKETPLACE_CATEGORIES.map(c => c.value));
+const VALID_CATEGORIES = new Set(TRUST_CENTRE_CATEGORIES.map(c => c.value));
 
 // ═══════════════════════════════════════════════
 // PUBLIC – No auth required
 // ═══════════════════════════════════════════════
 
-// GET /api/marketplace/categories – Must be before /:orgId
+// GET /api/trust-centre/categories – Must be before /:orgId
 router.get('/categories', (_req: Request, res: Response) => {
-  res.json({ categories: MARKETPLACE_CATEGORIES });
+  res.json({ categories: TRUST_CENTRE_CATEGORIES });
 });
 
-// GET /api/marketplace/listings – Public browse
+// GET /api/trust-centre/listings – Public browse
 router.get('/listings', async (req: Request, res: Response) => {
   try {
     const { country, industry, craRole, category, search } = req.query;
@@ -77,13 +77,13 @@ router.get('/listings', async (req: Request, res: Response) => {
     }
 
     const countResult = await pool.query(
-      `SELECT COUNT(*) FROM marketplace_profiles mp ${whereClause}`,
+      `SELECT COUNT(*) FROM trust_centre_profiles mp ${whereClause}`,
       params
     );
     const total = parseInt(countResult.rows[0].count);
 
     const profileResult = await pool.query(
-      `SELECT mp.* FROM marketplace_profiles mp ${whereClause}
+      `SELECT mp.* FROM trust_centre_profiles mp ${whereClause}
        ORDER BY mp.contact_requests_count DESC, mp.created_at ASC
        LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
       [...params, limit, offset]
@@ -200,17 +200,17 @@ router.get('/listings', async (req: Request, res: Response) => {
 
     res.json({ listings, total: listings.length, page, limit });
   } catch (err) {
-    console.error('[MARKETPLACE] Failed to fetch listings:', err);
+    console.error('[TRUST_CENTRE] Failed to fetch listings:', err);
     res.status(500).json({ error: 'Failed to fetch listings' });
   }
 });
 
-// GET /api/marketplace/listings/:orgId – Single company detail
+// GET /api/trust-centre/listings/:orgId – Single company detail
 router.get('/listings/:orgId', async (req: Request, res: Response) => {
   const { orgId } = req.params;
   try {
     const profile = await pool.query(
-      'SELECT * FROM marketplace_profiles WHERE org_id = $1 AND listed = true AND listing_approved = true',
+      'SELECT * FROM trust_centre_profiles WHERE org_id = $1 AND listed = true AND listing_approved = true',
       [orgId]
     );
     if (profile.rows.length === 0) {
@@ -278,7 +278,7 @@ router.get('/listings/:orgId', async (req: Request, res: Response) => {
       listedAt: row.created_at,
     });
   } catch (err) {
-    console.error('[MARKETPLACE] Failed to fetch listing detail:', err);
+    console.error('[TRUST_CENTRE] Failed to fetch listing detail:', err);
     res.status(500).json({ error: 'Failed to fetch listing' });
   }
 });
@@ -287,7 +287,7 @@ router.get('/listings/:orgId', async (req: Request, res: Response) => {
 // AUTHENTICATED – Profile management & contact
 // ═══════════════════════════════════════════════
 
-// GET /api/marketplace/profile – Current org's marketplace profile
+// GET /api/trust-centre/profile – Current org's Trust Centre profile
 router.get('/profile', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -295,7 +295,7 @@ router.get('/profile', requireAuth, async (req: Request, res: Response) => {
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
     const profile = await pool.query(
-      'SELECT * FROM marketplace_profiles WHERE org_id = $1',
+      'SELECT * FROM trust_centre_profiles WHERE org_id = $1',
       [orgId]
     );
 
@@ -345,12 +345,12 @@ router.get('/profile', requireAuth, async (req: Request, res: Response) => {
       products,
     });
   } catch (err) {
-    console.error('[MARKETPLACE] Failed to fetch profile:', err);
-    res.status(500).json({ error: 'Failed to fetch marketplace profile' });
+    console.error('[TRUST_CENTRE] Failed to fetch profile:', err);
+    res.status(500).json({ error: 'Failed to fetch Trust Centre profile' });
   }
 });
 
-// PUT /api/marketplace/profile – Upsert listing (org admin only)
+// PUT /api/trust-centre/profile – Upsert listing (org admin only)
 router.put('/profile', requireAuth, requirePlan('pro'), async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
@@ -360,7 +360,7 @@ router.put('/profile', requireAuth, requirePlan('pro'), async (req: Request, res
     // Check org admin
     const user = await pool.query('SELECT org_role FROM users WHERE id = $1', [userId]);
     if (user.rows[0]?.org_role !== 'admin') {
-      res.status(403).json({ error: 'Only organisation admins can manage the marketplace listing' });
+      res.status(403).json({ error: 'Only organisation admins can manage the Trust Centre listing' });
       return;
     }
 
@@ -416,7 +416,7 @@ router.put('/profile', requireAuth, requirePlan('pro'), async (req: Request, res
 
     // Upsert
     await pool.query(
-      `INSERT INTO marketplace_profiles (org_id, listed, tagline, description, logo_url, categories, featured_product_ids, compliance_badges)
+      `INSERT INTO trust_centre_profiles (org_id, listed, tagline, description, logo_url, categories, featured_product_ids, compliance_badges)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (org_id) DO UPDATE SET
          listed = $2, tagline = $3, description = $4, logo_url = $5,
@@ -437,18 +437,18 @@ router.put('/profile', requireAuth, requirePlan('pro'), async (req: Request, res
     const reqData = extractRequestData(req);
     await recordEvent({
       userId, email: (req as any).email,
-      eventType: 'marketplace_profile_updated', ...reqData,
+      eventType: 'trust_centre_profile_updated', ...reqData,
       metadata: { orgId, listed },
     });
 
     res.json({ success: true, complianceBadges: badges });
   } catch (err) {
-    console.error('[MARKETPLACE] Failed to update profile:', err);
-    res.status(500).json({ error: 'Failed to update marketplace profile' });
+    console.error('[TRUST_CENTRE] Failed to update profile:', err);
+    res.status(500).json({ error: 'Failed to update Trust Centre profile' });
   }
 });
 
-// POST /api/marketplace/contact/:orgId – Send intro email
+// POST /api/trust-centre/contact/:orgId – Send intro email
 router.post('/contact/:orgId', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;
@@ -466,17 +466,17 @@ router.post('/contact/:orgId', requireAuth, async (req: Request, res: Response) 
 
     // Target must be listed + approved
     const target = await pool.query(
-      'SELECT listed, listing_approved FROM marketplace_profiles WHERE org_id = $1',
+      'SELECT listed, listing_approved FROM trust_centre_profiles WHERE org_id = $1',
       [targetOrgId]
     );
     if (target.rows.length === 0 || !target.rows[0].listed || !target.rows[0].listing_approved) {
-      res.status(404).json({ error: 'Company not found on marketplace' });
+      res.status(404).json({ error: 'Company not found on Trust Centre' });
       return;
     }
 
     // Rate limit: max 3 contacts per day
     const dailyCount = await pool.query(
-      `SELECT count(*) FROM marketplace_contact_log
+      `SELECT count(*) FROM trust_centre_contact_log
        WHERE from_user_id = $1 AND sent_at > NOW() - INTERVAL '24 hours'`,
       [userId]
     );
@@ -487,7 +487,7 @@ router.post('/contact/:orgId', requireAuth, async (req: Request, res: Response) 
 
     // Rate limit: max 1 to same org per 7 days
     const orgCount = await pool.query(
-      `SELECT count(*) FROM marketplace_contact_log
+      `SELECT count(*) FROM trust_centre_contact_log
        WHERE from_user_id = $1 AND to_org_id = $2 AND sent_at > NOW() - INTERVAL '7 days'`,
       [userId, targetOrgId]
     );
@@ -552,11 +552,11 @@ router.post('/contact/:orgId', requireAuth, async (req: Request, res: Response) 
         <div style="font-family: 'Inter', -apple-system, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #e0e0e0; padding: 32px; border-radius: 12px;">
           <div style="text-align: center; margin-bottom: 24px;">
             <span style="font-size: 24px; font-weight: 700; color: #fff;">CRANIS</span><span style="font-size: 24px; font-weight: 700; color: #a78bfa;">2</span>
-            <span style="font-size: 14px; color: #888; display: block; margin-top: 4px;">Compliance Marketplace</span>
+            <span style="font-size: 14px; color: #888; display: block; margin-top: 4px;">Trust Centre</span>
           </div>
           <div style="background: #252540; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
             <h2 style="margin: 0 0 16px; color: #fff; font-size: 18px;">New Introduction</h2>
-            <p style="margin: 0 0 8px; color: #ccc;">You've received an introduction via the CRANIS2 Compliance Marketplace.</p>
+            <p style="margin: 0 0 8px; color: #ccc;">You've received an introduction via the CRANIS2 Trust Centre.</p>
             <div style="background: #1a1a2e; border-radius: 6px; padding: 16px; margin: 16px 0;">
               <p style="margin: 0 0 4px;"><strong style="color: #a78bfa;">From:</strong> ${senderOrgName}</p>
               <p style="margin: 0 0 4px;"><strong style="color: #a78bfa;">Contact:</strong> ${senderEmail}</p>
@@ -568,7 +568,7 @@ router.post('/contact/:orgId', requireAuth, async (req: Request, res: Response) 
             <p style="margin: 16px 0 0; color: #888; font-size: 13px;">You can reply directly to this email to respond to ${senderOrgName}.</p>
           </div>
           <p style="text-align: center; color: #666; font-size: 12px;">
-            Sent via <a href="https://dev.cranis2.dev/marketplace" style="color: #a78bfa; text-decoration: none;">CRANIS2 Compliance Marketplace</a>
+            Sent via <a href="https://dev.cranis2.dev/trust-centre" style="color: #a78bfa; text-decoration: none;">CRANIS2 Trust Centre</a>
           </p>
         </div>
       `;
@@ -577,10 +577,10 @@ router.post('/contact/:orgId', requireAuth, async (req: Request, res: Response) 
         method: 'POST',
         headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from: 'CRANIS2 Marketplace <info@poste.cranis2.com>',
+          from: 'CRANIS2 Trust Centre <info@poste.cranis2.com>',
           to: targetContactEmail,
           reply_to: senderEmail,
-          subject: `CRANIS2 Marketplace: Introduction from ${senderOrgName}`,
+          subject: `CRANIS2 Trust Centre: Introduction from ${senderOrgName}`,
           html: htmlBody,
         }),
       });
@@ -588,38 +588,38 @@ router.post('/contact/:orgId', requireAuth, async (req: Request, res: Response) 
 
     // Log contact
     await pool.query(
-      `INSERT INTO marketplace_contact_log (from_user_id, from_org_id, to_org_id, message)
+      `INSERT INTO trust_centre_contact_log (from_user_id, from_org_id, to_org_id, message)
        VALUES ($1, $2, $3, $4)`,
       [userId, senderOrgId, targetOrgId, message]
     );
 
     // Increment contact count
     await pool.query(
-      `UPDATE marketplace_profiles SET contact_requests_count = contact_requests_count + 1 WHERE org_id = $1`,
+      `UPDATE trust_centre_profiles SET contact_requests_count = contact_requests_count + 1 WHERE org_id = $1`,
       [targetOrgId]
     );
 
     const reqData = extractRequestData(req);
     await recordEvent({
       userId, email,
-      eventType: 'marketplace_contact_sent', ...reqData,
+      eventType: 'trust_centre_contact_sent', ...reqData,
       metadata: { fromOrgId: senderOrgId, toOrgId: targetOrgId },
     });
 
     res.json({ success: true, message: `Introduction sent to ${targetOrgName}` });
   } catch (err) {
-    console.error('[MARKETPLACE] Failed to send contact:', err);
+    console.error('[TRUST_CENTRE] Failed to send contact:', err);
     res.status(500).json({ error: 'Failed to send introduction' });
   }
 });
 
-// GET /api/marketplace/contact-history – Contacts sent by current user
+// GET /api/trust-centre/contact-history – Contacts sent by current user
 router.get('/contact-history', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   try {
     const result = await pool.query(
       `SELECT mcl.to_org_id, mcl.message, mcl.sent_at
-       FROM marketplace_contact_log mcl
+       FROM trust_centre_contact_log mcl
        WHERE mcl.from_user_id = $1
        ORDER BY mcl.sent_at DESC
        LIMIT 50`,
@@ -656,21 +656,21 @@ router.get('/contact-history', requireAuth, async (req: Request, res: Response) 
       res.json({ contacts: [] });
     }
   } catch (err) {
-    console.error('[MARKETPLACE] Failed to fetch contact history:', err);
+    console.error('[TRUST_CENTRE] Failed to fetch contact history:', err);
     res.status(500).json({ error: 'Failed to fetch contact history' });
   }
 });
 
 // ═══════════════════════════════════════════════
-// ADMIN – Platform admin marketplace controls
+// ADMIN – Platform admin Trust Centre controls
 // ═══════════════════════════════════════════════
 
-// GET /api/marketplace/admin/overview
+// GET /api/trust-centre/admin/overview
 router.get('/admin/overview', requirePlatformAdmin, async (req: Request, res: Response) => {
   try {
     const result = await pool.query(
-      `SELECT mp.*, (SELECT count(*) FROM marketplace_contact_log WHERE to_org_id = mp.org_id) AS total_contacts
-       FROM marketplace_profiles mp
+      `SELECT mp.*, (SELECT count(*) FROM trust_centre_contact_log WHERE to_org_id = mp.org_id) AS total_contacts
+       FROM trust_centre_profiles mp
        ORDER BY mp.created_at DESC`
     );
 
@@ -715,31 +715,31 @@ router.get('/admin/overview', requirePlatformAdmin, async (req: Request, res: Re
       totals: { total: profiles.length, listed, pending, totalContacts },
     });
   } catch (err) {
-    console.error('[MARKETPLACE ADMIN] Failed to fetch overview:', err);
-    res.status(500).json({ error: 'Failed to fetch marketplace overview' });
+    console.error('[TRUST_CENTRE ADMIN] Failed to fetch overview:', err);
+    res.status(500).json({ error: 'Failed to fetch Trust Centre overview' });
   }
 });
 
-// PUT /api/marketplace/admin/:orgId/approve – Toggle listing approval
+// PUT /api/trust-centre/admin/:orgId/approve – Toggle listing approval
 router.put('/admin/:orgId/approve', requirePlatformAdmin, async (req: Request, res: Response) => {
   const { orgId } = req.params;
   const { approved } = req.body;
   try {
     await pool.query(
-      'UPDATE marketplace_profiles SET listing_approved = $1, updated_at = NOW() WHERE org_id = $2',
+      'UPDATE trust_centre_profiles SET listing_approved = $1, updated_at = NOW() WHERE org_id = $2',
       [!!approved, orgId]
     );
 
     const reqData = extractRequestData(req);
     await recordEvent({
       userId: (req as any).userId, email: (req as any).email,
-      eventType: approved ? 'admin_marketplace_approved' : 'admin_marketplace_disapproved',
+      eventType: approved ? 'admin_trust_centre_approved' : 'admin_trust_centre_disapproved',
       ...reqData, metadata: { orgId },
     });
 
     res.json({ success: true });
   } catch (err) {
-    console.error('[MARKETPLACE ADMIN] Failed to update approval:', err);
+    console.error('[TRUST_CENTRE ADMIN] Failed to update approval:', err);
     res.status(500).json({ error: 'Failed to update listing approval' });
   }
 });

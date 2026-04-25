@@ -1,5 +1,10 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useParams } from 'react-router-dom';
 import RootLayout from './layouts/RootLayout';
+
+function MarketplaceDetailRedirect() {
+  const { orgId } = useParams<{ orgId: string }>();
+  return <Navigate to={`/trust-centre/${orgId}`} replace />;
+}
 import PublicLayout from './layouts/PublicLayout';
 import AuthenticatedLayout from './layouts/AuthenticatedLayout';
 
@@ -9,8 +14,8 @@ import SignupPage from './pages/public/SignupPage';
 import CheckEmailPage from './pages/public/CheckEmailPage';
 import VerifyEmailPage from './pages/public/VerifyEmailPage';
 import AcceptInvitePage from './pages/public/AcceptInvitePage';
-import MarketplacePage from './pages/public/MarketplacePage';
-import MarketplaceDetailPage from './pages/public/MarketplaceDetailPage';
+import TrustCentrePage from './pages/public/TrustCentrePage';
+import TrustCentreDetailPage from './pages/public/TrustCentreDetailPage';
 import DocsPage from './pages/public/DocsPage';
 import WelcomePage from './pages/setup/WelcomePage';
 import OrgSetupPage from './pages/setup/OrgSetupPage';
@@ -41,7 +46,7 @@ import AuditTrailReport from './pages/reports/AuditTrailReport';
 import StakeholdersPage from './pages/settings/StakeholdersPage';
 import OrganisationPage from './pages/settings/OrganisationPage';
 import AuditLogPage from './pages/settings/AuditLogPage';
-import MarketplaceSettingsPage from './pages/settings/MarketplaceSettingsPage';
+import TrustCentreSettingsPage from './pages/settings/TrustCentreSettingsPage';
 import IntegrationsPage from './pages/settings/IntegrationsPage';
 import DocumentTemplatesPage from './pages/resources/DocumentTemplatesPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -78,8 +83,10 @@ const router = createBrowserRouter([
           { path: '/check-email', element: <CheckEmailPage /> },
           { path: '/verify-email', element: <VerifyEmailPage /> },
           { path: '/accept-invite', element: <AcceptInvitePage /> },
-          { path: '/marketplace', element: <MarketplacePage /> },
-          { path: '/marketplace/:orgId', element: <MarketplaceDetailPage /> },
+          { path: '/trust-centre', element: <TrustCentrePage /> },
+          { path: '/trust-centre/:orgId', element: <TrustCentreDetailPage /> },
+          { path: '/marketplace', element: <Navigate to="/trust-centre" replace /> },
+          { path: '/marketplace/:orgId', element: <MarketplaceDetailRedirect /> },
           { path: '/docs', element: <DocsPage /> },
           { path: '/docs/:slug', element: <DocsPage /> },
           { path: '/welcome', element: <WelcomePage /> },
@@ -115,7 +122,8 @@ const router = createBrowserRouter([
           { path: '/stakeholders', element: <StakeholdersPage /> },
           { path: '/organisation', element: <OrganisationPage /> },
           { path: '/audit-log', element: <AuditLogPage /> },
-          { path: '/marketplace/settings', element: <MarketplaceSettingsPage /> },
+          { path: '/trust-centre/settings', element: <TrustCentreSettingsPage /> },
+          { path: '/marketplace/settings', element: <Navigate to="/trust-centre/settings" replace /> },
           { path: '/integrations', element: <IntegrationsPage /> },
           { path: '/document-templates', element: <DocumentTemplatesPage /> },
 

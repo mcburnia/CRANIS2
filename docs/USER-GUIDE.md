@@ -1,93 +1,38 @@
 # CRANIS2 User Guide
 
-**Document Version:** 4.0
-**Last Updated:** 2026-03-17
-**Covers:** Sections 1–43 plus Appendices A–E
-
----
-
-## How This Guide Is Organised
-
-This guide serves two audiences. Sections are tagged so you can focus on what is relevant to your role:
-
-- **Admin** — Organisation administrators, compliance officers, and product managers who configure products, manage obligations, and maintain compliance documentation.
-- **Contributor** — Software engineers, test engineers, and DevOps practitioners whose development activity generates compliance and R&D evidence.
-
-Most sections are relevant to both audiences. Where a section is primarily for one audience, it is marked accordingly.
+**Document Version:** 1.0
+**Last Updated:** 2026-03-02
+**Covers:** Sections 1--25 plus Appendices A--E
 
 ---
 
 ## Table of Contents
 
-### Foundations (Admin + Contributor)
-
 1. [Introduction](#1-introduction)
 2. [Regulatory Context](#2-regulatory-context)
 3. [Getting Started](#3-getting-started)
 4. [Navigating the Platform](#4-navigating-the-platform)
-
-### Product & Compliance Management (Admin)
-
 5. [Products](#5-products)
 6. [Compliance Timeline](#6-compliance-timeline)
 7. [Escrow](#7-escrow)
 8. [Obligations Tracking](#8-obligations-tracking)
 9. [Technical Files](#9-technical-files)
 10. [ENISA Reporting](#10-enisa-reporting)
-11. [Licence Compliance](#11-licence-compliance)
+11. [License Compliance](#11-license-compliance)
 12. [IP Proof](#12-ip-proof)
 13. [Due Diligence Export](#13-due-diligence-export)
-
-### Supply Chain & Development (Admin + Contributor)
-
 14. [Repository Management](#14-repository-management)
 15. [Contributors](#15-contributors)
 16. [Dependencies](#16-dependencies)
 17. [Risk Findings (Vulnerability Management)](#17-risk-findings-vulnerability-management)
-
-### Organisation & Billing (Admin)
-
 18. [Billing](#18-billing)
-19. [Marketplace](#19-marketplace)
+19. [Trust Centre](#19-trust-centre)
 20. [Stakeholders](#20-stakeholders)
 21. [Organisation Management](#21-organisation-management)
 22. [Audit Log](#22-audit-log)
 23. [Feedback System](#23-feedback-system)
 24. [Platform Administration](#24-platform-administration)
 25. [Automated Background Processes](#25-automated-background-processes)
-
-### AI Intelligence (Admin)
-
-26. [AI Copilot](#26-ai-copilot)
-27. [AI Auto-Triage](#27-ai-auto-triage)
-28. [AI Risk Assessment](#28-ai-risk-assessment)
-29. [AI Incident Report Drafter](#29-ai-incident-report-drafter)
-30. [CRA Category Recommender](#30-cra-category-recommender)
-31. [Supplier Due Diligence](#31-supplier-due-diligence)
-32. [Compliance Gap Narrator](#32-compliance-gap-narrator)
-
-### Developer Tools & Integrations (Contributor)
-
-33. [Public API & API Keys](#33-public-api--api-keys)
-34. [CI/CD Compliance Gate](#34-cicd-compliance-gate)
-35. [Integrations (Trello, MCP, IDE)](#35-integrations-trello-mcp-ide)
-36. [Copilot Usage & Cost Protection](#36-copilot-usage--cost-protection)
-
-### Post-Market & Monitoring (Admin)
-
-37. [Post-Market Monitoring & Field Issues](#37-post-market-monitoring--field-issues)
-38. [Cryptographic Standards Inventory](#38-cryptographic-standards-inventory)
-39. [Conformity Assessments](#39-conformity-assessments)
-40. [GRC/OSCAL Bridge](#40-grcooscal-bridge)
-
-### Software Evidence Engine (Contributor + Admin)
-
-41. [Software Evidence Engine](#41-software-evidence-engine)
-42. [Session Capture & Competence Profiling](#42-session-capture--competence-profiling)
-43. [Source Code Guarantee](#43-source-code-guarantee)
-
-### Appendices
-
 - [Appendix A: CRA Product Categories](#appendix-a-cra-product-categories)
 - [Appendix B: Supported Repository Providers](#appendix-b-supported-repository-providers)
 - [Appendix C: Supported Lockfile Formats](#appendix-c-supported-lockfile-formats)
@@ -102,50 +47,38 @@ Most sections are relevant to both audiences. Where a section is primarily for o
 
 CRANIS2 is a compliance platform that helps software companies meet the requirements of two major pieces of EU legislation: the **Cyber Resilience Act (CRA)** and the **NIS2 Directive**.
 
-It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see. CRANIS2 never stores your source code and never writes to your repositories — all access is strictly read-only. The platform automates a comprehensive set of compliance functions: SBOM management, vulnerability monitoring, licence compliance, intellectual property proof, CRA technical documentation, ENISA reporting, source code escrow, post-market monitoring with field issue tracking, cryptographic standards inventory with PQC readiness, compliance evidence vault, document templates, conformity assessments, AI-powered compliance intelligence, supplier due diligence, GRC/OSCAL bridge, software evidence engine with R&D tax credit support, session capture with competence profiling, and external integrations (API, CI/CD, Trello, IDE, MCP).
+It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see. CRANIS2 reads dependency metadata from your repositories but never stores, analyses or modifies your source code. The platform automates seven compliance functions: SBOM management, vulnerability monitoring, license compliance, intellectual property proof, CRA technical documentation, ENISA reporting, and source code escrow.
 
 ### Who This Guide Is For
 
-This guide serves two primary audiences:
+This guide is written for four audiences:
 
-**Organisation and Product Administrators** — Compliance officers, product managers, and organisation administrators who configure products, manage obligations, maintain technical documentation, track vulnerabilities, and demonstrate conformity to market surveillance authorities.
-
-**Development and Testing Contributors** — Software engineers, test engineers, and DevOps practitioners whose daily development activity generates the evidence that compliance depends on. This includes engineers whose commits are analysed by the Software Evidence Engine, developers using AI-assisted tools (Claude Code, Cursor, VS Code) via the MCP server, CI/CD pipeline operators integrating compliance gates, and contributors whose competence is profiled from development sessions.
-
-The guide is also relevant to:
-
-- **Platform Admins** – Users with platform-level access who manage organisations, monitor system health, and administer the vulnerability database. Platform admin functions are covered in section 24.
-- **Evaluators and Auditors** – Individuals assessing whether CRANIS2 meets their organisation's compliance needs, or reviewing the compliance evidence it produces.
-
-### Source Code Guarantee
-
-CRANIS2 never stores your source code and never writes to your repository. All repository access is strictly read-only. Source files may be read transiently (for dependency detection or Software Evidence Engine analysis), but the content is processed in memory and discarded immediately. Only structured metadata is retained: package names, LOC counts, commit classifications, and developer attribution. Your code, logic, algorithms, and business rules are never stored.
+- **Organisation Admins** -- Users who set up and manage their company's CRANIS2 account, configure products, and oversee compliance activities.
+- **Organisation Members** -- Team members who work within the platform: reviewing findings, updating technical files, filing reports.
+- **Platform Admins** -- Users with platform-level access who manage organisations, monitor system health, and administer the vulnerability database. Platform admin functions are covered in the second half of this guide.
+- **Evaluators and Auditors** -- Individuals assessing whether CRANIS2 meets their organisation's compliance needs, or reviewing the compliance evidence it produces.
 
 ### Key Terminology
 
 | Term | Meaning |
 |------|---------|
-| **CRA** | Cyber Resilience Act – EU regulation requiring cybersecurity standards for products with digital elements, effective December 2024 |
-| **NIS2** | Network and Information Security Directive (2022/2555) – EU directive strengthening cybersecurity obligations for essential and important entities |
-| **SBOM** | Software Bill of Materials – a machine-readable inventory of all software components in a product |
-| **ENISA** | European Union Agency for Cybersecurity – the EU body that coordinates vulnerability and incident reporting under the CRA |
-| **CSIRT** | Computer Security Incident Response Team – national cybersecurity body in each EU member state |
-| **CE Mark** | Conformite Europeenne – the marking required to legally sell products in the EU single market |
+| **CRA** | Cyber Resilience Act -- EU regulation requiring cybersecurity standards for products with digital elements, effective December 2024 |
+| **NIS2** | Network and Information Security Directive (2022/2555) -- EU directive strengthening cybersecurity obligations for essential and important entities |
+| **SBOM** | Software Bill of Materials -- a machine-readable inventory of all software components in a product |
+| **ENISA** | European Union Agency for Cybersecurity -- the EU body that coordinates vulnerability and incident reporting under the CRA |
+| **CSIRT** | Computer Security Incident Response Team -- national cybersecurity body in each EU member state |
+| **CE Mark** | Conformite Europeenne -- the marking required to legally sell products in the EU single market |
 | **CycloneDX** | An OWASP standard format for SBOMs, supported by CRANIS2 in version 1.6 |
-| **SPDX** | Software Package Data Exchange – a Linux Foundation standard format for SBOMs, supported by CRANIS2 in version 2.3 |
+| **SPDX** | Software Package Data Exchange -- a Linux Foundation standard format for SBOMs, supported by CRANIS2 in version 2.3 |
 | **RFC 3161** | Internet standard for trusted timestamping, used by CRANIS2 to create legally admissible proof of content at a point in time |
-| **TLP** | Traffic Light Protocol – a classification system (WHITE, GREEN, AMBER, RED) for controlling information sensitivity in vulnerability reports |
+| **TLP** | Traffic Light Protocol -- a classification system (WHITE, GREEN, AMBER, RED) for controlling information sensitivity in vulnerability reports |
 | **Copyleft** | A category of open-source licence (GPL, LGPL, AGPL, MPL) that requires derivative works to be distributed under the same or compatible terms |
 | **Permissive** | A category of open-source licence (MIT, Apache-2.0, BSD, ISC) that allows unrestricted use including in proprietary products |
-| **PURL** | Package URL – a standardised scheme for identifying software packages across ecosystems (e.g. `pkg:npm/express@4.18.2`) |
-| **CVE** | Common Vulnerabilities and Exposures – a unique identifier assigned to publicly disclosed security vulnerabilities |
-| **CVSS** | Common Vulnerability Scoring System – a numerical scale (0.0–10.0) rating the severity of a vulnerability |
-| **OSV** | Open Source Vulnerabilities – a distributed vulnerability database covering all major ecosystems, used by CRANIS2 |
-| **NVD** | National Vulnerability Database – the US government repository of CVE data, used by CRANIS2 alongside OSV |
-| **SEE** | Software Evidence Engine – the CRANIS2 module that analyses repositories to extract engineering evidence for R&D tax credits, due diligence, and multi-regulation compliance |
-| **COCOMO II** | Constructive Cost Model – a software cost estimation model used by the SEE to calculate effort and cost ranges from LOC counts |
-| **LOC** | Lines of Code – a count of source code lines, used by the SEE for effort estimation (excludes generated, vendor, and blank lines) |
-| **MCP** | Model Context Protocol – a standard for IDE AI assistants to interact with external tools, used by CRANIS2 to expose compliance data to development environments |
+| **PURL** | Package URL -- a standardised scheme for identifying software packages across ecosystems (e.g. `pkg:npm/express@4.18.2`) |
+| **CVE** | Common Vulnerabilities and Exposures -- a unique identifier assigned to publicly disclosed security vulnerabilities |
+| **CVSS** | Common Vulnerability Scoring System -- a numerical scale (0.0--10.0) rating the severity of a vulnerability |
+| **OSV** | Open Source Vulnerabilities -- a distributed vulnerability database covering all major ecosystems, used by CRANIS2 |
+| **NVD** | National Vulnerability Database -- the US government repository of CVE data, used by CRANIS2 alongside OSV |
 
 ---
 
@@ -153,14 +86,14 @@ CRANIS2 never stores your source code and never writes to your repository. All r
 
 ### The Cyber Resilience Act (CRA)
 
-The CRA entered into force in December 2024 and applies to any product with digital elements placed on the EU single market. It imposes cybersecurity requirements across the entire product lifecycle, from design through end-of-support.
+The CRA entered into force in December 2024 and applies to any product with digital elements placed on the EU single market. It imposes cybersecurity requirements across the entire product lifecycle -- from design through end-of-support.
 
 **Who it applies to:**
 
-- **Manufacturers** – any company that designs, develops or produces a product with digital elements, or has one designed and produced on their behalf. This is the broadest category and includes most software product companies.
-- **Importers** – companies that bring products from outside the EU into the EU market.
-- **Distributors** – companies that make products available on the EU market without affecting their properties (resellers, channel partners).
-- **Open Source Stewards** – organisations that systematically provide support for open-source products intended for commercial use.
+- **Manufacturers** -- any company that designs, develops or produces a product with digital elements, or has one designed and produced on their behalf. This is the broadest category and includes most software product companies.
+- **Importers** -- companies that bring products from outside the EU into the EU market.
+- **Distributors** -- companies that make products available on the EU market without affecting their properties (resellers, channel partners).
+- **Open Source Stewards** -- organisations that systematically provide support for open-source products intended for commercial use.
 
 **Penalties for non-compliance:**
 
@@ -190,12 +123,12 @@ CRANIS2 lets you assign a CRA category to each product (see [Section 5: Products
 
 ### NIS2 Directive
 
-The NIS2 Directive (2022/2555) is the EU's framework for network and information security. While the CRA focuses on product security, NIS2 focuses on organisational security, particularly for entities operating critical infrastructure.
+The NIS2 Directive (2022/2555) is the EU's framework for network and information security. While the CRA focuses on product security, NIS2 focuses on organisational security -- particularly for entities operating critical infrastructure.
 
 NIS2 distinguishes between:
 
-- **Essential entities** – energy, transport, banking, health, water, digital infrastructure, ICT service management, public administration, space
-- **Important entities** – postal services, waste management, chemicals, food, manufacturing, digital providers, research
+- **Essential entities** -- energy, transport, banking, health, water, digital infrastructure, ICT service management, public administration, space
+- **Important entities** -- postal services, waste management, chemicals, food, manufacturing, digital providers, research
 
 The relationship between CRA and NIS2 is complementary. If your organisation falls under NIS2 and you manufacture software products, both sets of obligations apply. CRANIS2 tracks obligations from both frameworks.
 
@@ -282,7 +215,7 @@ Before you can use CRANIS2, you need to create an organisation. The setup wizard
 |-------|---------|----------|
 | Organisation name | Free text | Yes |
 | Country | Country selector | Yes |
-| Company size | Micro (< 10), Small (10–49), Medium (50–249), Large (250+) | Yes |
+| Company size | Micro (< 10), Small (10--49), Medium (50--249), Large (250+) | Yes |
 | CRA role | Manufacturer, Importer, Distributor, Open Source Steward | Yes |
 | Industry | Free text | No |
 
@@ -294,10 +227,10 @@ Once the organisation is created, you are assigned the **admin** role within it.
 
 After setup, the Dashboard provides a high-level summary of your compliance posture:
 
-- **Products** – how many products are registered and their sync status
-- **Vulnerabilities** – open findings across your portfolio
-- **Compliance** – obligation completion percentage
-- **SBOM** – dependency counts and freshness
+- **Products** -- how many products are registered and their sync status
+- **Vulnerabilities** -- open findings across your portfolio
+- **Compliance** -- obligation completion percentage
+- **SBOM** -- dependency counts and freshness
 
 These cards are connected to live data and update as you add products and connect repositories.
 
@@ -307,17 +240,17 @@ These cards are connected to live data and update as you add products and connec
 
 ### Sidebar Navigation
 
-The sidebar uses an accordion pattern; only one section can be expanded at a time. Clicking a section header collapses the previously open section and expands the new one.
+The sidebar uses an accordion pattern -- only one section can be expanded at a time. Clicking a section header collapses the previously open section and expands the new one.
 
 The sidebar is organised into five groups:
 
 | Group | Pages |
 |-------|-------|
 | **Dashboard** | Dashboard |
-| **Compliance** | Products, Obligations, Technical Files, Vulnerability Reports, Licence Compliance, IP Proof, Due Diligence |
+| **Compliance** | Products, Obligations, Technical Files, Vulnerability Reports, License Compliance, IP Proof, Due Diligence |
 | **Source Code** | Repos, Contributors, Dependencies, Risk Findings |
 | **Billing** | Plans & Usage, Reports |
-| **Settings** | Organisation, Stakeholders, Audit Log, Marketplace |
+| **Settings** | Organisation, Stakeholders, Audit Log, Trust Centre |
 
 A **Feedback** button sits at the bottom of the sidebar, outside the accordion. It opens a modal where you can submit bug reports, feature requests, or general feedback. Each submission is categorised (`bug`, `feature`, or `feedback`) and includes the page URL where you submitted it.
 
@@ -325,10 +258,10 @@ A **Feedback** button sits at the bottom of the sidebar, outside the accordion. 
 
 Throughout the platform, you will encounter several consistent UI elements:
 
-- **StatCards** – coloured summary cards at the top of most pages showing key metrics (e.g. "Open Vulnerabilities: 3"). Colours indicate severity: green (healthy), amber (attention needed), red (action required), blue (informational).
-- **PageHeaders** – the title bar at the top of every page, sometimes with a timestamp or subtitle.
-- **Inline editing** – many fields (obligation statuses, technical file sections, stakeholder details) can be edited directly on the page without navigating to a separate form.
-- **Filter bars** – tables across the platform support filtering by status, product, type, and other relevant criteria.
+- **StatCards** -- coloured summary cards at the top of most pages showing key metrics (e.g. "Open Vulnerabilities: 3"). Colours indicate severity: green (healthy), amber (attention needed), red (action required), blue (informational).
+- **PageHeaders** -- the title bar at the top of every page, sometimes with a timestamp or subtitle.
+- **Inline editing** -- many fields (obligation statuses, technical file sections, stakeholder details) can be edited directly on the page without navigating to a separate form.
+- **Filter bars** -- tables across the platform support filtering by status, product, type, and other relevant criteria.
 
 ### Notifications
 
@@ -382,16 +315,16 @@ To create a product, click the create button on the Products page. You will need
 
 ### CRA Categories
 
-- **Default** – Self-assessment. The manufacturer performs their own conformity assessment. This applies to the majority of software products.
-- **Class I (Important)** – Products with higher cybersecurity significance. Requires application of a harmonised standard or third-party assessment. Examples: identity management systems, VPNs, firewalls.
-- **Class II (Critical)** – Products considered critical to EU cybersecurity. Mandatory third-party assessment by an EU-notified body. Examples: operating systems, hypervisors, hardware security modules.
+- **Default** -- Self-assessment. The manufacturer performs their own conformity assessment. This applies to the majority of software products.
+- **Class I (Important)** -- Products with higher cybersecurity significance. Requires application of a harmonised standard or third-party assessment. Examples: identity management systems, VPNs, firewalls.
+- **Class II (Critical)** -- Products considered critical to EU cybersecurity. Mandatory third-party assessment by an EU-notified body. Examples: operating systems, hypervisors, hardware security modules.
 
 ### Product Types
 
 | Type | Description |
 |------|-------------|
 | Firmware | Software embedded in hardware devices |
-| SaaS | Software as a Service – cloud-hosted application |
+| SaaS | Software as a Service -- cloud-hosted application |
 | Library | A reusable software library or framework |
 | Desktop App | Application installed on desktop operating systems |
 | Mobile App | Application installed on mobile devices |
@@ -401,43 +334,39 @@ To create a product, click the create button on the Products page. You will need
 
 ### Distribution Models
 
-The distribution model affects licence compatibility analysis (see [Section 11: Licence Compliance](#11-licence-compliance)):
+The distribution model affects license compatibility analysis (see [Section 11: License Compliance](#11-license-compliance)):
 
 | Model | Description |
 |-------|-------------|
 | `proprietary_binary` | Distributed as compiled binary without source code |
-| `saas_hosted` | Hosted as a service – users do not receive a copy |
+| `saas_hosted` | Hosted as a service -- users do not receive a copy |
 | `source_available` | Source code is available but under restrictive terms |
 | `library_component` | Distributed as a library for integration by others |
 | `internal_only` | Used internally, not distributed to third parties |
 
 ### Product Detail Page
 
-Clicking on a product opens the detail page (`/products/:productId`), which has seven tabs:
+Clicking on a product opens the detail page (`/products/:productId`), which has five tabs:
 
-**Overview** – The landing tab. Shows:
+**Overview** -- The landing tab. Shows:
 - Repository card with connection status and provider
 - SBOM summary: package count, source tier (API / Lockfile / Import Scan), last sync time, staleness indicator
 - Technical file progress (X of 8 sections complete)
 - Version history using the CRANIS2 auto-versioning format (`YYYY.MM.DD.NNNN`) alongside any Git tags from the repository
 
-**Obligations** – Per-product CRA obligations with inline status editing. Each obligation can be set to Not Started, In Progress, or Met. See [Section 8: Obligations Tracking](#8-obligations-tracking).
+**Obligations** -- Per-product CRA obligations with inline status editing. Each obligation can be set to Not Started, In Progress, or Met. See [Section 8: Obligations Tracking](#8-obligations-tracking).
 
-**Technical File** – The eight Annex VII sections with content editors, plus the Annex I checklist. See [Section 9: Technical Files](#9-technical-files).
+**Technical File** -- The eight Annex VII sections with content editors, plus the Annex I checklist. See [Section 9: Technical Files](#9-technical-files).
 
-**Risk Findings** – Vulnerability findings specific to this product, with severity, affected dependency, and triage controls. Findings can be triaged as open, mitigated, or closed.
+**Risk Findings** -- Vulnerability findings specific to this product, with severity, affected dependency, and triage controls. Findings can be triaged as open, mitigated, or closed.
 
-**Dependencies** – The full SBOM package list for this product. Each dependency shows its name, version, ecosystem (npm, PyPI, crates.io, etc.), licence, and whether it is a direct or transitive dependency.
-
-**Field Issues** – Post-market monitoring for field-reported security issues. Tracks issues through a full lifecycle with corrective action management. See [Section 37: Post-Market Monitoring & Field Issues](#37-post-market-monitoring--field-issues).
-
-**Crypto Inventory** – Cryptographic algorithm usage detected in your dependency tree, classified by quantum readiness. See [Section 38: Cryptographic Standards Inventory](#38-cryptographic-standards-inventory).
+**Dependencies** -- The full SBOM package list for this product. Each dependency shows its name, version, ecosystem (npm, PyPI, crates.io, etc.), license, and whether it is a direct or transitive dependency.
 
 ### Editing and Deleting Products
 
 Product details (name, description, version, type, category, distribution model) can be edited from the product detail page.
 
-When deleting a product, CRANIS2 generates a **data exit package**, a ZIP file containing all compliance data associated with that product (SBOM, findings, technical file content, reports). This ensures you retain your compliance evidence even after removing the product from the platform.
+When deleting a product, CRANIS2 generates a **data exit package** -- a ZIP file containing all compliance data associated with that product (SBOM, findings, technical file content, reports). This ensures you retain your compliance evidence even after removing the product from the platform.
 
 If the product had escrow enabled, the Forgejo repository is preserved even after deletion, in accordance with legal retention requirements.
 
@@ -452,7 +381,7 @@ Each product has a historical compliance timeline accessible at `/products/:prod
 The timeline provides a chronological view of all compliance-significant events for that product, including:
 
 - Vulnerability scan results (when scans ran, what was found)
-- Licence scan events
+- License scan events
 - Obligation status changes
 - ENISA report submissions
 - Technical file updates
@@ -486,7 +415,7 @@ Key characteristics:
 - Escrow is **opt-in** and configured per product
 - Source code is deposited as a mirror of your repository
 - **Daily automated deposits** run at 5 AM UTC, keeping the escrow always current
-- The Forgejo instance is separate from your production repository. It is a deposit, not a replacement
+- The Forgejo instance is separate from your production repository -- it is a deposit, not a replacement
 - Deposits are preserved even after product deletion (legal retention)
 
 ### Configuring Escrow
@@ -494,13 +423,13 @@ Key characteristics:
 To configure escrow for a product, navigate to `/products/:productId/escrow`. From this page you can:
 
 - Enable or disable escrow for the product
-- Choose which artefact types to include in deposits:
+- Choose which artifact types to include in deposits:
 
 | Artifact Type | Description |
 |---------------|-------------|
 | SBOM (CycloneDX/SPDX) | The product's software bill of materials |
 | Vulnerability reports | Current vulnerability scan findings |
-| Licence audit | Licence compliance scan results |
+| License audit | License compliance scan results |
 | IP proof | RFC 3161 timestamp snapshots |
 | CRA documentation | Technical file content and obligation status |
 | Compliance timeline | Historical compliance event data |
@@ -509,8 +438,8 @@ To configure escrow for a product, navigate to `/products/:productId/escrow`. Fr
 
 You control what happens to the escrow deposit if it needs to be released:
 
-- **Open source** – the source code is published publicly
-- **Designated recipients** – specific clients you name receive private copies
+- **Open source** -- the source code is published publicly
+- **Designated recipients** -- specific clients you name receive private copies
 
 ### What Happens on Product Deletion
 
@@ -533,13 +462,13 @@ The CRA defines a set of obligations that apply to manufacturers, importers and 
 - Security update provision (Article 13)
 - SBOM maintenance (Article 13)
 - Technical documentation (Article 13, Annex VII)
-- Conformity assessment (Articles 24–28)
+- Conformity assessment (Articles 24--28)
 - CE marking (Article 22)
 - Reporting to authorities (Article 14)
 - Cooperation with market surveillance (Article 43)
 - Incident and vulnerability coordination (Article 15)
 
-CRANIS2 tracks **35 obligations in total**, split across three operator roles: 19 for manufacturers (Articles 13, 14, 16, 20, 32, and Annexes), 10 for importers (Article 18), and 6 for distributors (Article 19). The specific obligations shown for each product are determined by its CRA category and the organisation's CRA role.
+The specific obligations tracked in CRANIS2 are derived from these articles and mapped to each product based on its CRA category.
 
 ### Obligation Statuses
 
@@ -553,9 +482,9 @@ Each obligation has one of three statuses:
 
 ### Working with Obligations
 
-- **Inline editing** – Change any obligation's status directly from the table by clicking the status indicator.
-- **Per-product view** – Obligations also appear on the product detail page under the Obligations tab, where you can manage them in the context of a specific product.
-- **Filtering** – The overview page supports filtering by product and by status, so you can quickly identify which obligations still need attention.
+- **Inline editing** -- Change any obligation's status directly from the table by clicking the status indicator.
+- **Per-product view** -- Obligations also appear on the product detail page under the Obligations tab, where you can manage them in the context of a specific product.
+- **Filtering** -- The overview page supports filtering by product and by status, so you can quickly identify which obligations still need attention.
 
 ---
 
@@ -592,7 +521,7 @@ The CRA reference for each section is displayed alongside the editor, so you can
 
 ### Annex I Part I Checklist
 
-Within the Technical File tab, you also find the **Annex I Part I checklist**, the 13 essential cybersecurity requirements labelled (a) through (m) (see [Section 2: Regulatory Context](#2-regulatory-context) for the full list).
+Within the Technical File tab, you also find the **Annex I Part I checklist** -- the 13 essential cybersecurity requirements labelled (a) through (m) (see [Section 2: Regulatory Context](#2-regulatory-context) for the full list).
 
 For each requirement, you can:
 
@@ -613,7 +542,7 @@ The Technical Files overview page shows completion as X/8 sections complete for 
 
 Under CRA Article 14, you must file an ENISA report when you become aware of either:
 
-- An **actively exploited vulnerability** in one of your products, meaning a vulnerability that is being used in real attacks
+- An **actively exploited vulnerability** in one of your products -- a vulnerability that is being used in real attacks
 - A **severe security incident** that has a significant impact on the security of a product with digital elements
 
 If in doubt, err on the side of filing. Late reporting carries regulatory consequences; over-reporting does not.
@@ -626,7 +555,7 @@ Navigate to `/vulnerability-reports` and click **New Report**. The creation form
 |-------|-------------|
 | Product | Select the affected product from your portfolio |
 | Report type | **Actively Exploited Vulnerability** or **Severe Incident** |
-| Awareness date/time | When you first became aware of the issue. This starts the deadline clock |
+| Awareness date/time | When you first became aware of the issue -- this starts the deadline clock |
 
 Additional fields can be set after creation:
 
@@ -676,7 +605,7 @@ The ENISA Reporting overview page displays stat cards showing active reports, ov
 
 When all stages are complete and the issue is resolved, you can close a report. Closing marks it as resolved.
 
-Post-close addenda are allowed. You can submit additional intermediate stages even after a report has been closed, in case new information emerges.
+Importantly, post-close addenda are allowed -- you can submit additional intermediate stages even after a report has been closed, in case new information emerges.
 
 ### Creating a Report from a Risk Finding
 
@@ -684,58 +613,58 @@ If a vulnerability finding from a scan turns out to be actively exploited, you c
 
 ---
 
-## 11. Licence Compliance
+## 11. License Compliance
 
 ### Overview
 
-The Licence Compliance page (`/license-compliance`) provides a cross-product view of the open-source licences in your dependency tree and their compatibility with your distribution model.
+The License Compliance page (`/license-compliance`) provides a cross-product view of the open-source licenses in your dependency tree and their compatibility with your distribution model.
 
-### Licence Categories
+### License Categories
 
-CRANIS2 classifies every dependency's licence into one of three categories:
+CRANIS2 classifies every dependency's license into one of three categories:
 
 | Category | Licences | Implications |
 |----------|---------|-------------|
 | **Permissive** | MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Unlicense | No restrictions on distribution. Compatible with all distribution models. |
 | **Copyleft** | GPL-2.0, GPL-3.0, LGPL-2.1, LGPL-3.0, AGPL-3.0, MPL-2.0, SSPL-1.0 | Requires derivative works to be distributed under the same or compatible terms. Impact depends on distribution model and linking method. |
-| **Unknown / NOASSERTION** | No licence declared, unrecognised licence identifier | Requires manual review. Dependencies with no declared licence may carry legal risk. |
+| **Unknown / NOASSERTION** | No license declared, unrecognised license identifier | Requires manual review. Dependencies with no declared license may carry legal risk. |
 
 ### Distribution Model Impact
 
-Your product's distribution model (set when creating or editing a product; see [Section 5: Products](#5-products)) directly affects which licences are compatible. For example:
+Your product's distribution model (set when creating or editing a product -- see [Section 5: Products](#5-products)) directly affects which licenses are compatible. For example:
 
 - A **proprietary binary** distribution is incompatible with GPL-licensed dependencies unless the dependency is dynamically linked (LGPL exception)
 - A **SaaS-hosted** product triggers network copyleft obligations under AGPL and SSPL
-- An **internal-only** product generally has no distribution-related licence obligations
+- An **internal-only** product generally has no distribution-related license obligations
 - A **library component** must consider the downstream consumer's distribution model
 
 ### Compatibility Matrix
 
-CRANIS2 includes a rules engine that evaluates every dependency's licence against your product's distribution model and produces a verdict:
+CRANIS2 includes a rules engine that evaluates every dependency's license against your product's distribution model and produces a verdict:
 
 | Verdict | Meaning |
 |---------|---------|
-| **Compatible** | The licence is fully compatible with your distribution model |
-| **Incompatible** | The licence conflicts with your distribution model – action required |
-| **Review Needed** | The compatibility is ambiguous or context-dependent – manual review recommended |
+| **Compatible** | The license is fully compatible with your distribution model |
+| **Incompatible** | The license conflicts with your distribution model -- action required |
+| **Review Needed** | The compatibility is ambiguous or context-dependent -- manual review recommended |
 
-### Cross-Licence Conflicts
+### Cross-License Conflicts
 
-The compatibility engine also detects **14 known cross-licence incompatibilities** based on FSF guidance. These are cases where two licences in the same dependency tree conflict with each other (e.g. GPL-2.0-only and Apache-2.0 in some configurations).
+The compatibility engine also detects **14 known cross-license incompatibilities** based on FSF guidance. These are cases where two licenses in the same dependency tree conflict with each other (e.g. GPL-2.0-only and Apache-2.0 in some configurations).
 
 ### Network Copyleft Detection
 
-For SaaS products, CRANIS2 specifically checks for AGPL and SSPL licences. These "network copyleft" licences extend copyleft obligations to software accessed over a network, not just software that is distributed as a copy. If your product is distributed as `saas_hosted` and includes an AGPL dependency, it will be flagged.
+For SaaS products, CRANIS2 specifically checks for AGPL and SSPL licenses. These "network copyleft" licenses extend copyleft obligations to software accessed over a network, not just software that is distributed as a copy. If your product is distributed as `saas_hosted` and includes an AGPL dependency, it will be flagged.
 
 ### Waivers
 
-In some cases, you may determine that a licence finding does not actually apply to your situation (for example, a test-only dependency that is not included in the distributed product). You can **waive** a finding and record your reasoning. Waived findings are retained in the audit trail but excluded from active compliance counts.
+In some cases, you may determine that a license finding does not actually apply to your situation (for example, a test-only dependency that is not included in the distributed product). You can **waive** a finding and record your reasoning. Waived findings are retained in the audit trail but excluded from active compliance counts.
 
 ### Rechecking After Changes
 
-If you change a product's distribution model, the licence compatibility verdicts may change. Use the recheck function to re-evaluate all findings against the new distribution model without triggering a full SBOM resync.
+If you change a product's distribution model, the license compatibility verdicts may change. Use the recheck function to re-evaluate all findings against the new distribution model without triggering a full SBOM resync.
 
-A per-product scan trigger is also available to run a fresh licence scan on demand.
+A per-product scan trigger is also available to run a fresh license scan on demand.
 
 ---
 
@@ -747,34 +676,34 @@ IP Proof is CRANIS2's implementation of cryptographic timestamping for complianc
 
 This serves several purposes:
 
-- **Prior art** – proving your software composition predates a competitor's patent claim
-- **Compliance evidence** – demonstrating that your SBOM or compliance state existed as of a particular date
-- **Escrow verification** – confirming the integrity of deposited materials
+- **Prior art** -- proving your software composition predates a competitor's patent claim
+- **Compliance evidence** -- demonstrating that your SBOM or compliance state existed as of a particular date
+- **Escrow verification** -- confirming the integrity of deposited materials
 
 ### How RFC 3161 Works
 
 RFC 3161 defines a protocol for trusted timestamping. In simple terms:
 
 1. CRANIS2 generates a SHA-256 hash of your product's composition data (the dependency graph, not your source code)
-2. This hash is sent to a **Time Stamping Authority (TSA)**, an independent, trusted third party
+2. This hash is sent to a **Time Stamping Authority (TSA)** -- an independent, trusted third party
 3. The TSA signs the hash together with the current time, creating a **timestamp token**
 4. The token is stored in CRANIS2 and can be independently verified by anyone
 
 The TSA used by CRANIS2 is **FreeTSA.org**. The resulting timestamp is recognised under the EU eIDAS Regulation (910/2014) as legally admissible evidence.
 
-The TSA never sees your source code or even your dependency data. It only receives a cryptographic hash. The hash alone reveals nothing about the content it was derived from.
+Critically, the TSA never sees your source code or even your dependency data -- it only receives a cryptographic hash. The hash alone reveals nothing about the content it was derived from.
 
 ### Viewing IP Proof Snapshots
 
 The IP Proof page (`/ip-proof`) shows all timestamped snapshots for your products. Each snapshot displays:
 
-- **Content hash** – the SHA-256 hash that was timestamped
-- **Verification status** – whether the timestamp token has been validated
-- **Creation date** – when the snapshot was created
+- **Content hash** -- the SHA-256 hash that was timestamped
+- **Verification status** -- whether the timestamp token has been validated
+- **Creation date** -- when the snapshot was created
 
 ### Automatic Creation
 
-IP proof snapshots are created automatically after every SBOM sync. The nightly SBOM auto-sync at 2 AM triggers a licence scan, and the licence scan triggers IP proof creation. This means your IP proof stays current without any manual action.
+IP proof snapshots are created automatically after every SBOM sync. The nightly SBOM auto-sync at 2 AM triggers a license scan, and the license scan triggers IP proof creation. This means your IP proof stays current without any manual action.
 
 ---
 
@@ -788,10 +717,10 @@ The Due Diligence page (`/due-diligence`) lets you generate a comprehensive, inv
 
 Select a product from the dropdown to see a preview of the report contents. The preview includes:
 
-- **Summary stat cards** – total dependencies (direct and transitive), permissive licence percentage, open vulnerability count, and CRA compliance progress
-- **Report contents** – descriptions of each file that will be included in the export
-- **Non-permissive dependencies table** – a preview of dependencies with copyleft or unknown licences (up to 20 shown, full list in the export)
-- **CRA obligations summary** – a visual overview of obligation statuses (Met, In Progress, Not Started)
+- **Summary stat cards** -- total dependencies (direct and transitive), permissive license percentage, open vulnerability count, and CRA compliance progress
+- **Report contents** -- descriptions of each file that will be included in the export
+- **Non-permissive dependencies table** -- a preview of dependencies with copyleft or unknown licenses (up to 20 shown, full list in the export)
+- **CRA obligations summary** -- a visual overview of obligation statuses (Met, In Progress, Not Started)
 
 ### Export Contents
 
@@ -799,11 +728,11 @@ Clicking **Download Due Diligence Package** generates a ZIP file containing:
 
 | File | Format | Description |
 |------|--------|-------------|
-| Due Diligence Report | Markdown | Executive summary covering product details, dependency inventory, licence compliance posture, vulnerability assessment, IP proof status, and CRA compliance progress |
-| Software Bill of Materials | CycloneDX 1.6 JSON | Machine-readable dependency inventory with package hashes, licences, and supplier data |
-| Licence Findings | CSV | Complete list of dependencies with their licences, categories, risk levels, compatibility verdicts, and waiver status |
+| Due Diligence Report | PDF | Executive summary covering product details, dependency inventory, license compliance posture, vulnerability assessment, IP proof status, and CRA compliance progress |
+| Software Bill of Materials | CycloneDX 1.6 JSON | Machine-readable dependency inventory with package hashes, licenses, and supplier data |
+| License Findings | CSV | Complete list of dependencies with their licenses, categories, risk levels, compatibility verdicts, and waiver status |
 | Vulnerability Summary | JSON | All vulnerability findings with severities, affected packages, CVE identifiers, and fix versions |
-| Full Licence Texts | Text files | Complete licence text for each non-permissive licence found in the dependency tree |
+| Full License Texts | Text files | Complete license text for each non-permissive license found in the dependency tree |
 
 The ZIP filename follows the pattern `due-diligence-{product-name}-{date}.zip`.
 
@@ -811,11 +740,11 @@ The ZIP filename follows the pattern `due-diligence-{product-name}-{date}.zip`.
 
 Common scenarios include:
 
-- **Investor due diligence** – providing evidence of software governance and compliance readiness during fundraising
-- **Customer procurement** – responding to supply chain security questionnaires with concrete data rather than self-declarations
-- **Regulatory inspection** – having a ready-to-share compliance package if a market surveillance authority requests documentation
-- **Internal audit** – periodic review of compliance status by your own governance team
-- **Insurance applications** – demonstrating cybersecurity maturity for cyber insurance underwriting
+- **Investor due diligence** -- providing evidence of software governance and compliance readiness during fundraising
+- **Customer procurement** -- responding to supply chain security questionnaires with concrete data rather than self-declarations
+- **Regulatory inspection** -- having a ready-to-share compliance package if a market surveillance authority requests documentation
+- **Internal audit** -- periodic review of compliance status by your own governance team
+- **Insurance applications** -- demonstrating cybersecurity maturity for cyber insurance underwriting
 
 ---
 
@@ -825,12 +754,12 @@ Common scenarios include:
 
 The Repos page (`/repos`) provides a cross-product overview of all connected source code repositories across your organisation. At the top, stat cards summarise:
 
-- **Connected Repos** – the total number of repositories linked to products
-- **Stars** – aggregated star count across all connected repositories
-- **Forks** – aggregated fork count
-- **Open Issues** – total open issues across all repositories
-- **Contributors** – total unique contributors
-- **Stale SBOMs** – repositories where the SBOM is out of date (a push event has been received since the last sync)
+- **Connected Repos** -- the total number of repositories linked to products
+- **Stars** -- aggregated star count across all connected repositories
+- **Forks** -- aggregated fork count
+- **Open Issues** -- total open issues across all repositories
+- **Contributors** -- total unique contributors
+- **Stale SBOMs** -- repositories where the SBOM is out of date (a push event has been received since the last sync)
 
 ### Supported Providers
 
@@ -860,7 +789,7 @@ For self-hosted providers, authentication uses a Personal Access Token:
 
 1. Navigate to `/repos` and open the **Provider Connections** panel
 2. Select the provider (Gitea, Forgejo, or GitLab)
-3. Enter the **Instance URL** – the base URL of your self-hosted instance (e.g. `https://git.example.com`)
+3. Enter the **Instance URL** -- the base URL of your self-hosted instance (e.g. `https://git.example.com`)
 4. Enter the **Personal Access Token** generated from your provider's settings
 5. CRANIS2 validates the token against the provider's API before storing it
 6. The token is encrypted at rest and used for all subsequent API calls to that instance
@@ -881,7 +810,7 @@ If the API SBOM is unavailable or insufficient, CRANIS2 scans your repository fo
 
 **Tier 3: Source Import Scanning**
 
-If no lockfiles are found, CRANIS2 falls back to scanning source code import statements. The import scanner supports 28 programming languages (see [Appendix D](#appendix-d-supported-languages-for-import-scanning)) and identifies dependencies by analysing `import`, `require`, `use`, `include`, and equivalent statements. This tier produces a best-effort SBOM based on observed imports, though it cannot determine exact versions.
+If no lockfiles are found, CRANIS2 falls back to scanning source code import statements. The import scanner supports 26 programming languages (see [Appendix D](#appendix-d-supported-languages-for-import-scanning)) and identifies dependencies by analysing `import`, `require`, `use`, `include`, and equivalent statements. This tier produces a best-effort SBOM based on observed imports, though it cannot determine exact versions.
 
 ### Source Code Privacy
 
@@ -891,8 +820,8 @@ CRANIS2 never stores your source code. During SBOM generation, repository conten
 
 SBOMs can be updated in two ways:
 
-- **Manual sync** – Click the sync button on the product detail page or the Repos page to trigger an immediate SBOM regeneration.
-- **Automatic daily sync** – The platform scheduler runs at 2 AM UTC and syncs all stale SBOMs. Only repositories that have received changes since the last sync are processed. After SBOM sync, licence scanning and IP proof generation are triggered automatically.
+- **Manual sync** -- Click the sync button on the product detail page or the Repos page to trigger an immediate SBOM regeneration.
+- **Automatic daily sync** -- The platform scheduler runs at 2 AM UTC and syncs all stale SBOMs. Only repositories that have received changes since the last sync are processed. After SBOM sync, license scanning and IP proof generation are triggered automatically.
 
 ### Webhook-Driven Staleness
 
@@ -900,7 +829,7 @@ When configured, push events from GitHub, Codeberg, or Forgejo webhooks automati
 
 ### Disconnecting a Repository
 
-Disconnecting a repository from a product removes the live connection but preserves all previously generated compliance data. The existing SBOM, vulnerability findings, licence scan results, and IP proof snapshots remain intact. Only future syncs are stopped.
+Disconnecting a repository from a product removes the live connection but preserves all previously generated compliance data -- the existing SBOM, vulnerability findings, license scan results, and IP proof snapshots remain intact. Only future syncs are stopped.
 
 ---
 
@@ -914,18 +843,18 @@ The Contributors page (`/contributors`) displays a grid of all contributors acro
 
 At the top of the page, stat cards summarise:
 
-- **Total Contributors** – the number of unique individuals who have contributed to your products
-- **Total Contributions** – the aggregate contribution count across all products
-- **Products with Repos** – how many of your products have a connected repository
+- **Total Contributors** -- the number of unique individuals who have contributed to your products
+- **Total Contributions** -- the aggregate contribution count across all products
+- **Products with Repos** -- how many of your products have a connected repository
 
 ### Contributor Details
 
 Each contributor card displays:
 
-- **Avatar** – the contributor's profile picture from the repository provider
-- **Login** – the contributor's username on the provider (e.g. GitHub handle)
-- **Profile link** – a direct link to the contributor's profile on the provider
-- **Contribution count** – the number of commits or contributions attributed to this individual
+- **Avatar** -- the contributor's profile picture from the repository provider
+- **Login** -- the contributor's username on the provider (e.g. GitHub handle)
+- **Profile link** -- a direct link to the contributor's profile on the provider
+- **Contribution count** -- the number of commits or contributions attributed to this individual
 
 ### Per-Product Breakdown
 
@@ -953,7 +882,7 @@ For each product, the dependency list shows every package in the SBOM:
 | **Version** | The exact version resolved from the lockfile or import scan |
 | **Ecosystem** | The package ecosystem, shown as a badge (npm, PyPI, crates.io, Maven, Go, NuGet, RubyGems, Hex, Pub, CocoaPods, and others) |
 | **Licence** | The declared licence identifier (SPDX format) |
-| **PURL** | The Package URL – a standardised identifier for the package (e.g. `pkg:npm/express@4.18.2`) |
+| **PURL** | The Package URL -- a standardised identifier for the package (e.g. `pkg:npm/express@4.18.2`) |
 
 ### Depth Indicator
 
@@ -963,8 +892,8 @@ Each dependency is tagged as either **direct** (explicitly declared in your proj
 
 The Dependencies page is the foundation for two downstream compliance functions:
 
-- **Licence scanning** – every dependency's licence is evaluated for compatibility with your distribution model. See [Section 11: Licence Compliance](#11-licence-compliance).
-- **Vulnerability scanning** – every dependency is checked against vulnerability databases. See [Section 17: Risk Findings](#17-risk-findings-vulnerability-management).
+- **License scanning** -- every dependency's licence is evaluated for compatibility with your distribution model. See [Section 11: License Compliance](#11-license-compliance).
+- **Vulnerability scanning** -- every dependency is checked against vulnerability databases. See [Section 17: Risk Findings](#17-risk-findings-vulnerability-management).
 
 ---
 
@@ -974,8 +903,8 @@ The Dependencies page is the foundation for two downstream compliance functions:
 
 The Risk Findings page (`/risk-findings`) provides a unified view of all vulnerability findings across your product portfolio. Stat cards at the top summarise findings by severity and status:
 
-- **By severity** – Critical, High, Medium, Low counts
-- **By status** – Total, Open, Dismissed, Acknowledged, Mitigated, Resolved
+- **By severity** -- Critical, High, Medium, Low counts
+- **By status** -- Total, Open, Dismissed, Acknowledged, Mitigated, Resolved
 
 ### Vulnerability Sources
 
@@ -994,10 +923,10 @@ Findings are assigned a severity level derived from the CVSS (Common Vulnerabili
 
 | Severity | CVSS Range | Colour |
 |----------|-----------|--------|
-| **Critical** | 9.0 – 10.0 | Red |
-| **High** | 7.0 – 8.9 | Red |
-| **Medium** | 4.0 – 6.9 | Amber |
-| **Low** | 0.1 – 3.9 | Green |
+| **Critical** | 9.0 -- 10.0 | Red |
+| **High** | 7.0 -- 8.9 | Red |
+| **Medium** | 4.0 -- 6.9 | Amber |
+| **Low** | 0.1 -- 3.9 | Green |
 
 ### The Five-Status Triage Workflow
 
@@ -1017,16 +946,16 @@ From the product detail page, you can trigger a vulnerability scan for a specifi
 
 ### Creating an ENISA Report from a Finding
 
-If a vulnerability finding represents an actively exploited vulnerability, you can create an ENISA report directly from the finding. Clicking the report button navigates to `/vulnerability-reports` with the report creation form pre-populated with data from the finding: affected dependency, severity, CVSS score, and description. This saves time and reduces the risk of transcription errors during a time-sensitive reporting process.
+If a vulnerability finding represents an actively exploited vulnerability, you can create an ENISA report directly from the finding. Clicking the report button navigates to `/vulnerability-reports` with the report creation form pre-populated with data from the finding -- affected dependency, severity, CVSS score, and description. This saves time and reduces the risk of transcription errors during a time-sensitive reporting process.
 
 ### Scan History
 
 The scan history section shows all past vulnerability scans for a product, including:
 
-- **Status** – completed, failed, or in progress
-- **Duration** – how long the scan took to complete
-- **Dependency count** – how many packages were evaluated
-- **Per-source timing** – breakdown of time spent querying OSV vs NVD
+- **Status** -- completed, failed, or in progress
+- **Duration** -- how long the scan took to complete
+- **Dependency count** -- how many packages were evaluated
+- **Per-source timing** -- breakdown of time spent querying OSV vs NVD
 
 ### Platform-Wide Scanning
 
@@ -1038,18 +967,14 @@ The platform scheduler runs a comprehensive vulnerability scan at 3 AM UTC. This
 
 ### Pricing Model
 
-CRANIS2 offers two paid tiers:
+CRANIS2 uses a simple, contributor-based pricing model:
 
-| Plan | Price | Includes |
-|------|-------|----------|
-| **Standard** | EUR 6 per contributor per month | All core compliance features: SBOMs, vulnerability monitoring, licence compliance, IP proof, technical files, ENISA reporting, escrow, obligations tracking, marketplace |
-| **Pro** | EUR 9 per product per month + EUR 6 per contributor per month | Everything in Standard, plus: AI Copilot, AI auto-triage, AI risk assessment, AI incident report drafter, CRA category recommender, public API & API keys, CI/CD compliance gate, IDE assistant (MCP), Trello integration |
-
-An active contributor is anyone who has made at least one contribution to a connected repository within the last 90 days. Bot accounts are automatically excluded from billing.
+- **EUR 6 per month** per active contributor across your organisation
+- An active contributor is anyone who has made at least one contribution to a connected repository
 
 ### Free Trial
 
-Every new organisation receives a **90-day free trial** with full access to all platform features. No credit card is required to start the trial.
+Every new organisation receives a **30-day free trial** with full access to all platform features (extended to 90 days with a bonus code at signup). No credit card is required to start the trial.
 
 ### Trial Lifecycle
 
@@ -1057,7 +982,7 @@ The trial follows a defined progression:
 
 | Phase | Duration | Access Level |
 |-------|----------|-------------|
-| **Trial** | 90 days from organisation creation | Full access to all features |
+| **Trial** | 30 days (90 with a bonus code) from organisation creation | Full access to all features |
 | **Grace period** | 7 days after trial expires | Full access, with a warning banner prompting you to subscribe |
 | **Read-only** | After grace period | All write operations are blocked; viewing, reading, and exporting remain available |
 | **Suspended** | 60 days after entering read-only | Account is suspended with limited access |
@@ -1078,11 +1003,11 @@ For paying customers, the lifecycle in the event of a payment failure is:
 
 The Billing page (`/billing`) shows:
 
-- **Status card** – current billing status (trial, active, read-only, suspended)
-- **Contributor count** – the number of active contributors driving your bill
-- **Billing details form** – billing email, company name, and VAT number
-- **Stripe checkout** – subscribe or update your payment method via Stripe's hosted checkout
-- **Customer portal** – manage invoices, payment methods, and subscription details through Stripe's customer portal
+- **Status card** -- current billing status (trial, active, read-only, suspended)
+- **Contributor count** -- the number of active contributors driving your bill
+- **Billing details form** -- billing email, company name, and VAT number
+- **Stripe checkout** -- subscribe or update your payment method via Stripe's hosted checkout
+- **Customer portal** -- manage invoices, payment methods, and subscription details through Stripe's customer portal
 
 ### The Billing Gate
 
@@ -1105,15 +1030,15 @@ The Billing page includes a contributor roster showing all individuals counted f
 
 ---
 
-## 19. Marketplace
+## 19. Trust Centre
 
-### Public Marketplace
+### Public Trust Centre
 
-The Marketplace (`/marketplace`) is a public-facing directory of organisations using CRANIS2 to demonstrate their compliance posture. It is accessible without login, allowing prospective customers and partners to browse listed companies.
+The Trust Centre (`/trust-centre`) is a public-facing directory of organisations using CRANIS2 to demonstrate their compliance posture. It is accessible without login, allowing prospective customers and partners to browse listed companies.
 
 ### Search and Filtering
 
-The marketplace supports search by organisation name and filtering by 10 product categories:
+The Trust Centre supports search by organisation name and filtering by 10 product categories:
 
 | Category | Category |
 |----------|----------|
@@ -1125,18 +1050,18 @@ The marketplace supports search by organisation name and filtering by 10 product
 
 ### Compliance Badges
 
-Each marketplace listing displays compliance badges that provide an at-a-glance summary of the organisation's posture:
+Each Trust Centre listing displays compliance badges that provide an at-a-glance summary of the organisation's posture:
 
-- **CRA status** – overall CRA compliance progress
-- **Obligations %** – percentage of CRA obligations marked as Met
-- **Tech file %** – percentage of technical file sections completed
-- **Product count** – number of products registered
-- **Open vulnerabilities** – count of unresolved vulnerability findings
-- **Licence compliance %** – percentage of dependencies with compatible licences
+- **CRA status** -- overall CRA compliance progress
+- **Obligations %** -- percentage of CRA obligations marked as Met
+- **Tech file %** -- percentage of technical file sections completed
+- **Product count** -- number of products registered
+- **Open vulnerabilities** -- count of unresolved vulnerability findings
+- **Licence compliance %** -- percentage of dependencies with compatible licences
 
 ### Company Detail Page
 
-Clicking on an organisation opens the detail page (`/marketplace/:orgId`), which shows the full profile including description, categories, featured products, and all compliance badges.
+Clicking on an organisation opens the detail page (`/trust-centre/:orgId`), which shows the full profile including description, categories, featured products, and all compliance badges.
 
 ### Contact Modal
 
@@ -1147,15 +1072,15 @@ Logged-in users can contact listed organisations through a contact modal. Rate l
 
 ### Listing Your Organisation
 
-To list your organisation on the marketplace, navigate to `/marketplace/settings`. From this page you can:
+To list your organisation on the Trust Centre, navigate to `/trust-centre/settings`. From this page you can:
 
-- **Toggle visibility** – turn your listing on or off
-- **Tagline** – a short one-line description
-- **Description** – a longer description of your company and products
-- **Categories** – select which product categories apply to your organisation
-- **Featured products** – choose which of your products to highlight on the listing
+- **Toggle visibility** -- turn your listing on or off
+- **Tagline** -- a short one-line description
+- **Description** -- a longer description of your company and products
+- **Categories** -- select which product categories apply to your organisation
+- **Featured products** -- choose which of your products to highlight on the listing
 
-Marketplace listings are currently auto-approved upon creation.
+Trust Centre listings are currently auto-approved upon creation.
 
 ---
 
@@ -1196,7 +1121,7 @@ Each stakeholder role captures the following information:
 
 ### How Stakeholders Work
 
-Stakeholder roles are pre-seeded. The roles themselves cannot be added or removed, only their details can be edited. This ensures the CRA-required roles are always present and visible. Each role displays its CRA reference, so you can see which article or annex requires that particular contact.
+Stakeholder roles are pre-seeded -- the roles themselves cannot be added or removed, only their details can be edited. This ensures the CRA-required roles are always present and visible. Each role displays its CRA reference, so you can see which article or annex requires that particular contact.
 
 Editing is done inline on the Stakeholders page. Click a role to expand it and update the contact details.
 
@@ -1214,7 +1139,7 @@ The Organisation page (`/organisation`) is where you manage your company's profi
 |-------|-------------|----------|
 | Organisation name | Your company name | Yes |
 | Country | Country of registration | Yes |
-| Company size | Micro (< 10), Small (10–49), Medium (50–249), Large (250+) | Yes |
+| Company size | Micro (< 10), Small (10--49), Medium (50--249), Large (250+) | Yes |
 | CRA role | Manufacturer, Importer, Distributor, Open Source Steward | Yes |
 | Industry | Your industry sector | No |
 | Website | Company website URL | No |
@@ -1262,7 +1187,7 @@ The audit log captures events across all compliance functions, including:
 - Obligation status changes
 - Stakeholder information updates
 - Technical file edits
-- Licence scan events
+- License scan events
 - Login and authentication events
 
 ### Viewing the Audit Log
@@ -1280,8 +1205,8 @@ The audit log is presented as a paginated table with the following columns:
 
 The audit log supports filtering by:
 
-- **Event type** – narrow down to specific categories of events
-- **User** – view actions taken by a specific team member
+- **Event type** -- narrow down to specific categories of events
+- **User** -- view actions taken by a specific team member
 
 ### Regulatory Significance
 
@@ -1309,7 +1234,7 @@ CRANIS2 includes a built-in feedback system accessible from the **Feedback & Bug
 |-------|-------------|
 | Subject | A brief summary of the feedback |
 | Message | Detailed description |
-| Page URL | Automatically captured. The page you were on when you opened the feedback modal |
+| Page URL | Automatically captured -- the page you were on when you opened the feedback modal |
 
 All submissions are reviewed by the platform team and inform the development roadmap.
 
@@ -1332,7 +1257,7 @@ The admin panel includes 10 pages:
 | Page | Description |
 |------|-------------|
 | **Dashboard** | Platform-wide statistics: total users, organisations, products, scans run, active users over time |
-| **Organisations** | Browse all organisations on the platform. View details, marketplace approval status. |
+| **Organisations** | Browse all organisations on the platform. View details, Trust Centre approval status. |
 | **Users** | Search for users across all organisations. Suspend or unsuspend accounts, delete users (with full cascade of associated data), toggle platform admin status. |
 | **Audit Log** | Cross-organisation event history. Unlike the per-org audit log, this shows events from all organisations. |
 | **System Health** | Database row counts for all major tables, scan performance metrics, error rates, and system status indicators. |
@@ -1353,670 +1278,22 @@ CRANIS2 runs a set of background jobs on a fixed schedule. These processes maint
 | Time (UTC) | Job | Description |
 |------------|-----|-------------|
 | **1:00 AM** | Vulnerability database sync | Fetches the latest advisories from OSV (263,000+ entries) and CVEs from NVD (182,000+ entries). Updates the local vulnerability database. |
-| **2:00 AM** | SBOM auto-sync | Re-syncs all stale SBOMs (repositories where a push event has been received since the last sync). After sync, triggers licence scanning and IP proof generation for affected products. |
+| **2:00 AM** | SBOM auto-sync | Re-syncs all stale SBOMs (repositories where a push event has been received since the last sync). After sync, triggers license scanning and IP proof generation for affected products. |
 | **3:00 AM** | Platform vulnerability scan | Runs a comprehensive vulnerability scan across all SBOM components on the platform. Deduplicates findings and generates notifications for new discoveries. |
 | **4:00 AM** | Billing checks | Evaluates trial expiry dates and payment grace periods. Transitions organisations between billing states (trial, grace, read-only, suspended, cancelled) as appropriate. |
-| **5:00 AM** | Escrow deposits | Creates or updates escrow deposits for all products with escrow enabled. Pushes selected artefacts (SBOM, findings, compliance data) to the Forgejo escrow instance. |
+| **5:00 AM** | Escrow deposits | Creates or updates escrow deposits for all products with escrow enabled. Pushes selected artifacts (SBOM, findings, compliance data) to the Forgejo escrow instance. |
 | **Hourly** | CRA deadline checks | Monitors all open ENISA reports for approaching or overdue deadlines. Generates notifications at 12 hours, 4 hours, and 1 hour before a deadline, and again when a deadline becomes overdue. |
 
 ### Webhooks
 
 CRANIS2 receives webhooks from external services to maintain real-time awareness of changes:
 
-- **GitHub / Codeberg / Forgejo push events** – When a push is made to a connected repository, the webhook marks the corresponding product's SBOM as stale. This triggers the "Update Available" indicator on the Repos page and product detail page. The stale SBOM is automatically re-synced during the 2 AM nightly job.
-- **Stripe billing events** – Payment success, payment failure, and subscription update events from Stripe are processed in real time. These events trigger billing state transitions (e.g. from active to past due) and generate user notifications.
+- **GitHub / Codeberg / Forgejo push events** -- When a push is made to a connected repository, the webhook marks the corresponding product's SBOM as stale. This triggers the "Update Available" indicator on the Repos page and product detail page. The stale SBOM is automatically re-synced during the 2 AM nightly job.
+- **Stripe billing events** -- Payment success, payment failure, and subscription update events from Stripe are processed in real time. These events trigger billing state transitions (e.g. from active to past due) and generate user notifications.
 
 ### No User Action Required
 
 All background processes run automatically. Users benefit from up-to-date vulnerability data, fresh SBOMs, enforced billing rules, and current escrow deposits without needing to trigger any of these manually.
-
----
-
-## 26. AI Copilot
-
-**Requires:** Pro plan
-
-The AI Copilot provides contextual AI-generated suggestions for compliance documentation. It is powered by Claude (Anthropic) and is available on two areas of the platform:
-
-### Technical File Suggestions
-
-Each of the eight technical file sections has an **AI Suggest** button. When clicked, the Copilot analyses your product's data (its dependencies, vulnerability scan results, CRA category, repository metadata, and existing documentation) and generates a draft for that section.
-
-- Suggestions are presented in a review panel alongside your current content
-- You can accept, edit, or discard the suggestion
-- Refinement is supported: after receiving a suggestion, you can provide additional instructions and the Copilot will revise its output
-- Suggestions are cached for 24 hours (same product context produces the same result without consuming additional tokens)
-
-### Obligation Evidence Suggestions
-
-On the Obligations tab of a product, each obligation has an **AI Suggest** button for its evidence/notes field. The Copilot generates suggested evidence text based on the obligation requirements and your product's compliance data.
-
-### How It Works
-
-The Copilot sends a structured context payload (product metadata, dependencies, scan results, existing content) to the Claude API. Your source code is never included; only compliance metadata is sent. Responses are streamed back to the UI.
-
----
-
-## 27. AI Auto-Triage
-
-**Requires:** Pro plan
-
-AI auto-triage analyses vulnerability findings and recommends an appropriate triage action for each one:
-
-- **Dismiss** – the finding is a false positive or not applicable to your usage
-- **Acknowledge** – the finding is real but does not require immediate action
-- **Escalate** – the finding requires urgent attention
-
-### How It Works
-
-When you click **AI Triage** on a vulnerability finding, the Copilot examines the CVE details, the affected package, its version, and your product's context. It returns:
-
-- A recommended action (dismiss / acknowledge / escalate)
-- A confidence score (0–100%)
-- A reasoning explanation
-- For findings with available fixes, a **CLI mitigation command** specific to the package ecosystem (e.g. `npm install lodash@4.17.21`, `pip install requests>=2.31.0`, `cargo update -p serde`)
-
-### Auto-Dismiss
-
-Findings where the AI recommends dismissal with a confidence score above 90% can be automatically dismissed. This reduces noise from false positives while preserving an audit trail of the AI's reasoning.
-
-### Supported Ecosystems for Mitigation Commands
-
-npm, pip, Cargo (Rust), Go modules, Maven, NuGet, Composer (PHP), RubyGems, CocoaPods, Pub (Dart), Hex (Elixir), and Swift Package Manager.
-
----
-
-## 28. AI Risk Assessment
-
-**Requires:** Pro plan
-
-The AI risk assessment generator creates a comprehensive risk assessment document for a product, grounded in its actual platform data. Navigate to a product's detail page and click **Generate Risk Assessment**.
-
-### What It Produces
-
-1. **Risk Assessment Methodology** – describes the approach, data sources, and severity classification used
-2. **Threat Model** – identifies threats relevant to the product based on its CRA category, dependency profile, and distribution model
-3. **Risk Register** – a structured table of identified risks with likelihood, impact, severity, and recommended mitigations
-4. **Annex I Mappings** – maps 13 CRA Annex I essential requirements to the product's current compliance state, with evidence references
-
-### Output
-
-The risk assessment is stored against the product and can be exported as **Markdown** for inclusion in the CRA technical file. It is regenerated on demand; each generation reflects the product's current state.
-
----
-
-## 29. AI Incident Report Drafter
-
-**Requires:** Pro plan
-
-When creating an ENISA Article 14 report (see Section 10), the AI incident report drafter can pre-populate each of the three reporting stages with content grounded in your product's data.
-
-### How It Works
-
-On any CRA report, click **AI Draft** for a stage (early warning, notification, or final report). The Copilot analyses:
-
-- The product's vulnerability findings and scan history
-- Any linked findings associated with the report
-- Content from previously submitted stages (for continuity)
-- The product's CRA category and metadata
-
-It generates stage-appropriate content following ENISA Article 14 requirements. The draft is presented for review before merging into the report form.
-
-### Non-Destructive Merge
-
-AI-generated content is merged with any existing content in the stage form. Existing text is never overwritten. The AI draft is appended or offered as a suggestion alongside current content.
-
----
-
-## 30. CRA Category Recommender
-
-**Requires:** Pro plan (AI augmentation); deterministic scoring available on all plans
-
-The CRA category recommender helps determine whether a product falls under the Default, Important Class I, Important Class II, or Critical CRA category.
-
-### Deterministic Scoring
-
-The recommender uses four attributes to compute a risk score:
-
-1. **Network connectivity** – does the product connect to the internet or operate on a network?
-2. **Data sensitivity** – does the product handle personal data, financial data, or credentials?
-3. **Privileged access** – does the product run with elevated privileges or manage access control?
-4. **Safety / infrastructure impact** – could a failure affect critical infrastructure or physical safety?
-
-Each attribute is scored, and the total determines the recommended category. This scoring is deterministic and available on all plans.
-
-### AI Augmentation (Pro Plan)
-
-On Pro plans, the recommender also sends the product's metadata and attribute answers to the Claude API for a second opinion. The AI may confirm the deterministic result or suggest adjustments with reasoning. Both scores are shown side by side.
-
-### Admin Rules
-
-Platform admins can define override rules that map specific attribute combinations to fixed categories (e.g. "any product with safety impact must be Class II"). These rules take precedence over both the deterministic score and the AI suggestion. All rule changes are recorded in the audit trail.
-
-### Accessing the Recommender
-
-Click the **CRA Category** badge on a product's detail page to open the Category Recommender modal.
-
----
-
-## 31. Supplier Due Diligence
-
-**Available on:** All plans
-
-The Supply Chain tab on each product provides supplier due diligence capabilities for managing third-party dependency risk.
-
-### Questionnaires
-
-CRANIS2 generates deterministic, template-based questionnaires for your product's dependencies. These questionnaires assess:
-
-- Security practices of the dependency maintainer
-- Licence compliance and compatibility
-- Vulnerability handling and disclosure processes
-- Update and maintenance cadence
-
-Questionnaires are generated from templates. No AI is involved. The questions are derived from CRA requirements and industry best practices.
-
-### Supplier Enrichment
-
-For dependencies from supported registries, CRANIS2 automatically enriches supplier information:
-
-- **npm** – maintainer details, repository URL, licence, download counts, last publish date
-- **PyPI** – author details, project URL, licence, Python version support
-- **crates.io** – owner details, repository URL, licence, download counts
-
-Enrichment data is cached in a shared 30-day Postgres cache to minimise external API calls.
-
-### Export
-
-Supplier due diligence data can be exported as:
-
-- **Markdown** – formatted report suitable for audit or procurement review
-- **CSV** – raw data for further analysis
-
----
-
-## 32. Compliance Gap Narrator
-
-**Available on:** All plans
-
-The compliance gap narrator provides a deterministic analysis of each product's compliance gaps. It appears as a **Next Steps** card on the product Overview tab.
-
-### What It Shows
-
-- A prioritised list of compliance actions, ordered by impact
-- Each action includes the relevant CRA article, what is needed, and why it matters
-- A completion percentage based on obligations, technical file progress, scan coverage, and SBOM freshness
-
-### How It Works
-
-The gap analysis is computed deterministically from platform data. It does not use AI. It examines:
-
-- Obligation statuses (not started, in progress, complete)
-- Technical file section completion
-- Vulnerability scan recency and open finding counts
-- SBOM freshness and dependency coverage
-- Stakeholder contact completeness
-- ENISA reporting readiness
-
-The Next Steps card updates in real time as you make progress.
-
----
-
-## 33. Public API & API Keys
-
-**Requires:** Pro plan
-
-CRANIS2 provides a public REST API for programmatic access to your compliance data. The API is authenticated using API keys.
-
-### Managing API Keys
-
-Navigate to **Settings > Integrations** to manage API keys. You can:
-
-- Create new keys with a descriptive name
-- View active keys (the full key is shown only once at creation)
-- Revoke keys instantly
-
-API keys use the prefix `cranis2_` followed by 40 hexadecimal characters. Keys are stored as SHA-256 hashes; the plaintext is never retained after creation.
-
-### API Scopes
-
-Each key has four read-only scopes:
-
-| Scope | Access |
-|-------|--------|
-| `read:products` | List products in your organisation |
-| `read:vulnerabilities` | Read vulnerability findings and scan status |
-| `read:compliance` | Read obligation and compliance status |
-| `write:findings` | Trigger syncs and resolve findings |
-
-New keys include all scopes by default.
-
-### Available Endpoints
-
-All public API endpoints are under `/api/v1/`:
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/products` | List all products |
-| GET | `/api/v1/products/:id` | Get product details |
-| GET | `/api/v1/products/:id/vulnerabilities` | Get vulnerability findings |
-| GET | `/api/v1/products/:id/obligations` | Get obligation statuses |
-| GET | `/api/v1/compliance-status` | Get overall compliance pass/fail |
-
-### Authentication
-
-Include your API key in the `Authorization` header:
-
-```
-Authorization: Bearer cranis2_your_key_here
-```
-
----
-
-## 34. CI/CD Compliance Gate
-
-**Requires:** Pro plan + API key
-
-The CI/CD compliance gate lets you block deployments that do not meet your organisation's compliance threshold. It queries the CRANIS2 public API and exits with a non-zero code if the compliance check fails.
-
-### How It Works
-
-The gate calls the `/api/v1/compliance-status` endpoint, which returns a pass/fail result based on whether any open critical or high-severity findings exist. You configure the gate as a step in your CI/CD pipeline.
-
-### Setup
-
-Navigate to **Settings > Integrations > CI/CD Gate** for ready-made configuration snippets for:
-
-- **GitHub Actions** – a workflow step using `curl` and `jq`
-- **GitLab CI** – a pipeline job with the gate script
-- **Generic** – a bash script that works with any CI system
-
-Each snippet uses your API key and the CRANIS2 API URL. Copy the snippet into your pipeline configuration.
-
-### Configurable Threshold
-
-The compliance gate checks for zero open critical and high-severity findings by default. The threshold is configurable via the API.
-
----
-
-## 35. Integrations (Trello, MCP, IDE)
-
-**Requires:** Pro plan
-
-The Integrations page (**Settings > Integrations**) provides configuration for external tool connections.
-
-### Trello Integration
-
-Connect CRANIS2 to Trello to automatically create cards when compliance events occur. Configuration:
-
-1. Enter your Trello API key and token
-2. Map each product to a Trello board
-3. Select which event types should create cards:
-   - **New vulnerability finding** – creates a card when a new critical or high finding is discovered
-   - **Obligation status change** – creates a card when an obligation moves to a new status
-   - **SBOM stale** – creates a card when a product's SBOM becomes stale
-   - **Compliance gap** – creates a card for new compliance gaps
-
-Cards are deduplicated. The same event will not create duplicate cards. When an event is resolved (e.g. a vulnerability is fixed), a resolution comment is added to the existing card.
-
-Default lists are auto-created on empty boards: To Do, In Progress, Done, and Resolved.
-
-### MCP Server (IDE AI Assistants)
-
-CRANIS2 provides a Model Context Protocol (MCP) server that enables IDE AI assistants (Claude Desktop, VS Code Copilot, Cursor, Claude Code) to query your compliance data directly from the editor.
-
-The MCP server provides five tools:
-
-| Tool | Description |
-|------|-------------|
-| `list_products` | List all products in your organisation |
-| `get_vulnerabilities` | Get vulnerability findings for a product (filterable by severity and status) |
-| `get_mitigation` | Get an ecosystem-aware bash command to fix a specific vulnerability |
-| `get_compliance_status` | Check pass/fail compliance status against a severity threshold |
-| `verify_fix` | Trigger an SBOM rescan to confirm a vulnerability fix has been applied |
-
-### IDE Compliance Assistant Setup
-
-The Integrations page includes a setup wizard for configuring the MCP server in your IDE:
-
-1. Select your IDE (VS Code, Cursor, Claude Desktop, or Claude Code)
-2. Select an existing API key or create a new one
-3. Copy the auto-generated JSON configuration snippet
-4. Paste it into your IDE's MCP configuration file
-
-The wizard provides the correct configuration format for each IDE and includes instructions for where to place the configuration file.
-
-### Example Workflow
-
-```
-You: "What vulnerabilities does my project have?"
-AI:  [calls list_products, then get_vulnerabilities]
-     "Found 3 critical vulnerabilities. The most urgent is CVE-2024-1234
-      in lodash@4.17.11. Run: npm install lodash@4.17.21"
-
-You: *runs the command in terminal*
-
-You: "Verify my fix"
-AI:  [calls verify_fix]
-     "Verification passed: lodash@4.17.11 is no longer flagged.
-      The finding has been marked as resolved in CRANIS2."
-```
-
----
-
-## 36. Copilot Usage & Cost Protection
-
-**Requires:** Pro plan
-
-CRANIS2 includes a three-layer cost protection system for AI Copilot features to prevent runaway costs.
-
-### Token Budget
-
-Each organisation has a monthly token budget (default: 500,000 tokens). When the budget is exhausted, AI features return a 429 error until the next billing cycle. Platform admins can configure the default budget and set per-organisation overrides.
-
-### Rate Limits
-
-Individual AI endpoints have rate limits to prevent abuse:
-
-| Endpoint | Limit |
-|----------|-------|
-| AI Suggest (tech file / obligations) | 20 requests per product per hour |
-| AI Triage | 5 requests per product per hour |
-| AI Risk Assessment | 3 requests per product per day |
-| AI Incident Report Draft | 5 requests per report per day |
-| CRA Category Recommendation | 5 requests per product per day |
-
-### Response Caching
-
-AI responses are cached for 24 hours using a SHA-256 hash of the input context. If the same request is made with identical context (e.g. re-clicking AI Suggest without changing any product data), the cached response is returned instantly without consuming tokens.
-
-### Usage Dashboard
-
-AI usage is tracked on the Billing page:
-
-- **Organisation-level**: total tokens used, remaining budget, cost estimate (USD)
-- **Product-level**: a Copilot Usage widget on the product Overview tab shows per-product token consumption
-- **Admin-level**: platform admins see cross-organisation usage on the Admin Billing page
-
----
-
-## 37. Post-Market Monitoring & Field Issues
-
-### What Is Post-Market Monitoring?
-
-CRA Articles 13(2) and 13(9) require manufacturers to monitor their products after placing them on the market. This includes tracking field-reported security issues, implementing corrective actions, and providing security updates. CRANIS2 provides a structured workflow for managing this process.
-
-### Accessing Field Issues
-
-Field issues are managed from the **Field Issues** tab on each product's detail page. You can also access a cross-product view from the sidebar navigation.
-
-### Creating a Field Issue
-
-Click **Report Field Issue** to create a new entry. Each field issue captures:
-
-| Field | Description |
-|-------|-------------|
-| **Title** | Short description of the reported issue |
-| **Description** | Detailed account of the issue, including how it was discovered and its potential impact |
-| **Severity** | Critical, High, Medium, or Low |
-| **Source** | How the issue was reported: customer report, internal testing, vulnerability disclosure, market surveillance, or other |
-| **Affected versions** | Which product versions are affected |
-| **Reporter** | Contact details for the person or organisation that reported the issue |
-
-### Field Issue Lifecycle
-
-Each field issue progresses through a defined lifecycle:
-
-1. **Open** – Issue has been reported and recorded
-2. **Investigating** – The issue is being analysed to determine root cause and impact
-3. **Fix in Progress** – A corrective action has been identified and development is underway
-4. **Resolved** – The fix has been implemented and verified
-5. **Closed** – The issue has been fully addressed and documented
-
-### Corrective Actions
-
-Each field issue can have one or more **corrective actions** — the specific steps taken to address the issue. Corrective actions have their own lifecycle:
-
-1. **Planned** – The action has been identified but work has not started
-2. **In Progress** – Work is underway
-3. **Completed** – The action has been implemented
-4. **Verified** – The action has been tested and confirmed effective
-
-### Obligation Wiring
-
-Field issue data automatically feeds the obligation engine:
-
-- **Art. 13(6) — Vulnerability handling**: Status reflects open field issues. If any field issues remain open, this obligation cannot be fully met.
-- **Art. 13(9) — Security updates**: Status tracks corrective action completion. Pending corrective actions keep this obligation in progress.
-
-### Surveillance Reports
-
-Click **Export Report** to generate a Markdown surveillance report covering all field issues for a product, including corrective action status and timeline. This report is suitable for inclusion in CRA technical file documentation or for submission to market surveillance authorities.
-
----
-
-## 38. Cryptographic Standards Inventory
-
-### What Is the Crypto Inventory?
-
-CRA Annex I requires products to use appropriate cryptographic standards. CRANIS2 scans your dependency tree to identify cryptographic algorithm usage and classifies each algorithm by its quantum readiness status.
-
-### Accessing the Crypto Inventory
-
-The crypto inventory is available from the **Crypto Inventory** tab on each product's detail page.
-
-### Algorithm Classification
-
-CRANIS2 recognises 37 cryptographic algorithms, each classified into one of three categories:
-
-| Category | Meaning | Examples |
-|----------|---------|----------|
-| **Quantum-safe** | Resistant to known quantum computing attacks | ML-KEM (Kyber), ML-DSA (Dilithium), SLH-DSA (SPHINCS+), AES-256, SHA-3 |
-| **Quantum-vulnerable** | Secure today but will be broken by cryptographically relevant quantum computers | RSA, ECDSA, ECDH, classic Diffie-Hellman, DSA |
-| **Broken** | Already considered insecure regardless of quantum computing | MD5, SHA-1, DES, 3DES, RC4 |
-
-### PQC Readiness Assessment
-
-The **Post-Quantum Cryptography (PQC) Readiness Assessment** provides a structured evaluation of your product's preparedness for the quantum computing transition. It covers 18 questions across areas including:
-
-- Current cryptographic algorithm usage
-- Migration planning for quantum-vulnerable algorithms
-- Crypto-agility (ability to swap algorithms without major refactoring)
-- Key management practices
-- Compliance with emerging PQC standards (NIST FIPS 203/204/205)
-
-The assessment is available as a public self-assessment tool at `/assess/pqc`.
-
-### Obligation Wiring
-
-Crypto inventory data feeds the obligation engine:
-
-- **Art. 13(2) — Cryptographic requirements**: Derived status reflects whether broken or quantum-vulnerable algorithms have been identified and addressed.
-- **Annex I risk assessment**: Crypto findings are included in the risk assessment context for AI-generated Annex I mappings.
-
----
-
-## 39. Conformity Assessments
-
-### What Are Conformity Assessments?
-
-Conformity assessments are structured self-evaluation tools that help you determine whether your product or organisation meets regulatory requirements. CRANIS2 provides four assessment types:
-
-| Assessment | Questions | Scope |
-|-----------|-----------|-------|
-| **CRA Conformity** | 12 | Product-level CRA compliance covering essential requirements, documentation, vulnerability handling, and CE marking |
-| **NIS2 Readiness** | 25 | Organisation-level NIS2 compliance covering governance, risk management, incident handling, supply chain security, and reporting |
-| **Importer Obligations** | 10 | CRA Article 18 obligations specific to importers placing products on the EU market |
-| **PQC Readiness** | 18 | Post-quantum cryptography preparedness covering algorithm usage, migration planning, and crypto-agility |
-
-### Taking an Assessment
-
-Each assessment presents questions with:
-
-- **Guidance text** explaining the regulatory requirement and what constitutes compliance
-- **Response options** (typically Yes / Partially / No / Not Applicable)
-- **Evidence linking** to connect your response to supporting documentation within the platform
-- **Progress tracking** showing how many questions have been answered
-
-### Public Assessment Landing Page
-
-All four assessments are available publicly at `/assess` without requiring a CRANIS2 account. This allows prospective customers, supply chain partners, and auditors to evaluate compliance posture independently. Results are shown immediately upon completion.
-
-### Assessment Results
-
-Completed assessments produce a compliance score and highlight areas requiring attention. For authenticated users, assessment results are stored against the product or organisation and can be referenced in technical file documentation.
-
----
-
-## 40. GRC/OSCAL Bridge
-
-### What Is OSCAL?
-
-OSCAL (Open Security Controls Assessment Language) is a NIST framework for expressing security assessment information in a standardised, machine-readable format. It enables interoperability between compliance tools and GRC (Governance, Risk, and Compliance) platforms.
-
-### Supported Document Types
-
-CRANIS2 exports compliance data in OSCAL 1.1.2 format across four document types:
-
-| Document Type | Contents |
-|--------------|----------|
-| **Catalog** | CRA obligation definitions as OSCAL controls, with regulatory references and descriptions |
-| **Profile** | The subset of obligations applicable to a specific product, based on its CRA category and operator role |
-| **Assessment Results** | Current compliance status for each obligation, including findings, evidence references, and timestamps |
-| **Component Definition** | Product metadata expressed as an OSCAL component with properties (category, type, version, distribution model) |
-
-### Accessing OSCAL Exports
-
-**Requires:** Pro plan
-
-OSCAL exports are available via the Public API:
-
-```
-GET /api/v1/products/:productId/oscal/catalog
-GET /api/v1/products/:productId/oscal/profile
-GET /api/v1/products/:productId/oscal/assessment-results
-GET /api/v1/products/:productId/oscal/component-definition
-```
-
-All endpoints return JSON conforming to the OSCAL 1.1.2 schema. The exports can be imported into GRC platforms such as Trestle, Lula, or Comply.
-
----
-
-## 41. Software Evidence Engine
-
-*Audience: Contributor + Admin | Plan: Pro*
-
-The Software Evidence Engine (SEE) analyses connected repositories to extract structured engineering evidence for R&D tax credits, due diligence, and multi-regulation compliance reporting.
-
-### Source Code Guarantee
-
-All repository access is strictly read-only. CRANIS2 never writes to your repository and never stores your source code. The SEE reads commit metadata, branch structures, and file classifications. Source files are processed transiently — read, metadata extracted, content discarded. What is retained: LOC counts, commit classifications, developer attribution percentages, branch types, and architecture evolution events.
-
-### Enabling SEE
-
-SEE is opt-in per product and requires explicit source code consent from the product owner.
-
-1. Navigate to the product detail page
-2. Open the **Evidence** tab group
-3. On the **Software Evidence** tab, grant source code consent
-4. Run the first analysis
-
-### Analysis Phases
-
-The SEE operates in eight phases, each building on the previous:
-
-**Phase A — Estimation.** File classification engine categorises repository files (production, test, configuration, generated, vendor, documentation). LOC counting produces per-language totals. A COCOMO II-style model generates effort and cost estimates (low, mid, high ranges). An executive report summarises findings.
-
-**Phase B — Commit History.** Paginated, incremental commit ingestion via the provider API. Each commit is stored as metadata (SHA, author, date, message, additions, deletions). Developer attribution is calculated as contribution percentages. SEEDeveloper and SEECommit nodes appear in the evidence graph.
-
-**Phase C — Branch Analysis.** Branch metadata is ingested. A deterministic classifier assigns each commit to one of nine categories: feature, fix, refactor, test, documentation, build, style, experiment, or chore. Branch types (feature, experimental, release, maintenance, abandoned) are inferred. Rewrite ratio is calculated per module.
-
-**Phase D — Experimentation Detection.** Five algorithms identify R&D activity: refactoring waves, prototype branches, rapid iteration cycles, high rewrite ratios, and fix-after-feature patterns. An R&D evidence report is generated with SHA-256 content hashing for tamper detection.
-
-**Phase E — Architecture & Test Evolution.** Detects module restructuring, migration events, API changes, and decomposition patterns. Tracks test creation, modification, and failure-fix correlation. SEEModule nodes represent inferred module boundaries.
-
-**Phase F — Evidence Graph Integration.** Links SEE data to existing CRANIS2 records (SBOMs, vulnerabilities, dependencies). Five provenance query types answer questions such as "who introduced this dependency?" and "what experiments preceded this architecture change?"
-
-**Phase G — Multi-Regulation Reports.** Generates evidence reports for six regulatory frameworks: R&D Tax (HMRC, CIR, Forschungszulage, I+D+i), CRA, NIS2, AI Act, DORA, and ISO 27001. Reports are deterministic, auditable, immutably stored, and exportable as Markdown.
-
-**Phase H — Session Capture.** Development sessions are recorded (with consent) via Claude Code hooks or MCP. See section 42 for details.
-
-### What Contributors Need to Know
-
-- Your commits, branches, and development sessions may be analysed if the product owner has enabled SEE
-- Only metadata is retained — your source code is never stored
-- Developer attribution shows contribution percentages (not a performance metric — it measures evidence coverage)
-- Experimentation detection identifies R&D activity patterns for tax credit claims
-- You may be asked to consent to session capture for competence profiling (always optional)
-
----
-
-## 42. Session Capture & Competence Profiling
-
-*Audience: Contributor | Plan: Pro*
-
-Session capture records development sessions to build evidence of engineering competence — a requirement for R&D tax credit claims in multiple jurisdictions (HMRC, CIR, Forschungszulage, I+D+i).
-
-### How It Works
-
-1. **Explicit consent.** Each developer is prompted for consent before any session is recorded. No recording occurs without consent.
-2. **Session recording.** Development conversations (via Claude Code hooks or MCP integration) are captured.
-3. **Forgejo storage.** Session transcripts are stored in the platform's Forgejo instance — EU-sovereign, git-backed, within the CRANIS2 infrastructure.
-4. **Competence profiling.** A Competence Evidence Profile is generated from each session, assessing 10 domains:
-   - Domain vocabulary depth
-   - Design reasoning quality
-   - Industry reference detection
-   - Decision quality assessment
-   - Technical uncertainty identification
-   - Problem decomposition
-   - Trade-off analysis
-   - Standards awareness
-   - Security consciousness
-   - Architecture comprehension
-
-### Why This Matters
-
-R&D tax relief schemes require evidence that work was carried out by "competent professionals" exercising judgement in the face of technical uncertainty. Traditional evidence relies on formal qualifications (degrees, certifications). Session capture provides behavioural evidence of competence from actual development activity, which is more defensible and does not exclude self-taught engineers.
-
-### Setup
-
-Session capture integrates with:
-- **Claude Code** via hooks configuration (automatic transcript capture)
-- **Other AI-assisted tools** via the MCP server
-
-Setup instructions are available in the CONTRIBUTING.md file and in the `tools/session-capture/` directory.
-
----
-
-## 43. Source Code Guarantee
-
-*Audience: Admin + Contributor*
-
-This section consolidates the guarantees that CRANIS2 makes regarding your source code and repository access.
-
-### What CRANIS2 Never Does
-
-| Guarantee | Detail |
-|-----------|--------|
-| **Never stores source code** | All source file access is transient — files are read, metadata is extracted, content is discarded immediately. No source code is stored in any database, file system, or cache. |
-| **Never writes to repositories** | All repository access is strictly read-only. No pushes, no branches, no file modifications, no settings changes. Connections use read-only scopes. |
-| **Never sends source code to AI** | The AI Copilot and other AI features receive only compliance metadata (dependency lists, vulnerability findings, obligation statuses). Source code is never included in AI prompts. |
-| **Never shares data between organisations** | Strict multi-tenant isolation. Every query is scoped to the authenticated user's organisation. |
-
-### What CRANIS2 Reads (and When)
-
-| Access Level | When | What Is Read | What Is Retained |
-|-------------|------|-------------|-----------------|
-| **Dependency discovery** | All products, automatic | Lockfiles, import statements | Package names and versions only |
-| **SEE analysis** | Opt-in products, on demand | Commit metadata, branch structures, file paths, LOC counts | Structured metrics: LOC, commit classifications, developer attribution, architecture events |
-| **Session capture** | Opt-in per developer | Development session transcripts | Session records stored in Forgejo (EU-sovereign) |
-
-### Repository Connection Security
-
-- **GitHub / Codeberg:** OAuth with read-only scopes
-- **Gitea / Forgejo / GitLab:** Personal Access Tokens encrypted at rest (AES-256-GCM)
-- All connections are verified via the provider's API before any data access
-- Tokens can be revoked at any time from the Integrations page
 
 ---
 
@@ -2081,7 +1358,7 @@ CRANIS2's Tier 2 SBOM generation parses 28 lockfile formats across all major pac
 
 ## Appendix D: Supported Languages for Import Scanning
 
-CRANIS2's Tier 3 import scanner analyses source code import statements in 28 programming languages:
+CRANIS2's Tier 3 import scanner analyses source code import statements in 26 programming languages:
 
 | Language | Language | Language |
 |----------|----------|----------|
@@ -2091,8 +1368,8 @@ CRANIS2's Tier 3 import scanner analyses source code import statements in 28 pro
 | Go | PHP | Shell |
 | Rust | Swift | Zig |
 | Java | Objective-C | Crystal |
-| Scala | C | Delphi |
-| Groovy | C++ | Pascal |
+| Scala | C | |
+| Groovy | C++ | |
 | Dart | Elixir | |
 | Haskell | Erlang | |
 
@@ -2106,10 +1383,10 @@ CRANIS2 supports exporting SBOMs in two industry-standard formats:
 
 | Format | Version | Output | Description |
 |--------|---------|--------|-------------|
-| **CycloneDX** | 1.6 | JSON | OWASP standard for software bill of materials. Includes component metadata, licences, supplier information, and package hashes. Widely adopted by security tooling and compliance frameworks. |
+| **CycloneDX** | 1.6 | JSON | OWASP standard for software bill of materials. Includes component metadata, licenses, supplier information, and package hashes. Widely adopted by security tooling and compliance frameworks. |
 | **SPDX** | 2.3 | JSON | Linux Foundation standard for software package data exchange. Includes package identifiers, relationships, licence declarations, and file-level information. Required by several government procurement frameworks. |
 
-Both formats include **SHA-512 hash enrichment** for package integrity verification, enabling downstream consumers to verify that the packages listed in the SBOM match the actual artefacts in use.
+Both formats include **SHA-512 hash enrichment** for package integrity verification, enabling downstream consumers to verify that the packages listed in the SBOM match the actual artifacts in use.
 
 ---
 

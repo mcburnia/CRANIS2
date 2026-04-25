@@ -39,7 +39,7 @@ const SIDEBAR_PAGES = [
   { name: 'Stakeholders', url: '/stakeholders', section: 'Settings' },
   { name: 'Organisation', url: '/organisation', section: 'Settings' },
   { name: 'Audit Log', url: '/audit-log', section: 'Settings' },
-  { name: 'Marketplace', url: '/marketplace/settings', section: 'Settings' },
+  { name: 'Trust Centre', url: '/trust-centre/settings', section: 'Settings' },
 ];
 
 test.describe('Navigation — All Pages @smoke', () => {
@@ -79,7 +79,7 @@ test.describe('Navigation — All Pages @smoke', () => {
 
       // Check for console errors (filter benign ones)
       const realErrors = consoleErrors.filter(
-        (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to load resource')
+        (err) => !err.includes('favicon') && !err.includes('404')
       );
       expect(realErrors, `Console errors on ${page_def.name}: ${realErrors.join(', ')}`).toHaveLength(0);
     });

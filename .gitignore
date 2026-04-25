@@ -8,3 +8,9 @@ backend/tests/node_modules/
 .mcp.json
 data/snapshots/
 logs/
+
+# Local-only operational state
+backups/
+reports/
+data/
+.claude/

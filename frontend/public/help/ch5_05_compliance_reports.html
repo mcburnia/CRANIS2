@@ -8,201 +8,115 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{
-    --navy:#1C2B3A;--teal:#1D9E75;--teal-lt:#E1F5EE;--teal-dk:#085041;
-    --purple:#534AB7;--purple-lt:#EEEDFE;--coral:#D85A30;--coral-lt:#FAECE7;
-    --amber:#BA7517;--amber-lt:#FAEEDA;--green-lt:#EAF3DE;--green-dk:#173404;
-    --gray-lt:#F1EFE8;--bg:#F4F2EE;--surface:#FFFFFF;--border:#E2DDD4;
-    --text:#1A1A18;--text-2:#5A5854;--text-3:#8C8A84;
-    --shadow:0 2px 8px rgba(0,0,0,.07),0 8px 24px rgba(0,0,0,.05);
-  }
+  :root{--navy:#1C2B3A;--teal:#1D9E75;--teal-lt:#E1F5EE;--teal-dk:#085041;--purple:#534AB7;--purple-lt:#EEEDFE;--coral:#D85A30;--coral-lt:#FAECE7;--amber:#BA7517;--amber-lt:#FAEEDA;--green-lt:#EAF3DE;--green-dk:#173404;--gray-lt:#F1EFE8;--bg:#F4F2EE;--surface:#FFFFFF;--border:#E2DDD4;--text:#1A1A18;--text-2:#5A5854;--text-3:#8C8A84;--shadow:0 2px 8px rgba(0,0,0,.07),0 8px 24px rgba(0,0,0,.05);}
   html,body{font-family:'Source Serif 4',Georgia,serif;background:var(--bg);color:var(--text);}
   header{background:var(--navy);padding:0 28px;display:flex;align-items:center;gap:16px;height:52px;position:sticky;top:0;z-index:100;}
-  .logo{font-family:'Outfit',sans-serif;font-weight:700;font-size:17px;color:#fff;letter-spacing:-.3px;}
-  .logo span{color:var(--teal)}
+  .logo{font-family:'Outfit',sans-serif;font-weight:700;font-size:17px;color:#fff;letter-spacing:-.3px;}.logo span{color:var(--teal)}
   .sep{width:1px;height:20px;background:rgba(255,255,255,.2)}
-  .breadcrumb{font-family:'Outfit',sans-serif;font-size:13px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:7px;}
-  .breadcrumb strong{color:rgba(255,255,255,.9);font-weight:500}
-  .audience-tags{margin-left:auto;display:flex;gap:6px}
-  .tag{font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6)}
+  .breadcrumb{font-family:'Outfit',sans-serif;font-size:13px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:7px;}.breadcrumb strong{color:rgba(255,255,255,.9);font-weight:500}
+  .audience-tags{margin-left:auto;display:flex;gap:6px}.tag{font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6)}
   .map-section{background:var(--surface);border-bottom:2px solid var(--border);padding:24px 24px 16px}
-  .map-header{display:flex;align-items:baseline;gap:12px;margin-bottom:18px}
-  .map-header h1{font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px}
-  .map-header p{font-family:'Outfit',sans-serif;font-size:13px;color:var(--text-3)}
-  .map-wrap{overflow-x:auto;padding-bottom:4px}
-  .map-wrap svg{display:block;min-width:700px}
+  .map-header{display:flex;align-items:baseline;gap:12px;margin-bottom:18px}.map-header h1{font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px}.map-header p{font-family:'Outfit',sans-serif;font-size:13px;color:var(--text-3)}
+  .map-wrap{overflow-x:auto;padding-bottom:4px}.map-wrap svg{display:block;min-width:700px}
   .map-hint{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px}
   .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
   .stn{cursor:pointer;transition:opacity .15s}.stn:hover{opacity:.75}
-  .stn .lbl,.stn .lbl-sub{transition:font-size .15s ease,font-weight .15s ease}
-  .stn:hover .lbl{font-size:15px;font-weight:700}
-  .stn:hover .lbl-sub{font-size:13px;font-weight:500}
+  .stn .lbl,.stn .lbl-sub{transition:font-size .15s ease,font-weight .15s ease}.stn:hover .lbl{font-size:15px;font-weight:700}.stn:hover .lbl-sub{font-size:13px;font-weight:500}
   .instructions-wrap{max-width:820px;margin:0 auto;padding:36px 28px 80px}
   .prompt-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px;text-align:center;gap:14px}
   .prompt-icon{width:48px;height:48px;border-radius:50%;background:var(--teal-lt);display:flex;align-items:center;justify-content:center;font-size:22px}
-  .prompt-state h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;color:var(--text)}
-  .prompt-state p{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-3);max-width:340px;line-height:1.6}
-  .instruction-card{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;display:none;animation:fadeUp .22s ease both}
-  .instruction-card.visible{display:block}
+  .prompt-state h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;color:var(--text)}.prompt-state p{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-3);max-width:340px;line-height:1.6}
+  .instruction-card{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;display:none;animation:fadeUp .22s ease both}.instruction-card.visible{display:block}
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
   .card-header{padding:18px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
   .card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-  .card-header-text h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.15px}
-  .card-header-text .card-sub{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);margin-top:2px}
+  .card-header-text h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.15px}.card-header-text .card-sub{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);margin-top:2px}
   .line-badge{display:inline-block;font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;padding:2px 8px;border-radius:4px;margin-left:8px;vertical-align:middle}
-  .badge-teal{background:var(--teal-lt);color:var(--teal-dk)}.badge-coral{background:var(--coral-lt);color:#711E08}
-  .badge-purple{background:var(--purple-lt);color:#26215C}.badge-amber{background:var(--amber-lt);color:#412402}
-  .badge-blue{background:#E6F1FB;color:#042C53}.badge-green{background:var(--green-lt);color:var(--green-dk)}
-  .badge-gray{background:var(--gray-lt);color:#2C2C2A}
-  .card-body{padding:22px 24px 26px;display:flex;flex-direction:column;gap:14px}
-  .card-body p{font-size:15px;line-height:1.72;color:var(--text-2)}
-  .card-body strong{color:var(--text);font-weight:600}
-  .detail-list{list-style:none;display:flex;flex-direction:column;gap:7px;padding-left:2px}
-  .detail-list li{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-2);display:flex;align-items:flex-start;gap:10px;line-height:1.55}
-  .detail-list li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--teal);margin-top:7px;flex-shrink:0}
+  .badge-teal{background:var(--teal-lt);color:var(--teal-dk)}.badge-coral{background:var(--coral-lt);color:#711E08}.badge-purple{background:var(--purple-lt);color:#26215C}.badge-amber{background:var(--amber-lt);color:#412402}.badge-blue{background:#E6F1FB;color:#042C53}.badge-green{background:var(--green-lt);color:var(--green-dk)}.badge-gray{background:var(--gray-lt);color:#2C2C2A}
+  .card-body{padding:22px 24px 26px;display:flex;flex-direction:column;gap:14px}.card-body p{font-size:15px;line-height:1.72;color:var(--text-2)}.card-body strong{color:var(--text);font-weight:600}
+  .detail-list{list-style:none;display:flex;flex-direction:column;gap:7px;padding-left:2px}.detail-list li{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-2);display:flex;align-items:flex-start;gap:10px;line-height:1.55}.detail-list li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--teal);margin-top:7px;flex-shrink:0}
   .tip{background:var(--teal-lt);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--teal-dk);line-height:1.55}
   .warn{background:var(--amber-lt);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#412402;line-height:1.55}
   .info{background:#E6F1FB;border-left:3px solid #185FA5;border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#042C53;line-height:1.55}
   .code{font-family:'DM Mono',monospace;font-size:12.5px;background:var(--gray-lt);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--text)}
-  footer{background:var(--surface);border-top:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;position:sticky;bottom:0;z-index:100}
-  footer span{font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--text-3)}
+  footer{background:var(--surface);border-top:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;position:sticky;bottom:0;z-index:100}footer span{font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--text-3)}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">CRANIS<span>2</span></div>
-  <div class="sep"></div>
-  <div class="breadcrumb">
-    <span>Chapter 5 · Reporting & Evidence</span>
-    <span>\u203a</span>
-    <strong>Compliance reports</strong>
-  </div>
-  <div class="audience-tags"><span class="tag">Manager</span><span class="tag">Compliance officer</span></div>
+  <div class="logo">CRANIS<span>2</span></div><div class="sep"></div>
+  <div class="breadcrumb"><span>Chapter 5 &middot; Evidence &amp; Compliance</span><span>&rsaquo;</span><strong>Compliance reports</strong></div>
+  <div class="audience-tags"><span class="tag">Admin</span></div>
 </header>
 <div class="map-section">
-  <div class="map-header">
-    <h1>Compliance reports</h1>
-    <p>Three report types for different audiences</p>
-  </div>
+  <div class="map-header"><h1>Compliance reports</h1><p>Point-in-time compliance evidence for auditors and regulators</p></div>
   <div class="map-wrap">
-    <svg viewBox="0 0 760 206" xmlns="http://www.w3.org/2000/svg"><defs><style>
-  .lbl{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:11px;fill:#1A1A18;}
-  .lbl-sub{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:9.5px;fill:#8C8A84;}
-</style></defs><line x1="63.0" y1="104" x2="209.5" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
-<line x1="225.5" y1="104" x2="372.0" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
-<line x1="388.0" y1="104" x2="534.5" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
-<line x1="550.5" y1="104" x2="693.0" y2="104" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
-<g class="stn" id="ms-s1" onclick="show('s1')"><rect x="49.0" y="94" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="55.0" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="55.0" y="130" text-anchor="start" class="lbl" font-weight="600" style="fill:#1A1A18">Step 1</text><text x="55.0" y="143" text-anchor="start" class="lbl-sub">Navigate</text></g>
-<g class="stn" id="ms-s2" onclick="show('s2')"><circle cx="217.5" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="217.5" y="130" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Step 2</text><text x="217.5" y="143" text-anchor="middle" class="lbl-sub">Configure</text></g>
-<g class="stn" id="ms-s3" onclick="show('s3')"><circle cx="380.0" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="380.0" y="130" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Step 3</text><text x="380.0" y="143" text-anchor="middle" class="lbl-sub">Review</text></g>
-<g class="stn" id="ms-s4" onclick="show('s4')"><circle cx="542.5" cy="104" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="542.5" y="130" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Step 4</text><text x="542.5" y="143" text-anchor="middle" class="lbl-sub">Apply</text></g>
-<g class="stn" id="ms-s5" onclick="show('s5')"><circle cx="705.0" cy="104" r="12" fill="white" stroke="#3B6D11" stroke-width="3"/><circle cx="705.0" cy="104" r="6" fill="#3B6D11"/><text x="705.0" y="130" text-anchor="middle" class="lbl" font-weight="600" style="fill:#1A1A18">Complete</text><text x="705.0" y="143" text-anchor="middle" class="lbl-sub">Done</text></g>
-  <line x1="30" y1="194" x2="55" y2="194" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/>
-  <text x="61" y="198" class="lbl-sub">Main journey</text>
-  <line x1="150" y1="194" x2="175" y2="194" stroke="#D85A30" stroke-width="4" stroke-linecap="round"/>
-  <text x="181" y="198" class="lbl-sub">Error / branch</text>
-  <line x1="278" y1="194" x2="303" y2="194" stroke="#BA7517" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
-  <text x="309" y="198" class="lbl-sub">Feeder</text>
-  <line x1="368" y1="194" x2="393" y2="194" stroke="#534AB7" stroke-width="4" stroke-linecap="round"/>
-  <text x="399" y="198" class="lbl-sub">Next process</text>
-  <circle cx="468" cy="194" r="6" fill="white" stroke="#888" stroke-width="2"/>
-  <circle cx="468" cy="194" r="3" fill="#888"/>
-  <text x="479" y="198" class="lbl-sub">Interchange</text></svg>
+    <svg viewBox="0 0 760 160" xmlns="http://www.w3.org/2000/svg"><defs><style>.lbl{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:11px;fill:#1A1A18;}.lbl-sub{font-family:'Outfit','Helvetica Neue',sans-serif;font-size:9.5px;fill:#8C8A84;}</style></defs><g transform="translate(0,12)">
+<line x1="55" y1="80" x2="175" y2="80" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="195" y1="80" x2="315" y2="80" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="335" y1="80" x2="455" y2="80" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="475" y1="80" x2="575" y2="80" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<line x1="595" y1="80" x2="725" y2="80" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>
+<g class="stn" id="ms-navigate" onclick="show('navigate')"><rect x="41" y="70" width="12" height="20" rx="2" fill="#1D9E75"/><circle cx="47" cy="80" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="47" y="106" text-anchor="start" class="lbl" font-weight="600">Navigate</text><text x="47" y="119" text-anchor="start" class="lbl-sub">Sidebar Reports</text></g>
+<g class="stn" id="ms-summary" onclick="show('summary')"><circle cx="185" cy="80" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="185" y="56" text-anchor="middle" class="lbl" font-weight="600">Summary</text><text x="185" y="69" text-anchor="middle" class="lbl-sub">Compliance overview</text></g>
+<g class="stn" id="ms-trends" onclick="show('trends')"><circle cx="325" cy="80" r="12" fill="white" stroke="#D85A30" stroke-width="3"/><circle cx="325" cy="80" r="6" fill="#D85A30"/><text x="325" y="106" text-anchor="middle" class="lbl" font-weight="600">Trends</text><text x="325" y="119" text-anchor="middle" class="lbl-sub">Vulnerability history</text></g>
+<g class="stn" id="ms-audit" onclick="show('audit')"><circle cx="465" cy="80" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="465" y="56" text-anchor="middle" class="lbl" font-weight="600">Audit trail</text><text x="465" y="69" text-anchor="middle" class="lbl-sub">Activity log</text></g>
+<g class="stn" id="ms-filters" onclick="show('filters')"><circle cx="585" cy="80" r="8" fill="white" stroke="#1D9E75" stroke-width="3"/><text x="585" y="106" text-anchor="middle" class="lbl" font-weight="600">Filters</text><text x="585" y="119" text-anchor="middle" class="lbl-sub">Date range, export</text></g>
+<g class="stn" id="ms-cra" onclick="show('cra')"><circle cx="725" cy="80" r="12" fill="white" stroke="#3B6D11" stroke-width="3"/><circle cx="725" cy="80" r="6" fill="#3B6D11"/><text x="725" y="56" text-anchor="middle" class="lbl" font-weight="600">CRA context</text><text x="725" y="69" text-anchor="middle" class="lbl-sub">Art 13(10)</text></g>
+</g><line x1="30" y1="142" x2="55" y2="142" stroke="#1D9E75" stroke-width="4" stroke-linecap="round"/><text x="61" y="146" class="lbl-sub">Main journey</text></svg>
   </div>
   <div class="map-hint"><div class="hint-dot"></div>Click any station to see instructions for that step</div>
 </div>
 <div class="instructions-wrap">
-  <div class="prompt-state" id="prompt">
-    <div class="prompt-icon">🗺️</div>
-    <h2>Select a station to begin</h2>
-    <p>Click any station on the map above to read the instructions for that step.</p>
-  </div>
-  <div class="instruction-card" id="instruction-card">
-    <div class="card-header">
-      <div class="card-icon" id="card-icon"></div>
-      <div class="card-header-text">
-        <h2 id="card-title"></h2>
-        <div class="card-sub" id="card-sub"></div>
-      </div>
-    </div>
-    <div class="card-body" id="card-body"></div>
-  </div>
+  <div class="prompt-state" id="prompt"><div class="prompt-icon">&#x1f4ca;</div><h2>Select a station to begin</h2><p>Click any station on the map above to read the instructions for that step.</p></div>
+  <div class="instruction-card" id="instruction-card"><div class="card-header"><div class="card-icon" id="card-icon"></div><div class="card-header-text"><h2 id="card-title"></h2><div class="card-sub" id="card-sub"></div></div></div><div class="card-body" id="card-body"></div></div>
 </div>
-<footer>
-  <span>CRANIS2 User Guide</span>
-</footer>
+<footer><span>CRANIS2 User Guide &middot; 6 stations</span></footer>
 <script>
 const stations = {
-  "s1": {
-    "icon": "📍",
-    "iconBg": "#F1EFE8",
-    "badge": "Step 1",
-    "badgeClass": "badge-gray",
-    "title": "Navigate to compliance reports",
-    "sub": "Find the feature in the platform",
-    "body": "<p>This guide covers <strong>Compliance reports</strong>. Navigate to the relevant page using the sidebar or product detail tabs.</p><div class=\"tip\">Full content for this guide is being prepared. The navigation and structure are in place — detailed step-by-step instructions will follow.</div>"
+  "navigate": {
+    icon:"\ud83d\udcca",iconBg:"#F1EFE8",badge:"Step 1",badgeClass:"badge-gray",
+    title:"Open the Reports section",sub:"Sidebar \u2192 Reports",
+    body:`<p>Click <strong>Reports</strong> in the sidebar to access the compliance reporting dashboard. The reports section provides a consolidated view of your organisation\u2019s compliance posture across all products.</p><p>Reports are generated on demand and reflect the current state of your data at the time of generation. Each report captures a <strong>point-in-time snapshot</strong>, making it suitable for audit submissions or periodic management reviews.</p><div class="tip">Generate a compliance report before any scheduled audit or management review. The snapshot captures the exact state of your compliance at that moment, providing defensible evidence.</div>`
   },
-  "s2": {
-    "icon": "⚙️",
-    "iconBg": "#E1F5EE",
-    "badge": "Step 2",
-    "badgeClass": "badge-teal",
-    "title": "Configure or set up",
-    "sub": "Initial configuration steps",
-    "body": "<p>Configure the settings required for <strong>compliance reports</strong>. Each option is explained with its impact on your compliance workflow.</p>"
+  "summary": {
+    icon:"\ud83d\udccb",iconBg:"#E1F5EE",badge:"Overview",badgeClass:"badge-teal",
+    title:"Compliance summary",sub:"Obligations, technical file, vulnerabilities, and ENISA alignment",
+    body:`<p>The summary section provides a high-level overview of your compliance posture, broken down into four key areas:</p><ul class="detail-list"><li><strong>Obligations</strong> \u2014 completion percentage across all applicable CRA obligations, broken down by status (compliant, in progress, not started)</li><li><strong>Technical file</strong> \u2014 completeness of your technical documentation, including which sections have been filled and which remain empty</li><li><strong>Vulnerabilities</strong> \u2014 current vulnerability counts by severity and triage status, plus the ratio of mitigated to outstanding findings</li><li><strong>ENISA alignment</strong> \u2014 how well your product\u2019s security practices align with the European Union Agency for Cybersecurity guidance on CRA implementation</li></ul><p>Each area shows a progress indicator and links directly to the relevant section for deeper investigation.</p>`
   },
-  "s3": {
-    "icon": "🔍",
-    "iconBg": "#E1F5EE",
-    "badge": "Step 3",
-    "badgeClass": "badge-teal",
-    "title": "Review the results",
-    "sub": "Check what was generated or configured",
-    "body": "<p>Review the output to ensure it meets your needs. Make any necessary adjustments before proceeding.</p>"
+  "trends": {
+    icon:"\ud83d\udcc8",iconBg:"#FAECE7",badge:"Analysis",badgeClass:"badge-coral",
+    title:"Vulnerability trends",sub:"Time-series history of your vulnerability landscape",
+    body:`<p>The trends view displays a <strong>time-series chart</strong> tracking how your vulnerability counts have changed over time. This visualisation helps you demonstrate that your security posture is improving, not just that it is adequate at a single point in time.</p><ul class="detail-list"><li><strong>New findings per period</strong> \u2014 how many new vulnerabilities were discovered in each time window</li><li><strong>Mitigated per period</strong> \u2014 how many were resolved, showing your remediation velocity</li><li><strong>Outstanding over time</strong> \u2014 the running total of open findings, which should trend downward</li><li><strong>Mean time to remediate</strong> \u2014 average days from discovery to resolution, broken down by severity</li></ul><div class="info">Regulators and auditors value trend data because it demonstrates a functioning, ongoing vulnerability management process \u2014 not just a one-off clean-up before an assessment.</div>`
   },
-  "s4": {
-    "icon": "✔️",
-    "iconBg": "#E1F5EE",
-    "badge": "Step 4",
-    "badgeClass": "badge-teal",
-    "title": "Apply or save",
-    "sub": "Confirm your changes",
-    "body": "<p>Apply your changes. The platform updates your compliance status accordingly.</p>"
+  "audit": {
+    icon:"\ud83d\udd12",iconBg:"#EEEDFE",badge:"Evidence",badgeClass:"badge-purple",
+    title:"Tamper-evident audit trail",sub:"Chronological log of all compliance-relevant actions",
+    body:`<p>The audit trail records every significant action taken within your organisation\u2019s CRANIS2 workspace. Each entry captures:</p><ul class="detail-list"><li><strong>Timestamp</strong> \u2014 exact date and time of the action (UTC)</li><li><strong>Actor</strong> \u2014 the user who performed the action (email and user ID)</li><li><strong>Action type</strong> \u2014 what was done (e.g. vulnerability triaged, obligation status updated, document uploaded)</li><li><strong>Target</strong> \u2014 the specific resource affected (product, vulnerability, obligation)</li><li><strong>Details</strong> \u2014 before and after values for status changes, providing full traceability</li></ul><p>The audit trail is <strong>append-only</strong> \u2014 entries cannot be modified or deleted, even by organisation admins. This ensures the integrity of your compliance evidence.</p><div class="warn">The audit trail is designed to withstand scrutiny. Do not attempt to work around it by deleting and recreating resources \u2014 deletion events are also logged.</div>`
   },
-  "s5": {
-    "icon": "✅",
-    "iconBg": "#EAF3DE",
-    "badge": "Complete",
-    "badgeClass": "badge-green",
-    "title": "Process complete",
-    "sub": "Compliance reports is now configured",
-    "body": "<p><strong>Compliance reports</strong> is now set up and contributing to your compliance evidence.</p>"
+  "filters": {
+    icon:"\ud83d\udce4",iconBg:"#FAEEDA",badge:"Export",badgeClass:"badge-amber",
+    title:"Filters and export options",sub:"Date range selection and PDF/CSV export",
+    body:`<p>Use the filter controls to narrow your report to a specific time period or set of products:</p><ul class="detail-list"><li><strong>Date range</strong> \u2014 select a start and end date to scope the report to a specific period (e.g. the quarter under audit)</li><li><strong>Product filter</strong> \u2014 include all products or select specific ones for a focused report</li><li><strong>Export as PDF</strong> \u2014 generates a formatted, print-ready document suitable for submission to auditors or regulators</li><li><strong>Export as CSV</strong> \u2014 generates raw data tables for further analysis in spreadsheet tools or import into GRC platforms</li></ul><p>Exported reports include a generation timestamp and the filters applied, so recipients can understand exactly what the report covers.</p><div class="tip">When preparing for an audit, export both formats: PDF for the auditors to review, and CSV as a backup for any detailed queries they may have about specific data points.</div>`
+  },
+  "cra": {
+    icon:"\u2705",iconBg:"#EAF3DE",badge:"CRA context",badgeClass:"badge-green",
+    title:"CRA Article 13(10) \u2014 documentation obligations",sub:"Technical documentation and conformity evidence",
+    body:`<p>The CRA requires manufacturers to maintain comprehensive documentation and make it available to market surveillance authorities:</p><ul class="detail-list"><li><strong>Article 13(10)</strong> \u2014 manufacturers must keep the EU Declaration of Conformity and technical documentation at the disposal of market surveillance authorities for at least ten years after the product is placed on the market</li><li><strong>Article 13(11)</strong> \u2014 on request from a market surveillance authority, manufacturers must provide all information and documentation necessary to demonstrate conformity</li><li><strong>Article 31</strong> \u2014 specifies the contents of the technical file, including risk assessment, vulnerability handling evidence, and design documentation</li><li><strong>Annex VII</strong> \u2014 defines the elements of the EU Declaration of Conformity that must accompany the product</li></ul><div class="info">CRANIS2 compliance reports are designed to align with the documentation requirements of Articles 13(10\u201311) and 31. Regular report generation creates an evidence archive that satisfies the ten-year retention obligation.</div>`
   }
 };
-const allIds = ["s1", "s2", "s3", "s4", "s5"];
+const allIds = ["navigate","summary","trends","audit","filters","cra"];
 function show(id) {
-  const s = stations[id];
-  if (!s) return;
-  allIds.forEach(k => {
-    const el = document.getElementById('ms-' + k);
-    if (!el) return;
-    el.querySelectorAll('circle,rect').forEach(c => { c.style.filter = ''; });
-  });
+  const s = stations[id]; if (!s) return;
+  allIds.forEach(k => { const el = document.getElementById('ms-' + k); if (!el) return; el.querySelectorAll('circle,rect').forEach(c => { c.style.filter = ''; }); });
   const active = document.getElementById('ms-' + id);
-  if (active) active.querySelectorAll('circle').forEach(c => {
-    c.style.filter = 'drop-shadow(0 0 6px rgba(29,158,117,.6))';
-  });
-  document.getElementById('card-icon').textContent = s.icon;
-  document.getElementById('card-icon').style.background = s.iconBg;
+  if (active) active.querySelectorAll('circle').forEach(c => { c.style.filter = 'drop-shadow(0 0 6px rgba(29,158,117,.6))'; });
+  document.getElementById('card-icon').textContent = s.icon; document.getElementById('card-icon').style.background = s.iconBg;
   document.getElementById('card-title').innerHTML = s.title + '<span class="line-badge ' + s.badgeClass + '">' + s.badge + '</span>';
-  document.getElementById('card-sub').textContent = s.sub;
-  document.getElementById('card-body').innerHTML = s.body;
+  document.getElementById('card-sub').textContent = s.sub; document.getElementById('card-body').innerHTML = s.body;
   document.getElementById('prompt').style.display = 'none';
-  const card = document.getElementById('instruction-card');
-  card.classList.remove('visible');
-  void card.offsetWidth;
-  card.classList.add('visible');
+  const card = document.getElementById('instruction-card'); card.classList.remove('visible'); void card.offsetWidth; card.classList.add('visible');
 }
 </script>
 </body>

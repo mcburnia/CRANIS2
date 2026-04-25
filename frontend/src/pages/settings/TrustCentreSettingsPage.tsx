@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import { useAuth } from '../../context/AuthContext';
-import './MarketplaceSettingsPage.css';
+import './TrustCentreSettingsPage.css';
 
 interface Category { value: string; label: string; }
 interface Product { id: string; name: string; productType: string; }
@@ -42,7 +42,7 @@ function badgeColor(s: string) {
   switch (s) { case 'compliant': return 'green'; case 'in_progress': return 'amber'; default: return 'muted'; }
 }
 
-export default function MarketplaceSettingsPage() {
+export default function TrustCentreSettingsPage() {
   usePageMeta();
   const { user } = useAuth();
   const isPro = user?.orgPlan === 'pro' || user?.orgPlan === 'enterprise' || user?.isPlatformAdmin;
@@ -72,11 +72,11 @@ export default function MarketplaceSettingsPage() {
     setError('');
     try {
       const [profileRes, catRes, meRes] = await Promise.all([
-        fetch('/api/marketplace/profile', { headers }),
-        fetch('/api/marketplace/categories'),
+        fetch('/api/trust-centre/profile', { headers }),
+        fetch('/api/trust-centre/categories'),
         fetch('/api/auth/me', { headers }),
       ]);
-      if (!profileRes.ok) throw new Error('Failed to load marketplace profile');
+      if (!profileRes.ok) throw new Error('Failed to load Trust Centre profile');
       const profileData: ProfileData = await profileRes.json();
       const catData = catRes.ok ? await catRes.json() : { categories: [] };
       const meData = meRes.ok ? await meRes.json() : {};
@@ -102,7 +102,7 @@ export default function MarketplaceSettingsPage() {
     setError('');
     setSuccess('');
     try {
-      const res = await fetch('/api/marketplace/profile', {
+      const res = await fetch('/api/trust-centre/profile', {
         method: 'PUT',
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify({ listed, tagline, description, logoUrl, categories: selectedCategories, featuredProductIds }),
@@ -110,7 +110,7 @@ export default function MarketplaceSettingsPage() {
       if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error((data as any).error || 'Failed to save'); }
       const data = await res.json();
       if (data.complianceBadges && profile) setProfile({ ...profile, complianceBadges: data.complianceBadges, listed });
-      setSuccess('Marketplace settings saved');
+      setSuccess('Trust Centre settings saved');
     } catch (err: any) {
       setError(err.message || 'Failed to save');
     } finally {
@@ -118,8 +118,8 @@ export default function MarketplaceSettingsPage() {
     }
   }
 
-  if (loading) return <><PageHeader title="Marketplace Settings" /><div className="ms-loading"><Loader2 size={24} className="ms-spin" /> Loading...</div></>;
-  if (!profile) return <><PageHeader title="Marketplace Settings" /><div className="ms-error">{error || 'Failed to load.'}</div></>;
+  if (loading) return <><PageHeader title="Trust Centre Settings" /><div className="ts-loading"><Loader2 size={24} className="ts-spin" /> Loading...</div></>;
+  if (!profile) return <><PageHeader title="Trust Centre Settings" /><div className="ts-error">{error || 'Failed to load.'}</div></>;
 
   const b = profile.complianceBadges;
   const badgeItems = [
@@ -134,59 +134,59 @@ export default function MarketplaceSettingsPage() {
 
   return (
     <>
-      <PageHeader title="Marketplace Settings" />
-      <div className="ms-page">
-        {success && <div className="ms-success">{success}</div>}
-        {error && <div className="ms-error">{error}</div>}
+      <PageHeader title="Trust Centre Settings" />
+      <div className="ts-page">
+        {success && <div className="ts-success">{success}</div>}
+        {error && <div className="ts-error">{error}</div>}
 
         {!isPro && (
           <div className="ai-upgrade-banner" style={{ marginBottom: '1rem' }}>
             <Info size={14} />
-            <span>Marketplace listings require the <strong>Pro</strong> plan. <a href="/billing"><Sparkles size={12} style={{ verticalAlign: 'middle' }} /> Upgrade now</a></span>
+            <span>Trust Centre listings require the <strong>Pro</strong> plan. <a href="/billing"><Sparkles size={12} style={{ verticalAlign: 'middle' }} /> Upgrade now</a></span>
           </div>
         )}
 
-        <div className="ms-section" style={!isPro ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
-          <div className="ms-toggle-row">
-            <div className="ms-toggle-info">
+        <div className="ts-section" style={!isPro ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
+          <div className="ts-toggle-row">
+            <div className="ts-toggle-info">
               <Store size={18} />
               <div>
-                <span className="ms-toggle-label">Public Marketplace Listing</span>
-                <span className="ms-toggle-desc">Make your organisation visible on the CRANIS2 marketplace</span>
+                <span className="ts-toggle-label">Public Trust Centre Listing</span>
+                <span className="ts-toggle-desc">Make your organisation visible on the CRANIS2 Trust Centre</span>
               </div>
             </div>
-            <label className="ms-toggle">
+            <label className="ts-toggle">
               <input type="checkbox" checked={listed} onChange={e => setListed(e.target.checked)} />
-              <span className="ms-toggle-slider" />
+              <span className="ts-toggle-slider" />
             </label>
           </div>
-          {!profile.listingApproved && listed && <div className="ms-info-banner">Your listing is pending approval.</div>}
+          {!profile.listingApproved && listed && <div className="ts-info-banner">Your listing is pending approval.</div>}
         </div>
 
         {listed && (
-          <div className="ms-form">
-            <div className="ms-field">
+          <div className="ts-form">
+            <div className="ts-field">
               <label>Tagline</label>
-              <input type="text" className="ms-input" placeholder="A short description of your organisation" maxLength={160} value={tagline} onChange={e => setTagline(e.target.value)} />
-              <div className="ms-char-count"><span className={tagline.length > 150 ? 'ms-char-warn' : ''}>{tagline.length}</span>/160</div>
+              <input type="text" className="ts-input" placeholder="A short description of your organisation" maxLength={160} value={tagline} onChange={e => setTagline(e.target.value)} />
+              <div className="ts-char-count"><span className={tagline.length > 150 ? 'ts-char-warn' : ''}>{tagline.length}</span>/160</div>
             </div>
-            <div className="ms-field">
+            <div className="ts-field">
               <label>Description</label>
-              <textarea className="ms-textarea" placeholder="Describe your organisation, products, and compliance approach" maxLength={2000} rows={6} value={description} onChange={e => setDescription(e.target.value)} />
-              <div className="ms-char-count"><span className={description.length > 1900 ? 'ms-char-warn' : ''}>{description.length}</span>/2000</div>
+              <textarea className="ts-textarea" placeholder="Describe your organisation, products, and compliance approach" maxLength={2000} rows={6} value={description} onChange={e => setDescription(e.target.value)} />
+              <div className="ts-char-count"><span className={description.length > 1900 ? 'ts-char-warn' : ''}>{description.length}</span>/2000</div>
             </div>
-            <div className="ms-field">
+            <div className="ts-field">
               <label>Logo URL</label>
-              <input type="url" className="ms-input" placeholder="https://example.com/logo.png" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} />
+              <input type="url" className="ts-input" placeholder="https://example.com/logo.png" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} />
             </div>
             {categories.length > 0 && (
-              <div className="ms-field">
+              <div className="ts-field">
                 <label>Categories</label>
-                <div className="ms-checkbox-grid">
+                <div className="ts-checkbox-grid">
                   {categories.map(cat => (
-                    <label key={cat.value} className="ms-checkbox">
+                    <label key={cat.value} className="ts-checkbox">
                       <input type="checkbox" checked={selectedCategories.includes(cat.value)} onChange={() => setSelectedCategories(prev => prev.includes(cat.value) ? prev.filter(c => c !== cat.value) : [...prev, cat.value])} />
-                      <span className="ms-checkbox-mark" />
+                      <span className="ts-checkbox-mark" />
                       <span>{cat.label}</span>
                     </label>
                   ))}
@@ -194,13 +194,13 @@ export default function MarketplaceSettingsPage() {
               </div>
             )}
             {profile.products.length > 0 && (
-              <div className="ms-field">
+              <div className="ts-field">
                 <label><Package size={14} style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} />Featured Products</label>
-                <div className="ms-checkbox-grid">
+                <div className="ts-checkbox-grid">
                   {profile.products.map(p => (
-                    <label key={p.id} className="ms-checkbox">
+                    <label key={p.id} className="ts-checkbox">
                       <input type="checkbox" checked={featuredProductIds.includes(p.id)} onChange={() => setFeaturedProductIds(prev => prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id])} />
-                      <span className="ms-checkbox-mark" />
+                      <span className="ts-checkbox-mark" />
                       <span>{p.name}</span>
                     </label>
                   ))}
@@ -208,27 +208,27 @@ export default function MarketplaceSettingsPage() {
               </div>
             )}
             {listed && profile.listingApproved && orgId && (
-              <Link to={`/marketplace/${orgId}`} className="ms-preview-link" target="_blank"><Eye size={16} /> View your public listing <ExternalLink size={14} /></Link>
+              <Link to={`/trust-centre/${orgId}`} className="ts-preview-link" target="_blank"><Eye size={16} /> View your public listing <ExternalLink size={14} /></Link>
             )}
           </div>
         )}
 
-        <div className="ms-section" style={!isPro ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
-          <div className="ms-section-header"><ShieldCheck size={18} /><h3>Compliance Badges</h3></div>
-          <p className="ms-section-desc">Auto-computed from your compliance data. Displayed on your marketplace listing.</p>
-          <div className="ms-badges">
+        <div className="ts-section" style={!isPro ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
+          <div className="ts-section-header"><ShieldCheck size={18} /><h3>Compliance Badges</h3></div>
+          <p className="ts-section-desc">Auto-computed from your compliance data. Displayed on your Trust Centre listing.</p>
+          <div className="ts-badges">
             {badgeItems.map(item => (
-              <div key={item.label} className={`ms-badge-card ms-badge-${item.color}`}>
-                <span className="ms-badge-value">{item.value}</span>
-                <span className="ms-badge-label">{item.label}</span>
+              <div key={item.label} className={`ts-badge-card ts-badge-${item.color}`}>
+                <span className="ts-badge-value">{item.value}</span>
+                <span className="ts-badge-label">{item.label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="ms-actions">
-          <button className="ms-save-btn" onClick={handleSave} disabled={saving || !isPro}>
-            {saving ? <Loader2 size={16} className="ms-spin" /> : <Save size={16} />}
+        <div className="ts-actions">
+          <button className="ts-save-btn" onClick={handleSave} disabled={saving || !isPro}>
+            {saving ? <Loader2 size={16} className="ts-spin" /> : <Save size={16} />}
             {saving ? 'Saving...' : 'Save Settings'}
           </button>
         </div>

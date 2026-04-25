@@ -86,7 +86,7 @@ const HELP_ROUTES: HelpRoute[] = [
   { pattern: /^\/admin/, help: '/help/ch7_04_user_roles.html' },
 
   // Public tools
-  { pattern: '/marketplace', help: '/help/ch7_09_marketplace.html' },
+  { pattern: '/trust-centre', help: '/help/ch7_09_trust_centre.html' },
   { pattern: '/docs', help: '/help/ch0_01_what_is_cra.html' },
   { pattern: '/', help: '/help/ch0_01_what_is_cra.html' },
 ];

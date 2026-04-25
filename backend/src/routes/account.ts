@@ -755,7 +755,7 @@ router.delete('/', authRateLimit('account_delete'), requireAuth, async (req: Req
       [userId]
     );
     await pool.query(
-      'UPDATE marketplace_contact_log SET from_user_id = $1::uuid WHERE from_user_id = $2',
+      'UPDATE trust_centre_contact_log SET from_user_id = $1::uuid WHERE from_user_id = $2',
       ['00000000-0000-0000-0000-000000000000', userId]
     );
     await pool.query(

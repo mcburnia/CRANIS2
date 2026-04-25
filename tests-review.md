@@ -15,7 +15,7 @@
 
 **Expected failures (16 backend):** 13 tier3-import-scanning (needs Forgejo), 2 webhook-e2e B5/B6 (needs Forgejo push), 1 category-recommendation (needs Anthropic API).
 
-**E2E failures:** All 7 pre-existing E2E failures fixed in P0 (marketplace profile, console errors, supplier DD tab). Zero E2E failures remaining.
+**E2E failures:** All 7 pre-existing E2E failures fixed in P0 (Trust Centre profile, console errors, supplier DD tab). Zero E2E failures remaining.
 
 ---
 
@@ -47,7 +47,7 @@
 | `feedback.test.ts` | 70 | ~3 | User feedback submission | OK |
 | `ip-proof.test.ts` | 116 | ~5 | IP proof snapshot/verify | OK |
 | `license-scan.test.ts` | 177 | ~8 | License findings, compatibility | OK |
-| `marketplace.test.ts` | 190 | ~14 | Categories, public listings, contact form, contact history, admin overview/approval, Pro gating | OK — deepened |
+| `Trust Centre.test.ts` | 190 | ~14 | Categories, public listings, contact form, contact history, admin overview/approval, Pro gating | OK — deepened |
 | `notifications.test.ts` | 139 | ~10 | Notification list, field validation, single mark-read, unread count, cross-org isolation | OK — deepened |
 | `obligations.test.ts` | 535 | ~20 | Obligation tracking, derived status | OK — comprehensive |
 | `onboard.test.ts` | 135 | ~5 | Product onboarding wizard | OK |
@@ -162,7 +162,7 @@
 | `organisation-management.spec.ts` | ~8 | Org details, members |
 | `escrow-management.spec.ts` | ~8 | Escrow configuration |
 | `due-diligence-package.spec.ts` | ~8 | Package preview/export |
-| `marketplace.spec.ts` | ~8 | Profile editing |
+| `Trust Centre.spec.ts` | ~8 | Profile editing |
 | `supplier-due-diligence.spec.ts` | ~4 | Questionnaires |
 | `billing-and-subscription.spec.ts` | ~8 | Billing gating |
 
@@ -191,7 +191,7 @@
 | **SBOM Export** | `GET /:productId/export/cyclonedx`, `GET /:productId/export/spdx` — only status tested, not actual download | HIGH — core feature |
 | **Retention Ledger** | ~~All endpoints~~ — RESOLVED (P4): list, summary, expiry warnings, cost forecast, snapshots, certificate. Remaining: Wise ref linking, bulk funding, legal hold | LOW |
 | **Snapshot Schedule** | ~~`GET/PUT/DELETE /:productId/snapshot-schedule`~~ — RESOLVED (P4) | DONE |
-| **Marketplace** | ~~`GET /listings`, `POST /contact/:orgId`, `GET /contact-history`, admin approve~~ — RESOLVED (P2) | DONE |
+| **Trust Centre** | ~~`GET /listings`, `POST /contact/:orgId`, `GET /contact-history`, admin approve~~ — RESOLVED (P2) | DONE |
 | **Document Templates** | ~~`GET /:id/generate` (product-specific generation)~~ — RESOLVED (P4) | DONE |
 | **Conformity Assessment** | Public endpoint `GET /api/conformity-assessment/` | LOW — tested via E2E indirectly |
 | **GRC Bridge** | `GET /api/integrations/grc/` | LOW — informational only |
@@ -243,7 +243,7 @@ These files exist but have minimal assertions — they check HTTP status codes b
 |------|-------|--------|
 | `audit-log.test.ts` (46→120 lines) | Only checked 200 status | **RESOLVED (P2)** — added total count, event filtering, pagination, org isolation |
 | `billing.test.ts` (101 lines) | Only checks billing status | REMAINING — add checkout session creation, plan upgrade/downgrade flows |
-| `marketplace.test.ts` (43→190 lines) | Only checked profile GET/PUT | **RESOLVED (P2)** — added categories, listings, contact, admin, Pro gating |
+| `Trust Centre.test.ts` (43→190 lines) | Only checked profile GET/PUT | **RESOLVED (P2)** — added categories, listings, contact, admin, Pro gating |
 | `notifications.test.ts` (58→139 lines) | Only checked list/read | **RESOLVED (P2)** — added unread count, field validation, cross-org isolation |
 | `due-diligence.test.ts` (98→145 lines) | Only checked preview | **RESOLVED (P2)** — added scan fields, ZIP export, cross-org isolation |
 | `escrow.test.ts` (104 lines) | Only checks config/deposit | REMAINING — add agent invite/revoke, multi-deposit scenarios |
@@ -277,7 +277,7 @@ All 7 E2E failures were investigated and fixed. Zero E2E failures remaining.
 
 | Test | Resolution |
 |------|-----------|
-| `marketplace.spec.ts` (4 tests) | Fixed — profile persistence issue resolved |
+| `Trust Centre.spec.ts` (4 tests) | Fixed — profile persistence issue resolved |
 | `sbom-generation-and-export.spec.ts` (1 test) | Fixed — console error source identified and resolved |
 | `supplier-due-diligence.spec.ts` (1 test) | Fixed — tab visibility condition corrected |
 | `oversized-text-inputs.spec.ts` (1 test) | Fixed — console error handling for large product names |
@@ -323,7 +323,7 @@ Importer/distributor E2E personas added. Obligation rendering verified by org ro
 
 ### P2: Deepen Thin Backend Tests — DONE (5/7) ✓
 
-Expanded: audit-log, marketplace, notifications, due-diligence (P2), plus billing and sbom-export already had prior coverage improvements. Remaining thin files: `billing.test.ts`, `escrow.test.ts`, `sbom-export.test.ts`.
+Expanded: audit-log, Trust Centre, notifications, due-diligence (P2), plus billing and sbom-export already had prior coverage improvements. Remaining thin files: `billing.test.ts`, `escrow.test.ts`, `sbom-export.test.ts`.
 
 ### P3: Add User Journey Integration Tests — DONE ✓
 
@@ -391,7 +391,7 @@ The test suite is **comprehensive and well-structured** with ~1,395 backend test
 **Completed:**
 1. ~~Fix the 7 pre-existing E2E failures~~ — **DONE (P0)** — all 7 fixed, zero E2E failures
 2. ~~Add role-aware E2E tests~~ — **DONE (P1)** — importer/distributor personas and obligation rendering
-3. ~~Deepen the thin backend tests~~ — **DONE (P2)** — 5 of 7 thin files expanded (audit-log, marketplace, notifications, due-diligence, plus 3 others from prior context)
+3. ~~Deepen the thin backend tests~~ — **DONE (P2)** — 5 of 7 thin files expanded (audit-log, Trust Centre, notifications, due-diligence, plus 3 others from prior context)
 4. ~~Add user journey tests~~ — **DONE (P3)** — 3 new integration test files (44 tests)
 5. ~~Fill endpoint coverage gaps~~ — **DONE (P4)** — 4 new route test files (45 tests)
 6. ~~Add lockfile parser unit tests~~ — **DONE (P5)** — all 28 parsers tested (43 tests)

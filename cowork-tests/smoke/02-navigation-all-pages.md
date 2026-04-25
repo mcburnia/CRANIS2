@@ -47,9 +47,9 @@
 - **Action:** Click "Billing" in the sidebar
 - **Expected:** The billing page loads at `/billing`. Current plan, usage, or subscription details are visible. No console errors.
 
-### Step 11: Navigate to Marketplace
-- **Action:** Click "Marketplace" in the sidebar
-- **Expected:** The marketplace page loads at `/marketplace`. Available services or integrations are listed. No console errors.
+### Step 11: Navigate to Trust Centre
+- **Action:** Click "Trust Centre" in the sidebar
+- **Expected:** The Trust Centre page loads at `/Trust Centre`. Available services or integrations are listed. No console errors.
 
 ### Step 12: Navigate to Notifications
 - **Action:** Click "Notifications" in the sidebar

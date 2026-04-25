@@ -14,7 +14,7 @@ const DEV_MODE = process.env.DEV_SKIP_EMAIL === 'true';
 // POST /api/auth/register
 router.post('/register', authRateLimit('register'), async (req: Request, res: Response) => {
   try {
-    const { email, password, browserLanguage, browserTimezone, referrer: clientReferrer } = req.body;
+    const { email, password, browserLanguage, browserTimezone, referrer: clientReferrer, bonusCode } = req.body;
 
     if (!email || !password) {
       res.status(400).json({ error: 'Email and password are required' });
@@ -31,6 +31,26 @@ router.post('/register', authRateLimit('register'), async (req: Request, res: Re
     if (!hasUpper || !hasLower || !hasNumber || !hasSpecial || !isLongEnough) {
       res.status(400).json({ error: 'Password does not meet strength requirements' });
       return;
+    }
+
+    // Validate bonus code if supplied. Self-referral (affiliate trying to use
+    // their own code) is rejected to prevent abuse.
+    let canonicalBonusCode: string | null = null;
+    if (typeof bonusCode === 'string' && bonusCode.trim().length > 0) {
+      const lookup = await pool.query(
+        `SELECT bonus_code, contact_email FROM affiliates
+         WHERE LOWER(bonus_code) = LOWER($1) AND enabled = TRUE LIMIT 1`,
+        [bonusCode.trim()]
+      );
+      if (lookup.rows.length === 0) {
+        res.status(400).json({ error: 'Bonus code not recognised' });
+        return;
+      }
+      if (lookup.rows[0].contact_email.toLowerCase() === email.toLowerCase()) {
+        res.status(400).json({ error: 'You cannot use your own bonus code' });
+        return;
+      }
+      canonicalBonusCode = lookup.rows[0].bonus_code;
     }
 
     // Extract server-side telemetry
@@ -98,9 +118,9 @@ router.post('/register', authRateLimit('register'), async (req: Request, res: Re
 
     if (DEV_MODE) {
       const result = await pool.query(
-        `INSERT INTO users (email, password_hash, email_verified, preferred_language)
-         VALUES ($1, $2, TRUE, $3) RETURNING id`,
-        [email.toLowerCase(), passwordHash, preferredLang || null]
+        `INSERT INTO users (email, password_hash, email_verified, preferred_language, bonus_code_used)
+         VALUES ($1, $2, TRUE, $3, $4) RETURNING id`,
+        [email.toLowerCase(), passwordHash, preferredLang || null, canonicalBonusCode]
       );
       const sessionToken = generateSessionToken(result.rows[0].id, email.toLowerCase());
       console.log(`[DEV MODE] Account auto-verified for ${email}`);
@@ -128,9 +148,9 @@ router.post('/register', authRateLimit('register'), async (req: Request, res: Re
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const result = await pool.query(
-      `INSERT INTO users (email, password_hash, verification_token, token_expires_at, preferred_language)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [email.toLowerCase(), passwordHash, token, expiresAt, preferredLang || null]
+      `INSERT INTO users (email, password_hash, verification_token, token_expires_at, preferred_language, bonus_code_used)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [email.toLowerCase(), passwordHash, token, expiresAt, preferredLang || null, canonicalBonusCode]
     );
 
     await sendVerificationEmail(email.toLowerCase(), token);

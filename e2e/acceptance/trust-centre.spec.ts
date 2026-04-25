@@ -1,46 +1,39 @@
 /**
- * Acceptance Test 11: Marketplace — View Profile, Update Profile Fields
+ * Acceptance Test 11: Trust Centre — View Profile, Update Profile Fields
  *
- * Converts: cowork-tests/acceptance/11-marketplace.md
- * Tests the marketplace settings page, profile field display, profile editing,
+ * Converts: cowork-tests/acceptance/11-trust-centre.md
+ * Tests the Trust Centre settings page, profile field display, profile editing,
  * change persistence, and reversion of test modifications.
  *
  * @tags @acceptance
  */
 import { test, expect } from '@playwright/test';
 import { TEST_USERS, TEST_PASSWORD } from '../helpers/test-data.js';
-import { apiLogin, apiGet, apiPut, apiPost } from '../helpers/api-client.js';
+import { apiLogin, apiGet, apiPut } from '../helpers/api-client.js';
 
 const BASE_URL = process.env.E2E_BASE_URL || 'https://dev.cranis2.dev';
 
-test.describe('Marketplace Settings @acceptance', () => {
+test.describe('Trust Centre Settings @acceptance', () => {
 
   // Store original profile values for cleanup
   let originalTagline: string | null = null;
   let originalDescription: string | null = null;
   let token: string;
-  let platformToken: string;
 
   test.beforeAll(async () => {
     token = await apiLogin(TEST_USERS.mfgAdmin, TEST_PASSWORD);
-    platformToken = await apiLogin(TEST_USERS.platformAdmin, TEST_PASSWORD);
-
-    // Marketplace profile editing requires Pro plan — upgrade the org temporarily
-    await apiPut('/api/admin/orgs/a0000001-0000-0000-0000-000000000001/plan', platformToken, {
-      plan: 'pro',
-    });
 
     // Save original profile values for cleanup
-    const profile = await apiGet('/api/marketplace/profile', token);
+    const profile = await apiGet('/api/trust-centre/profile', token);
     originalTagline = profile.tagline ?? null;
     originalDescription = profile.description ?? null;
   });
 
   test.afterAll(async () => {
-    // Revert marketplace profile to original values if they were modified
+    // Revert Trust Centre profile to original values if they were modified
     if (token && (originalTagline !== null || originalDescription !== null)) {
       try {
-        await apiPut('/api/marketplace/profile', token, {
+        await apiPut('/api/trust-centre/profile', token, {
           tagline: originalTagline ?? '',
           description: originalDescription ?? '',
         });
@@ -48,52 +41,43 @@ test.describe('Marketplace Settings @acceptance', () => {
         // Best effort cleanup — don't fail tests if revert doesn't work
       }
     }
-
-    // Restore org to standard plan
-    try {
-      await apiPut('/api/admin/orgs/a0000001-0000-0000-0000-000000000001/plan', platformToken, {
-        plan: 'standard',
-      });
-    } catch {
-      // Best effort cleanup
-    }
   });
 
-  test.describe('Marketplace settings page and navigation', () => {
+  test.describe('Trust Centre settings page and navigation', () => {
 
-    test('marketplace settings page loads via sidebar navigation', async ({ page }) => {
+    test('Trust Centre settings page loads via sidebar navigation', async ({ page }) => {
       await page.goto(`${BASE_URL}/dashboard`);
       await page.waitForLoadState('networkidle');
 
-      // Expand Settings section and click Marketplace
+      // Expand Settings section and click Trust Centre
       await page.getByRole('button', { name: 'Settings' }).click();
       await page.waitForTimeout(300);
-      await page.getByRole('link', { name: 'Marketplace' }).first().click();
+      await page.getByRole('link', { name: 'Trust Centre' }).first().click();
       await page.waitForLoadState('networkidle');
 
-      // Verify we're on the marketplace settings page
-      await expect(page).toHaveURL(/marketplace\/settings/);
+      // Verify we're on the Trust Centre settings page
+      await expect(page).toHaveURL(/trust-centre\/settings/);
     });
 
-    test('marketplace settings page loads via direct URL', async ({ page }) => {
-      await page.goto(`${BASE_URL}/marketplace/settings`);
+    test('Trust Centre settings page loads via direct URL', async ({ page }) => {
+      await page.goto(`${BASE_URL}/trust-centre/settings`);
       await page.waitForLoadState('networkidle');
 
-      await expect(page).toHaveURL(/marketplace\/settings/);
+      await expect(page).toHaveURL(/trust-centre\/settings/);
 
       const body = await page.textContent('body');
       expect(body).toBeTruthy();
       expect(body!.length).toBeGreaterThan(50);
 
-      // Page should reference marketplace-related content
-      const hasMarketplaceContent = body!.toLowerCase().includes('marketplace') ||
+      // Page should reference Trust Centre-related content
+      const hasTrustCentreContent = body!.toLowerCase().includes("trust centre") ||
                                      body!.toLowerCase().includes('profile') ||
                                      body!.toLowerCase().includes('listing');
-      expect(hasMarketplaceContent, 'Page should contain marketplace-related content').toBeTruthy();
+      expect(hasTrustCentreContent, 'Page should contain Trust Centre-related content').toBeTruthy();
     });
 
-    test('marketplace profile API returns expected fields', async () => {
-      const profile = await apiGet('/api/marketplace/profile', token);
+    test('Trust Centre profile API returns expected fields', async () => {
+      const profile = await apiGet('/api/trust-centre/profile', token);
 
       expect(profile).toBeDefined();
       expect(profile).toHaveProperty('listed');
@@ -106,8 +90,8 @@ test.describe('Marketplace Settings @acceptance', () => {
       expect(profile).toHaveProperty('products');
     });
 
-    test('marketplace settings page displays editable fields', async ({ page }) => {
-      await page.goto(`${BASE_URL}/marketplace/settings`);
+    test('Trust Centre settings page displays editable fields', async ({ page }) => {
+      await page.goto(`${BASE_URL}/trust-centre/settings`);
       await page.waitForLoadState('networkidle');
 
       // Look for form inputs, textareas, or editable fields
@@ -118,20 +102,20 @@ test.describe('Marketplace Settings @acceptance', () => {
       const editableIndicator = inputCount > 0 ||
                                  (await page.getByRole('button', { name: /edit|save|update/i }).count()) > 0;
 
-      expect(editableIndicator, 'Marketplace settings should have editable fields or edit controls').toBeTruthy();
+      expect(editableIndicator, 'Trust Centre settings should have editable fields or edit controls').toBeTruthy();
     });
 
-    test('no console errors on marketplace settings page', async ({ page }) => {
+    test('no console errors on Trust Centre settings page', async ({ page }) => {
       const consoleErrors: string[] = [];
       page.on('console', (msg) => {
         if (msg.type() === 'error') consoleErrors.push(msg.text());
       });
 
-      await page.goto(`${BASE_URL}/marketplace/settings`);
+      await page.goto(`${BASE_URL}/trust-centre/settings`);
       await page.waitForLoadState('networkidle');
 
       const realErrors = consoleErrors.filter(
-        (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('Failed to load resource')
+        (err) => !err.includes('favicon') && !err.includes('404')
       );
       expect(realErrors, `Console errors: ${realErrors.join(', ')}`).toHaveLength(0);
     });
@@ -139,10 +123,10 @@ test.describe('Marketplace Settings @acceptance', () => {
 
   test.describe('Profile editing and persistence', () => {
 
-    test('marketplace profile can be updated via API', async () => {
+    test('Trust Centre profile can be updated via API', async () => {
       const testTagline = `E2E acceptance test — ${Date.now()}`;
 
-      const updateResult = await apiPut('/api/marketplace/profile', token, {
+      const updateResult = await apiPut('/api/trust-centre/profile', token, {
         tagline: testTagline,
       });
 
@@ -150,38 +134,38 @@ test.describe('Marketplace Settings @acceptance', () => {
       expect(updateResult.status).toBe(200);
 
       // Verify the update persisted by reading back
-      const profile = await apiGet('/api/marketplace/profile', token);
+      const profile = await apiGet('/api/trust-centre/profile', token);
       expect(profile.tagline).toBe(testTagline);
     });
 
-    test('marketplace description can be updated via API', async () => {
-      const testDescription = 'CRANIS2 acceptance test — marketplace profile updated';
+    test('Trust Centre description can be updated via API', async () => {
+      const testDescription = 'CRANIS2 acceptance test — Trust Centre profile updated';
 
-      const updateResult = await apiPut('/api/marketplace/profile', token, {
+      const updateResult = await apiPut('/api/trust-centre/profile', token, {
         description: testDescription,
       });
 
       expect(updateResult.status).toBe(200);
 
       // Verify persistence
-      const profile = await apiGet('/api/marketplace/profile', token);
+      const profile = await apiGet('/api/trust-centre/profile', token);
       expect(profile.description).toBe(testDescription);
     });
 
-    test('marketplace settings page reflects updated profile', async ({ page }) => {
+    test('Trust Centre settings page reflects updated profile', async ({ page }) => {
       // Set a known value via API first
       const testDescription = 'CRANIS2 acceptance test — verify UI display';
-      const putRes = await apiPut('/api/marketplace/profile', token, {
+      const putRes = await apiPut('/api/trust-centre/profile', token, {
         description: testDescription,
       });
       expect(putRes.status, `PUT should succeed, got ${putRes.status}`).toBeLessThan(300);
 
       // Verify the update persisted via API readback
-      const profile = await apiGet('/api/marketplace/profile', token);
+      const profile = await apiGet('/api/trust-centre/profile', token);
       expect(profile.description).toBe(testDescription);
 
       // Load the settings page and verify it renders without errors
-      await page.goto(`${BASE_URL}/marketplace/settings`);
+      await page.goto(`${BASE_URL}/trust-centre/settings`);
       await page.waitForLoadState('networkidle');
 
       const body = await page.textContent('body');
@@ -223,7 +207,7 @@ test.describe('Marketplace Settings @acceptance', () => {
 
     test('changes persist after navigating away and back', async ({ page }) => {
       const testDescription = 'CRANIS2 persistence check — navigate away test';
-      await apiPut('/api/marketplace/profile', token, {
+      await apiPut('/api/trust-centre/profile', token, {
         description: testDescription,
       });
 
@@ -231,12 +215,12 @@ test.describe('Marketplace Settings @acceptance', () => {
       await page.goto(`${BASE_URL}/dashboard`);
       await page.waitForLoadState('networkidle');
 
-      // Navigate back to marketplace settings
-      await page.goto(`${BASE_URL}/marketplace/settings`);
+      // Navigate back to Trust Centre settings
+      await page.goto(`${BASE_URL}/trust-centre/settings`);
       await page.waitForLoadState('networkidle');
 
       // Verify via API that value is still there
-      const profile = await apiGet('/api/marketplace/profile', token);
+      const profile = await apiGet('/api/trust-centre/profile', token);
       expect(profile.description).toBe(testDescription);
     });
   });

@@ -266,23 +266,27 @@ export async function getOrgBillingStatus(orgId: string): Promise<BillingStatus 
 
 // ── Ensure billing record exists (auto-create trial for new orgs) ──
 
-export async function ensureOrgBilling(orgId: string): Promise<BillingStatus> {
+// Trial-duration policy. Bonus code at signup grants the longer trial.
+export const DEFAULT_TRIAL_DAYS = 30;
+export const BONUS_TRIAL_DAYS = 90;
+
+export async function ensureOrgBilling(orgId: string, trialDays: number = DEFAULT_TRIAL_DAYS): Promise<BillingStatus> {
   const existing = await getOrgBillingStatus(orgId);
   if (existing) return existing;
 
   // Auto-create a trial record
   const trialEnd = new Date();
-  trialEnd.setDate(trialEnd.getDate() + 90);
+  trialEnd.setDate(trialEnd.getDate() + trialDays);
 
   await pool.query(
     `INSERT INTO org_billing (org_id, status, trial_ends_at, trial_duration_days)
-     VALUES ($1, 'trial', $2, 90)
+     VALUES ($1, 'trial', $2, $3)
      ON CONFLICT (org_id) DO NOTHING`,
-    [orgId, trialEnd.toISOString()]
+    [orgId, trialEnd.toISOString(), trialDays]
   );
 
-  await logBillingEvent(orgId, 'trial_started', { trialDays: 90 });
-  console.log(`[BILLING] Auto-created trial for org ${orgId}, expires ${trialEnd.toISOString()}`);
+  await logBillingEvent(orgId, 'trial_started', { trialDays });
+  console.log(`[BILLING] Auto-created trial for org ${orgId} (${trialDays} days), expires ${trialEnd.toISOString()}`);
 
   return (await getOrgBillingStatus(orgId))!;
 }

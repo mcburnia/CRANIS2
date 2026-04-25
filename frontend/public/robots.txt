@@ -5,7 +5,7 @@ User-agent: *
 
 # Public pages
 Allow: /
-Allow: /marketplace
+Allow: /trust-centre
 Allow: /docs
 Allow: /docs/faq
 Allow: /login
@@ -37,7 +37,7 @@ Disallow: /reports
 Disallow: /stakeholders
 Disallow: /organisation
 Disallow: /audit-log
-Disallow: /marketplace/settings
+Disallow: /trust-centre/settings
 
 # Admin panel
 Disallow: /admin

@@ -321,7 +321,7 @@ cd ~/CRANIS2/e2e && npm run push-results
         field-issues.ts    ← Post-market monitoring (field issues + corrective actions CRUD + export)
         crypto-inventory.ts ← Cryptographic standards inventory (scan, findings, summary)
         dev.ts             ← Dev-only routes (removed before production)
-        marketplace.ts     ← Marketplace endpoints (listings, profile, contact, admin)
+        trust-centre.ts    ← Trust Centre endpoints (listings, profile, contact, admin)
       db/
         pool.ts            ← Postgres pool + schema init (all tables including vuln_db_* and CPE index)
         neo4j.ts           ← Neo4j driver + graph schema init (constraints/indexes)
@@ -333,7 +333,7 @@ cd ~/CRANIS2/e2e && npm run push-results
         scheduler.ts       ← Daily scheduler (vuln DB sync 1 AM, SBOM sync 2 AM, vuln scan 3 AM)
         vulnerability-scanner.ts ← Platform-wide CVE scanner (local Postgres DB with CPE matching, deduplication)
         vuln-db-sync.ts    ← Local vulnerability database sync (OSV.dev + NVD feeds → Postgres, CPE index rebuild)
-        marketplace.ts     ← Compliance badge computation for marketplace profiles
+        trust-centre.ts    ← Compliance badge computation for Trust Centre profiles
         license-compatibility.ts ← License compatibility rules engine (distribution model + FSF conflicts)
         crypto-scanner.ts  ← Cryptographic algorithm scanner service
         obligation-engine.ts ← 35-obligation CRA engine (manufacturer, importer, distributor)
@@ -366,14 +366,14 @@ cd ~/CRANIS2/e2e && npm run push-results
         PageHeader.tsx     ← Page title + timestamp
         StatCard.tsx       ← Metric display card
       pages/
-        public/            ← LandingPage, LoginPage, SignupPage, CheckEmailPage, VerifyEmailPage, AcceptInvitePage, MarketplacePage, MarketplaceDetailPage, DocsPage
+        public/            ← LandingPage, LoginPage, SignupPage, CheckEmailPage, VerifyEmailPage, AcceptInvitePage, TrustCentrePage, TrustCentreDetailPage, DocsPage
         setup/             ← WelcomePage, OrgSetupPage (wizard with CRA role selection)
         dashboard/         ← DashboardPage (fully migrated)
         products/          ← ProductsPage (list + add modal), ProductDetailPage (tabs + GitHub UI)
         compliance/        ← ObligationsPage (live), TechnicalFilesPage (live)
         repositories/      ← ReposPage (live), ContributorsPage (live), DependenciesPage (live), RiskFindingsPage (live)
         billing/           ← BillingPage, ReportsPage (stubs)
-        settings/          ← StakeholdersPage (live), OrganisationPage (live), AuditLogPage (live), MarketplaceSettingsPage (live)
+        settings/          ← StakeholdersPage (live), OrganisationPage (live), AuditLogPage (live), TrustCentreSettingsPage (live)
         notifications/     ← NotificationsPage (live — filters, mark-read, severity badges)
         admin/             ← AdminDashboardPage, AdminOrgsPage, AdminUsersPage, AdminAuditLogPage, AdminSystemPage, AdminVulnScanPage, AdminVulnDbPage, AdminDocsPage
 ```
@@ -389,8 +389,8 @@ cd ~/CRANIS2/e2e && npm run push-results
 - `/welcome` → Post-verification welcome page (links to org setup)
 - `/accept-invite?token=xxx` → Accept invitation, set password, activate account
 - `/setup/org` → Organisation setup wizard
-- `/marketplace` → Public compliance marketplace (browse companies, search/filter)
-- `/marketplace/:orgId` → Company detail page (products, compliance badges, contact modal)
+- `/trust-centre` → Public Trust Centre (browse companies, search/filter)
+- `/trust-centre/:orgId` → Company detail page (products, compliance badges, contact modal)
 - `/docs` → User Guide documentation page (fetched from API, TOC sidebar)
 - `/docs/faq` → FAQ documentation page
 
@@ -421,7 +421,7 @@ cd ~/CRANIS2/e2e && npm run push-results
 - `/stakeholders` → CRA stakeholder management (live — org + product contacts)
 - `/organisation` → Organisation settings (live — editable)
 - `/audit-log` → Audit trail (live — paginated event log)
-- `/marketplace/settings` → Marketplace settings (toggle listing, edit profile, compliance badges)
+- `/trust-centre/settings` → Trust Centre settings (toggle listing, edit profile, compliance badges)
 
 ## API Endpoints
 
@@ -488,13 +488,13 @@ cd ~/CRANIS2/e2e && npm run push-results
 | POST | /api/auth/accept-invite | Accept invitation — set password, activate account |
 | GET | /api/admin/vulnerability-db/status | Local vuln DB status (ecosystems, advisory counts, sync times) |
 | POST | /api/admin/vulnerability-db/sync | Trigger manual vuln DB sync (admin only) |
-| GET | /api/marketplace/listings | Public: Browse marketplace listings (paginated, filterable) |
-| GET | /api/marketplace/categories | Public: Static category list |
-| GET | /api/marketplace/listings/:orgId | Public: Company detail with products |
-| GET | /api/marketplace/profile | Auth: Current org marketplace profile |
-| PUT | /api/marketplace/profile | Auth: Upsert marketplace listing |
-| POST | /api/marketplace/contact/:orgId | Auth: Send introduction email (rate-limited) |
-| GET | /api/marketplace/contact-history | Auth: Contacts sent by current user |
+| GET | /api/trust-centre/listings | Public: Browse Trust Centre listings (paginated, filterable) |
+| GET | /api/trust-centre/categories | Public: Static category list |
+| GET | /api/trust-centre/listings/:orgId | Public: Company detail with products |
+| GET | /api/trust-centre/profile | Auth: Current org Trust Centre profile |
+| PUT | /api/trust-centre/profile | Auth: Upsert Trust Centre listing |
+| POST | /api/trust-centre/contact/:orgId | Auth: Send introduction email (rate-limited) |
+| GET | /api/trust-centre/contact-history | Auth: Contacts sent by current user |
 | POST | /api/license-scan/:productId/recheck-compatibility | Re-run compatibility checks without full rescan |
 | GET | /api/docs | Public: List all doc pages (slug, title, updated_at) |
 | GET | /api/docs/:slug | Public: Get doc page content (markdown) |
@@ -783,8 +783,8 @@ CREATE TABLE vuln_db_nvd_cpe_index (
   version_end_excl VARCHAR(100)
 );
 -- Indexes: idx_nvd_cpe_product, idx_nvd_cpe_target, idx_nvd_cpe_product_target
-n-- Marketplace profiles (opt-in company listings)
-CREATE TABLE marketplace_profiles (
+n-- Trust Centre profiles (opt-in company listings)
+CREATE TABLE trust_centre_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID UNIQUE NOT NULL,
   listed BOOLEAN DEFAULT FALSE,
@@ -800,8 +800,8 @@ CREATE TABLE marketplace_profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Marketplace contact log (intro emails)
-CREATE TABLE marketplace_contact_log (
+-- Trust Centre contact log (intro emails)
+CREATE TABLE trust_centre_contact_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   from_user_id UUID NOT NULL,
   from_org_id UUID,
@@ -1213,10 +1213,10 @@ sudo systemctl restart cloudflared
 - **User management (admin)** -- Edit user, suspend/unsuspend, delete with cascades, action menu per row
 - **Billing (Stripe)** -- Two-tier pricing: Standard (€6/contributor/month) and Pro (€20/product/month + €6/contributor/month). Admin-configurable pricing via `platform_settings` table. Stripe price auto-creation at startup. 90-day trial, checkout sessions (multi-line-item for Pro), customer portal, webhook, billing gate middleware, trial/payment lifecycle, billing emails (9 templates), admin controls (extend trial, exempt, pause, pricing config). Upgrade/downgrade between plans with Stripe proration.
 - **Landing page** -- Hero, feature cards, audience cards, pricing CTA, regulation sections (CRA, NIS2, GDPR, EU Sovereignty, ISO)
-- **Compliance Marketplace** -- Public marketplace for companies to list themselves with products and compliance badges. marketplace_profiles + marketplace_contact_log tables. Public browse page (/marketplace) with search/filter, detail page (/marketplace/:orgId) with contact modal, settings page (/marketplace/settings) with toggle/editor. Contact rate limiting (3/day, 1/org/7d). 10 categories. Admin approval controls.
+- **Trust Centre** -- Public Trust Centre for companies to list themselves with products and compliance badges. trust_centre_profiles + trust_centre_contact_log tables. Public browse page (/trust-centre) with search/filter, detail page (/trust-centre/:orgId) with contact modal, settings page (/trust-centre/settings) with toggle/editor. Contact rate limiting (3/day, 1/org/7d). 10 categories. Admin approval controls.
 - **Admin pages updated for local DB** — Dashboard shows last DB sync time, System Health shows Local DB Query avg latency (historical API latencies dimmed), Vuln Scan shows local DB timing as primary display
 - **License Compatibility Matrix** -- Distribution model awareness on products (proprietary_binary, saas_hosted, source_available, library_component, internal_only). Pure rules engine (license-compatibility.ts) with FSF cross-license conflict table (14 known incompatibilities). Verdicts: compatible/incompatible/review_needed per finding. AGPL/SSPL network copyleft detection. Integrated into license scanner, recheck endpoint for distribution model changes. Frontend: distribution model select on product edit, verdict badges/filters on LicenseCompliancePage. Due diligence PDF includes compatibility analysis section.
-- **Landing page polish** -- Alternating section backgrounds (nth-of-type(even) #363d4f), CRANIS2 logo "2" blue on public pages, Log In nav link, marketplace cards full-width list layout, hero text simplified
+- **Landing page polish** -- Alternating section backgrounds (nth-of-type(even) #363d4f), CRANIS2 logo "2" blue on public pages, Log In nav link, Trust Centre cards full-width list layout, hero text simplified
 - **SEO implementation** -- usePageMeta hook (per-route meta tags, Open Graph, Twitter Cards, JSON-LD structured data), sitemap.xml endpoint, security headers middleware (CSP, HSTS, X-Frame-Options), canonical URLs
 - **User documentation** -- USER-GUIDE.md and FAQ.md (comprehensive usage guides), in-app /docs page with TOC sidebar, hash navigation, IntersectionObserver heading tracking
 - **Admin-editable documentation** -- doc_pages Postgres table (seeded from markdown files), /api/docs public GET + admin PUT endpoints, AdminDocsPage split-pane markdown editor with live preview, Ctrl+S/Cmd+S save, unsaved changes warning, tab switching between User Guide and FAQ
@@ -1286,7 +1286,7 @@ sudo systemctl restart cloudflared
 
 **Session 25 (2026-03-06):**
 - **Supplier due diligence (P3 #19)** — Deterministic template-based questionnaires for supply chain due diligence. Risk flags (copyleft licence, known vulnerability, high severity vuln, no supplier info) map to pre-written CRA-grounded questions — no AI dependency. Supplier enrichment from npm/PyPI/crates.io registries with shared 30-day Postgres cache (`supplier_enrichment_cache` table). PDF/CSV export. Supply Chain tab on product detail page. Available to all plans (removed Pro gate). `supplier-due-diligence.ts` service + route. `SupplyChainTab.tsx` frontend component.
-- **Supplier Marketplace backlog (P4 #28–34)** — Captured viral growth loop concept: manufacturers invite suppliers via questionnaires, suppliers join and publish compliance profiles, due diligence auto-resolves. 7 items with detailed subtasks for initial implementation (#28 invitation flow, #29 supplier profiles, #30 auto-resolution).
+- **Supplier Trust Centre backlog (P4 #28–34)** — Captured viral growth loop concept: manufacturers invite suppliers via questionnaires, suppliers join and publish compliance profiles, due diligence auto-resolves. 7 items with detailed subtasks for initial implementation (#28 invitation flow, #29 supplier profiles, #30 auto-resolution).
 - **AI design principle established** — Only use LLMs within the app when they add value that cannot be gained deterministically. Template/rule-based approaches preferred for predictable logic.
 
 **Session 26 (2026-03-06):**
@@ -1306,7 +1306,7 @@ sudo systemctl restart cloudflared
 
 **Session 30 (2026-03-07):**
 - **Welcome page contact form** — Replaced "Open the Platform" CTA with name/email/position contact form. Backend `POST /contact` endpoint sends thank-you email to enquirer and lead notification to `info@cranis2.com` via Resend API (`noreply@poste.cranis2.com` verified domain). Node 20 native `fetch`, no extra dependencies.
-- **Pro plan feature gating** — Moved "Public API & CI/CD gate" and "Marketplace listings" from Standard to Pro tier. Backend: `requirePlan('pro')` on API key management routes, belt-and-braces plan check in `requireApiKey` middleware, `requirePlan('pro')` on marketplace profile PUT. Frontend: `orgPlan` field on `/api/auth/me` response, upgrade banners on IntegrationsPage (API Keys + CI/CD cards) and MarketplaceSettingsPage for Standard-plan users. Welcome page pricing updated.
+- **Pro plan feature gating** — Moved "Public API & CI/CD gate" and "Trust Centre listings" from Standard to Pro tier. Backend: `requirePlan('pro')` on API key management routes, belt-and-braces plan check in `requireApiKey` middleware, `requirePlan('pro')` on Trust Centre profile PUT. Frontend: `orgPlan` field on `/api/auth/me` response, upgrade banners on IntegrationsPage (API Keys + CI/CD cards) and TrustCentreSettingsPage for Standard-plan users. Welcome page pricing updated.
 - **AI Copilot cost protection (three layers):**
   1. **Per-org monthly token budget** — `copilot.monthly_token_limit` platform setting (default 500K tokens/month, admin-configurable). Per-org override via `org_billing.copilot_token_limit` column. `requireTokenBudget()` middleware checks current month's `copilot_usage` against limit, returns 429 with usage info when exceeded. `/api/copilot/status` now returns `tokenBudget: { used, limit, remaining }`.
   2. **Per-endpoint rate limiting** — `requireCopilotRateLimit()` middleware using Postgres-based counting against `copilot_usage`. Limits: suggest 20/product/hour, triage 5/product/hour, risk assessment 3/product/day, incident report 5/report/day, category recommendation 5/product/day. Returns 429 with details when exceeded.
@@ -1420,9 +1420,9 @@ sudo systemctl restart cloudflared
   - Tests: 22 new tests (21 in obligation-engine-roles.test.ts + 1 new OSCAL test). Full suite: 1244 tests (73 files), 1228 pass, 16 expected infra-dependent failures.
 
 - **Comprehensive test review and improvement (P0–P5)** — Full cross-reference audit of all backend endpoints, services, and E2E flows against test coverage, followed by systematic improvement:
-  - **P0:** Fixed all 7 pre-existing E2E failures (marketplace profile, console errors, supplier DD tab). Zero E2E failures remaining.
+  - **P0:** Fixed all 7 pre-existing E2E failures (Trust Centre profile, console errors, supplier DD tab). Zero E2E failures remaining.
   - **P1:** Added importer/distributor E2E personas and role-aware obligation rendering tests.
-  - **P2:** Deepened 7 thin backend test files (audit-log, marketplace, notifications, due-diligence, billing, sbom-export, escrow) with field validation, content assertions, cross-org isolation.
+  - **P2:** Deepened 7 thin backend test files (audit-log, trust-centre, notifications, due-diligence, billing, sbom-export, escrow) with field validation, content assertions, cross-org isolation.
   - **P3:** 3 new user journey integration tests (44 tests): onboarding journey, compliance package assembly, role-specific obligations.
   - **P4:** 4 new endpoint coverage test files (45 tests): retention ledger, admin vuln scan, snapshot schedule, document templates.
   - **P5:** Lockfile parser unit tests (43 tests) covering all 28 parsers with sample input, registry integrity, dispatcher routing, deduplication, error handling.
@@ -1650,4 +1650,4 @@ Massive session — completed 3 full workstreams of the launch readiness plan (8
 - Register Bitbucket OAuth consumer for beta partner
 - ICO registration (ico.org.uk, £40/year) + update Privacy Policy placeholder
 - Legal review of Privacy Policy and Terms of Service
-- Post-launch: #59 i18n, P5 supplier marketplace, remaining help guide stubs, major version bumps (TypeScript 6, Vite 8, Resend 6, ESLint 10)
+- Post-launch: #59 i18n, P5 supplier Trust Centre, remaining help guide stubs, major version bumps (TypeScript 6, Vite 8, Resend 6, ESLint 10)

@@ -1,7 +1,13 @@
-import { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './SignupPage.css';
+
+type BonusCodeState =
+  | { status: 'idle' }
+  | { status: 'checking' }
+  | { status: 'valid'; canonicalCode: string; displayName: string }
+  | { status: 'invalid' };
 
 interface PasswordCheck {
   label: string;
@@ -40,6 +46,7 @@ function getBrowserTelemetry() {
 export default function SignupPage() {
   usePageMeta();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -47,11 +54,41 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Bonus code: prefill from ?ref= and auto-expand the field if present
+  const initialBonusCode = (searchParams.get('ref') || '').trim();
+  const [bonusCode, setBonusCode] = useState(initialBonusCode);
+  const [bonusCodeOpen, setBonusCodeOpen] = useState(initialBonusCode.length > 0);
+  const [bonusCodeState, setBonusCodeState] = useState<BonusCodeState>({ status: 'idle' });
+
   const { score, checks } = useMemo(() => getPasswordStrength(password), [password]);
   const strengthInfo = useMemo(() => getStrengthLabel(score), [score]);
 
   const passwordsMatch = password === confirmPassword;
   const confirmTouched = confirmPassword.length > 0;
+
+  // Debounced bonus-code validation against /api/bonus-code/validate
+  useEffect(() => {
+    const trimmed = bonusCode.trim();
+    if (!trimmed) {
+      setBonusCodeState({ status: 'idle' });
+      return;
+    }
+    setBonusCodeState({ status: 'checking' });
+    const handle = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/bonus-code/validate?code=${encodeURIComponent(trimmed)}`);
+        const data = await res.json();
+        if (data.valid) {
+          setBonusCodeState({ status: 'valid', canonicalCode: data.canonicalCode, displayName: data.displayName });
+        } else {
+          setBonusCodeState({ status: 'invalid' });
+        }
+      } catch {
+        setBonusCodeState({ status: 'idle' });
+      }
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [bonusCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,13 +107,23 @@ export default function SignupPage() {
       return;
     }
 
+    // Reject submission if a code was entered but is invalid
+    if (bonusCode.trim() && bonusCodeState.status === 'invalid') {
+      setError('Bonus code not recognised. Remove it or enter a valid code.');
+      return;
+    }
+
     setLoading(true);
     try {
       const telemetry = getBrowserTelemetry();
+      const body: Record<string, unknown> = { email, password, ...telemetry };
+      if (bonusCode.trim() && bonusCodeState.status === 'valid') {
+        body.bonusCode = bonusCodeState.canonicalCode;
+      }
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, ...telemetry }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -185,11 +232,48 @@ export default function SignupPage() {
               )}
             </div>
 
+            <div className="form-group">
+              {!bonusCodeOpen ? (
+                <button
+                  type="button"
+                  className="bonus-toggle"
+                  onClick={() => setBonusCodeOpen(true)}
+                >
+                  Got a bonus code? <span className="bonus-toggle-hint">Adds 60 days to your trial</span>
+                </button>
+              ) : (
+                <>
+                  <label>Bonus code <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(optional)</span></label>
+                  <input
+                    type="text"
+                    placeholder="e.g. SAMK"
+                    className={`form-input ${bonusCodeState.status === 'invalid' ? 'input-error' : ''} ${bonusCodeState.status === 'valid' ? 'input-success' : ''}`}
+                    value={bonusCode}
+                    onChange={(e) => setBonusCode(e.target.value.toUpperCase())}
+                    autoComplete="off"
+                    spellCheck={false}
+                    maxLength={32}
+                  />
+                  {bonusCodeState.status === 'checking' && (
+                    <div className="field-hint">Checking...</div>
+                  )}
+                  {bonusCodeState.status === 'valid' && (
+                    <div className="field-success">
+                      Valid &mdash; adds 60 days to your trial. Referred by {bonusCodeState.displayName}.
+                    </div>
+                  )}
+                  {bonusCodeState.status === 'invalid' && (
+                    <div className="field-error">Code not recognised</div>
+                  )}
+                </>
+              )}
+            </div>
+
             <button
               type="submit"
               className="btn btn-primary"
               style={{ width: '100%' }}
-              disabled={!email || score < 4 || !passwordsMatch || !confirmTouched || loading}
+              disabled={!email || score < 4 || !passwordsMatch || !confirmTouched || loading || (bonusCode.trim().length > 0 && bonusCodeState.status === 'invalid')}
             >
               {loading ? 'Creating account...' : 'Create Account'}
             </button>

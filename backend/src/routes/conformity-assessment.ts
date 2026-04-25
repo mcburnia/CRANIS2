@@ -122,16 +122,18 @@ productConformityRouter.get('/:productId/conformity-assessment', async (req: Req
       await neo4jSession.close();
     }
 
-    // Check if harmonised standards are documented in the technical file
+    // Check if harmonised standards are documented in the technical file.
+    // Ownership is already validated by the Neo4j MATCH above; technical_file_sections
+    // keys on product_id (table has no org_id column).
     const tfResult = await pool.query(
       `SELECT content FROM technical_file_sections
-       WHERE org_id = $1 AND product_id = $2 AND section_key = 'standards_applied'`,
-      [orgId, productId]
+       WHERE product_id = $1 AND section_key = 'standards_applied'`,
+      [productId]
     );
 
     let harmonisedStandardsApplied = false;
     if (tfResult.rows.length > 0 && tfResult.rows[0].content) {
-      const content = tfResult.rows[0].content.toLowerCase();
+      const content = JSON.stringify(tfResult.rows[0].content).toLowerCase();
       harmonisedStandardsApplied =
         content.includes('en 18031') ||
         content.includes('etsi en 303 645') ||

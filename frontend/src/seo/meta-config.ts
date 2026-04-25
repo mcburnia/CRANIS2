@@ -99,7 +99,7 @@ const FAQ_JSON_LD: Record<string, unknown> = {
       name: 'How much does CRANIS2 cost?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'CRANIS2 offers two tiers: Standard at EUR 6 per contributor per month (all core compliance features), and Pro at EUR 9 per product per month plus EUR 6 per contributor per month (adds AI Copilot, Software Evidence Engine, session capture, public API, CI/CD gate, and MCP server). Both plans include a 90-day free trial.',
+        text: 'CRANIS2 offers two tiers: Standard at EUR 6 per contributor per month (all core compliance features), and Pro at EUR 9 per product per month plus EUR 6 per contributor per month (adds AI Copilot, Software Evidence Engine, session capture, public API, CI/CD gate, and MCP server). Both plans include a 30-day free trial, extended to 90 days with a valid bonus code at signup.',
       },
     },
     {
@@ -107,7 +107,7 @@ const FAQ_JSON_LD: Record<string, unknown> = {
       name: 'Is there a free trial?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Yes. Every new organisation receives a 90-day free trial with full access to all Standard plan features. Pro features require an upgrade. No credit card is required to start.',
+        text: 'Yes. Every new organisation receives a 30-day free trial with full access to all Standard plan features (extended to 90 days with a bonus code at signup). Pro features require an upgrade. No credit card is required to start.',
       },
     },
     {
@@ -178,11 +178,11 @@ export const ROUTE_META: Record<string, PageMeta> = {
     canonical: '/',
     jsonLd: [ORG_JSON_LD, SOFTWARE_JSON_LD],
   },
-  '/marketplace': {
-    title: 'Marketplace – CRANIS2',
+  '/trust-centre': {
+    title: 'Trust Centre – CRANIS2',
     description:
-      'Browse EU-compliant software vendors on the CRANIS2 Marketplace. Find companies with verified CRA compliance, SBOMs, vulnerability management, and escrow coverage.',
-    canonical: '/marketplace',
+      'Browse EU-compliant software vendors on the CRANIS2 Trust Centre. Find companies with verified CRA compliance, SBOMs, vulnerability management, and escrow coverage.',
+    canonical: '/trust-centre',
   },
   '/docs': {
     title: 'Documentation – CRANIS2',
@@ -206,7 +206,7 @@ export const ROUTE_META: Record<string, PageMeta> = {
   '/signup': {
     title: 'Sign Up – CRANIS2',
     description:
-      'Create a free CRANIS2 account. 90-day trial with full access to automated SBOM generation, vulnerability monitoring, ENISA reporting, and CRA compliance tools.',
+      'Create a free CRANIS2 account. 30-day trial (90 days with a bonus code) with full access to automated SBOM generation, vulnerability monitoring, ENISA reporting, and CRA compliance tools.',
     canonical: '/signup',
   },
   '/check-email': {
@@ -250,7 +250,7 @@ export const AUTH_PAGE_TITLES: Record<string, string> = {
   '/stakeholders': 'Stakeholders',
   '/organisation': 'Organisation',
   '/audit-log': 'Audit Log',
-  '/marketplace/settings': 'Marketplace Settings',
+  '/trust-centre/settings': 'Trust Centre Settings',
   '/welcome': 'Welcome',
   '/setup/org': 'Organisation Setup',
 };

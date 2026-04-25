@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   Users, Package, Shield, BarChart3, Bell, Lock,
-  ShieldCheck, Globe, Award, Fingerprint,
+  ShieldCheck, Globe, Award, Fingerprint, Eye,
   CheckCircle2, XCircle, ChevronRight,
 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -13,6 +13,7 @@ const features = [
   { icon: Package, title: 'Automated SBOM & Scanning', desc: "Three-tier dependency detection across 28 lockfile formats and 26 languages. Daily scans against 445,000+ known vulnerabilities. Your software bill of materials, always current." },
   { icon: Shield, title: 'CRA Technical File', desc: "Eight structured sections matching CRA Annex VII. Auto-populated content for product description, vulnerability handling, standards, and test reports. Cuts documentation effort by 60\u201380%." },
   { icon: BarChart3, title: 'Obligation Intelligence', desc: "35 CRA obligations across manufacturer, importer, and distributor roles. Statuses derived automatically from platform data, including SBOMs, scans, technical file progress, field issues, and crypto scans. Always know your true compliance standing." },
+  { icon: Eye, title: 'Full Traceability of Access', desc: "Know every contributor who touched each product, when, and with what access. Automatic contributor tracking underpins contributor-based billing, audit logs, and departure records \u2014 with evidence exportable for any time window." },
   { icon: Lock, title: 'Evidence Vault & Retention', desc: "Cryptographically signed compliance snapshots with RFC 3161 timestamps and 10-year cold storage retention. Tamper-evident evidence that satisfies CRA Art. 13(10)." },
   { icon: Bell, title: 'ENISA Reporting & Alerts', desc: "24-hour, 72-hour, and 14-day deadline tracking for mandatory vulnerability and incident reporting. Escalating alerts so you never miss a regulatory deadline." },
   { icon: Users, title: 'AI Copilot & Integrations', desc: "AI-powered suggestions for technical files, vulnerability triage, risk assessments, and incident reports. Public API, CI/CD gate, Trello integration, and IDE assistant via MCP." },
@@ -21,7 +22,7 @@ const features = [
 const audiences = [
   { title: 'Solo developers & small teams', desc: 'Affordable CRA compliance without hiring consultants. Auto-populated technical files, AI copilot, and a step-by-step action plan get you to conformity faster.' },
   { title: 'Software product companies', desc: 'End-to-end compliance for every product you sell into the EU. SBOMs, vulnerability monitoring, technical documentation, and regulatory reporting, all automated.' },
-  { title: 'B2B software vendors', desc: 'Provide customers with SBOMs, compliance evidence, and escrow coverage. List on the compliance marketplace to demonstrate your posture publicly.' },
+  { title: 'B2B software vendors', desc: 'Provide customers with SBOMs, compliance evidence, and escrow coverage. List on the public Trust Centre to demonstrate your posture publicly.' },
   { title: 'Compliance & legal teams', desc: 'Obligation tracking, deadline alerts, conformity assessments, and a 10-year evidence vault with legal holds. Everything auditors expect, without chasing developers.' },
 ];
 
@@ -171,7 +172,7 @@ export default function LandingPage() {
           <a href="#features">Features</a>
           <a href="#compliance">Compliance</a>
           <a href="#pricing">Pricing</a>
-          <Link to="/marketplace">Marketplace</Link>
+          <Link to="/trust-centre">Trust Centre</Link>
           <Link to="/docs">Documentation</Link>
           <Link to="/login">Log In</Link>
           <Link to="/signup" className="btn btn-primary">Try CRANIS2 Free</Link>
@@ -185,8 +186,8 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="hero">
-        <h1>Compliance<br /><span>without the chaos</span></h1>
-        <p>Automated SBOMs, vulnerability monitoring, technical documentation, and regulatory reporting for the EU Cyber Resilience Act and NIS2.</p>
+        <h1>Continuous compliance<br /><span>with EU legislation for your software</span></h1>
+        <p>Automated SBOMs, vulnerability monitoring, technical documentation, ENISA reporting, and full traceability of access to your codebase &mdash; purpose-built for the CRA, NIS2, and GDPR.</p>
         <div className="hero-actions">
           <Link to="/signup" className="btn btn-primary btn-lg">Try CRANIS2 Free</Link>
           <a href="#features" className="btn btn-outline btn-lg">See How It Works</a>
@@ -406,7 +407,7 @@ export default function LandingPage() {
           <Link to="/signup" className="btn btn-primary btn-lg">Start Your Free Trial</Link>
           <Link to="/login" className="btn btn-outline btn-lg">Log In</Link>
         </div>
-        <div className="cta-sub">90-day free trial &middot; No credit card required</div>
+        <div className="cta-sub">30-day free trial &middot; 90 days with a bonus code &middot; No credit card required</div>
       </section>
 
       {/* ── Footer ── */}

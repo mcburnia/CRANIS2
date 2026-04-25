@@ -715,7 +715,7 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     await client.query(`CREATE INDEX IF NOT EXISTS idx_org_billing_status ON org_billing(status)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_org_billing_stripe ON org_billing(stripe_customer_id)`);
     await client.query(`
-      CREATE TABLE IF NOT EXISTS marketplace_profiles (
+      CREATE TABLE IF NOT EXISTS trust_centre_profiles (
         id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         org_id                 UUID NOT NULL UNIQUE,
         listed                 BOOLEAN NOT NULL DEFAULT false,
@@ -731,9 +731,9 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
         updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_marketplace_listed ON marketplace_profiles(listed) WHERE listed = true`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_trust_centre_listed ON trust_centre_profiles(listed) WHERE listed = true`);
     await client.query(`
-      CREATE TABLE IF NOT EXISTS marketplace_contact_log (
+      CREATE TABLE IF NOT EXISTS trust_centre_contact_log (
         id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         from_user_id UUID NOT NULL REFERENCES users(id),
         from_org_id  UUID NOT NULL,
@@ -742,8 +742,8 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
         sent_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_marketplace_contact_from ON marketplace_contact_log(from_user_id)`);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_marketplace_contact_to ON marketplace_contact_log(to_org_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_trust_centre_contact_from ON trust_centre_contact_log(from_user_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_trust_centre_contact_to ON trust_centre_contact_log(to_org_id)`);
 
     // ── Escrow tables ──
     await client.query(`

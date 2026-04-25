@@ -76,7 +76,7 @@ These files contain only generic placeholder text ("Full content for this guide 
 | ch7_06_stakeholders.html | Stakeholder/contact management | CRA Art. 13(12) |
 | ch7_07_org_settings.html | Organisation settings incl. CRA role | CRA Art. 3, Art. 13-19 |
 | ch7_08_trello_integration.html | Trello task automation | CRA Art. 13 (task tracking) |
-| ch7_09_marketplace.html | Supplier marketplace | **Feature not built (P5 parked)**. Remove or mark "Coming soon". |
+| ch7_09_Trust Centre.html | Supplier Trust Centre | **Feature not built (P5 parked)**. Remove or mark "Coming soon". |
 | ch7_10_document_templates.html | Document template library | CRA Annex VII, Art. 28 |
 
 ### Priority order for stubs
@@ -95,7 +95,7 @@ These files contain only generic placeholder text ("Full content for this guide 
 12. **ch7_10_document_templates.html** -- P6 complete, no docs
 13. **ch7_06_stakeholders.html** -- overlaps with ch7_04
 14. **ch7_08_trello_integration.html** -- integration feature
-15. **ch7_09_marketplace.html** -- feature not built, lowest priority
+15. **ch7_09_Trust Centre.html** -- feature not built, lowest priority
 
 ---
 
@@ -325,7 +325,7 @@ These files contain only generic placeholder text ("Full content for this guide 
 6. Standardise audience tags to the five standard roles
 
 ### Phase 2: Write the 18 stub guides
-Priority order as listed above. ch4_06 (AI Copilot reference) first, ch7_09 (marketplace, feature not built) last or removed.
+Priority order as listed above. ch4_06 (AI Copilot reference) first, ch7_09 (Trust Centre, feature not built) last or removed.
 
 ### Phase 3: Add Copilot prompt specification to all relevant guides
 For every file that mentions an AI feature, add:

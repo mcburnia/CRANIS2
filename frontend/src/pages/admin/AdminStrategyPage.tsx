@@ -10,7 +10,7 @@ const SECTIONS = [
   { id: 'role-of-cranis2', label: 'The Role of CRANIS2' },
   { id: 'dev-platforms', label: 'Development Platforms in Context' },
   { id: 'long-tail', label: 'The Long Tail of Software' },
-  { id: 'marketplace', label: 'The CRANIS2 Marketplace' },
+  { id: 'trust-centre', label: 'The CRANIS2 Trust Centre' },
   { id: 'trust-network', label: 'The Trust Network' },
   { id: 'software-ecosystem', label: 'Within the Software Ecosystem' },
   { id: 'financial-ecosystem', label: 'Within the Financial Ecosystem' },
@@ -290,20 +290,20 @@ export default function AdminStrategyPage() {
             </div>
           </section>
 
-          {/* ── 7. The CRANIS2 Marketplace ──────────────────────────────────── */}
-          <section id="marketplace" className="ast-section">
-            <h2>7. The CRANIS2 Marketplace</h2>
+          {/* ── 7. The CRANIS2 Trust Centre ──────────────────────────────────── */}
+          <section id="trust-centre" className="ast-section">
+            <h2>7. The CRANIS2 Trust Centre</h2>
             <p>
-              CRANIS2 already includes a marketplace capability. This is strategically important and must be
+              CRANIS2 already includes a Trust Centre capability. This is strategically important and must be
               clearly understood by the team.
             </p>
             <p>
-              The marketplace allows organisations to publish software products that meet compliance expectations.
+              The Trust Centre allows organisations to publish software products that meet compliance expectations.
               Other organisations can discover and evaluate these products. Compliance badges displayed on
-              marketplace listings are computed from real platform data, including vulnerability scan results,
+              Trust Centre listings are computed from real platform data, including vulnerability scan results,
               obligation completion, and licence scan coverage, and cannot be self-declared.
             </p>
-            <p>The marketplace connects:</p>
+            <p>The Trust Centre connects:</p>
             <ul>
               <li><strong>Software vendors</strong> – who want to demonstrate that their products are compliant and trustworthy</li>
               <li><strong>Enterprises and NIS2 organisations</strong> – who need to evaluate the security posture of their suppliers</li>
@@ -316,7 +316,7 @@ export default function AdminStrategyPage() {
               is demonstrable rather than declarative.
             </p>
             <p>
-              Marketplace listings require platform admin approval before becoming visible. This curation
+              Trust Centre listings require platform admin approval before becoming visible. This curation
               step ensures quality and prevents misuse.
             </p>
           </section>

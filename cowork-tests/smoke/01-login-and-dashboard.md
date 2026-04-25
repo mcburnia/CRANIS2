@@ -21,7 +21,7 @@
 
 ### Step 4: Verify Sidebar Navigation Items
 - **Action:** Inspect the left sidebar navigation
-- **Expected:** The sidebar is visible and contains accordion sections. At minimum the following items are present: Products, CRA Reports, Due Diligence, Vulnerabilities, License Scan, IP Proof, Technical Files, Escrow, Billing, Marketplace, Notifications, Settings. Clicking a section chevron expands it, and only one section is expanded at a time.
+- **Expected:** The sidebar is visible and contains accordion sections. At minimum the following items are present: Products, CRA Reports, Due Diligence, Vulnerabilities, License Scan, IP Proof, Technical Files, Escrow, Billing, Trust Centre, Notifications, Settings. Clicking a section chevron expands it, and only one section is expanded at a time.
 
 ### Step 5: Verify Product List on Dashboard
 - **Action:** Look for a product list or recent products section on the dashboard

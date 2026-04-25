@@ -366,8 +366,8 @@ router.delete('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Re
       // Tables with org_id (direct)
       await pool.query('DELETE FROM copilot_usage WHERE org_id = $1', [orgId]);
       await pool.query('DELETE FROM product_activity_log WHERE org_id = $1', [orgId]);
-      await pool.query('DELETE FROM marketplace_profiles WHERE org_id = $1', [orgId]);
-      await pool.query('DELETE FROM marketplace_contact_log WHERE to_org_id = $1', [orgId]);
+      await pool.query('DELETE FROM trust_centre_profiles WHERE org_id = $1', [orgId]);
+      await pool.query('DELETE FROM trust_centre_contact_log WHERE to_org_id = $1', [orgId]);
       await pool.query('DELETE FROM billing_events WHERE org_id = $1', [orgId]);
       await pool.query('DELETE FROM departed_contributors WHERE org_id = $1', [orgId]);
       await pool.query('DELETE FROM contributor_snapshots WHERE org_id = $1', [orgId]);
@@ -406,7 +406,7 @@ router.delete('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Re
         await pool.query('DELETE FROM feedback WHERE user_id = ANY($1)', [userIds]);
         await pool.query('DELETE FROM user_events WHERE user_id = ANY($1)', [userIds]);
         await pool.query('DELETE FROM repo_connections WHERE user_id = ANY($1)', [userIds]);
-        await pool.query('DELETE FROM marketplace_contact_log WHERE from_user_id = ANY($1)', [userIds]);
+        await pool.query('DELETE FROM trust_centre_contact_log WHERE from_user_id = ANY($1)', [userIds]);
       }
 
       // Org billing and users last

@@ -66,7 +66,7 @@ All GDPR items done: Privacy Policy, Terms of Service, data export, account dele
 - **10 remaining help guide stub rewrites** — after top 5 above are done
 - **Service unit test depth** — only 7/71 services have unit tests. Route tests cover critical paths.
 - **P4 #24/#25** — Chat ops / Slack notifications.
-- **P5 Supplier Marketplace** — 7 features (#28-34), not started.
+- **P5 Supplier Trust Centre** — 7 features (#28-34), not started.
 - **#59 Multi-language i18n** — scope TBD.
 - ~~#60 Bitbucket integration~~ — **DONE** (session 59). Needs OAuth consumer registration before beta partner can use it.
 - **#61 SSO and GMAIL | Github sign in etc.** — must have moving forward.

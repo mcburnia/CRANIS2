@@ -36,7 +36,7 @@ All five MVP features are built, tested, and shipped.
 - [x] Copilot usage dashboard — org billing, admin billing, product widget, token counts + cost (P3 #27)
 - [x] Pro plan + admin-configurable pricing — Standard (€6/contributor) + Pro (€9/product + €6/contributor)
 - [x] AI Copilot cost protection — per-org token budget, per-endpoint rate limits, response caching
-- [x] Pro plan feature gating — API keys, CI/CD, marketplace behind Pro tier
+- [x] Pro plan feature gating — API keys, CI/CD, Trust Centre behind Pro tier
 
 ---
 
@@ -52,12 +52,12 @@ All five MVP features are built, tested, and shipped.
 
 ---
 
-## Phase 5: Supplier Marketplace (Not Started — Post-Launch)
+## Phase 5: Supplier Trust Centre (Not Started — Post-Launch)
 
 - [ ] Supplier invitation flow (#28)
 - [ ] Supplier compliance profile (#29)
 - [ ] Auto-resolution of due diligence (#30)
-- [ ] Marketplace directory (#31)
+- [ ] Trust Centre directory (#31)
 - [ ] Supplier analytics dashboard (#32)
 - [ ] Supplier tier pricing (#33)
 - [ ] Manufacturer trust signals (#34)
@@ -175,7 +175,7 @@ All five MVP features are built, tested, and shipped.
 
 - [ ] #59 Multi-language support — i18n/localisation (scope TBD)
 - [ ] P4 #24/#25 — Chat ops / Slack notifications
-- [ ] P5 — Supplier Marketplace (7 features, #28-34)
+- [ ] P5 — Supplier Trust Centre (7 features, #28-34)
 - [ ] 15 help guide stub rewrites
 - [ ] Service unit test depth (7/71 services)
 - [ ] Audit log route mapping

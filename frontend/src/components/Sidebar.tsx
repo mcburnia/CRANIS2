@@ -61,7 +61,7 @@ const navSections = [
       { to: '/stakeholders', icon: UserCircle, label: 'Stakeholders' },
       { to: '/organisation', icon: Settings, label: 'Organisation' },
       { to: '/audit-log', icon: ScrollText, label: 'Audit Log' },
-      { to: '/marketplace/settings', icon: Store, label: 'Marketplace' },
+      { to: '/trust-centre/settings', icon: Store, label: 'Trust Centre' },
       { to: '/integrations', icon: Plug, label: 'Integrations' },
     ],
   },

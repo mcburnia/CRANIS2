@@ -96,6 +96,34 @@
   margin-top: 0.35rem;
 }
 
+.field-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.35rem;
+}
+
+.bonus-toggle {
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 6px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.bonus-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.bonus-toggle-hint {
+  font-size: 0.75rem;
+  color: var(--accent);
+  margin-left: 0.5rem;
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

@@ -7,7 +7,7 @@
  * canonical URLs, and JSON-LD baked into <head>.
  *
  * NGINX's `try_files $uri $uri/ /index.html` serves these automatically:
- *   /marketplace  →  dist/marketplace/index.html  (marketplace-specific meta)
+ *   /trust-centre  →  dist/trust-centre/index.html  (Trust Centre-specific meta)
  *   /dashboard    →  dist/index.html              (default meta, noindex)
  */
 
@@ -76,10 +76,10 @@ const ROUTES = [
     ],
   },
   {
-    path: '/marketplace',
-    title: 'Marketplace — CRANIS2',
+    path: '/trust-centre',
+    title: 'Trust Centre — CRANIS2',
     description:
-      'Browse EU-compliant software vendors on the CRANIS2 Marketplace. Find companies with verified CRA compliance, SBOMs, vulnerability management, and escrow coverage.',
+      'Browse EU-compliant software vendors on the CRANIS2 Trust Centre. Find companies with verified CRA compliance, SBOMs, vulnerability management, and escrow coverage.',
     robots: 'index, follow',
   },
   {

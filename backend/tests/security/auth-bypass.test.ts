@@ -31,7 +31,7 @@ describe('Auth Bypass Attempts', () => {
       ['GET', '/api/technical-files/overview'],
       ['GET', '/api/billing/status'],
       ['GET', '/api/audit-log'],
-      ['GET', '/api/marketplace/profile'],
+      ['GET', '/api/trust-centre/profile'],
       ['GET', `/api/escrow/${TEST_IDS.products.github}/config`],
       ['GET', `/api/sbom/${TEST_IDS.products.github}/export/status`],
       ['GET', `/api/due-diligence/${TEST_IDS.products.github}/preview`],

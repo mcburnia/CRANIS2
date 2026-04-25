@@ -159,7 +159,7 @@ export default function DocsPage() {
         </div>
 
         <div className="doc-nav-links">
-          <Link to="/marketplace">Marketplace</Link>
+          <Link to="/trust-centre">Trust Centre</Link>
           <Link to="/login">Log In</Link>
           <Link to="/signup" className="btn btn-primary">
             Try CRANIS2

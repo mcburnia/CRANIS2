@@ -1,21 +1,21 @@
 /**
- * Marketplace Route Tests — /api/marketplace
+ * Trust Centre Route Tests — /api/trust-centre
  *
  * Tests: profile retrieval/update, public categories, public listings,
  * contact form, contact history, admin overview/approval, cross-org isolation
  *
  * API response formats (from probing):
- * - GET /api/marketplace/profile returns { listed, tagline, description, logoUrl, categories, featuredProductIds, complianceBadges, products }
- * - GET /api/marketplace/categories returns { categories: [...] }
- * - GET /api/marketplace/listings returns { listings: [...], pagination: {...} }
- * - GET /api/marketplace/listings/:orgId returns single listing object
- * - POST /api/marketplace/contact/:orgId expects { message } (10-1000 chars)
+ * - GET /api/trust-centre/profile returns { listed, tagline, description, logoUrl, categories, featuredProductIds, complianceBadges, products }
+ * - GET /api/trust-centre/categories returns { categories: [...] }
+ * - GET /api/trust-centre/listings returns { listings: [...], pagination: {...} }
+ * - GET /api/trust-centre/listings/:orgId returns single listing object
+ * - POST /api/trust-centre/contact/:orgId expects { message } (10-1000 chars)
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { api, loginTestUser, TEST_USERS } from '../setup/test-helpers.js';
 
-describe('/api/marketplace', () => {
+describe('/api/trust-centre', () => {
   let adminToken: string;
   let impToken: string;
   let platformToken: string;
@@ -28,22 +28,22 @@ describe('/api/marketplace', () => {
     platformToken = await loginTestUser(TEST_USERS.platformAdmin);
   });
 
-  // ─── GET /api/marketplace/profile ─────────────────────────────────────
+  // ─── GET /api/trust-centre/profile ─────────────────────────────────────
 
-  describe('GET /api/marketplace/profile', () => {
+  describe('GET /api/trust-centre/profile', () => {
     it('should reject unauthenticated request', async () => {
-      const res = await api.get('/api/marketplace/profile');
+      const res = await api.get('/api/trust-centre/profile');
       expect(res.status).toBe(401);
     });
 
-    it('should return marketplace profile for org', async () => {
-      const res = await api.get('/api/marketplace/profile', { auth: adminToken });
+    it('should return Trust Centre profile for org', async () => {
+      const res = await api.get('/api/trust-centre/profile', { auth: adminToken });
       expect(res.status).toBe(200);
       expect(res.body).toBeDefined();
     });
 
     it('should have expected profile fields', async () => {
-      const res = await api.get('/api/marketplace/profile', { auth: adminToken });
+      const res = await api.get('/api/trust-centre/profile', { auth: adminToken });
       expect(res.status).toBe(200);
 
       expect(res.body).toHaveProperty('listed');
@@ -57,8 +57,8 @@ describe('/api/marketplace', () => {
     });
 
     it('should return different profiles for different orgs', async () => {
-      const mfgRes = await api.get('/api/marketplace/profile', { auth: adminToken });
-      const impRes = await api.get('/api/marketplace/profile', { auth: impToken });
+      const mfgRes = await api.get('/api/trust-centre/profile', { auth: adminToken });
+      const impRes = await api.get('/api/trust-centre/profile', { auth: impToken });
 
       expect(mfgRes.status).toBe(200);
       expect(impRes.status).toBe(200);
@@ -69,11 +69,11 @@ describe('/api/marketplace', () => {
     });
   });
 
-  // ─── PUT /api/marketplace/profile ─────────────────────────────────────
+  // ─── PUT /api/trust-centre/profile ─────────────────────────────────────
 
-  describe('PUT /api/marketplace/profile', () => {
+  describe('PUT /api/trust-centre/profile', () => {
     it('should reject unauthenticated request', async () => {
-      const res = await api.put('/api/marketplace/profile', {
+      const res = await api.put('/api/trust-centre/profile', {
         body: { tagline: 'test' },
       });
       expect(res.status).toBe(401);
@@ -81,7 +81,7 @@ describe('/api/marketplace', () => {
 
     it('should require Pro plan', async () => {
       // impAdmin org is on trial/standard — PUT should be gated
-      const res = await api.put('/api/marketplace/profile', {
+      const res = await api.put('/api/trust-centre/profile', {
         auth: impToken,
         body: { tagline: 'test' },
       });
@@ -89,11 +89,11 @@ describe('/api/marketplace', () => {
     });
   });
 
-  // ─── GET /api/marketplace/categories (public) ─────────────────────────
+  // ─── GET /api/trust-centre/categories (public) ─────────────────────────
 
-  describe('GET /api/marketplace/categories', () => {
+  describe('GET /api/trust-centre/categories', () => {
     it('should return categories without auth', async () => {
-      const res = await api.get('/api/marketplace/categories');
+      const res = await api.get('/api/trust-centre/categories');
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('categories');
       expect(Array.isArray(res.body.categories)).toBe(true);
@@ -101,7 +101,7 @@ describe('/api/marketplace', () => {
     });
 
     it('should return category objects with value and label', async () => {
-      const res = await api.get('/api/marketplace/categories');
+      const res = await api.get('/api/trust-centre/categories');
       expect(res.status).toBe(200);
       for (const cat of res.body.categories) {
         expect(cat).toHaveProperty('value');
@@ -112,18 +112,18 @@ describe('/api/marketplace', () => {
     });
   });
 
-  // ─── GET /api/marketplace/listings (public) ───────────────────────────
+  // ─── GET /api/trust-centre/listings (public) ───────────────────────────
 
-  describe('GET /api/marketplace/listings', () => {
+  describe('GET /api/trust-centre/listings', () => {
     it('should return listings without auth', async () => {
-      const res = await api.get('/api/marketplace/listings');
+      const res = await api.get('/api/trust-centre/listings');
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('listings');
       expect(Array.isArray(res.body.listings)).toBe(true);
     });
 
     it('should include pagination fields', async () => {
-      const res = await api.get('/api/marketplace/listings');
+      const res = await api.get('/api/trust-centre/listings');
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('total');
       expect(typeof res.body.total).toBe('number');
@@ -132,34 +132,34 @@ describe('/api/marketplace', () => {
     });
 
     it('should support pagination query params', async () => {
-      const res = await api.get('/api/marketplace/listings?page=1&limit=5');
+      const res = await api.get('/api/trust-centre/listings?page=1&limit=5');
       expect(res.status).toBe(200);
       expect(res.body.listings.length).toBeLessThanOrEqual(5);
     });
   });
 
-  // ─── GET /api/marketplace/listings/:orgId (public) ────────────────────
+  // ─── GET /api/trust-centre/listings/:orgId (public) ────────────────────
 
-  describe('GET /api/marketplace/listings/:orgId', () => {
+  describe('GET /api/trust-centre/listings/:orgId', () => {
     it('should return 404 for non-existent org', async () => {
       const fakeOrgId = '00000000-0000-0000-0000-000000000000';
-      const res = await api.get(`/api/marketplace/listings/${fakeOrgId}`);
+      const res = await api.get(`/api/trust-centre/listings/${fakeOrgId}`);
       expect([404, 400]).toContain(res.status);
     });
   });
 
-  // ─── POST /api/marketplace/contact/:orgId ─────────────────────────────
+  // ─── POST /api/trust-centre/contact/:orgId ─────────────────────────────
 
-  describe('POST /api/marketplace/contact/:orgId', () => {
+  describe('POST /api/trust-centre/contact/:orgId', () => {
     it('should reject unauthenticated request', async () => {
-      const res = await api.post(`/api/marketplace/contact/${mfgOrgId}`, {
+      const res = await api.post(`/api/trust-centre/contact/${mfgOrgId}`, {
         body: { message: 'Hello from test' },
       });
       expect(res.status).toBe(401);
     });
 
     it('should reject message shorter than 10 chars or unlisted org', async () => {
-      const res = await api.post(`/api/marketplace/contact/${mfgOrgId}`, {
+      const res = await api.post(`/api/trust-centre/contact/${mfgOrgId}`, {
         auth: impToken,
         body: { message: 'Hi' },
       });
@@ -168,7 +168,7 @@ describe('/api/marketplace', () => {
     });
 
     it('should reject empty message or unlisted org', async () => {
-      const res = await api.post(`/api/marketplace/contact/${mfgOrgId}`, {
+      const res = await api.post(`/api/trust-centre/contact/${mfgOrgId}`, {
         auth: impToken,
         body: {},
       });
@@ -177,16 +177,16 @@ describe('/api/marketplace', () => {
     });
   });
 
-  // ─── GET /api/marketplace/contact-history ──────────────────────────────
+  // ─── GET /api/trust-centre/contact-history ──────────────────────────────
 
-  describe('GET /api/marketplace/contact-history', () => {
+  describe('GET /api/trust-centre/contact-history', () => {
     it('should reject unauthenticated request', async () => {
-      const res = await api.get('/api/marketplace/contact-history');
+      const res = await api.get('/api/trust-centre/contact-history');
       expect(res.status).toBe(401);
     });
 
     it('should return contact history for authenticated user', async () => {
-      const res = await api.get('/api/marketplace/contact-history', { auth: adminToken });
+      const res = await api.get('/api/trust-centre/contact-history', { auth: adminToken });
       expect(res.status).toBe(200);
       // Should be an array or object with messages
       expect(res.body).toBeDefined();
@@ -195,22 +195,22 @@ describe('/api/marketplace', () => {
 
   // ─── Admin endpoints ──────────────────────────────────────────────────
 
-  describe('GET /api/marketplace/admin/overview', () => {
+  describe('GET /api/trust-centre/admin/overview', () => {
     it('should reject non-admin request', async () => {
-      const res = await api.get('/api/marketplace/admin/overview', { auth: adminToken });
+      const res = await api.get('/api/trust-centre/admin/overview', { auth: adminToken });
       expect([401, 403]).toContain(res.status);
     });
 
     it('should return overview for platform admin', async () => {
-      const res = await api.get('/api/marketplace/admin/overview', { auth: platformToken });
+      const res = await api.get('/api/trust-centre/admin/overview', { auth: platformToken });
       expect(res.status).toBe(200);
       expect(res.body).toBeDefined();
     });
   });
 
-  describe('PUT /api/marketplace/admin/:orgId/approve', () => {
+  describe('PUT /api/trust-centre/admin/:orgId/approve', () => {
     it('should reject non-admin request', async () => {
-      const res = await api.put(`/api/marketplace/admin/${mfgOrgId}/approve`, {
+      const res = await api.put(`/api/trust-centre/admin/${mfgOrgId}/approve`, {
         auth: adminToken,
       });
       expect([401, 403]).toContain(res.status);
