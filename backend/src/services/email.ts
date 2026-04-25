@@ -215,3 +215,67 @@ export async function sendEscrowAgentAccessEmail(
     `,
   });
 }
+
+interface AffiliateStatementEmailArgs {
+  to: string;
+  displayName: string;
+  bonusCode: string;
+  periodLabel: string;
+  activeReferredOrgs: number;
+  newSignupsThisMonth: number;
+  churnedThisMonth: number;
+  grossRevenueEur: number;
+  commissionRateSnapshot: number;
+  commissionEarnedEur: number;
+}
+
+export async function sendAffiliateStatementEmail(args: AffiliateStatementEmailArgs): Promise<void> {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
+  const from = process.env.EMAIL_FROM || 'info@cranis2.com';
+  const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(n);
+  const ratePct = (args.commissionRateSnapshot * 100).toFixed(1);
+  const earned = eur(args.commissionEarnedEur);
+  const dashboardUrl = `${frontendUrl}/affiliate`;
+
+  await resend.emails.send({
+    from: `CRANIS2 <${from}>`,
+    to: args.to,
+    subject: `Your CRANIS2 affiliate statement — ${args.periodLabel}`,
+    html: `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 2rem; background: #0a0a0f; color: #e4e4e7;">
+        <div style="margin-bottom: 1.5rem;">
+          <span style="font-size: 1.25rem; font-weight: 800; color: #e4e4e7;">CRANIS</span><span style="font-size: 1.25rem; font-weight: 800; color: #a855f7;">2</span>
+          <span style="font-size: 0.8rem; color: #71717a; display: block; margin-top: 0.25rem;">Affiliate Statement</span>
+        </div>
+        <h2 style="font-size: 1.2rem; color: #e4e4e7; margin-bottom: 0.25rem;">${args.periodLabel}</h2>
+        <p style="color: #a1a1aa; font-size: 0.9rem; line-height: 1.6; margin: 0 0 1.5rem 0;">
+          Hello ${args.displayName} &mdash; here's your monthly summary for bonus code <code style="background: #27272a; padding: 0.15rem 0.4rem; border-radius: 4px; color: #a855f7;">${args.bonusCode}</code>.
+        </p>
+        <div style="background: linear-gradient(135deg, #18181b 0%, #1c1c22 100%); border: 1px solid #2a2d3a; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.25rem;">
+          <p style="color: #71717a; font-size: 0.78rem; margin: 0 0 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">You can now invoice CRANIS2 for</p>
+          <p style="color: #22c55e; font-size: 2rem; font-weight: 700; margin: 0; letter-spacing: -0.02em;">${earned}</p>
+          <p style="color: #71717a; font-size: 0.8rem; margin: 0.5rem 0 0;">${eur(args.grossRevenueEur)} gross revenue &times; ${ratePct}% commission</p>
+        </div>
+        <div style="background: #18181b; border: 1px solid #2a2d3a; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;">
+          <p style="color: #71717a; font-size: 0.78rem; margin: 0 0 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Activity</p>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="color: #a1a1aa; font-size: 0.88rem; padding: 0.4rem 0; width: 60%;">Active referred organisations</td><td style="color: #e4e4e7; font-size: 0.88rem; padding: 0.4rem 0; font-weight: 600; text-align: right;">${args.activeReferredOrgs}</td></tr>
+            <tr><td style="color: #a1a1aa; font-size: 0.88rem; padding: 0.4rem 0;">New signups this month</td><td style="color: #e4e4e7; font-size: 0.88rem; padding: 0.4rem 0; font-weight: 600; text-align: right;">${args.newSignupsThisMonth}</td></tr>
+            <tr><td style="color: #a1a1aa; font-size: 0.88rem; padding: 0.4rem 0;">Churned this month</td><td style="color: #e4e4e7; font-size: 0.88rem; padding: 0.4rem 0; font-weight: 600; text-align: right;">${args.churnedThisMonth}</td></tr>
+          </table>
+        </div>
+        <a href="${dashboardUrl}" style="display: inline-block; background: #3b82f6; color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+          View dashboard &amp; submit invoice
+        </a>
+        <p style="color: #71717a; font-size: 0.8rem; margin-top: 1.5rem; line-height: 1.6;">
+          To get paid, send an invoice for <strong style="color: #e4e4e7;">${earned}</strong> to <a href="mailto:${from}" style="color: #3b82f6;">${from}</a>, referencing bonus code ${args.bonusCode} and period ${args.periodLabel}.
+        </p>
+        <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 2rem 0;" />
+        <p style="color: #71717a; font-size: 0.72rem; line-height: 1.6;">
+          CRANIS2 &mdash; Continuous compliance with EU legislation for software.<br/>
+          You're receiving this because you're a registered CRANIS2 affiliate. To stop receiving these statements, contact us.
+        </p>
+      </div>
+    `,
+  });
+}

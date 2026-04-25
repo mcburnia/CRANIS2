@@ -19,6 +19,7 @@ import { Router, Request, Response } from 'express';
 import pool from '../../db/pool.js';
 import { requirePlatformAdmin } from '../../middleware/requirePlatformAdmin.js';
 import { recordEvent, extractRequestData } from '../../services/telemetry.js';
+import { generateStatementForAffiliate, generateAffiliateMonthlyStatements } from '../../services/affiliate-statements.js';
 
 const router = Router();
 
@@ -383,6 +384,80 @@ router.post('/affiliates/:id/ledger', requirePlatformAdmin, async (req: Request,
   } catch (err) {
     console.error('[ADMIN AFFILIATES] Ledger entry failed:', err);
     res.status(500).json({ error: 'Failed to record ledger entry' });
+  }
+});
+
+// ── POST /api/admin/affiliates/:id/regenerate-statement — manual trigger ──
+//
+// Body: { period: "YYYY-MM", force?: boolean }
+// Useful for back-dating, re-running after a rate change, or smoke testing.
+
+router.post('/affiliates/:id/regenerate-statement', requirePlatformAdmin, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { period, force } = req.body;
+
+  if (typeof period !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) {
+    res.status(400).json({ error: 'period is required in YYYY-MM format' });
+    return;
+  }
+
+  const [yearStr, monthStr] = period.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const periodStart = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
+  const periodEnd = new Date(Date.UTC(year, month, 1, 0, 0, 0));
+
+  try {
+    const affResult = await pool.query(
+      `SELECT id, bonus_code, display_name, contact_email, commission_rate, enabled, user_id
+       FROM affiliates WHERE id = $1`,
+      [id]
+    );
+    if (affResult.rows.length === 0) {
+      res.status(404).json({ error: 'Affiliate not found' });
+      return;
+    }
+
+    const result = await generateStatementForAffiliate(
+      affResult.rows[0],
+      periodStart,
+      periodEnd,
+      { force: !!force }
+    );
+
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: (req as any).userId, email: (req as any).email,
+      eventType: 'admin_affiliate_statement_regenerated', ...reqData,
+      metadata: { affiliateId: id, period, force: !!force, skipped: result.skipped ?? null },
+    });
+
+    res.json({
+      statementId: result.statementId,
+      metrics: result.metrics,
+      skipped: result.skipped ?? null,
+    });
+  } catch (err: any) {
+    console.error('[ADMIN AFFILIATES] Regenerate statement failed:', err);
+    res.status(500).json({ error: err.message || 'Failed to regenerate statement' });
+  }
+});
+
+// ── POST /api/admin/affiliates/run-monthly-now — fire scheduler manually ──
+
+router.post('/affiliates/run-monthly-now', requirePlatformAdmin, async (req: Request, res: Response) => {
+  try {
+    const summary = await generateAffiliateMonthlyStatements();
+    const reqData = extractRequestData(req);
+    await recordEvent({
+      userId: (req as any).userId, email: (req as any).email,
+      eventType: 'admin_affiliate_monthly_run', ...reqData,
+      metadata: summary,
+    });
+    res.json(summary);
+  } catch (err: any) {
+    console.error('[ADMIN AFFILIATES] Manual monthly run failed:', err);
+    res.status(500).json({ error: err.message || 'Failed to run monthly statements' });
   }
 });
 

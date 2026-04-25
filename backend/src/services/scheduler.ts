@@ -13,6 +13,7 @@ import {
 import type { GitHubRelease } from '../services/github.js';
 import * as repoProvider from '../services/repo-provider.js';
 import type { RepoProvider, NormalisedRelease } from '../services/repo-provider.js';
+import { runMonthlyAffiliateStatements } from './affiliate-statements.js';
 import { enrichDependencyHashes } from './hash-enrichment.js';
 import { enrichDependencyLicenses } from './license-enrichment.js';
 import { resolveLockfileVersions } from './lockfile-resolver.js';
@@ -1513,5 +1514,6 @@ export function startScheduler(): void {
     checkRetentionExpiry().catch(err => console.error('[SCHEDULER] Uncaught error in retention expiry check:', err));
     checkReserveSufficiency().catch(err => console.error('[SCHEDULER] Uncaught error in reserve sufficiency check:', err));
     runWeeklyTrustEvaluation().catch(err => console.error('[SCHEDULER] Uncaught error in trust evaluation:', err));
+    runMonthlyAffiliateStatements().catch(err => console.error('[SCHEDULER] Uncaught error in affiliate statements:', err));
   }, CHECK_INTERVAL_MS);
 }
