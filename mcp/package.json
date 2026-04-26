@@ -22,5 +22,9 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "overrides": {
+    "hono": "^4.12.14",
+    "@hono/node-server": "^1.19.13"
   }
 }
