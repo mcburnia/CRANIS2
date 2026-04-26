@@ -291,6 +291,8 @@ export async function initDb() {
     await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS github_findings INT`);
     await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS nvd_duration_ms INT`);
     await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS nvd_findings INT`);
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS local_db_duration_ms INT`);
+    await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS local_db_findings INT DEFAULT 0`);
     await client.query(`ALTER TABLE vulnerability_scans ADD COLUMN IF NOT EXISTS triggered_by VARCHAR(255)`);
 
     // Vulnerability findings – individual CVEs/advisories found per product
