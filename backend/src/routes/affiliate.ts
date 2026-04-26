@@ -53,7 +53,7 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
     const result = await pool.query(
       `SELECT id, bonus_code, display_name, contact_email, commission_rate,
               commission_window_months, enabled, payout_method, created_at, updated_at
-       FROM affiliates WHERE user_id = $1 LIMIT 1`,
+       FROM affiliates WHERE user_id = $1 AND enabled = TRUE LIMIT 1`,
       [userId]
     );
     if (result.rows.length === 0) {
