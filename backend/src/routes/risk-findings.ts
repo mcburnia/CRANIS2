@@ -95,7 +95,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       else if (row.status === 'dismissed') pf.dismissed += count;
       else if (row.status === 'acknowledged') pf.acknowledged += count;
       else if (row.status === 'mitigated') pf.mitigated += count;
-      else if (row.status === 'resolved') pf.resolved += count;
+      else if (row.status === 'resolved' || row.status === 'auto_resolved') pf.resolved += count;
       // Track open-only severity for stat cards
       if (row.status === 'open' || row.status === 'acknowledged') {
         if (row.severity === 'critical') pf.openCritical += count;
@@ -308,11 +308,16 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
       else if (row.status === 'dismissed') summary.dismissed++;
       else if (row.status === 'acknowledged') summary.acknowledged++;
       else if (row.status === 'mitigated') summary.mitigated++;
-      else if (row.status === 'resolved') summary.resolved++;
+      else if (row.status === 'resolved' || row.status === 'auto_resolved') summary.resolved++;
     }
 
+    // Normalise auto_resolved → resolved on the wire. The DB keeps the
+    // audit distinction (resolved_by IS NULL on auto_resolved rows), but
+    // the UI treats both as "resolved" for display + counting.
+    const findings = result.rows.map(r => r.status === 'auto_resolved' ? { ...r, status: 'resolved' } : r);
+
     res.json({
-      findings: result.rows,
+      findings,
       lastScan: scanResult.rows[0] || null,
       summary,
     });
