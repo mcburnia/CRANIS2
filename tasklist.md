@@ -171,6 +171,14 @@ All five MVP features are built, tested, and shipped.
 
 ---
 
+## Open product bugs
+
+- [ ] **SBOM resync should prune orphaned `Dependency` nodes/edges in Neo4j.** Found 2026-04-26 during dep-upgrade housekeeping for the CRANIS2 product. When a SBOM resync detects new dependency versions (e.g. `vite 8.0.10`), it adds new `Dependency` nodes + `DEPENDS_ON` edges from `Product`, but **does not remove** edges to the old versions (`vite 7.3.1`, `vite 6.4.1`). Knock-on impact: `reconcileFindings()` in the platform vuln scanner reads `currentDepsByProduct` from Neo4j, sees the old purls still present, and **doesn't auto-resolve** vulnerability findings whose dependency has actually been upgraded. Workaround: manually `MATCH (p:Product)-[r:DEPENDS_ON]->(d:Dependency)` and DELETE edges whose `(d.name, d.version)` is no longer in the current `product_sboms.spdx_json` after a resync. Proper fix: in the SBOM ingest path (`backend/src/services/github.ts` or wherever Neo4j writes happen), diff the new SBOM against existing edges and DETACH-DELETE the orphans before adding the new ones.
+- [ ] **`runProductScan()` doesn't call `reconcileFindings()`** — only the platform-wide scan does. Per-product scans never auto-resolve stale findings, so users who hit the in-app "Scan now" button see findings persist even after dep upgrades. Same fix path: refactor `reconcileFindings()` to accept a single `productId` and call it from `runProductScan` after the new-findings sweep.
+- [ ] **`vulnerability_scans` schema vs scanner code drift** — fixed 2026-04-26 by adding `local_db_duration_ms` + `local_db_findings` columns. Worth reviewing other tables for similar drift between code and `pool.ts`.
+
+---
+
 ## Parked (post-launch)
 
 - [ ] #59 Multi-language support — i18n/localisation (scope TBD)
