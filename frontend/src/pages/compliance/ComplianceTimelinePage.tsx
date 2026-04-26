@@ -70,6 +70,13 @@ interface TimelineData {
   productId: string;
   productName: string;
   timeRange: { earliest: string | null; latest: string | null };
+  current?: {
+    openFindings: number;
+    openCritical: number;
+    openHigh: number;
+    openMedium: number;
+    openLow: number;
+  };
   vulnerabilityScans: VulnScan[];
   licenseScans: LicenseScan[];
   craReports: CraReport[];
@@ -272,10 +279,16 @@ export default function ComplianceTimelinePage() {
 
   const events = data ? buildEvents(data) : [];
 
-  // Stat computations
+  // Stat computations. The summary cards reflect the *current* state
+  // (open + acknowledged), not the latest scan record's raw findings_count
+  // — that count includes dismissed/resolved findings, which makes the card
+  // alarmist about issues that have already been triaged.
   const lastVuln = data?.vulnerabilityScans[data.vulnerabilityScans.length - 1];
   const lastLicense = data?.licenseScans[data.licenseScans.length - 1];
-  const critHigh = lastVuln ? lastVuln.criticalCount + lastVuln.highCount : 0;
+  const critHigh = data?.current
+    ? data.current.openCritical + data.current.openHigh
+    : (lastVuln ? lastVuln.criticalCount + lastVuln.highCount : 0);
+  const totalActionable = data?.current?.openFindings;
   const permPct = lastLicense && lastLicense.totalDeps > 0
     ? Math.round((lastLicense.permissiveCount / lastLicense.totalDeps) * 100)
     : 0;
@@ -331,7 +344,11 @@ export default function ComplianceTimelinePage() {
               label="Critical + High"
               value={critHigh}
               color={critHigh === 0 ? 'green' : critHigh <= 5 ? 'amber' : 'red'}
-              sub={lastVuln ? `of ${lastVuln.findingsCount} total findings` : undefined}
+              sub={
+                totalActionable !== undefined
+                  ? (totalActionable === 0 ? 'No active findings' : `of ${totalActionable} active findings`)
+                  : (lastVuln ? `of ${lastVuln.findingsCount} total findings` : undefined)
+              }
             />
             <StatCard
               label="License Health"

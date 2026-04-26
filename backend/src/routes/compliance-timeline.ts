@@ -136,10 +136,32 @@ router.get('/:productId', requireAuth, async (req: Request, res: Response) => {
     const earliest = timestamps.length ? new Date(Math.min(...timestamps)).toISOString() : null;
     const latest = timestamps.length ? new Date(Math.max(...timestamps)).toISOString() : null;
 
+    // Live "currently actionable" counts. The latest scan record's
+    // findings_count includes dismissed/resolved/auto_resolved findings —
+    // useful for the chart's data point but misleading on the summary card,
+    // where users want to see what's still open.
+    const currentResult = await pool.query(
+      `SELECT severity, COUNT(*)::int AS n
+       FROM vulnerability_findings
+       WHERE product_id = $1
+         AND status IN ('open', 'acknowledged')
+       GROUP BY severity`,
+      [productId]
+    );
+    const current = { openFindings: 0, openCritical: 0, openHigh: 0, openMedium: 0, openLow: 0 };
+    for (const r of currentResult.rows) {
+      current.openFindings += r.n;
+      if (r.severity === 'critical') current.openCritical = r.n;
+      else if (r.severity === 'high') current.openHigh = r.n;
+      else if (r.severity === 'medium') current.openMedium = r.n;
+      else if (r.severity === 'low') current.openLow = r.n;
+    }
+
     res.json({
       productId,
       productName,
       timeRange: { earliest, latest },
+      current,
 
       vulnerabilityScans: vulnScans.rows.map(r => ({
         id: r.id,
