@@ -265,7 +265,14 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
         const obligations = obByProduct[p.id] || [];
         const applicable = getApplicableObligations(p.category, craRole);
         const total = applicable.length;
-        const met = obligations.filter(o => o.effectiveStatus === 'met').length;
+        // Numerator must share scope with the denominator: count only 'met'
+        // obligations that are *applicable* to this product's role+category.
+        // Otherwise non-applicable obligations marked 'met' inflate readiness
+        // above 100% (e.g. importer/Default → 14/10 → 140%).
+        const applicableKeys = new Set(applicable.map(a => a.key));
+        const met = obligations.filter(o =>
+          o.effectiveStatus === 'met' && applicableKeys.has(o.key)
+        ).length;
         const readiness = total > 0 ? Math.round((met / total) * 100) : 0;
         readinessMap[p.id] = { met, total, readiness };
         totalMetAcrossOrg += met;
