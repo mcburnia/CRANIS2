@@ -1,8 +1,8 @@
 # CRANIS2 User Guide
 
 **Document Version:** 1.0
-**Last Updated:** 2026-03-02
-**Covers:** Sections 1--25 plus Appendices A--E
+**Last Updated:** 2026-04-28
+**Covers:** Sections 1--28 plus Appendices A--E
 
 ---
 
@@ -30,9 +30,12 @@
 20. [Stakeholders](#20-stakeholders)
 21. [Organisation Management](#21-organisation-management)
 22. [Audit Log](#22-audit-log)
-23. [Feedback System](#23-feedback-system)
-24. [Platform Administration](#24-platform-administration)
-25. [Automated Background Processes](#25-automated-background-processes)
+23. [Account and Data Rights](#23-account-and-data-rights)
+24. [Feedback System](#24-feedback-system)
+25. [Affiliate Programme](#25-affiliate-programme)
+26. [Non-Profit and Open Source Access](#26-non-profit-and-open-source-access)
+27. [Platform Administration](#27-platform-administration)
+28. [Automated Background Processes](#28-automated-background-processes)
 - [Appendix A: CRA Product Categories](#appendix-a-cra-product-categories)
 - [Appendix B: Supported Repository Providers](#appendix-b-supported-repository-providers)
 - [Appendix C: Supported Lockfile Formats](#appendix-c-supported-lockfile-formats)
@@ -196,6 +199,8 @@ Navigate to `/signup` to create a new account. You will need:
   - At least one special character
 
 A strength meter on the signup form shows your progress against these criteria in real time.
+
+If you have a bonus code (e.g. from an affiliate partner), enter it in the bonus code field during signup. Valid bonus codes extend your free trial from 30 to 90 days.
 
 ### Email Verification
 
@@ -362,6 +367,8 @@ Clicking on a product opens the detail page (`/products/:productId`), which has 
 
 **Dependencies** -- The full SBOM package list for this product. Each dependency shows its name, version, ecosystem (npm, PyPI, crates.io, etc.), license, and whether it is a direct or transitive dependency.
 
+The Overview tab includes a **Next Steps** card — a compliance gap narrator that analyses your product's current state and presents a prioritised list of actions needed to achieve full CRA compliance. Each gap includes the relevant CRA article reference, a description of the action required, and a navigation link to the appropriate page or tab.
+
 ### Editing and Deleting Products
 
 Product details (name, description, version, type, category, distribution model) can be edited from the product detail page.
@@ -455,7 +462,19 @@ The Obligations page (`/obligations`) provides a cross-product view of all CRA a
 
 ### What Are CRA Obligations?
 
-The CRA defines a set of obligations that apply to manufacturers, importers and distributors of products with digital elements. These cover areas including:
+The CRA defines a set of obligations that apply to manufacturers, importers and distributors of products with digital elements. CRANIS2 tracks **35 obligations** across three CRA roles:
+
+| Role | Obligation Count | Source Articles |
+|------|-----------------|-----------------|
+| **Manufacturer** | 19 | Articles 13, 14, 16, 20, 32, Annexes I and VII |
+| **Importer** | 10 | Article 18 |
+| **Distributor** | 6 | Article 19 |
+
+Open-source stewards share the manufacturer obligation set.
+
+The platform automatically assigns the correct obligation set based on the organisation's CRA role. When you create or update your organisation's role in the Organisation settings, the applicable obligations are recalculated for all products.
+
+For manufacturers (the broadest set), obligations cover areas including:
 
 - Product security requirements (Annex I)
 - Vulnerability handling processes (Article 13)
@@ -468,7 +487,7 @@ The CRA defines a set of obligations that apply to manufacturers, importers and 
 - Cooperation with market surveillance (Article 43)
 - Incident and vulnerability coordination (Article 15)
 
-The specific obligations tracked in CRANIS2 are derived from these articles and mapped to each product based on its CRA category.
+Importers and distributors have role-specific subsets drawn from their respective CRA articles.
 
 ### Obligation Statuses
 
@@ -485,6 +504,7 @@ Each obligation has one of three statuses:
 - **Inline editing** -- Change any obligation's status directly from the table by clicking the status indicator.
 - **Per-product view** -- Obligations also appear on the product detail page under the Obligations tab, where you can manage them in the context of a specific product.
 - **Filtering** -- The overview page supports filtering by product and by status, so you can quickly identify which obligations still need attention.
+- **Auto-intelligence** -- Many obligations have their status automatically derived from platform data (e.g. SBOM presence, vulnerability scan results, technical file completion). When the auto-derived status is higher than the manual status, an "auto" badge appears. When platform data confirms a manual status, a "✓ confirmed" badge appears.
 
 ---
 
@@ -967,14 +987,18 @@ The platform scheduler runs a comprehensive vulnerability scan at 3 AM UTC. This
 
 ### Pricing Model
 
-CRANIS2 uses a simple, contributor-based pricing model:
+CRANIS2 offers two subscription tiers:
 
-- **EUR 6 per month** per active contributor across your organisation
-- An active contributor is anyone who has made at least one contribution to a connected repository
+| Plan | Monthly Price | Includes |
+|------|--------------|----------|
+| **Standard** | €6 per active contributor | Core compliance features: SBOM, vulnerability scanning, obligations tracking, technical files, ENISA reporting, licence compliance, IP proof, escrow, due diligence, reports |
+| **Pro** | €9 per product + €6 per active contributor | Everything in Standard, plus: AI Copilot (suggestions, auto-triage, risk assessment, incident drafting, category recommendation), Public API and API keys, CI/CD compliance gate, Trust Centre listings, MCP IDE integration, GRC/OSCAL bridge, Software Evidence Engine |
+
+An active contributor is anyone who has made at least one contribution to a connected repository.
 
 ### Free Trial
 
-Every new organisation receives a **30-day free trial** with full access to all platform features (extended to 90 days with a bonus code at signup). No credit card is required to start the trial.
+Every new organisation receives a **30-day free trial** with full access to all Pro features. No credit card is required. Organisations that sign up with a bonus code (e.g. from an affiliate partner) receive a **90-day trial** instead.
 
 ### Trial Lifecycle
 
@@ -982,7 +1006,7 @@ The trial follows a defined progression:
 
 | Phase | Duration | Access Level |
 |-------|----------|-------------|
-| **Trial** | 30 days (90 with a bonus code) from organisation creation | Full access to all features |
+| **Trial** | 30 days (90 with bonus code) from organisation creation | Full access to all features |
 | **Grace period** | 7 days after trial expires | Full access, with a warning banner prompting you to subscribe |
 | **Read-only** | After grace period | All write operations are blocked; viewing, reading, and exporting remain available |
 | **Suspended** | 60 days after entering read-only | Account is suspended with limited access |
@@ -1004,7 +1028,9 @@ For paying customers, the lifecycle in the event of a payment failure is:
 The Billing page (`/billing`) shows:
 
 - **Status card** -- current billing status (trial, active, read-only, suspended)
+- **Plan selection** -- Choose between Standard and Pro. Trial and cancelled organisations see a two-column plan comparison grid. Active subscribers see their current plan with an Upgrade or Downgrade button.
 - **Contributor count** -- the number of active contributors driving your bill
+- **CSIRT country** -- Set your organisation's default CSIRT country for ENISA reporting.
 - **Billing details form** -- billing email, company name, and VAT number
 - **Stripe checkout** -- subscribe or update your payment method via Stripe's hosted checkout
 - **Customer portal** -- manage invoices, payment methods, and subscription details through Stripe's customer portal
@@ -1080,7 +1106,7 @@ To list your organisation on the Trust Centre, navigate to `/trust-centre/settin
 - **Categories** -- select which product categories apply to your organisation
 - **Featured products** -- choose which of your products to highlight on the listing
 
-Trust Centre listings are currently auto-approved upon creation.
+Trust Centre listings are auto-approved by default. Platform administrators can revoke approval for any listing if necessary. Trust Centre settings are available to organisations on the Pro plan.
 
 ---
 
@@ -1214,7 +1240,36 @@ CRA Article 10 requires manufacturers to maintain records of compliance activiti
 
 ---
 
-## 23. Feedback System
+## 23. Account and Data Rights
+
+### Data Export
+
+You can export all personal data held by CRANIS2 at any time. Navigate to your Account page and select **Export My Data**. The platform generates a structured JSON file containing your account details, organisation membership, billing records, repository connections (tokens excluded), products, stakeholders, feedback, API keys (secrets excluded), recent telemetry, Copilot usage, notifications, and SEE sessions.
+
+Categories excluded from export (with reasons) include password hashes, OAuth tokens, the immutable audit trail, and Stripe billing invoices (available directly from Stripe).
+
+### Account Deletion
+
+To delete your account, navigate to your Account page and select **Delete My Account**. You will be asked to confirm your password. If you are the sole administrator of an organisation, you must first transfer admin rights or delete the organisation.
+
+On confirmation, CRANIS2 immediately deletes your user record, events, repository connections, feedback, API keys, Copilot cache, notifications, and Neo4j user node. Billing records and audit trail entries are anonymised (not deleted) for legal retention obligations. Foreign key references across 11 tables are nullified.
+
+### Data Retention
+
+CRANIS2 enforces documented retention periods automatically:
+
+| Data | Retention |
+|------|-----------|
+| User events (telemetry) | 90 days |
+| Feedback submissions | 2 years |
+| Expired verification tokens | Deleted on expiry |
+| Copilot response cache | 24 hours |
+
+Platform administrators can trigger a manual retention cleanup via the Admin panel.
+
+---
+
+## 24. Feedback System
 
 ### In-App Feedback
 
@@ -1240,7 +1295,52 @@ All submissions are reviewed by the platform team and inform the development roa
 
 ---
 
-## 24. Platform Administration
+## 25. Affiliate Programme
+
+CRANIS2 offers an affiliate programme that rewards partners for referring new customers.
+
+### For Users
+
+If you received a bonus code from an affiliate partner, enter it during signup to extend your free trial to 90 days.
+
+### For Affiliates
+
+Affiliates have access to a self-service dashboard (`/affiliate`) showing:
+
+- **Referral statistics** -- Signups, active organisations, and conversion metrics
+- **Commission ledger** -- Detailed log of earned commissions with amounts and descriptions
+- **Monthly statements** -- Automatically generated statements summarising earned, invoiced, and paid commissions
+- **Invoice submission** -- Submit invoices for commission payment
+
+The affiliate link appears in the sidebar navigation for users who have been registered as affiliates by a platform administrator.
+
+### For Administrators
+
+Platform administrators manage affiliates from the Admin panel (`/admin/affiliates`):
+
+- Create and edit affiliate accounts with configurable commission rates
+- View affiliate detail pages with full ledger history
+- Create manual ledger entries (credits, adjustments, payments)
+- Review monthly statements and track payment status
+
+---
+
+## 26. Non-Profit and Open Source Access
+
+CRANIS2 provides free access for verified non-profit organisations and qualifying open-source projects.
+
+### Eligibility
+
+- **Non-profit organisations** -- Must submit verification documentation via the platform. Applications are reviewed by platform administrators.
+- **Open-source projects** -- Automatically classified using a trust scoring system that evaluates OSI-approved licence usage, repository activity, and community indicators.
+
+### What Is Included
+
+Qualifying organisations receive full platform access without contributor-based charges. The trust classification is re-evaluated periodically by an automated scheduler to ensure continued eligibility.
+
+---
+
+## 27. Platform Administration
 
 ### Admin Panel
 
@@ -1269,7 +1369,7 @@ The admin panel includes 10 pages:
 
 ---
 
-## 25. Automated Background Processes
+## 28. Automated Background Processes
 
 ### Scheduler
 
@@ -1288,7 +1388,7 @@ CRANIS2 runs a set of background jobs on a fixed schedule. These processes maint
 
 CRANIS2 receives webhooks from external services to maintain real-time awareness of changes:
 
-- **GitHub / Codeberg / Forgejo push events** -- When a push is made to a connected repository, the webhook marks the corresponding product's SBOM as stale. This triggers the "Update Available" indicator on the Repos page and product detail page. The stale SBOM is automatically re-synced during the 2 AM nightly job.
+- **GitHub / Codeberg / Forgejo / Bitbucket push events** -- When a push is made to a connected repository, the webhook marks the corresponding product's SBOM as stale. This triggers the "Update Available" indicator on the Repos page and product detail page. The stale SBOM is automatically re-synced during the 2 AM nightly job.
 - **Stripe billing events** -- Payment success, payment failure, and subscription update events from Stripe are processed in real time. These events trigger billing state transitions (e.g. from active to past due) and generate user notifications.
 
 ### No User Action Required
@@ -1316,6 +1416,7 @@ All background processes run automatically. Users benefit from up-to-date vulner
 | **Gitea** | Personal Access Token | Self-hosted | User-provided instance URL |
 | **Forgejo** | Personal Access Token | Self-hosted | User-provided instance URL |
 | **GitLab** | Personal Access Token | Self-hosted | User-provided instance URL |
+| **Bitbucket** | OAuth | Cloud (bitbucket.org) | `https://bitbucket.org` |
 
 ---
 

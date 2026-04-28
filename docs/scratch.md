@@ -60,6 +60,27 @@ For completed work history, see `.claude/projects/-home-mcburnia-cranis2/memory/
 
 ---
 
+## Future — Enterprise Licensing and Managed Service Hosting
+
+Two commercial models to explore post-launch:
+
+### Enterprise Licensing
+- On-premise or private-cloud deployment of CRANIS2 for large organisations
+- Custom SLAs, dedicated support, tailored obligation sets
+- Pricing model TBD — likely annual licence fee based on product/contributor count
+- Considerations: deployment packaging (Docker, Kubernetes), configuration management, update delivery, data isolation guarantees
+
+### Managed Service Hosting
+- CRANIS2 hosted and operated by Loman Cavendish on behalf of the customer
+- Dedicated instance per customer (not multi-tenant shared infrastructure)
+- Full data sovereignty — customer chooses hosting region (EU, UK, etc.)
+- Includes backup management, patching, monitoring, and 24/7 availability
+- Pricing model TBD — likely monthly fee per instance + usage-based component
+
+**Discussion needed:** scope, pricing, infrastructure requirements, operational burden, minimum viable offering for each model.
+
+---
+
 ## Parked (post-launch)
 
 - **15 remaining help guide stub rewrites**

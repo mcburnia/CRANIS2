@@ -190,6 +190,8 @@ All five MVP features are built, tested, and shipped.
 - [ ] Service unit test depth (7/71 services)
 - [ ] Audit log route mapping
 - [ ] Compliance Timeline SVG issue
+- [ ] Enterprise Licensing — on-premise/private-cloud deployment model (scope TBD)
+- [ ] Managed Service Hosting — dedicated hosted instances per customer (scope TBD)
 
 ---
 

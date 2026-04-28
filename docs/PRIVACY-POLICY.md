@@ -147,7 +147,7 @@ We retain different categories of data for different periods.
 | Feedback submissions | 2 years | Product improvement |
 | Escrow records | Duration of escrow agreement plus 1 year | Contractual obligation |
 
-When a retention period expires, the relevant data is deleted or anonymised. We are progressively implementing automated retention enforcement. During the beta period, some retention policies may be enforced manually.
+When a retention period expires, the relevant data is deleted or anonymised automatically. Automated retention enforcement runs on a scheduled basis, deleting expired telemetry events, feedback, verification tokens, and Copilot response cache. Platform administrators can also trigger a manual retention cleanup at any time.
 
 ---
 
@@ -180,7 +180,7 @@ Under UK GDPR, you have the following rights. You can exercise any of these by c
 
 **Right to restrict processing.** You can request that we stop processing your data for specific purposes while a complaint or dispute is resolved.
 
-**Right to data portability.** You can request your personal data in a structured, machine-readable format. We are implementing an automated data export feature. Until this is available, we will fulfil portability requests manually within 30 days.
+**Right to data portability.** You can request your personal data in a structured, machine-readable format. Navigate to your Account page and select "Export My Data" to download a JSON export of all your personal data, including account details, organisation membership, products, findings, and usage history. Security-sensitive data (password hashes, OAuth tokens) is excluded from the export.
 
 **Right to object.** You can object to processing based on legitimate interest. We will stop processing unless we have compelling legitimate grounds that override your interests.
 

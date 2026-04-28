@@ -25,7 +25,7 @@ Most software companies — especially SMEs — have no tooling for this. They f
 
 ## 2. What CRANIS2 Actually Does
 
-CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, Gitea, Forgejo, or GitLab (including self-hosted instances) — and automatically builds compliance evidence from dependency metadata. It reads import statements but never stores, analyses or modifies source code in any way. It automates eight core compliance functions:
+CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, Gitea, Forgejo, GitLab (including self-hosted instances), or Bitbucket Cloud — and automatically builds compliance evidence from dependency metadata. It reads import statements but never stores, analyses or modifies source code in any way. It automates eight core compliance functions:
 
 ### 2.1 Software Bill of Materials (SBOM)
 
@@ -41,8 +41,8 @@ CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, G
 - Stores dependencies in a graph database (Neo4j) with relationship tracking
 - Enriches each dependency with cryptographic hashes from package registries (npm, PyPI) for integrity verification
 - Exports in both CycloneDX 1.6 and SPDX 2.3 formats — the two industry standards
-- Auto-syncs daily at 2 AM for any products with changes; webhooks from GitHub, Codeberg, and Forgejo flag stale SBOMs in real time
-- Works with all five supported providers — Tiers 2 and 3 are provider-agnostic
+- Auto-syncs daily at 2 AM for any products with changes; webhooks from GitHub, Codeberg, Forgejo, and Bitbucket Cloud flag stale SBOMs in real time
+- Works with all six supported providers — Tiers 2 and 3 are provider-agnostic
 
 ### 2.2 Vulnerability Monitoring
 
@@ -158,15 +158,18 @@ CRANIS2 connects to a company's source code repositories — GitHub, Codeberg, G
 
 | Capability | Purpose |
 |---|---|
-| **Obligations Tracking** | Maps 19 CRA and NIS2 requirements to products with auto-intelligence — obligation statuses are derived from platform data (SBOMs, scans, technical file progress) so users see their true compliance standing without manual data entry. Manual overrides are always preserved. |
+| **Obligations Tracking** | Maps 35 CRA obligations across three operator roles (19 manufacturer, 10 importer, 6 distributor) to products with auto-intelligence — obligation statuses are derived from platform data (SBOMs, scans, technical file progress) so users see their true compliance standing without manual data entry. Manual overrides are always preserved. |
 | **Compliance Checklist** | A 7-step getting-started guide per product that breaks CRA conformity into concrete, actionable steps with real-time progress tracking, completion percentage, and statutory deadlines |
 | **Stakeholders Management** | Records CRA/NIS2 contacts at org and product level (responsible persons, security officers). Auto-assign option during product creation fills all 6 stakeholder roles with the creating user's details — ideal for solo developers and small teams |
 | **Due Diligence Export** | Generates a complete compliance package as a ZIP: PDF report, CycloneDX SBOM, licence findings CSV, vulnerability summary JSON, full licence texts |
-| **Trust Centre** | Companies can opt in to list themselves publicly with compliance badges derived from real platform data — not self-declared |
+| **Trust Centre** | Companies can opt in to list themselves publicly with compliance badges derived from real platform data — not self-declared. Listings are auto-approved by default. Platform administrators can revoke approval for any listing. |
 | **Notifications System** | Targeted alerts for vulnerability findings, deadline warnings, sync status, billing events |
-| **Webhook Integration** | Push webhooks are automatically registered when repositories are connected (GitHub, Codeberg, Gitea, Forgejo) — SBOMs are flagged as stale in real time when code is pushed, with admin health monitoring to detect broken pipelines |
+| **Webhook Integration** | Push webhooks are automatically registered when repositories are connected (GitHub, Codeberg, Gitea, Forgejo, Bitbucket Cloud) — SBOMs are flagged as stale in real time when code is pushed, with admin health monitoring to detect broken pipelines |
 | **Audit Logging** | Every significant action is recorded with user, timestamp, IP address, and metadata |
 | **Platform Admin Dashboard** | Organisation management, user management, system health, vulnerability database status, webhook health monitoring, feedback handling |
+| **Affiliate Programme** | Commission tracking, monthly statements, self-service dashboard for referral partners |
+| **Non-Profit/Open Source Access** | Trust scoring, automatic classification, admin verification for non-profit and open-source organisations |
+| **Account and Data Rights** | GDPR data export, account deletion, data retention enforcement — users can export or delete their data at any time |
 
 ---
 
@@ -199,7 +202,7 @@ What we receive from Tier 3: `import express from 'express'` → we record "expr
 | Layer | Mechanism |
 |---|---|
 | **User authentication** | JWT session tokens, bcrypt password hashing, email verification required |
-| **Repository authentication** | OAuth (GitHub, Codeberg) or encrypted PAT tokens (Gitea, Forgejo, GitLab) — PATs encrypted at rest using AES-256-GCM |
+| **Repository authentication** | OAuth (GitHub, Codeberg, Bitbucket Cloud) or encrypted PAT tokens (Gitea, Forgejo, GitLab) — PATs encrypted at rest using AES-256-GCM |
 | **Organisation isolation** | Every database query is scoped to the user's `org_id` — there is no query path that returns another organisation's data |
 | **Product ownership** | Neo4j graph relationship verification: a product must have a `BELONGS_TO` relationship to the user's organisation before any operation is permitted |
 | **Role-based access** | Organisation admins vs members; platform admin middleware for system operations |
@@ -257,7 +260,7 @@ This is a legitimate concern. Here is how CRANIS2 addresses it:
 
 1. **Repository authentication is the identity anchor.** You must authenticate with a real account (via OAuth or PAT) that has access to the repositories you claim. You cannot fabricate dependency data — it comes directly from the provider's API for repositories you control.
 
-2. **Trust Centre listings require admin approval.** A company cannot appear in the public Trust Centre without platform admin review and explicit approval. Compliance badges are computed from real platform data (vulnerability scan results, obligation completion, licence scan coverage) — they cannot be self-declared.
+2. **Trust Centre listings are verified.** Listings are auto-approved by default, allowing companies to publish their compliance posture immediately. Platform administrators can revoke approval for any listing. Compliance badges are computed from real platform data (vulnerability scan results, obligation completion, licence scan coverage) — they cannot be self-declared.
 
 3. **Organisation data is self-contained.** Even if someone creates an account with a similar company name, they cannot access another organisation's products, findings, or compliance data. The multi-tenancy isolation is absolute.
 
@@ -284,7 +287,9 @@ This is a legitimate concern. Here is how CRANIS2 addresses it:
 
 Transparency on commercial incentives:
 
-- **Contributor-based pricing:** EUR 6/month per active contributor to connected repositories
+- **Two plans:**
+  - **Standard (EUR 6/contributor/month):** Core compliance — SBOM management, vulnerability monitoring, licence compliance, IP proof, technical file, ENISA reporting, obligations tracking, compliance checklist, post-market monitoring, cryptographic standards inventory, source code escrow, compliance evidence vault, document templates, conformity assessments, and supplier due diligence
+  - **Pro (EUR 9/product/month + EUR 6/contributor/month):** Everything in Standard, plus AI Copilot, Public API, CI/CD compliance gate, Trust Centre listing, MCP server for IDE integration, GRC/OSCAL bridge, and Software Evidence Engine with R&D tax credit support
 - **90-day free trial** with no payment details required upfront
 - **No vendor lock-in on data:** Due diligence export provides all your compliance data in open formats (PDF, CycloneDX, SPDX, CSV, JSON) at any time
 - **Billing is managed through Stripe** — CRANIS2 does not handle payment card data
@@ -331,7 +336,7 @@ For technical due diligence:
 | Payments | Stripe | Subscription billing, checkout, customer portal |
 | Hosting | Docker Compose (NGINX + Backend + Postgres + Neo4j + Forgejo) | Self-contained deployment |
 | Tunnel | Cloudflare Tunnel | Secure public access without exposed ports |
-| Source Providers | GitHub, Codeberg, Gitea, Forgejo, GitLab | Repository connection via OAuth or PAT |
+| Source Providers | GitHub, Codeberg, Gitea, Forgejo, GitLab, Bitbucket Cloud | Repository connection via OAuth or PAT |
 
 ---
 

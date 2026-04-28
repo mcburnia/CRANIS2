@@ -113,7 +113,7 @@ By using the platform, you grant us a limited licence to process, store, and dis
 
 ### 5.3 Data portability
 
-You may export your data at any time through the platform's export features (SBOM exports, compliance reports, due diligence packages). We are implementing a comprehensive data export feature for full account data. Until this is available, you may request a manual export by contacting info@lomancavendish.com.
+You may export your data at any time through the platform's export features (SBOM exports, compliance reports, due diligence packages). A full account data export is available from your Account page — select "Export My Data" to download a structured JSON file containing all your personal data. You may also request account deletion from the same page, which immediately removes personal data and anonymises billing and audit records for legal retention.
 
 ### 5.4 Data processing
 

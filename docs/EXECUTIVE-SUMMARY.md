@@ -4,7 +4,7 @@
 
 CRANIS2 is a compliance platform that helps software companies meet the requirements of two major pieces of EU legislation: the **Cyber Resilience Act (CRA)** and the **NIS2 Directive**.
 
-It connects to your existing source code repositories (GitHub, Codeberg, Gitea, Forgejo, and GitLab) and automatically builds the compliance evidence that regulators expect to see. No spreadsheets, no consultants, no guesswork.
+It connects to your existing source code repositories (GitHub, Codeberg, Gitea, Forgejo, GitLab, and Bitbucket Cloud) and automatically builds the compliance evidence that regulators expect to see. No spreadsheets, no consultants, no guesswork.
 
 ## What Does It Actually Do?
 
@@ -102,7 +102,7 @@ If you build software and have customers in Europe, this applies to you.
 
 This is the most common question we hear, and the answer is clear. Here is exactly what happens:
 
-1. You connect your source code repository. For GitHub and Codeberg, this is via OAuth (the same mechanism used by CI/CD tools and developer platforms). For Gitea, Forgejo, and GitLab (including self-hosted instances), you provide a Personal Access Token (PAT) which is encrypted at rest using AES-256-GCM. **All connections use read-only scopes. CRANIS2 cannot push code, create branches, modify files, or change any repository settings.**
+1. You connect your source code repository. For GitHub, Codeberg, and Bitbucket Cloud, this is via OAuth (the same mechanism used by CI/CD tools and developer platforms). For Gitea, Forgejo, and GitLab (including self-hosted instances), you provide a Personal Access Token (PAT) which is encrypted at rest using AES-256-GCM. **All connections use read-only scopes. CRANIS2 cannot push code, create branches, modify files, or change any repository settings.**
 
 2. CRANIS2 identifies your dependencies using a three-tier approach:
    - **Tier 1 (API):** For GitHub, it calls the Dependency Graph API, returning package names and versions as structured metadata
@@ -168,7 +168,18 @@ Repository access tokens are encrypted at rest using AES-256-GCM with HKDF-deriv
 All database services are bound to localhost only — there is no external access to any database port. Authentication endpoints are rate-limited to prevent brute-force attacks. Cross-origin requests are restricted to the CRANIS2 domain. Security headers (HSTS, Content-Security-Policy, X-Frame-Options) are enforced on every response. Dependencies are continuously audited for vulnerabilities.
 
 **Audit and Verification**
-Over 2,100 automated tests verify the platform's security controls on every build. The security hardening programme is validated by dedicated test suites covering port binding, rate limiting, CORS policy, credential management, and cryptographic operations.
+Over 2,166 automated tests verify the platform's security controls on every build. The security hardening programme is validated by dedicated test suites covering port binding, rate limiting, CORS policy, credential management, and cryptographic operations.
+
+## Pricing
+
+CRANIS2 offers two plans, both with a 90-day free trial and no payment details required upfront:
+
+- **Standard (€6/contributor/month):** Core compliance — SBOM management, vulnerability monitoring, licence compliance, IP proof, technical file, EU Declaration of Conformity, ENISA reporting, obligations tracking, compliance checklist, post-market monitoring, cryptographic standards inventory, source code escrow, compliance evidence vault, document templates, conformity assessments, and supplier due diligence.
+- **Pro (€9/product/month + €6/contributor/month):** Everything in Standard, plus AI Copilot, Public API, CI/CD compliance gate, Trust Centre listing, MCP server for IDE integration, GRC/OSCAL bridge, and Software Evidence Engine with R&D tax credit support.
+
+Billing is managed through Stripe — CRANIS2 does not handle payment card data. No vendor lock-in: all compliance data is exportable in open formats (PDF, CycloneDX, SPDX, CSV, JSON) at any time.
+
+An affiliate programme rewards partners for referring new customers, with self-service commission tracking and monthly statements.
 
 ## Summary
 
@@ -179,9 +190,9 @@ Over 2,100 automated tests verify the platform's security controls on every buil
 | **Timing** | CRA reporting obligations begin Sept 2026; full compliance required Dec 2027 |
 | **Audience** | Organisation administrators (compliance officers, product managers) and development contributors (engineers, testers, DevOps) at software product companies selling into the EU |
 | **Source code** | Source code is never stored. Repositories are never written to. All access is strictly read-only. SEE analysis (opt-in) reads commit metadata and file classifications but retains only structured metrics |
-| **Providers** | GitHub, Codeberg, Gitea, Forgejo, GitLab (including self-hosted instances) |
+| **Providers** | GitHub, Codeberg, Gitea, Forgejo, GitLab (including self-hosted instances), Bitbucket Cloud |
 | **Deployment** | SaaS platform at cranis2.com, hosted in Switzerland (Infomaniak) |
-| **Security** | Post-quantum hybrid signing (Ed25519 + ML-DSA-65), AES-256-GCM with HKDF, automated key rotation, auth rate limiting, localhost-only database access, 2,100+ automated security tests |
+| **Security** | Post-quantum hybrid signing (Ed25519 + ML-DSA-65), AES-256-GCM with HKDF, automated key rotation, auth rate limiting, localhost-only database access, 2,166 automated security tests |
 
 ---
 

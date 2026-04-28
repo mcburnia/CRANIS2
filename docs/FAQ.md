@@ -1,7 +1,7 @@
 # CRANIS2 Frequently Asked Questions
 
 **Document Version:** 1.0
-**Last Updated:** 2026-03-02
+**Last Updated:** 2026-04-28
 
 ---
 
@@ -23,8 +23,11 @@
 14. [Technical Files and Obligations](#technical-files-and-obligations)
 15. [Billing and Subscription](#billing-and-subscription)
 16. [Trust Centre](#trust-centre)
-17. [Notifications and Audit](#notifications-and-audit)
-18. [Troubleshooting](#troubleshooting)
+17. [Account and Data Rights](#account-and-data-rights)
+18. [Affiliate Programme](#affiliate-programme)
+19. [Non-Profit and Open Source Access](#non-profit-and-open-source-access)
+20. [Notifications and Audit](#notifications-and-audit)
+21. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -59,13 +62,18 @@ See the User Guide, Section 2: Regulatory Context.
 
 ### Q: How much does CRANIS2 cost?
 
-CRANIS2 uses a simple, contributor-based pricing model at EUR 6 per month per active contributor across your organisation. An active contributor is anyone who has made at least one contribution to a connected repository. Bot accounts are automatically identified and excluded from billing. There are no per-product fees, no feature tiers, and no hidden charges.
+CRANIS2 offers two pricing tiers:
+
+- **Standard plan** -- EUR 6 per active contributor per month. Includes core compliance features: SBOM management, vulnerability scanning, licence compliance, Technical Files, ENISA reporting, escrow, and Due Diligence export.
+- **Pro plan** -- EUR 9 per product per month plus EUR 6 per active contributor per month. Adds AI Copilot, Public API, CI/CD gate, Trust Centre listings, MCP IDE integration, GRC/OSCAL bridge, and the Software Evidence Engine.
+
+An active contributor is anyone who has made at least one contribution to a connected repository. Bot accounts are automatically identified and excluded from billing. You can upgrade or downgrade at any time from the Billing page; Stripe handles proration automatically.
 
 See the User Guide, Section 18: Billing.
 
 ### Q: Is there a free trial?
 
-Yes. Every new organisation receives a 30-day free trial (extended to 90 days with a bonus code at signup) with full access to all platform features. No credit card is required to start the trial. You can register products, connect repositories, generate SBOMs, run vulnerability scans, and use every feature during the trial period without restriction.
+Yes. Every new organisation receives a 30-day free trial (extended to 90 days with a bonus code at signup) with full Pro-tier access to all platform features. No credit card is required to start the trial. You can register products, connect repositories, generate SBOMs, run vulnerability scans, use the AI Copilot, and use every feature during the trial period without restriction.
 
 See the User Guide, Section 18: Billing.
 
@@ -256,7 +264,7 @@ See the User Guide, Section 5: Products.
 
 ### Q: How do I connect a repository to a product?
 
-From the product detail page, click **Connect Repository**. For GitHub and Codeberg, an OAuth popup flow handles authentication -- you authorise CRANIS2 and select your repository. For self-hosted Gitea, Forgejo, or GitLab instances, you first establish a PAT connection on the Repos page, then connect individual products to repositories on that instance. The first SBOM sync begins automatically after connection.
+From the product detail page, click **Connect Repository**. For GitHub, Codeberg, and Bitbucket Cloud, an OAuth popup flow handles authentication -- you authorise CRANIS2 and select your repository. For self-hosted Gitea, Forgejo, or GitLab instances, you first establish a PAT connection on the Repos page, then connect individual products to repositories on that instance. The first SBOM sync begins automatically after connection.
 
 See the User Guide, Section 14: Repository Management.
 
@@ -323,12 +331,13 @@ See the User Guide, Section 14: Repository Management.
 
 ### Q: Which repository providers does CRANIS2 support?
 
-CRANIS2 supports five repository providers:
+CRANIS2 supports six repository providers:
 
 | Provider | Auth Method | Hosting |
 |----------|-------------|---------|
 | **GitHub** | OAuth (popup flow) | github.com |
 | **Codeberg** | OAuth (popup flow) | codeberg.org |
+| **Bitbucket Cloud** | OAuth | bitbucket.org |
 | **Gitea** | Personal Access Token | Self-hosted instances |
 | **Forgejo** | Personal Access Token | Self-hosted instances |
 | **GitLab** | Personal Access Token | Self-hosted instances |
@@ -355,7 +364,7 @@ See the User Guide, Section 14: Repository Management.
 
 ### Q: Can I connect multiple repositories from the same provider?
 
-Yes. Once you have established an OAuth connection (GitHub, Codeberg) or a PAT connection (Gitea, Forgejo, GitLab), you can connect any number of repositories from that provider to different products. Each product is linked to one repository, but your provider connection can serve as many products as you need. You only need to authenticate once per provider instance.
+Yes. Once you have established an OAuth connection (GitHub, Codeberg, Bitbucket Cloud) or a PAT connection (Gitea, Forgejo, GitLab), you can connect any number of repositories from that provider to different products. Each product is linked to one repository, but your provider connection can serve as many products as you need. You only need to authenticate once per provider instance.
 
 ---
 
@@ -711,9 +720,14 @@ See the User Guide, Section 8: Obligations Tracking.
 
 ## Billing and Subscription
 
-### Q: How does contributor-based pricing work?
+### Q: How does pricing work?
 
-You pay **EUR 6 per month** for each active contributor across your organisation. An active contributor is anyone who has made at least one contribution to a connected repository. Bot accounts are automatically identified and excluded from billing. The Billing page shows a contributor roster with badges indicating each contributor's status: active (green), bot (grey), departed (red), and inactive (amber).
+CRANIS2 offers two plans:
+
+- **Standard** -- EUR 6 per active contributor per month. Covers core compliance: SBOM management, vulnerability scanning, licence compliance, Technical Files, ENISA reporting, escrow, and Due Diligence export.
+- **Pro** -- EUR 9 per product per month plus EUR 6 per active contributor per month. Adds AI Copilot, Public API, CI/CD gate, Trust Centre listings, MCP IDE integration, GRC/OSCAL bridge, and the Software Evidence Engine.
+
+An active contributor is anyone who has made at least one contribution to a connected repository. Bot accounts are automatically identified and excluded from billing. The Billing page shows a contributor roster with badges indicating each contributor's status: active (green), bot (grey), departed (red), and inactive (amber). You can upgrade or downgrade between plans at any time from the Billing page; Stripe handles proration automatically.
 
 See the User Guide, Section 18: Billing.
 
@@ -721,7 +735,7 @@ See the User Guide, Section 18: Billing.
 
 The trial follows a defined lifecycle:
 
-1. **30-day trial** (90 days with a bonus code) -- full access to all features.
+1. **30-day trial** (90 days with a bonus code) -- full Pro-tier access to all features.
 2. **7-day grace period** -- full access continues, with a warning banner prompting subscription.
 3. **Read-only mode** -- all write operations blocked; viewing and exporting remain available.
 4. **Suspension** (60 days after read-only) -- limited access.
@@ -765,7 +779,7 @@ See the User Guide, Section 19: Trust Centre.
 
 ### Q: How do I list my organisation on the Trust Centre?
 
-Navigate to the Trust Centre settings page. From there you can toggle your listing visibility on or off, write a tagline and longer description, select product categories that apply to your organisation (from 10 available categories), and choose which of your products to feature on the listing. Listings are currently auto-approved upon creation.
+Navigate to the Trust Centre settings page. From there you can toggle your listing visibility on or off, write a tagline and longer description, select product categories that apply to your organisation (from 10 available categories), and choose which of your products to feature on the listing. Listings are auto-approved by default. Platform administrators can revoke approval if necessary. Trust Centre settings require a Pro plan subscription.
 
 See the User Guide, Section 19: Trust Centre.
 
@@ -783,9 +797,53 @@ See the User Guide, Section 19: Trust Centre.
 
 ### Q: Do Trust Centre listings require approval?
 
-Trust Centre listings are currently **auto-approved** upon creation. When you toggle your listing to visible and save your profile, it appears in the public directory immediately. You can toggle it off at any time to remove your listing from public view. No manual review process is required.
+Listings are auto-approved by default. When you toggle your listing to visible and save your profile, it appears in the public directory immediately. Platform administrators can revoke approval if necessary. You can toggle your listing off at any time to remove it from public view. Trust Centre settings require a Pro plan subscription.
 
 See the User Guide, Section 19: Trust Centre.
+
+---
+
+## Account and Data Rights
+
+### Q: Can I export my data from CRANIS2?
+
+Yes. Navigate to your Account page and select "Export My Data." The platform generates a structured JSON export of all your personal data, including account details, organisation, products, findings, and usage history. OAuth tokens and password hashes are excluded for security.
+
+### Q: How do I delete my account?
+
+Navigate to your Account page and select "Delete My Account." You will need to confirm your password. If you are the sole administrator of an organisation, you must first transfer admin rights. Your personal data is immediately deleted; billing records and audit trail entries are anonymised for legal retention.
+
+### Q: How long does CRANIS2 retain my data?
+
+Telemetry events are retained for 90 days, feedback for 2 years, and Copilot response cache for 24 hours. Compliance data (products, obligations, technical files) is retained for the duration of your subscription. After account deletion, anonymised billing and audit records are retained for legal obligations.
+
+---
+
+## Affiliate Programme
+
+### Q: What is the affiliate programme?
+
+CRANIS2 partners with affiliates who refer new customers to the platform. Affiliates earn commissions on referred subscriptions and can manage their activity through a self-service dashboard.
+
+### Q: I have a bonus code — where do I enter it?
+
+Enter your bonus code on the signup page. Valid bonus codes typically extend your free trial from 30 to 90 days.
+
+### Q: How do I become an affiliate?
+
+Affiliate accounts are created by platform administrators. If you are interested in becoming an affiliate, contact the CRANIS2 team.
+
+---
+
+## Non-Profit and Open Source Access
+
+### Q: Is CRANIS2 free for open-source projects?
+
+Yes. Open-source projects that meet eligibility criteria (OSI-approved licence, active repository) are automatically classified for free access through the platform's trust scoring system.
+
+### Q: Is CRANIS2 free for non-profit organisations?
+
+Yes. Non-profit organisations can apply for free access by submitting verification documentation. Applications are reviewed by platform administrators.
 
 ---
 
