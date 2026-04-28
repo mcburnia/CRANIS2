@@ -19,6 +19,9 @@ import * as path from 'path';
 const PROJECT_ROOT = path.resolve(__dirname, '../../..');
 const SCRIPTS_DIR = path.join(PROJECT_ROOT, 'scripts');
 
+// In-container runs lack nvm/host context that the rotation scripts depend on.
+const SKIP_HOST_ONLY = process.env.IN_TEST_RUNNER_CONTAINER === 'true';
+
 const execOpts: ExecSyncOptions = {
   cwd: PROJECT_ROOT,
   timeout: 60_000,
@@ -124,7 +127,7 @@ describe('rotate-credentials.sh', () => {
 // ── Encryption Key Rotation ─────────────────────────────────────────
 
 describe('rotate-encryption-key.sh', () => {
-  it('--dry-run shows PAT count without making changes', () => {
+  it.skipIf(SKIP_HOST_ONLY)('--dry-run shows PAT count without making changes', () => {
     const { stdout, exitCode } = runScript('rotate-encryption-key.sh', ['--dry-run']);
     expect(exitCode).toBe(0);
     expect(stdout).toContain('ENCRYPTION KEY ROTATION');

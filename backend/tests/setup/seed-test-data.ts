@@ -57,12 +57,20 @@ export const TEST_IDS = {
     ossGitea:     'c0000001-0000-0000-0000-00000000000b',
     pdGithub:     'c0000001-0000-0000-0000-00000000000c',
     pdForgejo:    'c0000001-0000-0000-0000-00000000000d',
+    sbomFixture:  'c0000001-0000-0000-0000-00000000000e',
   },
   reports: {
     draft:              'd0000001-0000-0000-0000-000000000001',
     earlyWarningSent:   'd0000001-0000-0000-0000-000000000002',
     notificationSent:   'd0000001-0000-0000-0000-000000000003',
     closed:             'd0000001-0000-0000-0000-000000000004',
+  },
+  dependencies: {
+    lodash:   'e0000001-0000-0000-0000-000000000001',
+    express:  'e0000001-0000-0000-0000-000000000002',
+    react:    'e0000001-0000-0000-0000-000000000003',
+    chalk:    'e0000001-0000-0000-0000-000000000004',
+    debug:    'e0000001-0000-0000-0000-000000000005',
   },
 };
 
@@ -209,6 +217,9 @@ async function seedProducts(): Promise<void> {
     { id: TEST_IDS.products.gitea, name: 'test-product-gitea', orgId: TEST_IDS.orgs.mfgActive, provider: 'gitea', craCategory: 'default', repoUrl: 'https://gitea.example.com/test-org/test-product', instanceUrl: 'https://gitea.example.com' },
     { id: TEST_IDS.products.forgejo, name: 'test-product-forgejo', orgId: TEST_IDS.orgs.mfgActive, provider: 'forgejo', craCategory: 'important_i', repoUrl: 'https://forgejo.example.com/test-org/test-product', instanceUrl: 'https://forgejo.example.com' },
     { id: TEST_IDS.products.gitlab, name: 'test-product-gitlab', orgId: TEST_IDS.orgs.mfgActive, provider: 'gitlab', craCategory: 'default', repoUrl: 'https://gitlab.com/test-org/test-product' },
+    // Dedicated SBOM-export fixture — kept separate from other products so tests that
+    // assume "no SBOM exists for X" (e.g. obligations art_13_11) aren't broken by seeding.
+    { id: TEST_IDS.products.sbomFixture, name: 'test-product-sbom-fixture', orgId: TEST_IDS.orgs.mfgActive, provider: 'github', craCategory: 'default', repoUrl: 'https://github.com/test-org/test-sbom-fixture' },
 
     // Other orgs
     { id: TEST_IDS.products.impGithub, name: 'test-imp-github', orgId: TEST_IDS.orgs.impTrial, provider: 'github', craCategory: 'default', repoUrl: 'https://github.com/imp-org/product1' },
@@ -238,6 +249,104 @@ async function seedProducts(): Promise<void> {
     }
 
     console.log(`  Seeded ${products.length} products in Neo4j`);
+  } finally {
+    await session.close();
+  }
+}
+
+async function seedSboms(): Promise<void> {
+  const pool = getAppPool();
+  const session = getNeo4jSession();
+  const productId = TEST_IDS.products.sbomFixture;
+
+  // Five npm dependencies; first four are hash-enriched, fifth (react) is pending.
+  const deps = [
+    { id: TEST_IDS.dependencies.lodash,  name: 'lodash',  version: '4.17.21', hash: 'a'.repeat(128), license: 'MIT', supplier: 'OpenJS Foundation', enriched: true },
+    { id: TEST_IDS.dependencies.express, name: 'express', version: '4.19.0',  hash: 'b'.repeat(128), license: 'MIT', supplier: 'OpenJS Foundation', enriched: true },
+    { id: TEST_IDS.dependencies.chalk,   name: 'chalk',   version: '5.3.0',   hash: 'c'.repeat(128), license: 'MIT', supplier: 'Sindre Sorhus',     enriched: true },
+    { id: TEST_IDS.dependencies.debug,   name: 'debug',   version: '4.3.4',   hash: 'd'.repeat(128), license: 'MIT', supplier: 'TJ Holowaychuk',    enriched: true },
+    { id: TEST_IDS.dependencies.react,   name: 'react',   version: '18.2.0',  hash: null,            license: 'MIT', supplier: 'Meta',              enriched: false },
+  ];
+
+  // SPDX 2.3 doc — the export endpoint reads spdx_json.sbom.{packages,relationships}
+  const spdxDoc = {
+    sbom: {
+      spdxVersion: 'SPDX-2.3',
+      SPDXID: 'SPDXRef-DOCUMENT',
+      name: 'test-product-github SBOM',
+      dataLicense: 'CC0-1.0',
+      documentNamespace: `https://cranis2.test/sbom/${productId}`,
+      creationInfo: {
+        created: new Date().toISOString(),
+        creators: ['Tool: cranis2-test-seed'],
+      },
+      packages: deps.map(d => ({
+        SPDXID: `SPDXRef-Package-${d.name}`,
+        name: d.name,
+        versionInfo: d.version,
+        downloadLocation: `https://registry.npmjs.org/${d.name}/-/${d.name}-${d.version}.tgz`,
+        filesAnalyzed: false,
+        licenseConcluded: d.license,
+        licenseDeclared: d.license,
+        supplier: `Organization: ${d.supplier}`,
+        externalRefs: [{
+          referenceCategory: 'PACKAGE-MANAGER',
+          referenceType: 'purl',
+          referenceLocator: `pkg:npm/${d.name}@${d.version}`,
+        }],
+      })),
+      relationships: deps.map(d => ({
+        spdxElementId: 'SPDXRef-DOCUMENT',
+        relationshipType: 'DESCRIBES',
+        relatedSpdxElement: `SPDXRef-Package-${d.name}`,
+      })),
+    },
+  };
+
+  await pool.query(
+    `INSERT INTO product_sboms (product_id, spdx_json, spdx_version, package_count, is_stale, sbom_source, synced_at)
+     VALUES ($1, $2, $3, $4, FALSE, $5, NOW())
+     ON CONFLICT (product_id) DO UPDATE SET
+       spdx_json = $2, spdx_version = $3, package_count = $4,
+       is_stale = FALSE, sbom_source = $5, synced_at = NOW()`,
+    [productId, JSON.stringify(spdxDoc), 'SPDX-2.3', deps.length, 'test-seed']
+  );
+  await registerTestData('product_sbom', productId, 'postgres');
+
+  try {
+    for (const d of deps) {
+      const purl = `pkg:npm/${d.name}@${d.version}`;
+      await session.run(
+        `MATCH (p:Product {id: $productId})
+         MERGE (dep:Dependency {purl: $purl})
+         ON CREATE SET dep.id = $id, dep.createdAt = datetime()
+         SET dep.name = $name,
+             dep.version = $version,
+             dep.ecosystem = 'npm',
+             dep.license = $license,
+             dep.supplier = $supplier,
+             dep.versionSource = 'lockfile',
+             dep.downloadUrl = $downloadUrl,
+             dep.hash = $hash,
+             dep.hashAlgorithm = $hashAlg,
+             dep.hashEnrichedAt = CASE WHEN $hash IS NULL THEN NULL ELSE datetime() END
+         MERGE (p)-[:DEPENDS_ON]->(dep)`,
+        {
+          productId,
+          purl,
+          id: d.id,
+          name: d.name,
+          version: d.version,
+          license: d.license,
+          supplier: d.supplier,
+          downloadUrl: `https://registry.npmjs.org/${d.name}/-/${d.name}-${d.version}.tgz`,
+          hash: d.hash,
+          hashAlg: d.hash ? 'SHA-512' : null,
+        }
+      );
+      await registerTestData('dependency', d.id, 'neo4j');
+    }
+    console.log(`  Seeded SBOM for test-product-sbom-fixture (${deps.length} dependencies, ${deps.filter(d => d.enriched).length} enriched)`);
   } finally {
     await session.close();
   }
@@ -377,11 +486,19 @@ export async function seedAllTestData(): Promise<void> {
   }
   console.log(`\n=== Seeding CRANIS2 Test Data (database: ${currentDb}) ===\n`);
 
+  // Clean ephemeral test data before re-seeding. Earlier seed used random UUIDs +
+  // ON CONFLICT DO NOTHING, so multiple runs accumulated findings/SBOM rows and
+  // broke tests that assert on exact counts (e.g. risk-findings-regression).
+  // We only truncate tables the seed itself populates — auth/billing rows are upserted by id.
+  await pool.query('TRUNCATE TABLE vulnerability_findings, product_sboms, notifications, cra_reports RESTART IDENTITY CASCADE');
+  console.log('  Cleaned: vulnerability_findings, product_sboms, notifications, cra_reports');
+
   try {
     await seedUsers();
     await seedOrganisationsNeo4j();
     await seedBilling();
     await seedProducts();
+    await seedSboms();
     await seedVulnerabilityFindings();
     await seedCraReports();
     await seedNotifications();

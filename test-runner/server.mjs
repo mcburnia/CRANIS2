@@ -8,7 +8,7 @@ const app = express();
 const PORT = 3004;
 const MAX_OUTPUT_LINES = 500;
 const MAX_RUN_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
-const TESTS_DIR = path.resolve('/app/tests');
+const TESTS_DIR = path.resolve('/backend/tests');
 
 // ─── Database pool (cranis2_test) ────────────────────────────────────────
 

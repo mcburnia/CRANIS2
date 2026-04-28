@@ -492,7 +492,7 @@ router.post('/:id/stages', requireAuth, async (req: Request, res: Response) => {
     if (!stage || !['early_warning', 'notification', 'final_report', 'intermediate'].includes(stage)) {
       res.status(400).json({ error: 'stage must be: early_warning, notification, final_report, or intermediate' }); return;
     }
-    if (!content || typeof content !== 'object') {
+    if (!content || typeof content !== 'object' || Array.isArray(content)) {
       res.status(400).json({ error: 'content must be a JSON object' }); return;
     }
 
