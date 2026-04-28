@@ -150,6 +150,8 @@ All five MVP features are built, tested, and shipped.
 
 - [x] #58 Trusted Open Source & Non-Profit Access Model — trust scoring, OSI licence detection, abuse protection, non-profit verification, admin dashboard, scheduler, billing integration
 - [x] Welcome site email verification — two-step verified contact form + subscribe flow, disposable email honeypot, DB persistence, admin Welcome Leads page
+- [x] Trust Centre rename — Marketplace → Trust Centre across entire codebase (routes, services, frontend, tests, docs, e2e, help guides)
+- [x] Affiliate programme — bonus codes, admin management (ledger, detail views), monthly statement automation, affiliate self-service dashboard, 35 tests
 
 ---
 
@@ -175,7 +177,7 @@ All five MVP features are built, tested, and shipped.
 
 - [ ] **SBOM resync should prune orphaned `Dependency` nodes/edges in Neo4j.** Found 2026-04-26 during dep-upgrade housekeeping for the CRANIS2 product. When a SBOM resync detects new dependency versions (e.g. `vite 8.0.10`), it adds new `Dependency` nodes + `DEPENDS_ON` edges from `Product`, but **does not remove** edges to the old versions (`vite 7.3.1`, `vite 6.4.1`). Knock-on impact: `reconcileFindings()` in the platform vuln scanner reads `currentDepsByProduct` from Neo4j, sees the old purls still present, and **doesn't auto-resolve** vulnerability findings whose dependency has actually been upgraded. Workaround: manually `MATCH (p:Product)-[r:DEPENDS_ON]->(d:Dependency)` and DELETE edges whose `(d.name, d.version)` is no longer in the current `product_sboms.spdx_json` after a resync. Proper fix: in the SBOM ingest path (`backend/src/services/github.ts` or wherever Neo4j writes happen), diff the new SBOM against existing edges and DETACH-DELETE the orphans before adding the new ones.
 - [ ] **`runProductScan()` doesn't call `reconcileFindings()`** — only the platform-wide scan does. Per-product scans never auto-resolve stale findings, so users who hit the in-app "Scan now" button see findings persist even after dep upgrades. Same fix path: refactor `reconcileFindings()` to accept a single `productId` and call it from `runProductScan` after the new-findings sweep.
-- [ ] **`vulnerability_scans` schema vs scanner code drift** — fixed 2026-04-26 by adding `local_db_duration_ms` + `local_db_findings` columns. Worth reviewing other tables for similar drift between code and `pool.ts`.
+- [x] **`vulnerability_scans` schema vs scanner code drift** — fixed 2026-04-26 by adding `local_db_duration_ms` + `local_db_findings` columns.
 
 ---
 
@@ -193,6 +195,6 @@ All five MVP features are built, tested, and shipped.
 
 ## Test Suite
 
-- **Backend (Vitest):** ~1,957 tests (109 files), ~1,956 pass, 1 expected failure (category-recommendation needs Anthropic API)
+- **Backend (Vitest):** ~2,166 tests (121 files), ~2,166 pass, 0 fail, 36 skip, 1 expected infra failure (category-recommendation needs Anthropic API)
 - **E2E (Playwright):** ~280 tests
 - **Nightly runner:** cron at 22:00 CEST, 14-day log retention, Trello notifications

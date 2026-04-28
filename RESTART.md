@@ -166,7 +166,7 @@ tail -20 ~/cranis2/logs/nightly-tests-$(date '+%Y-%m-%d').log
 - Summary with pass/fail counts and failed test names
 - Trello notification: posts a card to the "Test Results" board (passed/failed lists) after each run
 
-### Manual Backend Tests (~2,144 tests — runs on server)
+### Manual Backend Tests (~2,166 tests — runs on server)
 
 **CRITICAL: Always use the isolated test stack, never the dev stack.**
 
@@ -185,9 +185,9 @@ cd ~/cranis2/backend/tests && source ~/.nvm/nvm.sh && TEST_BASE_URL=http://local
 - Single Cloudflare smoke test in `integration/cloudflare-tunnel.test.ts`
 - Deterministic test IDs for idempotent seeding
 - API client retry logic for transient socket errors (eliminates flaky failures from backend memory pressure)
-- Expected result: **~2,143 passed, 1 expected infra-dependent failure** (115 test files)
+- Expected result: **~2,166 passed, 0 failed, 36 skipped** (121 test files)
 - Expected failures: category-recommendation (1, needs Anthropic API)
-- Route test coverage: 98.5% (66/67 routes tested)
+- Route test coverage: 79 route test files covering 74 route files
 
 ### Playwright E2E Tests (~280 tests — runs locally on Mac)
 
@@ -322,6 +322,8 @@ cd ~/CRANIS2/e2e && npm run push-results
         crypto-inventory.ts ← Cryptographic standards inventory (scan, findings, summary)
         dev.ts             ← Dev-only routes (removed before production)
         trust-centre.ts    ← Trust Centre endpoints (listings, profile, contact, admin)
+        bonus-code.ts      ← Bonus code validation endpoint
+        affiliate.ts       ← Affiliate self-service dashboard (stats, ledger, statements)
       db/
         pool.ts            ← Postgres pool + schema init (all tables including vuln_db_* and CPE index)
         neo4j.ts           ← Neo4j driver + graph schema init (constraints/indexes)
@@ -337,6 +339,7 @@ cd ~/CRANIS2/e2e && npm run push-results
         license-compatibility.ts ← License compatibility rules engine (distribution model + FSF conflicts)
         crypto-scanner.ts  ← Cryptographic algorithm scanner service
         obligation-engine.ts ← 35-obligation CRA engine (manufacturer, importer, distributor)
+        affiliate-statements.ts ← Monthly affiliate statement automation + email
       middleware/
         requirePlatformAdmin.ts ← Platform admin auth middleware (JWT + DB check)
       utils/
@@ -821,6 +824,40 @@ CREATE TABLE doc_pages (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Affiliate programme
+CREATE TABLE affiliates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id),
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  code VARCHAR(50) UNIQUE NOT NULL,
+  commission_rate NUMERIC(5,2) DEFAULT 10.00,
+  status VARCHAR(20) DEFAULT 'active',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE bonus_codes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code VARCHAR(50) UNIQUE NOT NULL,
+  affiliate_id UUID REFERENCES affiliates(id),
+  discount_percent NUMERIC(5,2) DEFAULT 0,
+  trial_days INT DEFAULT 0,
+  max_uses INT,
+  uses INT DEFAULT 0,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE affiliate_ledger (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  affiliate_id UUID NOT NULL REFERENCES affiliates(id),
+  org_id UUID,
+  type VARCHAR(50) NOT NULL,
+  amount NUMERIC(10,2) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Vulnerability database sync status (per-ecosystem tracking)
 CREATE TABLE vuln_db_sync_status (
   ecosystem VARCHAR(50) PRIMARY KEY,
@@ -1096,37 +1133,39 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-03-21 (session 58)
+**Last updated:** 2026-04-28 (session 61)
 
-**Recently completed (session 58):**
-- **WS4 GDPR endpoints — COMPLETE** — Three GDPR data subject rights endpoints implementing the commitments in the Privacy Policy:
-  - `GET /api/account/data-export` — Right to data portability (Art. 20 GDPR). Returns structured JSON export of all personal data: account, organisation, billing, repo connections (tokens excluded), products, stakeholders, feedback, API keys (secrets excluded), telemetry (90-day window), copilot usage, notifications, SEE sessions. Documents excluded categories with reasons (password hash, OAuth tokens, audit trail, billing invoices).
-  - `DELETE /api/account` — Right to erasure (Art. 17 GDPR). Requires password confirmation. Blocks sole org admins (409). Cascade: immediately deletes user record, events, repo connections, feedback, API keys, copilot cache, notifications, Neo4j User node. Anonymises billing records and audit trail entries for legal retention. Nullifies FK references across 11 tables.
-  - `POST /api/admin/data-retention/run` — Manual retention cleanup trigger (platform admin). Enforces documented retention periods: user_events > 90 days, feedback > 2 years, expired verification tokens, copilot_cache > 24 hours.
-  - Comprehensive interface documentation (DataExportResponse, DeleteAccountRequest, DeleteAccountResponse, RetentionCleanupResponse) with JSDoc on all endpoints.
-  - `/api/account` added to billing-exempt paths (GDPR rights apply regardless of billing status).
-  - Test helper updated to send request body with DELETE method.
-  - 27 integration tests covering auth, validation, cascade deletion, Neo4j cleanup, anonymisation, retention enforcement.
-- **Loman Cavendish capabilities document** — `docs/loman-cavendish-capabilities.md` defining company service lines, proof points, and engagement models for website development.
-- **Production deployment plan** — `docs/deployment-plan.md` with 5-phase plan for cranis2-prod (Infomaniak VPS, 83.228.241.168).
+**Recently completed (session 60):**
+- **Trust Centre rename** — Marketplace → Trust Centre across entire codebase (routes, services, frontend, tests, docs, e2e, help guides). `marketplace.ts` → `trust-centre.ts` (backend + services), all frontend pages renamed, help guide updated, E2E tests updated.
+- **Affiliate programme (5 phases):**
+  - Phase 1: `bonus_codes`, `affiliate_ledger`, `affiliates` tables, signup bonus code flow, org billing integration
+  - Phase 2: Admin affiliates page with ledger management, detail view (`backend/src/routes/admin/affiliates.ts`)
+  - Phase 3: Monthly statement automation service (`backend/src/services/affiliate-statements.ts`), email template
+  - Phase 4: Affiliate self-service dashboard (`backend/src/routes/affiliate.ts`, `frontend/src/pages/AffiliatePage.tsx`), sidebar nav
+  - Phase 5: 35 Vitest tests (admin-affiliates, affiliate, auth-bonus-code, bonus-code)
+- **Dependency & vulnerability remediation** — bumped deps across all 5 workspaces (backend, frontend, e2e, mcp, welcome) to mitigate 26 open findings. 0 npm vulnerabilities remaining.
+- **Bug fixes (4):**
+  - `auto_resolved` findings surfaced as resolved in API responses (`risk-findings.ts`)
+  - Compliance timeline summary card uses live actionable findings count (`compliance-timeline.ts`)
+  - Dashboard CRA readiness capped at 100% (`dashboard.ts`)
+  - In-container test runner reaches parity with host — seeded live SBOM data (2166/0/36)
+- **`vulnerability_scans` schema drift fixed** — added `local_db_duration_ms` + `local_db_findings` columns
+- **Landing page polish** — welcome site HTML trimmed, open source repos docs, operating model docs
 
-**Previously completed (session 57):**
-- **Ownership rebranding** — Replaced all "Gibbs Consulting" references with "Loman Cavendish Limited" across 6 ai-coder-framework documents. Removed `/tmp/gibbs-ai-development-framework` from `.claude/settings.json`. CRANIS2 is a personal product owned by Loman Cavendish Limited.
-- **Privacy Policy (Beta)** — Comprehensive GDPR-compliant privacy policy drafted from full data audit of the codebase. Covers all personal data categories (account, billing, telemetry, repository, stakeholder, AI Copilot, escrow, feedback), names all sub-processors (Stripe, Resend, Anthropic, Git providers), specifies retention periods, documents data subject rights under UK GDPR. Served via doc_pages system at `/docs/privacy-policy`.
-- **Terms of Service (Beta)** — Full terms covering account responsibilities, acceptable use, subscription billing, AI Copilot disclaimers, data ownership, liability limitations, beta service notice, governing law (England and Wales). Served at `/docs/terms-of-service`.
-- **Dynamic docs routing** — DocsPage.tsx converted from hardcoded user-guide/faq to dynamic `/docs/:slug` routing. Privacy and Terms links added to login, signup, accept-invite, landing, and docs page footers.
-- **SBOM debug logging removed** — Removed `console.log` calls from `getSBOM()` in `services/github.ts`. Error logs converted to `console.error`.
-- **Docker Compose orphan cleanup (CRN-14)** — `test-stack.sh stop_stack()` now removes containers after stopping (`docker compose rm -f`), preventing exited test containers from lingering.
-- **Audit log help guide** — Created `ch7_11_audit_log.html` with 6 interactive stations (navigate, event types, filtering, event details, retention, CRA compliance context). Updated `HelpPanelContext.tsx` mapping from incorrect `ch5_05` to new guide.
-- **Dev routes confirmed removed** — `/api/dev/*` routes already absent from prior session.
-- **Compliance Timeline SVG reviewed** — No code defect found; component uses Recharts correctly. Needs visual browser review for any cosmetic issues.
-
-**Previously completed (sessions 55-56):**
+**Previously completed (sessions 57-59):**
+- WS4 GDPR compliance — Privacy Policy, Terms of Service, data export, account deletion, retention cleanup (27 tests)
+- Ownership rebranding — Gibbs Consulting → Loman Cavendish Limited
+- Bitbucket integration (#60) — 6th repo provider
+- Verified emails across welcome site flows — 90-day TTL, cross-flow recognition
+- Beck map navigation guidance (#64), login/signup cleanup (#62)
 - WS1-WS3 launch readiness workstreams (backup/restore, PQC, security hardening)
-- Welcome site email verification, admin leads page, platform analytics dashboard
-- Forgejo test infrastructure fix, backlog reprioritised for launch
+- Help guide stub rewrites (top 5 complete), E2E video recording, rate limit bypass
 
-**Test suite:** ~2,162 tests (115 files), ~2,161 pass, 1 expected failure (category-recommendation needs Anthropic API).
+**Open product bugs:**
+1. SBOM resync doesn't prune orphaned `Dependency` nodes/edges in Neo4j — blocks auto-resolution
+2. `runProductScan()` doesn't call `reconcileFindings()` — per-product scans never auto-resolve
+
+**Test suite:** ~2,166 tests (121 files), ~2,166 pass, 0 fail, 36 skip. 1 expected infra failure (category-recommendation needs Anthropic API).
 - Docker Compose stack (NGINX, Backend, Postgres, Neo4j)
 - Assistant operating protocol formalised in `Workflow Rules` (propose-first flow, test gates, push handoff, British English)
 - **CLAUDE.md created** — project-level instructions file (auto-loaded by Claude Code each session); contains operating protocol, environment notes, NGINX gotchas, port map
@@ -1225,14 +1264,13 @@ sudo systemctl restart cloudflared
 **Known Issues / Gotchas:**
 - **PRODUCTION MIGRATION**: `FRONTEND_URL` in `.env` is currently `https://dev.cranis2.dev`. When moving to production, this MUST be changed to `https://cranis2.com` (or equivalent production URL). This affects all email links (verification, invitations) and OAuth callback URLs.
 - DNS for poste.cranis2.com pending DKIM verification — once verified, invite emails will flow via Resend
-- Dev routes (`/api/dev/*`) must be removed before production
-- SBOM debug logging still in `services/github.ts` (console.log statements) — remove before production
-- **local_db_duration_ms** lives on `platform_scan_runs`, NOT `vulnerability_scans` — must JOIN through `platform_scan_run_id`
+- **SBOM resync orphaned dependencies** — Neo4j `DEPENDS_ON` edges not pruned on resync, blocks `reconcileFindings()` auto-resolution
+- **`runProductScan()` missing `reconcileFindings()`** — per-product scans never auto-resolve stale findings
+- **local_db_duration_ms** now on both `platform_scan_runs` AND `vulnerability_scans` (added session 60)
 - **GitHub "moderate" severity** — always use normaliseSeverity() when storing severity from any source
 - **NVD CPE matching** — never use keyword/description search (produces massive false positives). Always use CPE index with ecosystem-strict targets
 - **CPE wildcard target_sw** (`*`) matches unrelated products — only match ecosystem-specific targets (e.g. `node.js`)
 - **GENERIC_CPE_NAMES blocklist** in vulnerability-scanner.ts prevents scoped npm short names (core, connect, debug, etc.) from matching unrelated CPE products
-- Compose project naming mismatch can leave temporary `docker-*` orphan containers; cleanup and naming standardisation is tracked as technical debt in `docs/Stories-and-spikes.csv` (CRN-14)
 
 **Session 15 (2026-03-04):**
 - **Welcome site** — Standalone Express app on port 3004 serving public-facing content. Originally password-protected for Strategy & Ecosystem content; later evolved into the public welcome page with contact form, CRA and NIS2 conformity assessments, and launch list subscription (sessions 38–39). Docker service, Cloudflare Tunnel route via nginx proxy.
@@ -1646,8 +1684,9 @@ Massive session — completed 3 full workstreams of the launch readiness plan (8
 - **Login/signup cleanup (#62)** — removed non-functional GitHub auth stub buttons
 
 **Next Steps:**
+- Fix 2 open product bugs (SBOM orphan dependencies, per-product reconcileFindings)
 - Remaining 6 launch blockers are infrastructure/config (user-side): FRONTEND_URL migration, DKIM verification, production infrastructure (Infomaniak), Stripe production keys, Resend production domain, DEV_SKIP_EMAIL/LOG_LEVEL config
 - Register Bitbucket OAuth consumer for beta partner
 - ICO registration (ico.org.uk, £40/year) + update Privacy Policy placeholder
 - Legal review of Privacy Policy and Terms of Service
-- Post-launch: #59 i18n, P5 supplier Trust Centre, remaining help guide stubs, major version bumps (TypeScript 6, Vite 8, Resend 6, ESLint 10)
+- Post-launch: #59 i18n, #61 SSO, P5 supplier Trust Centre, remaining help guide stubs, major version bumps
