@@ -127,11 +127,43 @@ Contributor-based pricing aligns cost with compliance surface area. More contrib
 
 The initial market is small and mid-sized manufacturers. They are the first to feel the CRA burden and they lack in-house compliance teams. CRANIS2 gives them evidence infrastructure without the headcount.
 
-Enterprise expansion follows the evidence integrations. The OSCAL bridge, Public API, and CI/CD gate make CRANIS2 a feeder into existing GRC ecosystems. Large enterprises will not replace their compliance stack. They will plug structured evidence into it.
-
 Every connected repository increases the value of the evidence graph. Each new product adds obligation mappings, vulnerability coverage, and supply chain data. The Trust Centre creates network effects as suppliers publish compliance profiles. Usage compounds.
 
-The operating model is high-margin SaaS. No consulting dependency. No manual evidence production. The engine runs autonomously: daily SBOM syncs, nightly vulnerability scans, automated obligation derivation, scheduled retention enforcement. Marginal cost per additional customer is negligible.
+The SaaS operating model is high-margin. No consulting dependency. No manual evidence production. The engine runs autonomously: daily SBOM syncs, nightly vulnerability scans, automated obligation derivation, scheduled retention enforcement. Marginal cost per additional customer is negligible.
+
+### Enterprise and managed deployment
+
+Regulated enterprises that require dedicated environments, sovereign hosting, private networking, or internal-only operation can deploy CRANIS2 as a managed private instance. This is a higher-value infrastructure offering, not hosted SaaS with a support uplift.
+
+Enterprise customers retain standard software licensing (Standard or Pro, per contributor and per product) and add an annual managed deployment subscription.
+
+| Tier | Annual managed fee | Typical buyer | Includes |
+|------|-------------------|---------------|----------|
+| Enterprise Private | From EUR 75,000 | Large software vendors, regulated SMEs | Dedicated instance, managed upgrades, patching, backups, monitoring, business-hours SLA |
+| Enterprise Regulated | From EUR 150,000 | Financial services, critical infrastructure, public sector | Private deployment, enhanced SLA, resilience commitments, sovereign hosting options, premium support |
+| Enterprise Sovereign Dedicated | From EUR 250,000 | High-assurance and national-scale buyers | Dedicated environment, customer-controlled security options, high-assurance operations, bespoke resilience and support commitments |
+
+Optional add-ons provide expansion revenue per enterprise account.
+
+| Service | Indicative annual value |
+|---------|----------------------|
+| 24x7 premium support | EUR 20,000 to 40,000 |
+| Named technical account architect | EUR 25,000+ |
+| Customer-specific control mappings and regulatory extensions | EUR 30,000+ |
+| Customer-managed keys, HSM, and advanced sovereignty controls | Premium priced |
+| Air-gapped or isolated deployment models | Premium priced |
+
+Implementation and onboarding services are separately priced at EUR 15,000 to 50,000 depending on scope. Migration and evidence onboarding starts at EUR 20,000. Regulatory mapping workshops start at EUR 10,000. Professional services revenue is intentionally distinct from subscription revenue.
+
+### Blended revenue model
+
+This creates a commercial architecture with multiple revenue layers.
+
+SaaS subscriptions provide scalable recurring revenue through contributor and product pricing. Enterprise managed contracts operate in the EUR 100,000 to 300,000+ annual range. Premium services and support generate additional per-account revenue. Sovereign and regulated deployments create expansion opportunities within existing accounts.
+
+The result is materially higher average contract value, stronger retention, and enterprise defensibility, while preserving the scalability of the self-service SaaS core.
+
+This follows established pricing patterns from enterprise infrastructure and security vendors such as GitLab Dedicated, HashiCorp, Snyk, and ServiceNow, where managed private deployments are typically priced at two to four times standard SaaS contract value. The premium reflects operational responsibility, security assurance, and risk transfer.
 
 ### Affiliate programme
 
@@ -171,7 +203,7 @@ The platform generates structured, signed, retention-grade evidence from live so
 
 The same evidence engine serves CRA, NIS2, DORA, AI Act, R&D tax, and FedRAMP-aligned evidence requirements. Multiple adjacent markets, one core architecture.
 
-The commercial model scales efficiently. Contributor-based SaaS with platform-style compounding as every connected repository deepens the evidence graph.
+The commercial model supports both self-service SaaS adoption and high-value enterprise infrastructure contracts. Contributor-based SaaS provides scalable recurring revenue. Managed enterprise deployments in the EUR 100,000 to 300,000+ range provide high-ACV contracts with strong retention. Every connected repository deepens the evidence graph, compounding platform value.
 
 The product is built, tested, and shipping.
 
