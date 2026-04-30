@@ -3,7 +3,7 @@
 # CRANIS2 — Database Backup Script
 #
 # Dumps Postgres (cranis2 + forgejo databases) and Neo4j to compressed
-# archive files. Manages retention: 7 daily, 4 weekly, 3 monthly.
+# archive files. Manages retention: 7 daily, 4 weekly, 12 monthly (GFS).
 #
 # Usage:
 #   ./scripts/backup-databases.sh              # normal daily backup
@@ -224,11 +224,11 @@ if [ "$PRE_UPGRADE" = false ]; then
     log "  Purged old weekly symlinks"
   fi
 
-  # Purge old monthly symlinks (keep 3)
+  # Purge old monthly symlinks (keep 12)
   MONTHLY_COUNT=$(find "${MONTHLY_DIR}" -mindepth 1 -maxdepth 1 -type l 2>/dev/null | wc -l)
-  if [ "$MONTHLY_COUNT" -gt 3 ]; then
+  if [ "$MONTHLY_COUNT" -gt 12 ]; then
     find "${MONTHLY_DIR}" -mindepth 1 -maxdepth 1 -type l \
-      | sort | head -n "$((MONTHLY_COUNT - 3))" \
+      | sort | head -n "$((MONTHLY_COUNT - 12))" \
       | xargs rm -f
     log "  Purged old monthly symlinks"
   fi

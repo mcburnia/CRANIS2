@@ -84,6 +84,43 @@ find frontend/src/pages -name '*.tsx' | xargs wc -l | sort -rn | head -20
 
 **How to split:** Use the established pattern — sub-directory with `index.ts` composing focused sub-routers via `router.use()`, and `shared.ts` for common middleware/helpers. See `routes/github/`, `routes/technical-file/`, and `routes/admin/` for examples.
 
+### 12. Production safety — backup before any prod state change
+Before any schema migration, compose-file edit, container recreate, or other state-affecting change on the production server (`83.228.241.168`), take a pre-upgrade backup:
+
+```bash
+./scripts/backup-databases.sh --pre-upgrade               # full
+./scripts/backup-databases.sh --pre-upgrade --postgres-only  # faster, no Neo4j stop
+```
+
+Backups land in `~/cranis2/backups/pre-upgrade/<timestamp>/`, retained 30 days. Do not proceed until "BACKUP COMPLETE" is logged. The full retention scheme and recovery procedures are documented in `docs/backup-retention.md`.
+
+### 13. Schema is single source of truth in `pool.ts initDb()`
+All Postgres schema must live in `backend/src/db/pool.ts initDb()`, using idempotent guards:
+- `CREATE TABLE IF NOT EXISTS …`
+- `ALTER TABLE … ADD COLUMN IF NOT EXISTS …`
+- `CREATE INDEX IF NOT EXISTS …`
+
+Never apply DDL ad-hoc on the dev DB without also adding it to `initDb()` in the same commit. Otherwise dev passes tests but fresh deployments (like production) end up missing the schema. **This happened with the affiliate programme** — registration broke on prod immediately because the tables only existed on dev's hand-patched DB.
+
+### 14. Customer-data invariant
+Production updates must NEVER:
+- `DROP` a column or table
+- `DELETE` rows from a customer-owned table (`users`, `products`, `product_sboms`, vulnerability/finding tables, `technical_file_sections`, `obligations`, `org_billing`, `affiliate_*`, etc.)
+- `TRUNCATE` data tables
+- Remove a foreign key that data depends on
+
+Schema migrations in `pool.ts` may only add or relax structure, never remove. If a removal is genuinely needed, propose it explicitly to the user with a migration plan that includes data preservation. Rule 14 is the floor — rule 7 still requires approval for anything below it; rule 14 forbids the listed actions outright.
+
+### 15. Sensitive-output discipline
+Some commands echo secrets and must never be run ungated against an environment with a populated `.env`:
+
+- `docker compose config` — interpolates env vars; use `--no-interpolate`
+- `docker exec <container> env` — pipe through a `grep -E "^NODE_ENV|^FRONTEND_URL|..."` whitelist, never raw
+- `docker inspect` of any container running with secrets in its environment
+- Any blanket `printenv` from inside an app container
+
+If a secret ends up in a terminal, transcript, or log outside the prod host, treat it as compromised and add it to the rotation list. See `feedback_compose_config_secrets.md` for the incident that established this rule.
+
 ---
 
 ## Environment Notes
