@@ -155,21 +155,45 @@ All five MVP features are built, tested, and shipped.
 
 ---
 
-## Launch Blockers (must-fix before go-live)
+## Production Deployment (Complete — 2026-04-30, session 62)
 
-1. [ ] `FRONTEND_URL` migration — change from `dev.cranis2.dev` to production URL (affects all email links, OAuth callbacks)
-2. [ ] Remove `/api/dev/*` routes — destructive endpoints still present
-3. [ ] Remove SBOM debug logging — `console.log` in `services/github.ts`
-4. [ ] DKIM verification for `poste.cranis2.com` — emails landing in spam without it
-5. [ ] Production infrastructure — Infomaniak hosting, `cranis2.com` domain, Cloudflare Tunnel
-6. [ ] Privacy Policy — GDPR requirement for personal data collection
-7. [ ] Terms of Service — contractual basis for the platform
-8. [ ] Cookie consent — if any non-essential cookies used
-9. [ ] Stripe production keys — switch from test mode
-10. [ ] Resend production domain — verify `cranis2.com`
-11. [ ] Docker Compose orphan container cleanup (CRN-14)
-12. [ ] `DEV_SKIP_EMAIL` confirmed `false` in production
-13. [ ] Production `LOG_LEVEL` — set appropriately (not debug)
+Production live at `https://cranis2.com`. Full procedure: `docs/deployment-plan.md` (historical), `docs/backup-retention.md` (operational reference), `RESTART.md` "Production server" section.
+
+- [x] Phase 1 — Server foundation (Docker CE 29.4.1, Compose v5.1.3, NGINX 1.24, certbot, fail2ban, UFW, nvm + Node 24, git)
+- [x] Phase 2 — SSL & host NGINX (Let's Encrypt cert + auto-renew, full prod NGINX site at `/etc/nginx/sites-available/cranis2`, `client_max_body_size 200M`, security headers + Stripe-aware CSP)
+- [x] Phase 3 — Stack deployed (Docker stack with `NODE_ENV=production` via `docker-compose.override.yml`, all containers bound to `127.0.0.1` only)
+- [x] Phase 4 — Backup cron (daily 02:00 UTC, weekly verify Sun 04:00, key rotation check Mon 09:00)
+- [x] Phase 5 — Smoke test core flow (signup → email verify → land on `/getting-started` end-to-end)
+- [x] GFS retention (7d/4w/12m on prod; encrypted age-pull mirror to dev with 7d/4w/12m too)
+- [x] Affiliate schema patched on prod Postgres (registration was failing before)
+- [x] `/welcome` URL collision fixed — SPA route renamed to `/getting-started` (8 file edits)
+- [x] Container ports 3001/3004 tightened to `127.0.0.1` only
+
+**Outstanding pre-launch user actions:**
+
+- [ ] DKIM verification for `poste.cranis2.com` at Resend dashboard + Infomaniak DNS
+- [ ] Stripe live keys (currently `sk_test_*`) — get `sk_live_*`, live webhook (`whsec_*`), live `price_*` ID
+- [ ] Secret rotation (Anthropic API key, Codeberg client secret, Codeberg webhook secret, signing key, Postgres password, Forgejo admin token) — see `feedback_compose_config_secrets.md`
+- [ ] ICO registration (£40/year), update Privacy Policy placeholder
+- [ ] Legal review of Privacy Policy + Terms of Service
+
+---
+
+## Launch Blockers (closed 2026-04-30 — historical record)
+
+1. [x] `FRONTEND_URL` migration — `https://cranis2.com` set in prod `.env`
+2. [x] Remove `/api/dev/*` routes — destructive endpoints removed
+3. [x] Remove SBOM debug logging — `console.log` removed
+4. [ ] DKIM verification for `poste.cranis2.com` — TODO (user-side, see Production Deployment outstanding above)
+5. [x] Production infrastructure — Infomaniak VPS + `cranis2.com` + host NGINX + Let's Encrypt (no Cloudflare Tunnel — direct)
+6. [x] Privacy Policy
+7. [x] Terms of Service
+8. [x] Cookie consent
+9. [ ] Stripe production keys — TODO (user-side)
+10. [x] Resend production domain — `EMAIL_FROM=info@poste.cranis2.com` working
+11. [x] Docker Compose orphan container cleanup (CRN-14)
+12. [x] `DEV_SKIP_EMAIL` confirmed `false` in production
+13. [x] Production `LOG_LEVEL=info` set
 
 ---
 

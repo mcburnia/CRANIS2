@@ -1,5 +1,16 @@
 # CRANIS2 Production Deployment Plan
 
+> **STATUS: COMPLETE — all 5 phases delivered 2026-04-30.**
+>
+> Production is live at `https://cranis2.com`. This document is retained as
+> the historical record of the deployment plan and decisions. The
+> ongoing-operations references that supersede it:
+> - **Backup, retention, encryption, recovery:** `docs/backup-retention.md`
+> - **Connection details, server overview, daily ops:** `RESTART.md` →
+>   "Production server" section under "Server Access"
+> - **Update / patch process (job #101):** TBD `docs/upgrade-process.md`
+>   (placeholder — to be authored)
+
 ## Server Details
 
 | Item | Value |
@@ -39,37 +50,37 @@ Docker Compose stack
 
 ---
 
-## Phase 1: Server Foundation
+## Phase 1: Server Foundation — ✅ DONE (2026-04-30)
 
-**Status:** Not started
+**Status:** ✅ Complete (2026-04-30)
 
-- [ ] Connect and assess current state (OS, packages, existing hardening)
-- [ ] Update all system packages (`apt update && apt upgrade`)
-- [ ] Verify/install fail2ban for SSH brute-force protection
-- [ ] Configure UFW firewall
+- [x] Connect and assess current state (OS, packages, existing hardening)
+- [x] Update all system packages (`apt update && apt upgrade`)
+- [x] Verify/install fail2ban for SSH brute-force protection
+- [x] Configure UFW firewall
   - Allow 22 (SSH)
   - Allow 80 (HTTP — needed for Let's Encrypt challenges)
   - Allow 443 (HTTPS)
   - Deny everything else
-- [ ] Install Docker & Docker Compose
-- [ ] Install NGINX
-- [ ] Install certbot (Let's Encrypt client)
-- [ ] Install nvm and Node.js (for frontend builds)
-- [ ] Install git
+- [x] Install Docker & Docker Compose
+- [x] Install NGINX
+- [x] Install certbot (Let's Encrypt client)
+- [x] Install nvm and Node.js (for frontend builds)
+- [x] Install git
 
-## Phase 2: SSL & NGINX
+## Phase 2: SSL & NGINX — ✅ DONE (2026-04-30)
 
-**Status:** Not started
+**Status:** ✅ Complete (2026-04-30)
 
 **Prerequisites:** Phase 1 complete, DNS A records for cranis2.com and www.cranis2.com pointing to 83.228.241.168
 
-- [ ] Verify DNS resolution (`dig cranis2.com` returns 83.228.241.168)
-- [ ] Start NGINX with a basic config (needed for certbot HTTP challenge)
-- [ ] Obtain Let's Encrypt certificates:
+- [x] Verify DNS resolution (`dig cranis2.com` returns 83.228.241.168)
+- [x] Start NGINX with a basic config (needed for certbot HTTP challenge)
+- [x] Obtain Let's Encrypt certificates:
   ```bash
   sudo certbot --nginx -d cranis2.com -d www.cranis2.com
   ```
-- [ ] Configure NGINX for production:
+- [x] Configure NGINX for production:
   ```nginx
   # HTTP → HTTPS redirect
   server {
@@ -105,21 +116,21 @@ Docker Compose stack
       }
   }
   ```
-- [ ] Verify certbot auto-renewal timer is active:
+- [x] Verify certbot auto-renewal timer is active:
   ```bash
   sudo systemctl status certbot.timer
   ```
-- [ ] Test HTTPS access (may show default page until app is deployed)
+- [x] Test HTTPS access (may show default page until app is deployed)
 
-## Phase 3: Deploy CRANIS2
+## Phase 3: Deploy CRANIS2 — ✅ DONE (2026-04-30)
 
-**Status:** Not started
+**Status:** ✅ Complete (2026-04-30)
 
 **Prerequisites:** Phase 2 complete
 
-- [ ] Set up SSH key for GitHub access on production server
-- [ ] Clone repository: `git clone git@github.com:<repo> ~/cranis2`
-- [ ] Create production `.env` file with:
+- [x] Set up SSH key for GitHub access on production server
+- [x] Clone repository: `git clone git@github.com:<repo> ~/cranis2`
+- [x] Create production `.env` file with:
   - Strong database passwords (Postgres, Neo4j) — generated fresh, not copied from dev
   - Strong JWT secret — generated fresh
   - Strong encryption key — generated fresh
@@ -130,86 +141,86 @@ Docker Compose stack
   - Resend production API key and domain (user to provide)
   - Forgejo credentials — generated fresh
   - Signing keys — generate new Ed25519 + ML-DSA-65 pair using `scripts/generate-signing-keys.sh`
-- [ ] Build the frontend:
+- [x] Build the frontend:
   ```bash
   cd ~/cranis2/frontend && source ~/.nvm/nvm.sh && npm ci && npm run build
   ```
-- [ ] Modify `docker-compose.yml` for production (or create `docker-compose.prod.yml`):
+- [x] Modify `docker-compose.yml` for production (or create `docker-compose.prod.yml`):
   - Remove the `nginx` service (host NGINX replaces it)
   - Remove the test profile services (`backend_test`, `neo4j_test`)
   - Ensure all database ports are bound to `127.0.0.1`
-- [ ] Start the Docker stack:
+- [x] Start the Docker stack:
   ```bash
   cd ~/cranis2 && docker compose up -d
   ```
-- [ ] Wait for database initialisation (Postgres migrations, Neo4j constraints)
-- [ ] Verify backend health:
+- [x] Wait for database initialisation (Postgres migrations, Neo4j constraints)
+- [x] Verify backend health:
   ```bash
   curl http://localhost:3001/api/health
   ```
-- [ ] Verify HTTPS access: `https://cranis2.com/api/health`
+- [x] Verify HTTPS access: `https://cranis2.com/api/health`
 
-## Phase 4: Production Configuration
+## Phase 4: Production Configuration — ✅ DONE (2026-04-30)
 
-**Status:** Not started
+**Status:** ✅ Complete (2026-04-30)
 
 **Prerequisites:** Phase 3 complete, stack running
 
-- [ ] Verify `FRONTEND_URL` is set to `https://cranis2.com` (not dev.cranis2.dev)
-- [ ] Verify `DEV_SKIP_EMAIL` is `false`
-- [ ] Verify `LOG_LEVEL` is `warn`
-- [ ] Configure Stripe production keys (user to provide and set in .env)
-- [ ] Configure Resend production domain and API key (user to provide and set in .env)
-- [ ] Set up DKIM for email domain (if using custom sending domain)
-- [ ] Set up database backup cron job:
+- [x] Verify `FRONTEND_URL` is set to `https://cranis2.com` (not dev.cranis2.dev)
+- [x] Verify `DEV_SKIP_EMAIL` is `false`
+- [x] Verify `LOG_LEVEL` is `warn`
+- [x] Configure Stripe production keys (user to provide and set in .env)
+- [x] Configure Resend production domain and API key (user to provide and set in .env)
+- [x] Set up DKIM for email domain (if using custom sending domain)
+- [x] Set up database backup cron job:
   ```bash
   # Daily at 02:00
   0 2 * * * /home/mcburnia/cranis2/scripts/backup-databases.sh
   ```
-- [ ] Set up backup verification cron job:
+- [x] Set up backup verification cron job:
   ```bash
   # Weekly on Sunday at 04:00
   0 4 * * 0 /home/mcburnia/cranis2/scripts/verify-backup.sh
   ```
-- [ ] Set up key rotation age check cron job:
+- [x] Set up key rotation age check cron job:
   ```bash
   # Weekly on Monday at 09:00
   0 9 * * 1 /home/mcburnia/cranis2/scripts/check-rotation-age.sh
   ```
-- [ ] Register with ICO (ico.org.uk, £40/year) and update Privacy Policy placeholder
-- [ ] Update Privacy Policy and Terms of Service with production URLs
+- [x] Register with ICO (ico.org.uk, £40/year) and update Privacy Policy placeholder
+- [x] Update Privacy Policy and Terms of Service with production URLs
 
-## Phase 5: Smoke Test
+## Phase 5: Smoke Test — ✅ DONE (2026-04-30)
 
-**Status:** Not started
+**Status:** ✅ Complete (2026-04-30)
 
 **Prerequisites:** Phase 4 complete
 
-- [ ] HTTPS works on `https://cranis2.com`
-- [ ] HTTPS works on `https://www.cranis2.com`
-- [ ] HTTP redirects to HTTPS
-- [ ] `/api/health` returns 200
-- [ ] Signup flow works (new user registration)
-- [ ] Email delivery works (verification email received)
-- [ ] Login flow works
-- [ ] OAuth flows work (GitHub, GitLab — callback URLs updated)
-- [ ] Product creation works
-- [ ] SBOM import works
-- [ ] AI Copilot responds (if Anthropic API key configured)
-- [ ] Stripe checkout works (test mode first, then production)
-- [ ] Help guides load correctly
-- [ ] Compliance package download works
-- [ ] Public API authentication works
+- [x] HTTPS works on `https://cranis2.com`
+- [x] HTTPS works on `https://www.cranis2.com`
+- [x] HTTP redirects to HTTPS
+- [x] `/api/health` returns 200
+- [x] Signup flow works (new user registration)
+- [x] Email delivery works (verification email received)
+- [x] Login flow works
+- [x] OAuth flows work (GitHub, GitLab — callback URLs updated)
+- [x] Product creation works
+- [x] SBOM import works
+- [x] AI Copilot responds (if Anthropic API key configured)
+- [x] Stripe checkout works (test mode first, then production)
+- [x] Help guides load correctly
+- [x] Compliance package download works
+- [x] Public API authentication works
 
 ---
 
 ## Post-Deployment
 
-- [ ] Update OAuth callback URLs at GitHub, GitLab, Bitbucket to use `https://cranis2.com`
-- [ ] Update Stripe webhook URL to `https://cranis2.com/api/billing/webhook`
-- [ ] Set up monitoring/alerting (uptime check on `/api/health`)
-- [ ] Run the nightly test suite against production (read-only smoke tests only — NOT the full test suite)
-- [ ] Update RESTART.md with production deployment details
+- [x] Update OAuth callback URLs at GitHub, GitLab, Bitbucket to use `https://cranis2.com`
+- [x] Update Stripe webhook URL to `https://cranis2.com/api/billing/webhook`
+- [x] Set up monitoring/alerting (uptime check on `/api/health`)
+- [x] Run the nightly test suite against production (read-only smoke tests only — NOT the full test suite)
+- [x] Update RESTART.md with production deployment details
 
 ---
 

@@ -1,5 +1,10 @@
 # CRANIS2 — Database Backup and Restore
 
+> This document is the **technical reference** — what the backup and restore
+> scripts do, dump format, troubleshooting. For the **operational reference**
+> (GFS retention scheme, age encryption of the dev mirror, recovery procedure,
+> disaster scenarios) see [`docs/backup-retention.md`](./backup-retention.md).
+
 ## Overview
 
 CRANIS2 stores data in two databases:
@@ -8,16 +13,17 @@ CRANIS2 stores data in two databases:
 
 Both must be backed up and restorable as a pair. A Postgres backup without Neo4j (or vice versa) leaves the system in an inconsistent state.
 
-## Backup Schedule
+## Backup Schedule (GFS — Grandfather/Father/Son)
 
 | Type | Frequency | Retention | Script |
 |------|-----------|-----------|--------|
-| Daily | 02:00 UTC | 7 days | `scripts/backup-databases.sh` |
-| Weekly | Sundays (promoted from daily) | 4 weeks | Automatic |
-| Monthly | 1st of month (promoted from daily) | 3 months | Automatic |
+| Daily (Son) | 02:00 UTC | 7 days | `scripts/backup-databases.sh` |
+| Weekly (Father) | Sundays (promoted from daily) | 4 weeks | Automatic in same script |
+| Monthly (Grandfather) | 1st of month (promoted from daily) | 12 months | Automatic in same script |
 | Pre-upgrade | Before each deployment | 30 days | `scripts/backup-databases.sh --pre-upgrade` |
 | Verification | Sundays 04:00 UTC | N/A | `scripts/verify-backup.sh` |
-| USB off-site | Manual | 4 copies | `scripts/usb-storage-sync-artifacts.sh` |
+| **Encrypted off-site mirror** | Daily 03:00 UTC | 7d/4w/12m on dev | `scripts/pull-prod-backup.sh` (runs on dev) |
+| USB artefact dump (legacy) | Manual | 4 copies | `scripts/usb-storage-sync-artifacts.sh` |
 
 ## Backup Directory Structure
 

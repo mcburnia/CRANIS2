@@ -17,7 +17,8 @@ CRANIS2 is a SaaS platform that helps software organisations achieve and maintai
 
 ## Server Access
 
-- **Server:** Mac Mini running Ubuntu Linux
+### Dev server (this machine)
+- **Server:** Mac Mini running Ubuntu Linux (hostname `cranis2`)
 - **SSH (direct):** `ssh mcburnia@10.0.0.122` (only works from user's own terminal)
 - **SSH (Claude Code):** `ssh -p 2222 mcburnia@localhost` (via SSH tunnel — see below)
 - **Project path:** `~/cranis2/`
@@ -25,6 +26,17 @@ CRANIS2 is a SaaS platform that helps software organisations achieve and maintai
 - **Node.js:** Available via nvm — always prefix commands with `source ~/.nvm/nvm.sh &&`
 - **SSH key for GitHub:** `~/.ssh/id_ed25519` (has passphrase — user must run `git push` manually)
 - **Cloudflare Tunnel:** `cloudflared` running as systemd service (`cloudflared.service`), config at `~/.cloudflared/config.yml`
+
+### Production server (live as of 2026-04-30)
+- **Server:** Infomaniak VPS (`ov-6fc008`, Ubuntu 24.04.4 LTS)
+- **IP:** `83.228.241.168`
+- **Domain:** `https://cranis2.com` and `https://www.cranis2.com`
+- **SSH:** `ssh -i ~/.ssh/cranis2-prod mcburnia@83.228.241.168` (interactive key has a passphrase; load via `ssh-agent` once per Claude session — see `~/.claude/projects/-home-mcburnia-cranis2/memory/production_server.md`)
+- **TLS:** Let's Encrypt, certbot.timer auto-renews
+- **Architecture:** Host nginx (NOT containerised) → Docker stack (backend, postgres, neo4j, forgejo, welcome). Docker container ports bound to `127.0.0.1` only; UFW + Infomaniak provider firewall open on 22/80/443 only.
+- **Stack:** identical to dev plus a prod-only `docker-compose.override.yml` (gitignored) that sets `NODE_ENV=production`
+- **Backup:** GFS retention 7d/4w/12m on prod; encrypted age-pull mirror to dev at 03:00 UTC daily. Full procedure: `docs/backup-retention.md`
+- **Deployment plan history:** `docs/deployment-plan.md` (all 5 phases complete 2026-04-30)
 
 ### SSH Tunnel Workaround (IMPORTANT)
 
@@ -1133,7 +1145,28 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-04-28 (session 61)
+**Last updated:** 2026-04-30 (session 62)
+
+**Recently completed (session 62) — production deployment day:**
+- **Production stack live at `https://cranis2.com`** — TLS via Let's Encrypt, certbot.timer auto-renew, host nginx on the Infomaniak VPS (`83.228.241.168`)
+- **Production NGINX config** — full adaptation of dev `nginx/default.conf` (15+ welcome routes, security headers including HSTS + Stripe-aware CSP, SPA fallback, 200M client_max_body_size). Deployed at `/etc/nginx/sites-available/cranis2`. Note: nginx 1.24 needs combined `listen 443 ssl http2;` syntax (not `http2 on;`).
+- **`docker-compose.override.yml` on prod** (gitignored) — adds `NODE_ENV=production`. Override-file `ports:` lists MERGE with base; for port-binding changes edit base directly (lesson saved to `feedback_docker_port_rebinding.md`).
+- **Container port bindings tightened** — backend (3001) and welcome (3004) bound to `127.0.0.1` only on prod (defence-in-depth alongside UFW). Required `docker compose down && up -d` (full-stack restart) — in-place port-binding changes via overrides leave Docker's port-allocator stuck.
+- **Affiliate schema patch on prod** — registration was failing because `affiliates`, `affiliate_attributions`, `affiliate_ledger_entries`, `affiliate_monthly_statements` tables and `users.bonus_code_used` column existed on dev (hand-patched during session 60) but NOT in `pool.ts initDb()`. Applied `/tmp/prod-affiliate-fix.sql` directly to prod Postgres. **Dev fix still owed:** add the same DDL to `pool.ts initDb()` so future deployments don't have this gap (logged as job #100).
+- **`/welcome` URL collision fixed** — the marketing welcome container and the SPA's post-registration `WelcomePage.tsx` both wanted `/welcome`; nginx routed it to the marketing container. Renamed the SPA route to `/getting-started` (8 file edits on prod source tree). Dev fix still owed (logged as job #100).
+- **Backup architecture (Grandfather/Father/Son)** — prod nightly backup retention updated 7/4/3 → 7/4/12. Dev runs encrypted pull at 03:00 UTC via dedicated passphraseless SSH key (restricted on prod with `command="serve-backup.sh"`), `age` encrypts in-pipe (X25519 + ChaCha20-Poly1305) — plaintext never lands on dev disk. Dev mirror has its own 7/4/12 GFS chain in `~/cranis2-backup-mirror/`. Age private key escrowed on user's keyring USB (passphrase-protected). Full procedure: `docs/backup-retention.md`.
+- **CLAUDE.md operating rules 12-15 added:**
+  - 12. Pre-change backup before any prod state change
+  - 13. Schema in `pool.ts initDb()` is single source of truth, idempotent guards required
+  - 14. Customer-data invariant — no DROP/DELETE/TRUNCATE on customer-owned tables in updates
+  - 15. Sensitive-output discipline — never `docker compose config` without `--no-interpolate`, never `docker exec env` raw
+- **Two new feedback memories saved** (lessons hardened):
+  - `feedback_compose_config_secrets.md` — `docker compose config` interpolates and prints secrets; use `--no-interpolate`
+  - `feedback_docker_port_rebinding.md` — Compose `ports:` lists merge between override and base; edit base file directly; pair with `docker compose down && up -d`
+- **Smoke test (core flow)** — signup → email verify → land on `/getting-started` SPA WelcomePage end-to-end working
+- **Test account `andi.mcburniesmoke20260430@gmail.com` cleaned** — Postgres + Neo4j fully purged
+- **Tooling lessons:** `feedback_compose_config_secrets.md` + `feedback_docker_port_rebinding.md` (both updated/refined today). The `docker compose config` incident exposed several secrets in transcript; rotation deferred to pre-launch (option B chosen).
+- **Outstanding pre-launch tasks:** Stripe live keys, DKIM verification at Resend for `poste.cranis2.com`, secret rotation, dev↔prod sync (job #100), defined upgrade/patch process (job #101), remaining Phase 5 smoke tests (OAuth, products, SBOMs, Copilot, Stripe checkout).
 
 **Recently completed (session 60):**
 - **Trust Centre rename** — Marketplace → Trust Centre across entire codebase (routes, services, frontend, tests, docs, e2e, help guides). `marketplace.ts` → `trust-centre.ts` (backend + services), all frontend pages renamed, help guide updated, E2E tests updated.
