@@ -177,6 +177,8 @@ apply_header() {
     fi
     rm -f "$tmp"
   else
+    # Preserve original permissions (mv from /tmp would otherwise reset to 0644)
+    chmod --reference="$f" "$tmp"
     mv "$tmp" "$f"
   fi
 }
