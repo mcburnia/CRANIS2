@@ -1155,9 +1155,37 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-04-30 (session 62)
+**Last updated:** 2026-05-02 (session 63)
 
-**Recently completed (session 62) — production deployment day:**
+**Recently completed (session 63) — ownership cleanup, evidence locker, full regression, rebuild prep:**
+
+- **Licence headers across the whole codebase** — `LICENSE` at repo root (`LicenseRef-Cranis2-Proprietary`, Andrew (Andi) MCBURNIE, England and Wales governing law); `scripts/apply-licence-headers.sh` is idempotent, preserves shebangs/doctypes, preserves file permissions; 757 in-scope files headed; 8 `package.json` files updated with `license` and `author` metadata.
+- **Copyright range aligned to 2023–2026** — anchored to August 2023 ideation (triggered by FTI Consulting NIST assessment for SNRG, June 2023). Email standardised to `andi@mcburnie.com` across all artefacts.
+- **Evidence locker** (`evidence/`) — README index tracked; binary documents (pdf, docx, xlsx, etc.) listed in `.gitignore` so they stay local-only. Entry #1 logged: the FTI/SNRG NIST assessment, the documented external trigger for CRANIS2's ideation. PDF held locally on the dev Mac Mini, never pushed.
+- **Entity scrub — full removal of corporate attribution** — every Gibbs / Loman / Cavendish reference removed across 15 files (zero matches across the repo). `docs/loman-cavendish-capabilities.md` renamed to `docs/personal-capabilities.md` and rewritten in first person. `docs/operations/99-succession.md` rewritten as a personal succession plan addressed to executors / heirs / next-of-kin. `docs/PRIVACY-POLICY.md` and `docs/TERMS-OF-SERVICE.md` rewritten as a France-resident individual controller / operator under generic GDPR (CNIL as lead supervisory authority); governing law retained as England and Wales for continuity with the planned future UK NewCo. AI coder framework (6 files) rewritten without "managing director / employees / client engagements" framing; **R&D Tax Relief framing stripped entirely** from `STANDARDS.md` and `SESSION-TEMPLATE.md` (Corporation Tax mechanism, doesn't apply to an individual); the underlying evidence-and-discipline value preserved and reframed as IP provenance / audit / due-diligence support.
+- **CRANIS2 ownership memory** — saved [project_ownership.md](.claude/projects/-home-mcburnia-cranis2/memory/project_ownership.md) and [seis_strategy.md](.claude/projects/-home-mcburnia-cranis2/memory/seis_strategy.md) so future sessions never re-introduce corporate framing. Memory files (`user_profile.md`, `completed_work.md`, `MEMORY.md`) all scrubbed of named entities.
+- **Architectural review of the existing codebase** — conducted in-session; recommended changes to apply on the rebuild: TanStack Query, zod, Kysely + node-pg-migrate, graphile-worker, pino, CI from commit 1. Stack assessed as fit-for-purpose; the omissions above are the highest-leverage future improvements.
+- **Full regression run (Rule 6)** —
+  - **Backend (Vitest):** 119 files, **2,189 passed, 13 skipped, 0 failed** (5m 11s). Better than memory predicted. Previously-flagged 1 expected category-recommendation failure now resolved.
+  - **E2E (Playwright):** initial run had 6 acceptance failures; all fixed in commit `c2e1318`:
+    1. Stale 5-providers test (Bitbucket made it 6 in session 59)
+    2. Trust Centre PUT failures — Pro-plan gating; suite now upgrades the org via platformAdmin in `beforeAll` and restores in `afterAll`
+    3. Vulnerability Trends flake — fixed `waitForTimeout` replaced with `expect.toContainText({timeout: 15000})`
+  - Re-run: **194 acceptance + 62 break + smoke all green**. Test stack stopped cleanly.
+- **Rebuild prep on the secondary MacBook Pro** — confirmed at 10.0.0.117 (Ubuntu 24.04, 16 GB, x86_64, Docker 29.4 pre-installed, lid-ignore set, SSH server enabled). SSH alias `mbp` configured on the Mac Mini with a dedicated passphrase-less LAN-only key (`~/.ssh/mbp_lan`). Project location reserved at `/home/andi/cranis2/`, port range 4xxx, Forgejo as primary git, Codeberg as secondary push-mirror. Full plan in [rebuild_plan.md](.claude/projects/-home-mcburnia-cranis2/memory/rebuild_plan.md).
+
+**Next session (2026-05-03 onwards) — Build the rebuild stack on the MBP:**
+1. Install Node 24 + nvm on MBP (one shell script over SSH)
+2. Lay down `~/cranis2/` skeleton on MBP with `docs/ADR/` + bootstrap ADR
+3. Write `docker-compose.yml` for the rebuild stack (4xxx ports, dedicated network)
+4. Bring up Forgejo, scripted admin provision, create empty `cranis2` repo
+5. Pause for user to set up Codeberg account + scoped write token
+6. Configure push mirror via Forgejo API
+7. Verify: small test commit → push → confirm Codeberg receives the mirror
+
+---
+
+**Previously completed (session 62, 2026-04-30) — production deployment day:**
 - **Production stack live at `https://cranis2.com`** — TLS via Let's Encrypt, certbot.timer auto-renew, host nginx on the Infomaniak VPS (`83.228.241.168`)
 - **Production NGINX config** — full adaptation of dev `nginx/default.conf` (15+ welcome routes, security headers including HSTS + Stripe-aware CSP, SPA fallback, 200M client_max_body_size). Deployed at `/etc/nginx/sites-available/cranis2`. Note: nginx 1.24 needs combined `listen 443 ssl http2;` syntax (not `http2 on;`).
 - **`docker-compose.override.yml` on prod** (gitignored) — adds `NODE_ENV=production`. Override-file `ports:` lists MERGE with base; for port-binding changes edit base directly (lesson saved to `feedback_docker_port_rebinding.md`).
