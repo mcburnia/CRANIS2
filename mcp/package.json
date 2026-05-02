@@ -28,6 +28,6 @@
     "@hono/node-server": "^1.19.13"
   },
   "license": "LicenseRef-Cranis2-Proprietary",
-  "author": "Andrew (Andi) MCBURNIE <andi.mcburnie@gmail.com>",
+  "author": "Andrew (Andi) MCBURNIE <andi@mcburnie.com>",
   "private": true
 }

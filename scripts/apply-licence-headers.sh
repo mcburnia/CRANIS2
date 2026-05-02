@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+# Copyright © 2023–2026 Andrew (Andi) MCBURNIE. All rights reserved.
 # SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
 #
 # This file is part of CRANIS2 — a personally-owned, personally-funded
 # software product. Unauthorised copying, modification, distribution,
 # or commercial use is prohibited. For licence enquiries:
-# andi.mcburnie@gmail.com
+# andi@mcburnie.com
 
 # Idempotent sweep that adds the CRANIS2 proprietary licence header to every
 # in-scope project file. Skips imported libraries, generated artefacts, data,
@@ -25,13 +25,13 @@ ROOT="$(pwd)"
 MARKER='SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary'
 
 read -r -d '' BODY <<'EOF' || true
-Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+Copyright © 2023–2026 Andrew (Andi) MCBURNIE. All rights reserved.
 SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
 
 This file is part of CRANIS2 — a personally-owned, personally-funded
 software product. Unauthorised copying, modification, distribution,
 or commercial use is prohibited. For licence enquiries:
-andi.mcburnie@gmail.com
+andi@mcburnie.com
 EOF
 
 DRY_RUN=0
