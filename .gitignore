@@ -25,3 +25,17 @@ data/
 
 # Production-only docker compose overrides (created on prod host, never on dev)
 docker-compose.override.yml
+
+# Evidence locker — binaries are held locally only, never pushed to remotes.
+# The README.md index IS tracked so the existence of each piece of evidence
+# is recorded; the documents themselves stay off any remote git host.
+evidence/*.pdf
+evidence/*.docx
+evidence/*.xlsx
+evidence/*.pptx
+evidence/*.zip
+evidence/*.7z
+evidence/*.png
+evidence/*.jpg
+evidence/*.jpeg
+evidence/*.heic
