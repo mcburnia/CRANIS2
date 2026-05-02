@@ -8,10 +8,10 @@
   andi@mcburnie.com
 -->
 
-# Loman Cavendish Limited — Developer Guide to AI-Assisted Development
+# Developer Guide to AI-Assisted Development
 
 **Document type:** Guidelines
-**Owner:** Loman Cavendish Limited
+**Owner:** Andrew (Andi) MCBURNIE
 **Version:** 1.0
 **Last reviewed:** March 2026
 
@@ -277,4 +277,4 @@ When removing code, remove it completely:
 
 ---
 
-*Loman Cavendish Limited — Practical guidance for professional AI-assisted development.*
+*Andrew (Andi) MCBURNIE — Practical guidance for professional AI-assisted development.*

@@ -8,39 +8,39 @@
   andi@mcburnie.com
 -->
 
-# Loman Cavendish Limited — AI-Assisted Development Policy
+# AI-Assisted Development Policy
 
 **Document type:** Policy
-**Owner:** Loman Cavendish Limited
-**Version:** 1.0
-**Last reviewed:** March 2026
+**Owner:** Andrew (Andi) MCBURNIE
+**Version:** 1.1
+**Last reviewed:** May 2026
 **Review cycle:** Quarterly, or when tools, regulations, or contractual requirements change
 
 ---
 
 ## 1. Scope
 
-This policy applies to all development and research work undertaken by Loman Cavendish Limited, including:
+This policy applies to all development and research work undertaken under this framework, including:
 
-- Internal product development
-- Client engagements (where contractually permitted)
+- Personal product development
+- Any work performed under contract for a third party (where contractually permitted)
 - Research and prototyping activities
-- Open-source contributions made in a Loman Cavendish Limited capacity
+- Open-source contributions made under this framework
 
-All employees, contractors, and associates performing development work under the Loman Cavendish Limited banner must comply with this policy.
+Anyone performing development work under this framework — the framework owner, or any contractor or collaborator who has been granted access — must comply with this policy.
 
 ---
 
 ## 2. Authorised Tools
 
-The following AI tools are approved for use in Loman Cavendish Limited development work:
+The following AI tools are approved for use under this framework:
 
 | Tool | Approved Use | Notes |
 |------|-------------|-------|
 | Claude Code (Anthropic) | Code generation, analysis, documentation, research | Primary AI development tool |
 | GitHub Copilot | Inline code completion | IDE integration only |
 
-Additional tools may be approved by submitting a request to the managing director. The request must include the tool name, vendor, data handling policy, and intended use case. Unapproved tools must not be used on any Loman Cavendish Limited or client project.
+Additional tools may be approved by the framework owner. The request must include the tool name, vendor, data handling policy, and intended use case. Unapproved tools must not be used on any project covered by this framework.
 
 ---
 
@@ -48,23 +48,23 @@ Additional tools may be approved by submitting a request to the managing directo
 
 ### 3.1 What may be shared with AI tools
 
-- Source code owned by Loman Cavendish Limited (subject to client restrictions per Section 4)
+- Source code owned by the framework owner (subject to any contractual restrictions per Section 4)
 - Technical documentation and specifications
 - Publicly available information (standards, regulations, open-source code)
 - Anonymised or synthetic data
 
 ### 3.2 What must never be shared with AI tools
 
-- Client credentials, API keys, tokens, or secrets of any kind
-- Personally identifiable information (PII) of clients, users, or employees
-- Client data classified as confidential or restricted under NDA
+- Credentials, API keys, tokens, or secrets of any kind
+- Personally identifiable information (PII) of users, contractors, or third parties
+- Data classified as confidential or restricted under any agreement
 - Production database contents or connection strings
 - Financial records, pricing agreements, or commercial terms
-- Any information explicitly restricted by a client contract
+- Any information explicitly restricted by a contract
 
 ### 3.3 Data residency
 
-Developers must be aware of where AI tool vendors process and store data. For client work subject to data residency requirements (e.g. UK/EU only), verify that the AI tool's data processing arrangements comply before use.
+Developers must be aware of where AI tool vendors process and store data. For work subject to data residency requirements (e.g. EU/UK only), verify that the AI tool's data processing arrangements comply before use.
 
 ### 3.4 Environment files
 
@@ -72,31 +72,31 @@ Developers must be aware of where AI tool vendors process and store data. For cl
 
 ---
 
-## 4. Client Work
+## 4. Contracted Work
 
 ### 4.1 Contractual review
 
-Before using AI tools on a client engagement, review the contract for:
+Before using AI tools on any contracted engagement, review the contract for:
 
 - Restrictions on third-party tools or subprocessors
 - Data handling and confidentiality clauses
 - IP assignment terms that may affect AI-assisted work
 - Requirements for disclosure of AI involvement
 
-If the contract is silent on AI tool usage, seek written confirmation from the client before proceeding.
+If the contract is silent on AI tool usage, seek written confirmation from the counterparty before proceeding.
 
-### 4.2 Client notification
+### 4.2 Counterparty notification
 
-Where AI tools are used on client work, the client should be informed as part of the engagement setup. The notification should cover:
+Where AI tools are used on contracted work, the counterparty should be informed as part of the engagement setup. The notification should cover:
 
 - Which tools are used and for what purpose
 - That all output is reviewed and approved by a competent professional
 - That session transcripts are retained as part of the project record
-- That no client data is shared beyond the scope described in Section 3
+- That no counterparty data is shared beyond the scope described in Section 3
 
-### 4.3 Client-specific restrictions
+### 4.3 Counterparty-specific restrictions
 
-If a client imposes restrictions on AI tool usage, those restrictions take precedence over this policy. Document the restrictions in the project's `CLAUDE.md` file so they are enforced from the first session.
+If a counterparty imposes restrictions on AI tool usage, those restrictions take precedence over this policy. Document the restrictions in the project's `CLAUDE.md` file so they are enforced from the first session.
 
 ---
 
@@ -118,17 +118,17 @@ Session transcripts are stored in a dedicated evidence repository, separate from
 
 ### 5.4 Retention
 
-Session transcripts must be retained for a minimum of **7 years** from the date of creation. This exceeds HMRC's 6-year requirement for R&D tax credit records and provides a margin for late enquiries.
+Session transcripts must be retained for a minimum of **7 years** from the date of creation. This horizon supports IP-provenance evidence over a typical product lifecycle, defends against later challenges to authorship or methodology, and provides a margin for any future enquiry — regulatory, contractual, or otherwise.
 
 ### 5.5 Access
 
 Session transcripts are accessible to:
 
 - The contributor who recorded the session
-- The managing director
-- Tax advisors and auditors (under NDA, for R&D claims)
+- The framework owner
+- Auditors or counsel (under NDA), where required for a specific enquiry
 
-Access is not granted to clients unless explicitly agreed in writing.
+Access is not granted to counterparties unless explicitly agreed in writing.
 
 ---
 
@@ -140,7 +140,7 @@ All AI-generated code must be reviewed by a competent professional before it is 
 
 ### 6.2 Documentation review
 
-AI-generated documentation, compliance content, and client-facing material must be reviewed for accuracy, tone, and completeness before delivery.
+AI-generated documentation, compliance content, and counterparty-facing material must be reviewed for accuracy, tone, and completeness before delivery.
 
 ### 6.3 The propose-then-implement pattern
 
@@ -163,25 +163,24 @@ This is consistent with existing professional standards. A developer who uses a 
 Failure to comply with this policy may result in:
 
 - Removal of AI tool access
-- Disciplinary action under Loman Cavendish Limited's employment or contractor terms
-- Liability for any client or regulatory consequences arising from the non-compliance
+- Termination of any contractor agreement under which the work is performed
+- Liability for any contractual or regulatory consequences arising from the non-compliance
 
-Concerns about the policy or its application should be raised with the managing director. The policy is intended to protect both the company and the individual; constructive feedback is welcomed.
+Concerns about the policy or its application should be raised with the framework owner. The policy is intended to protect both the project and the individual; constructive feedback is welcomed.
 
 ---
 
 ## 9. Review and Amendment
 
-This policy is reviewed quarterly by the managing director. Amendments may be triggered by:
+This policy is reviewed quarterly by the framework owner. Amendments may be triggered by:
 
 - Changes to AI tool capabilities or vendor terms
 - New regulatory requirements (e.g. the EU AI Act, UK AI framework)
 - Lessons learned from project experience
-- Client feedback or contractual changes
-- Changes to HMRC R&D tax credit guidance
+- Counterparty feedback or contractual changes
 
 All amendments are versioned and dated. Previous versions are retained for audit purposes.
 
 ---
 
-*Loman Cavendish Limited — Professional standards for AI-assisted development.*
+*Andrew (Andi) MCBURNIE — Professional standards for AI-assisted development.*

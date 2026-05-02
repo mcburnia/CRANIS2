@@ -12,7 +12,7 @@
 
 **Document Version:** 2.0
 **Last Updated:** 2026-02-28
-**Author:** Andi McBurnie, Loman Cavendish Ltd
+**Author:** Andrew (Andi) MCBURNIE
 **CRA Reference:** Annex VII Par. 2(a) — System Architecture & Component Design
 
 > This document replaces the original microservices-based LLD (`OLD/LLD.md`). It describes the **as-built** architecture of CRANIS2 and serves as design documentation for CRA Annex VII compliance. For the development lifecycle, see `docs/SDLC.md`.

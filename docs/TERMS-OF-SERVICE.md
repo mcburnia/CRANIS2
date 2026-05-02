@@ -11,20 +11,21 @@
 # Terms of Service
 
 **Effective date:** 1 April 2026
-**Last updated:** 20 March 2026
+**Last updated:** 2 May 2026
 **Status:** Beta
 
-These terms govern your use of CRANIS2, a software compliance management platform operated by Loman Cavendish Limited.
+These terms govern your use of CRANIS2, a software compliance management platform operated by **Andrew (Andi) MCBURNIE**, a private individual.
 
-Loman Cavendish Limited
-Unit 32 St. Asaph Business Park
-St. Asaph, Wales
-LL17 0JA
+Andrew (Andi) MCBURNIE
+La Vallée
+50150 Sourdeval
+France
 
-Company registration: England and Wales
-Contact: info@lomancavendish.com
+Contact: andi@mcburnie.com
 
 By creating an account or using the platform, you agree to these terms. If you do not agree, do not use the service.
+
+CRANIS2 is at the date of these terms operated by Andi personally as a sole individual. If and when CRANIS2 is moved into a corporate vehicle, these terms will be re-issued and the operator details updated accordingly.
 
 ---
 
@@ -32,13 +33,13 @@ By creating an account or using the platform, you agree to these terms. If you d
 
 CRANIS2 is currently in a beta testing period. During the beta period, the following additional conditions apply.
 
-The service is provided for evaluation and early-adoption purposes. Features may be added, changed, or removed without prior notice. We may reset, migrate, or restructure data during the beta period where necessary for platform development, though we will give reasonable advance notice before doing so.
+The service is provided for evaluation and early-adoption purposes. Features may be added, changed, or removed without prior notice. Data may be reset, migrated, or restructured during the beta period where necessary for platform development, though reasonable advance notice will be given before doing so.
 
-No service level agreement (SLA) applies during the beta period. We will make reasonable efforts to maintain availability but do not guarantee uninterrupted access.
+No service level agreement (SLA) applies during the beta period. Reasonable efforts will be made to maintain availability, but uninterrupted access is not guaranteed.
 
 Beta participants may be asked to provide feedback on their experience. Participation in feedback is voluntary.
 
-When the beta period ends, we will notify you in advance. Your continued use of the platform after the beta period constitutes acceptance of the terms in effect at that time, which may differ from these beta terms.
+When the beta period ends, you will be notified in advance. Your continued use of the platform after the beta period constitutes acceptance of the terms in effect at that time, which may differ from these beta terms.
 
 ---
 
@@ -56,7 +57,7 @@ CRANIS2 is a compliance management tool. It is not a substitute for professional
 
 You must provide a valid email address and create a password to use CRANIS2. You must verify your email address before your account is fully activated.
 
-You are responsible for maintaining the security of your account credentials. If you believe your account has been compromised, contact us immediately at info@lomancavendish.com.
+You are responsible for maintaining the security of your account credentials. If you believe your account has been compromised, contact me immediately at andi@mcburnie.com.
 
 ### 2.2 Organisation membership
 
@@ -75,13 +76,13 @@ You agree to use CRANIS2 only for its intended purpose of software compliance ma
 - Attempt to gain unauthorised access to other accounts, organisations, or platform infrastructure
 - Use the platform to store, transmit, or process data that you do not have the right to handle
 - Reverse-engineer, decompile, or attempt to extract the source code of the platform
-- Use automated tools (scrapers, bots, or similar) to access the platform except through our published API
-- Interfere with the operation of the platform or impose an unreasonable load on our infrastructure
+- Use automated tools (scrapers, bots, or similar) to access the platform except through the published API
+- Interfere with the operation of the platform or impose an unreasonable load on the infrastructure
 - Use the AI Copilot features to generate content for purposes unrelated to your compliance activities
 - Enter personal data about third parties (stakeholder records, contributor information) without a lawful basis to do so
-- Resell, sublicense, or redistribute access to the platform without our written consent
+- Resell, sublicense, or redistribute access to the platform without written consent
 
-We reserve the right to suspend or terminate accounts that violate these terms.
+I reserve the right to suspend or terminate accounts that violate these terms.
 
 ---
 
@@ -93,7 +94,7 @@ CRANIS2 offers paid subscription plans. Pricing is published on the platform and
 
 ### 4.2 Payment
 
-Payments are processed by Stripe. By subscribing, you agree to Stripe's terms of service. You authorise us to charge your payment method at the start of each billing cycle.
+Payments are processed by Stripe. By subscribing, you agree to Stripe's terms of service. You authorise me to charge your payment method at the start of each billing cycle.
 
 ### 4.3 Cancellation
 
@@ -101,11 +102,11 @@ You may cancel your subscription at any time through the platform. Cancellation 
 
 ### 4.4 Refunds
 
-We do not offer refunds for partial billing periods. If you believe you have been charged in error, contact info@lomancavendish.com within 14 days of the charge.
+Refunds are not offered for partial billing periods. If you believe you have been charged in error, contact andi@mcburnie.com within 14 days of the charge.
 
 ### 4.5 Non-payment
 
-If payment fails, we will attempt to collect payment for up to 14 days. If payment remains outstanding, your organisation's access may be restricted to read-only mode. Continued non-payment may result in account suspension.
+If payment fails, attempts to collect payment will continue for up to 14 days. If payment remains outstanding, your organisation's access may be restricted to read-only mode. Continued non-payment may result in account suspension.
 
 ---
 
@@ -115,19 +116,19 @@ If payment fails, we will attempt to collect payment for up to 14 days. If payme
 
 You retain full ownership of all data you upload, enter, or generate through the platform. This includes product information, compliance records, SBOM data, stakeholder details, technical files, and any other content you create.
 
-We do not claim any intellectual property rights over your data.
+I do not claim any intellectual property rights over your data.
 
-### 5.2 Licence to us
+### 5.2 Licence to me
 
-By using the platform, you grant us a limited licence to process, store, and display your data solely for the purpose of providing the service. This licence ends when you delete your data or close your account, subject to any retention obligations described in our Privacy Policy.
+By using the platform, you grant me a limited licence to process, store, and display your data solely for the purpose of providing the service. This licence ends when you delete your data or close your account, subject to any retention obligations described in the Privacy Policy.
 
 ### 5.3 Data portability
 
-You may export your data at any time through the platform's export features (SBOM exports, compliance reports, due diligence packages). A full account data export is available from your Account page — select "Export My Data" to download a structured JSON file containing all your personal data. You may also request account deletion from the same page, which immediately removes personal data and anonymises billing and audit records for legal retention.
+You may export your data at any time through the platform's export features (SBOM exports, compliance reports, due-diligence packages). A full account data export is available from your Account page — select "Export My Data" to download a structured JSON file containing all your personal data. You may also request account deletion from the same page, which immediately removes personal data and anonymises billing and audit records for legal retention.
 
 ### 5.4 Data processing
 
-Our processing of your personal data is governed by our Privacy Policy, which forms part of these terms. By using the platform, you acknowledge that you have read and understood the Privacy Policy.
+Processing of your personal data is governed by the Privacy Policy, which forms part of these terms. By using the platform, you acknowledge that you have read and understood the Privacy Policy.
 
 ---
 
@@ -141,31 +142,31 @@ You are responsible for reviewing, verifying, and approving any AI-generated con
 
 ### 6.2 Data sent to AI
 
-When you use Copilot features, product context data (product names, dependency summaries, vulnerability counts, obligation statuses, and technical file content) is sent to Anthropic for processing. No personal data is sent. Full details are in our Privacy Policy.
+When you use Copilot features, product context data (product names, dependency summaries, vulnerability counts, obligation statuses, and technical file content) is sent to Anthropic for processing. No personal data is sent. Full details are in the Privacy Policy.
 
 ### 6.3 Accuracy
 
-We do not guarantee the accuracy, completeness, or regulatory correctness of AI-generated output. The CRA and related regulations are subject to interpretation and change. AI suggestions should be validated against current regulatory guidance.
+I do not guarantee the accuracy, completeness, or regulatory correctness of AI-generated output. The CRA and related regulations are subject to interpretation and change. AI suggestions should be validated against current regulatory guidance.
 
 ### 6.4 Availability
 
-AI Copilot features are subject to usage limits (rate limits and token budgets) which may vary by subscription plan. We reserve the right to adjust these limits.
+AI Copilot features are subject to usage limits (rate limits and token budgets) which may vary by subscription plan. I reserve the right to adjust these limits.
 
 ---
 
 ## 7. Repository connections
 
-When you connect a code repository, you authorise CRANIS2 to access your repositories using the permissions you grant during the OAuth flow or via a personal access token. Our access is read-only.
+When you connect a code repository, you authorise CRANIS2 to access your repositories using the permissions you grant during the OAuth flow or via a personal access token. Access is read-only.
 
 You are responsible for ensuring that you have the authority to grant this access. If your repository contains code owned by third parties, you must have their permission to connect it to CRANIS2.
 
-You may disconnect a repository at any time. When you disconnect, we revoke the stored access token and stop accessing the repository. Previously imported data (SBOMs, dependency information, contributor metadata) remains in the platform unless you delete the associated product.
+You may disconnect a repository at any time. When you disconnect, the stored access token is revoked and access stops. Previously imported data (SBOMs, dependency information, contributor metadata) remains in the platform unless you delete the associated product.
 
 ---
 
 ## 8. Source code escrow
 
-If your organisation uses the escrow feature, source code snapshots are stored on a Forgejo instance managed by us. Escrow access is granted to designated agents (your organisation and, where applicable, a nominated third party).
+If your organisation uses the escrow feature, source code snapshots are stored on a Forgejo instance under my operational control. Escrow access is granted to designated agents (your organisation and, where applicable, a nominated third party).
 
 Escrow data is stored separately from the main platform databases. Access is controlled by per-user credentials issued through the platform.
 
@@ -175,13 +176,13 @@ The escrow feature does not constitute a legal escrow agreement. If you require 
 
 ## 9. Intellectual property
 
-### 9.1 Our IP
+### 9.1 My IP
 
-CRANIS2, its design, code, documentation, AI prompt configurations, compliance frameworks, and branding are the intellectual property of Loman Cavendish Limited. Nothing in these terms grants you any rights to our intellectual property beyond the right to use the platform as a subscriber.
+CRANIS2, its design, code, documentation, AI prompt configurations, compliance frameworks, and branding are the intellectual property of Andrew (Andi) MCBURNIE. Nothing in these terms grants you any rights to that intellectual property beyond the right to use the platform as a subscriber.
 
 ### 9.2 Feedback
 
-If you provide us with feedback, suggestions, or feature requests, you grant us a non-exclusive, royalty-free, perpetual licence to use that feedback to improve the platform. We will not publicly attribute feedback to you without your permission.
+If you provide feedback, suggestions, or feature requests, you grant me a non-exclusive, royalty-free, perpetual licence to use that feedback to improve the platform. Feedback will not be publicly attributed to you without your permission.
 
 ---
 
@@ -189,11 +190,11 @@ If you provide us with feedback, suggestions, or feature requests, you grant us 
 
 ### 10.1 Availability
 
-We aim to maintain high availability but do not guarantee uninterrupted service. Planned maintenance will be announced in advance where possible. Unplanned outages will be communicated through the platform or by email.
+I aim to maintain high availability but do not guarantee uninterrupted service. Planned maintenance will be announced in advance where possible. Unplanned outages will be communicated through the platform or by email.
 
 ### 10.2 Support
 
-Support is provided by email at info@lomancavendish.com. We will respond to enquiries within a reasonable timeframe. During the beta period, support capacity may be limited.
+Support is provided by email at andi@mcburnie.com. Enquiries will be responded to within a reasonable timeframe. During the beta period, support capacity may be limited.
 
 ---
 
@@ -201,11 +202,11 @@ Support is provided by email at info@lomancavendish.com. We will respond to enqu
 
 To the maximum extent permitted by law:
 
-We provide the platform "as is" and "as available" without warranties of any kind, whether express or implied, including implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
+The platform is provided "as is" and "as available" without warranties of any kind, whether express or implied, including implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
 
-We are not liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the platform. This includes loss of profits, data, business opportunity, or goodwill.
+I am not liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the platform. This includes loss of profits, data, business opportunity, or goodwill.
 
-Our total aggregate liability for any claims arising from these terms or your use of the platform is limited to the amount you have paid us in the 12 months preceding the claim.
+My total aggregate liability for any claims arising from these terms or your use of the platform is limited to the amount you have paid me in the 12 months preceding the claim.
 
 Nothing in these terms excludes or limits liability for death or personal injury caused by negligence, fraud or fraudulent misrepresentation, or any other liability that cannot be excluded or limited by law.
 
@@ -213,7 +214,7 @@ Nothing in these terms excludes or limits liability for death or personal injury
 
 ## 12. Indemnification
 
-You agree to indemnify and hold harmless Loman Cavendish Limited from any claims, damages, losses, or expenses (including legal fees) arising from your use of the platform, your violation of these terms, or your infringement of any third-party rights.
+You agree to indemnify and hold harmless Andrew (Andi) MCBURNIE from any claims, damages, losses, or expenses (including legal fees) arising from your use of the platform, your violation of these terms, or your infringement of any third-party rights.
 
 ---
 
@@ -221,21 +222,21 @@ You agree to indemnify and hold harmless Loman Cavendish Limited from any claims
 
 ### 13.1 By you
 
-You may close your account at any time by contacting info@lomancavendish.com. If you have an active subscription, cancellation terms in section 4.3 apply.
+You may close your account at any time by contacting andi@mcburnie.com. If you have an active subscription, cancellation terms in section 4.3 apply.
 
-### 13.2 By us
+### 13.2 By me
 
-We may suspend or terminate your account if you breach these terms, if your account shows no activity for 12 consecutive months, or if we discontinue the service. Where possible, we will give 30 days' notice before termination.
+I may suspend or terminate your account if you breach these terms, if your account shows no activity for 12 consecutive months, or if I discontinue the service. Where possible, 30 days' notice will be given before termination.
 
 ### 13.3 Effect of termination
 
-On termination, your access to the platform ceases. We will retain your data in accordance with the retention periods described in our Privacy Policy. You may request a data export before termination.
+On termination, your access to the platform ceases. Your data is retained in accordance with the retention periods described in the Privacy Policy. You may request a data export before termination.
 
 ---
 
 ## 14. Changes to these terms
 
-We may update these terms from time to time. When we make material changes, we will notify you by email or through the platform at least 30 days before the changes take effect.
+These terms may be updated from time to time. When material changes are made, you will be notified by email or through the platform at least 30 days before the changes take effect.
 
 Your continued use of the platform after the effective date of updated terms constitutes acceptance of those terms. If you do not agree to the updated terms, you should stop using the platform and close your account.
 
@@ -255,17 +256,17 @@ If any provision of these terms is found to be unenforceable, the remaining prov
 
 ## 17. Entire agreement
 
-These terms, together with the Privacy Policy, constitute the entire agreement between you and Loman Cavendish Limited regarding your use of CRANIS2. They supersede any prior agreements or understandings.
+These terms, together with the Privacy Policy, constitute the entire agreement between you and Andrew (Andi) MCBURNIE regarding your use of CRANIS2. They supersede any prior agreements or understandings.
 
 ---
 
 ## 18. Contact
 
-For questions about these terms, contact us at:
+For questions about these terms, contact:
 
-Loman Cavendish Limited
-Unit 32 St. Asaph Business Park
-St. Asaph, Wales
-LL17 0JA
+Andrew (Andi) MCBURNIE
+La Vallée
+50150 Sourdeval
+France
 
-Email: info@lomancavendish.com
+Email: andi@mcburnie.com

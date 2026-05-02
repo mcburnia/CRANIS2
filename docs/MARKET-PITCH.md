@@ -393,4 +393,4 @@ The commercial model supports both self-service SaaS adoption and high-value ent
 
 ---
 
-*Loman Cavendish Limited*
+*Andrew (Andi) MCBURNIE*

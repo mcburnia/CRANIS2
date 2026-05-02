@@ -8,21 +8,21 @@
   andi@mcburnie.com
 -->
 
-# Loman Cavendish Limited — Capabilities Definition
+# Andrew (Andi) MCBURNIE — Capabilities
 
-## What We Do
+## What I Do
 
-Loman Cavendish builds production-grade software products. End-to-end — from concept through architecture, implementation, testing, deployment, and ongoing operation.
+I build production-grade software products end-to-end — from concept through architecture, implementation, testing, deployment, and ongoing operation. Solo, working personally, supported by AI-augmented development tooling.
 
-We combine 25+ years of enterprise architecture experience with AI-augmented development to deliver what traditionally requires a team of six to eight engineers. The result: faster delivery, lower cost, and architectural coherence that committee-designed software never achieves.
+I combine 25+ years of enterprise architecture experience with disciplined AI-augmented development to deliver what traditionally requires a team of six to eight engineers. The result: faster delivery, lower cost, and architectural coherence that committee-designed software never achieves.
 
 ---
 
-## How We Work
+## How I Work
 
-A single senior architect leads every engagement, supported by AI-augmented development tooling that handles implementation at scale. This isn't outsourced offshore code or a junior team managed remotely. It's one experienced architect who understands your domain, your constraints, and your regulation — building your product directly.
+A single experienced architect leads the work, supported by AI-augmented development tooling that handles implementation at scale. This is not outsourced offshore code or a junior team managed remotely. It is one experienced architect who understands the domain, the constraints, and the regulation — building the product directly.
 
-**What this means for clients:**
+**What this means in practice:**
 - One point of accountability — no handoffs, no communication overhead
 - Architectural decisions made by someone who has governed billion-pound integration programmes
 - Production-quality output from day one — not a prototype that needs rebuilding
@@ -35,7 +35,7 @@ A single senior architect leads every engagement, supported by AI-augmented deve
 
 ### 1. Full-Stack Product Development
 
-We build complete web-based software products — SaaS platforms, internal tools, customer-facing applications — ready for production use.
+Complete web-based software products — SaaS platforms, internal tools, customer-facing applications — ready for production use.
 
 **Technology stack:**
 - **Frontend:** React, TypeScript, responsive design
@@ -46,7 +46,7 @@ We build complete web-based software products — SaaS platforms, internal tools
 - **Email:** Transactional email (Resend), template management
 - **Authentication:** OAuth (GitHub, GitLab, Bitbucket), JWT, invite flows, role-based access
 
-**What we deliver:**
+**What gets delivered:**
 - Fully tested applications (unit, integration, end-to-end)
 - API documentation and public API access
 - Automated test suites with nightly regression runs
@@ -55,7 +55,7 @@ We build complete web-based software products — SaaS platforms, internal tools
 
 ### 2. AI & LLM Integration
 
-We build AI-augmented features into products — not toy demos, but production-ready AI capabilities with cost controls, rate limiting, and governance.
+AI-augmented features built into products — not toy demos, but production-ready AI capabilities with cost controls, rate limiting, and governance.
 
 **Capabilities:**
 - LLM-powered copilot features (contextual suggestions, document drafting, intelligent triage)
@@ -65,21 +65,21 @@ We build AI-augmented features into products — not toy demos, but production-r
 - Multi-capability AI architectures (different prompts/models per feature)
 - Cost protection layers (rate limiting, budget caps, cache-first strategies)
 
-**Our principle:** AI is used only where it adds value that cannot be achieved deterministically. We don't use AI for the sake of it.
+**Operating principle:** AI is used only where it adds value that cannot be achieved deterministically. Never AI for its own sake.
 
 ### 3. Regulatory Compliance Engineering
 
-We don't just advise on regulation — we encode it into working software. This is our sharpest differentiator.
+Not just advice on regulation — encoding it into working software. The sharpest differentiator.
 
-**Regulations we've implemented in production software:**
+**Regulations implemented in production software:**
 - **EU Cyber Resilience Act (CRA)** — obligation engines, conformity assessments, SBOM management, vulnerability tracking, end-of-life calculations, market surveillance workflows
 - **NIS2 Directive** — supply chain risk assessment
 - **GDPR** — data subject rights, privacy policies, retention management, data export/deletion
 - **AI Act** — risk classification frameworks
 - **DORA** — operational resilience mapping
 
-**What this means for clients:**
-- If your product operates in a regulated industry, compliance is part of the architecture from day one
+**What this means in practice:**
+- For products operating in regulated industries, compliance is part of the architecture from day one
 - Obligation tracking, audit trails, and evidence generation built into the product
 - Not a compliance layer added later — structural compliance
 
@@ -98,7 +98,7 @@ We don't just advise on regulation — we encode it into working software. This 
 
 ### 5. Security Engineering
 
-We build secure products by default, not as an afterthought.
+Secure products by default, not as an afterthought.
 
 **Implemented in production:**
 - Post-quantum cryptography (Ed25519 + ML-DSA-65 hybrid signing)
@@ -116,9 +116,9 @@ We build secure products by default, not as an afterthought.
 
 ## Proof of Capability
 
-### Product: CRA Compliance Platform (CRANIS2)
+### Product: CRANIS2 — EU Cyber Resilience Act compliance platform
 
-Built entirely by Loman Cavendish. A full SaaS platform helping software organisations achieve EU Cyber Resilience Act compliance.
+A full SaaS platform helping software organisations achieve EU CRA compliance. Personally-owned, personally-funded, built end-to-end.
 
 **Scale:**
 - ~50,000+ lines of production code
@@ -139,34 +139,34 @@ Built entirely by Loman Cavendish. A full SaaS platform helping software organis
 - 10-year compliance vault with cryptographic integrity verification
 - Conformity assessment workflows (CRA and NIS2)
 - Comprehensive help guide system (48 interactive guides)
-- Software Evidence Engine for R&D tax credit documentation
+- Software Evidence Engine for IP-provenance documentation
 - Post-quantum cryptographic signing of compliance packages
-- Nightly automated test runs with Trello notifications
+- Nightly automated test runs
 - Full backup/restore and upgrade/rollback tooling
 
-**Timeline:** Concept to launch-ready in approximately 6 months of part-time development.
+**Timeline:** Concept (August 2023) to launch-ready over approximately 2.5 years of part-time development.
 
 ### Previous Delivery (Anonymised)
 
-| Project | What Was Delivered | Outcome |
+| Sector | What Was Delivered | Outcome |
 |---|---|---|
-| Smart-grid energy platform | AI/ML-driven predictive modelling, asset integration across community energy networks | ~75% reduction in grid-energy demand |
-| Travel industry integration | Consolidated 5 airline systems and hotel platforms into unified environment | €1 billion increase in company asset value |
-| Logistics merger | Oracle AIA-based integration for major logistics merger | Legal and operational compliance achieved |
+| Smart-grid energy | AI/ML-driven predictive modelling, asset integration across community energy networks | ~75% reduction in grid-energy demand |
+| Travel industry | Consolidated 5 airline systems and hotel platforms into a unified environment | €1 billion increase in client asset value |
+| Logistics merger | Oracle AIA-based integration for a major logistics merger | Legal and operational compliance achieved |
 | Transport infrastructure | Unidirectional data-diode telemetry integration for critical national infrastructure | Safe operational visibility without control system risk |
-| Pharmaceutical R&D | FDA 21 CFR Part 11-compliant integration for AI/ML drug discovery | Regulatory-compliant research platform |
+| Pharmaceutical | FDA 21 CFR Part 11-compliant integration for AI/ML drug discovery | Regulatory-compliant research platform |
 
 ---
 
 ## Engagement Models
 
 ### Build a Product
-We take your concept and deliver a production-ready software product. Fixed scope, iterative delivery, full ownership transfer.
+Take your concept and deliver a production-ready software product. Fixed scope, iterative delivery, full ownership transfer.
 
 **Typical engagement:** 3–6 months. Includes architecture, implementation, testing, deployment, documentation.
 
 ### Extend a Product
-You have an existing product that needs new capabilities — AI features, compliance modules, API layers, billing systems. We integrate into your codebase and deliver.
+You have an existing product that needs new capabilities — AI features, compliance modules, API layers, billing systems. I integrate into your codebase and deliver.
 
 ### Architecture & Technical Due Diligence
 Independent architecture review, technology assessment, or technical due diligence for investment decisions.
@@ -191,9 +191,10 @@ Ongoing product development on a retained basis — new features, maintenance, s
 
 ## Contact
 
-**Loman Cavendish Limited**
-[Contact details to be confirmed]
+**Andrew (Andi) MCBURNIE**
+La Vallée, 50150, Sourdeval, France
+andi@mcburnie.com
 
 ---
 
-*This document defines the capabilities of Loman Cavendish Limited for use in website development and marketing materials.*
+*This document defines my personal capabilities for use in marketing materials and engagement discussions. CRANIS2 is a personally-owned product; any commercial engagement in respect of it will be on a personal basis until that work is formally moved into a corporate vehicle.*

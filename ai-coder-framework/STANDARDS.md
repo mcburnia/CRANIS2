@@ -8,45 +8,40 @@
   andi@mcburnie.com
 -->
 
-# Loman Cavendish Limited — R&D Evidence and Documentation Standards
+# Evidence and Documentation Standards
 
 **Document type:** Standard
-**Owner:** Loman Cavendish Limited
-**Version:** 1.0
-**Last reviewed:** March 2026
-**Regulatory basis:** HMRC R&D Tax Relief (Corporation Tax), BEIS Guidelines on the Meaning of Research and Development
+**Owner:** Andrew (Andi) MCBURNIE
+**Version:** 1.1
+**Last reviewed:** May 2026
 
 ---
 
 ## 1. Purpose
 
-This standard defines the evidence requirements for R&D tax credit claims made by Loman Cavendish Limited under the UK R&D tax relief scheme. It ensures that development and research activities are documented to the level required by HMRC, contemporaneously and as a natural byproduct of disciplined work.
+This standard defines the evidence and documentation expected for development and research work undertaken under this framework. It ensures that what was built, why, by whom, and through what process is recorded contemporaneously and as a natural byproduct of disciplined work — not retrofitted under deadline pressure.
 
-AI-assisted development produces uniquely strong R&D evidence because every session is captured as a verbatim transcript. This standard explains how to structure that evidence so it directly supports the four-part test.
+AI-assisted development produces uniquely strong evidence because every session is captured as a verbatim transcript. This standard explains how to structure that evidence so it stands up to subsequent scrutiny — IP provenance challenges, due-diligence enquiries, security audits, contractual disputes, or any later question about authorship and methodology.
 
 ---
 
-## 2. The Four-Part Test
+## 2. Four Lenses for Project Evidence
 
-HMRC requires that qualifying R&D activities satisfy all four parts of the following test. Every R&D project must document how its activities meet each criterion.
+Every non-trivial project should be documented through four complementary lenses. The structure mirrors classical R&D analysis frameworks but is applied here as professional discipline, not as a claim under any specific tax or grant scheme.
 
-### 2.1 Advance in Science or Technology
+### 2.1 The Advance
 
-The project must seek to achieve an advance in overall knowledge or capability in a field of science or technology. This is not limited to groundbreaking research; it includes:
-
-- Creating new processes, systems, or services
-- Appreciably improving existing ones beyond what is readily available
-- Developing novel combinations of existing technologies to solve a problem that has not been solved in this way before
+What new capability, process, or system was created — measured against what existed before.
 
 **What to document:**
 
-- The baseline — what existed before the project began and what was achievable using publicly available knowledge
-- The intended advance — what new capability, process, or system the project seeks to create
+- The baseline — what existed before the project began and what was achievable using publicly available knowledge or tooling
+- The intended advance — what new capability, process, or system the project sought to create
 - The outcome — what was actually achieved and how it differs from the baseline
 
-### 2.2 Scientific or Technological Uncertainty
+### 2.2 The Uncertainty
 
-The project must encounter uncertainty that a competent professional in the field could not readily resolve by applying existing knowledge or following established practice.
+The places where a competent professional could not readily resolve the problem by applying existing knowledge or following established practice.
 
 Uncertainty arises when:
 
@@ -62,11 +57,11 @@ Uncertainty arises when:
 - What approaches were tried, what was learned, and what was ultimately adopted or abandoned
 - Residual uncertainties that remain unresolved
 
-### 2.3 Systematic Investigation
+### 2.3 The Method
 
-The work must be conducted systematically. This means planned, structured activity with clear objectives — not trial and error without direction.
+That the work was conducted systematically — planned, structured activity with clear objectives — rather than trial-and-error without direction.
 
-AI-assisted development is inherently systematic when conducted under the Loman Cavendish Limited Guidelines:
+AI-assisted development is inherently systematic when conducted under the accompanying Guidelines:
 
 - Sessions begin with a stated objective
 - Plans are proposed and approved before implementation
@@ -81,9 +76,9 @@ AI-assisted development is inherently systematic when conducted under the Loman 
 - How the approach was adjusted based on findings
 - The relationship between sessions — how each session built on what was learned previously
 
-### 2.4 Competent Professional
+### 2.4 The Author
 
-The work must be directed by a professional with relevant qualifications, experience, or expertise in the field.
+That the work was directed by a professional with relevant qualifications, experience, or expertise in the field.
 
 **What to document:**
 
@@ -102,7 +97,6 @@ Every captured session must contain the following elements, either in the frontm
 ```yaml
 ---
 project: <project name>
-client: <client name, if applicable>
 contributor: <developer name>
 date: <YYYY-MM-DD>
 time: <HH:MM:SS>
@@ -114,7 +108,7 @@ type: development_session
 
 ### 3.2 Session Content
 
-The transcript itself provides the evidence. No additional annotation is required during the session. However, developers should be aware that the following elements strengthen an R&D claim when they appear naturally in the conversation:
+The transcript itself provides the evidence. No additional annotation is required during the session. However, developers should be aware that the following elements strengthen the evidentiary value of a session when they appear naturally in the conversation:
 
 - **Problem statement** — what the developer asked the AI to help with
 - **Uncertainty markers** — moments where the developer or AI identified that the solution was not obvious ("I'm not sure whether...", "Let's try this approach first...", "That didn't work because...")
@@ -124,28 +118,27 @@ The transcript itself provides the evidence. No additional annotation is require
 
 ### 3.3 Post-Session Annotation (Optional)
 
-For sessions that involve significant R&D activity, the contributor may add a brief annotation to the session file after it is captured:
+For sessions that resolve significant uncertainty or develop novel work, the contributor may add a brief annotation to the session file after capture:
 
 ```yaml
-r_and_d_project: <R&D project reference>
 objective: <what the session set out to achieve>
-uncertainties_encountered: <technological uncertainties met>
+uncertainties_encountered: <technical uncertainties met>
 advances_made: <what new knowledge or capability resulted>
 review_status: draft
 ```
 
-This annotation is optional but valuable. It makes the R&D relevance of the session explicit for auditors who may not have the technical context to extract it from the transcript alone.
+This annotation is optional but valuable. It makes the significance of the session explicit for reviewers who may not have the technical context to extract it from the transcript alone.
 
 ---
 
 ## 4. Project-Level Documentation
 
-Each R&D project (which may span multiple software projects and many sessions) requires a project-level narrative. This is typically written at the end of a claim period but should be informed by contemporaneous session records.
+Each substantive investigation (which may span multiple software projects and many sessions) deserves a project-level narrative. This is typically written periodically as the work progresses and is informed by contemporaneous session records.
 
-### 4.1 R&D Project Narrative Structure
+### 4.1 Project Narrative Structure
 
 ```markdown
-# R&D Project: <title>
+# Project: <title>
 
 ## 1. Objectives
 What the project sought to achieve and why it constitutes an advance.
@@ -154,7 +147,7 @@ What the project sought to achieve and why it constitutes an advance.
 What was achievable before the project began, using publicly available
 knowledge and existing tools.
 
-## 3. Technological Uncertainties
+## 3. Technical Uncertainties
 Specific uncertainties that could not be resolved by a competent
 professional without systematic investigation.
 
@@ -167,49 +160,49 @@ What was achieved, what was learned, and how it differs from the baseline.
 
 ## 6. Residual Uncertainties
 Uncertainties that remain unresolved and may form the basis of
-continuing R&D in subsequent periods.
+continuing investigation.
 
 ## 7. Contributors
 Names, roles, and relevant experience of the competent professionals
 who directed the work.
 
 ## 8. Session Index
-List of session transcripts related to this R&D project, with dates
+List of session transcripts related to this project, with dates
 and brief descriptions.
 ```
 
 ### 4.2 Maintaining the Narrative
 
-The R&D narrative should be updated periodically throughout the claim period, not written from scratch at the end. Monthly or quarterly updates are recommended. Session transcripts provide the raw material; the narrative provides the interpretation.
+The narrative should be updated periodically throughout the project, not written from scratch at the end. Monthly or quarterly updates are recommended. Session transcripts provide the raw material; the narrative provides the interpretation.
 
 ---
 
 ## 5. Contemporaneous Records
 
-HMRC places significant weight on records created at the time the work was performed, as opposed to records reconstructed retrospectively.
+Records created at the time the work was performed carry significantly more weight than records reconstructed retrospectively — for IP defence, audit, due diligence, or any future enquiry.
 
-AI-assisted development sessions are captured automatically and timestamped at the point of creation. This makes them inherently contemporaneous. They cannot be fabricated or backdated because:
+AI-assisted development sessions are captured automatically and timestamped at the point of creation. This makes them inherently contemporaneous. They cannot easily be fabricated or backdated because:
 
 - Session IDs are generated by the AI tool
 - Timestamps are system-generated
 - Transcript content reflects the actual conversation, including mistakes, dead ends, and course corrections
 
-This is a significant advantage over traditional R&D record-keeping, where developers are often asked to recall what they did months after the fact.
+This is a significant advantage over traditional record-keeping, where developers are often asked to recall what they did months after the fact.
 
 ---
 
-## 6. AI Tool Evidence and the Four-Part Test
+## 6. How Session Evidence Maps to the Four Lenses
 
-AI-assisted development sessions provide unusually strong evidence for each part of the four-part test:
+AI-assisted development sessions provide unusually strong evidence for each lens described in Section 2:
 
-| Test | How Session Transcripts Provide Evidence |
+| Lens | How Session Transcripts Provide Evidence |
 |------|------------------------------------------|
 | **Advance** | The developer states what they are trying to achieve. The final state of the code demonstrates the advance. |
 | **Uncertainty** | The transcript captures moments of uncertainty, failed approaches, and iterative problem-solving in real time. |
-| **Systematic** | The propose-then-implement pattern, structured task lists, and commit discipline demonstrate systematic methodology. |
-| **Competent professional** | The developer's direction of the AI — choosing approaches, rejecting output, making architectural decisions — demonstrates professional competence. |
+| **Method** | The propose-then-implement pattern, structured task lists, and commit discipline demonstrate systematic methodology. |
+| **Author** | The developer's direction of the AI — choosing approaches, rejecting output, making architectural decisions — evidences professional competence. |
 
-The key insight is that the developer's role in an AI-assisted session is precisely the role HMRC expects of a competent professional: directing a systematic investigation, evaluating results, and making informed decisions.
+The key insight is that the developer's role in an AI-assisted session is exactly the role any later reviewer expects of a competent professional: directing a systematic investigation, evaluating results, and making informed decisions.
 
 ---
 
@@ -217,8 +210,8 @@ The key insight is that the developer's role in an AI-assisted session is precis
 
 | Record Type | Minimum Retention | Basis |
 |-------------|-------------------|-------|
-| Session transcripts | 7 years from creation | HMRC enquiry window (6 years) plus 1-year margin |
-| R&D project narratives | 7 years from the end of the claim period | As above |
+| Session transcripts | 7 years from creation | Defends IP provenance and methodology over a typical product lifecycle; provides margin for any later enquiry |
+| Project narratives | 7 years from project end | As above |
 | Project scaffold files (CLAUDE.md, RESTART.md, etc.) | Retained in version control indefinitely | Part of the project record |
 | Commit history | Retained in version control indefinitely | Part of the project record |
 
@@ -236,24 +229,24 @@ evidence-repo/
       2026-03-17-160445.md
       ...
   narratives/
-    <r-and-d-project-reference>.md
+    <project-reference>.md
     ...
 ```
 
 ### 8.2 File Naming
 
 - Session files: `YYYY-MM-DD-HHMMSS.md` (generated automatically by the capture tool)
-- Narrative files: `<r-and-d-project-reference>.md` (e.g. `GC-RD-2026-001.md`)
+- Narrative files: `<project-reference>.md`
 
 ### 8.3 Evidence Repository
 
 The evidence repository is a separate git repository from the project source code. This separation:
 
 - Prevents development conversations from being mixed with production code
-- Allows independent access control (auditors can access evidence without accessing source)
+- Allows independent access control (reviewers can access evidence without accessing source)
 - Enables a retention policy independent of the project's lifecycle
-- Keeps session transcripts out of client-deliverable repositories
+- Keeps session transcripts out of any deliverable repository
 
 ---
 
-*Loman Cavendish Limited — Evidence standards for R&D tax credit claims and professional development practice.*
+*Andrew (Andi) MCBURNIE — Evidence standards for professional AI-assisted development.*

@@ -1197,7 +1197,7 @@ sudo systemctl restart cloudflared
 
 **Previously completed (sessions 57-59):**
 - WS4 GDPR compliance — Privacy Policy, Terms of Service, data export, account deletion, retention cleanup (27 tests)
-- Ownership rebranding — Gibbs Consulting → Loman Cavendish Limited
+- Corporate-attribution headers in `ai-coder-framework/` were touched in earlier sessions; that work was based on a misattribution and is being fully removed in session 62 (CRANIS2 is and has always been Andi's personal project, see [evidence/README.md](evidence/README.md))
 - Bitbucket integration (#60) — 6th repo provider
 - Verified emails across welcome site flows — 90-day TTL, cross-flow recognition
 - Beck map navigation guidance (#64), login/signup cleanup (#62)
@@ -1682,7 +1682,7 @@ Massive session — completed 3 full workstreams of the launch readiness plan (8
   - Docker Compose orphan cleanup — `test-stack.sh stop` now runs `docker compose rm -f`
   - Audit log help guide — new ch7_11_audit_log.html (6 stations)
   - Dev routes confirmed already removed
-- **Ownership rebranding** — all "Gibbs Consulting" references replaced with "Loman Cavendish Limited"
+- **Corporate-attribution rebranding work** — touched headers in `ai-coder-framework/` based on a misattribution; the resulting headers are themselves being fully removed in session 62
 - 7 of 13 launch blockers resolved. Remaining 6 are infrastructure/config (user-side).
 
 **Session 58 (2026-03-21):**

@@ -12,7 +12,7 @@
 
 **Document Version:** 1.1
 **Last Updated:** 2026-03-07
-**Author:** Andi McBurnie, Loman Cavendish Ltd
+**Author:** Andrew (Andi) MCBURNIE
 **CRA Reference:** Annex VII Par. 2(a) – Design & Development Process
 
 ---

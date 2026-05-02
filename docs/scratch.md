@@ -97,7 +97,7 @@ Two commercial models to explore post-launch:
 - Considerations: deployment packaging (Docker, Kubernetes), configuration management, update delivery, data isolation guarantees
 
 ### Managed Service Hosting
-- CRANIS2 hosted and operated by Loman Cavendish on behalf of the customer
+- CRANIS2 hosted and operated by the platform owner on behalf of the customer
 - Dedicated instance per customer (not multi-tenant shared infrastructure)
 - Full data sovereignty — customer chooses hosting region (EU, UK, etc.)
 - Includes backup management, patching, monitoring, and 24/7 availability

@@ -8,17 +8,17 @@
   andi@mcburnie.com
 -->
 
-# Loman Cavendish Limited — Session Record Template
+# Session Record Template
 
 **Document type:** Template
-**Owner:** Loman Cavendish Limited
-**Version:** 1.0
+**Owner:** Andrew (Andi) MCBURNIE
+**Version:** 1.1
 
 ---
 
 ## Purpose
 
-This template defines the structure for captured AI-assisted development sessions. The session capture tool generates files in this format automatically. The frontmatter fields support R&D tax credit claims, IP evidence, and audit requirements.
+This template defines the structure for captured AI-assisted development sessions. The session capture tool generates files in this format automatically. The frontmatter fields support IP provenance, audit, and knowledge-transfer requirements.
 
 ---
 
@@ -27,7 +27,6 @@ This template defines the structure for captured AI-assisted development session
 ```markdown
 ---
 project: <project-name>
-client: <client-name or "internal">
 contributor: <developer-name>
 date: <YYYY-MM-DD>
 time: <HH:MM:SS>
@@ -39,7 +38,6 @@ type: development_session
 # Development Session — <date> <time>
 
 **Project:** <project-name>
-**Client:** <client-name or Internal>
 **Contributor:** <developer-name>
 **Date:** <date> <time>
 **Session ID:** <session-id>
@@ -51,15 +49,14 @@ type: development_session
 
 ---
 
-## Optional R&D Annotation
+## Optional Annotation
 
-For sessions that involve R&D activity, the contributor may add the following fields to the frontmatter after the session is captured. This is optional but recommended for sessions that form part of an R&D claim.
+For sessions that resolve significant technical uncertainty, develop novel solutions, or otherwise warrant a permanent record beyond the raw transcript, the contributor may add the following fields to the frontmatter after capture. This is optional but recommended for sessions whose value is not obvious from the transcript alone.
 
 ```yaml
-r_and_d_project: <R&D project reference, e.g. GC-RD-2026-001>
 objective: <what the session set out to achieve>
 uncertainties_encountered: |
-  <technological uncertainties met during the session,
+  <technical uncertainties met during the session,
   written as specific statements, not generalities>
 advances_made: |
   <what new knowledge or capability resulted,
@@ -76,22 +73,20 @@ reviewed_date: <YYYY-MM-DD, if reviewed>
 | Field | Required | Description |
 |-------|----------|-------------|
 | `project` | Yes | The software project name (directory name by default) |
-| `client` | No | Client name if this is client work; "internal" otherwise |
 | `contributor` | Yes | Full name of the developer who conducted the session |
 | `date` | Yes | Session date in ISO format |
 | `time` | Yes | Session start time |
 | `session_id` | Yes | Unique identifier assigned by the AI tool |
 | `tool` | Yes | AI tool used (e.g. Claude Code, GitHub Copilot) |
 | `type` | Yes | Always `development_session` |
-| `r_and_d_project` | No | Reference to the R&D project this session supports |
 | `objective` | No | Brief statement of what the session aimed to achieve |
-| `uncertainties_encountered` | No | Specific technological uncertainties met |
+| `uncertainties_encountered` | No | Specific technical uncertainties met |
 | `advances_made` | No | New knowledge or capabilities resulting from the session |
-| `review_status` | No | Whether the R&D annotation has been reviewed |
+| `review_status` | No | Whether the annotation has been reviewed |
 
 ---
 
-## Guidance for R&D Annotations
+## Guidance for Annotations
 
 ### Writing Uncertainty Statements
 
@@ -111,15 +106,15 @@ Weak:
 
 ### When to Annotate
 
-Not every session requires R&D annotation. Annotate sessions where:
+Not every session requires annotation. Annotate sessions where:
 
-- You encountered genuine technological uncertainty
+- You encountered genuine technical uncertainty
 - You tried an approach that failed and learned from it
 - You developed a novel solution to a technical problem
-- You achieved something that was not readily achievable using existing knowledge
+- You achieved something that was not readily achievable using existing knowledge or tooling
 
-Routine development (bug fixes, UI adjustments, configuration changes) does not typically qualify as R&D and does not need annotation.
+Routine development (small bug fixes, UI adjustments, configuration changes, mechanical refactors) does not typically warrant annotation.
 
 ---
 
-*Loman Cavendish Limited — Template for AI-assisted development session records.*
+*Andrew (Andi) MCBURNIE — Template for AI-assisted development session records.*

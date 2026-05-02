@@ -8,20 +8,20 @@
   andi@mcburnie.com
 -->
 
-# Loman Cavendish Limited — Project Scaffold
+# Project Scaffold
 
 **Document type:** Standard
-**Owner:** Loman Cavendish Limited
-**Version:** 1.0
-**Last reviewed:** March 2026
+**Owner:** Andrew (Andi) MCBURNIE
+**Version:** 1.1
+**Last reviewed:** May 2026
 
 ---
 
 ## 1. Purpose
 
-Every software project initiated by Loman Cavendish Limited includes a standard set of files that enable AI-assisted development, session capture, and R&D evidence collection from day one. This document defines those files, explains their purpose, and provides starter templates.
+Every software project initiated under this framework includes a standard set of files that enable AI-assisted development and session capture from day one. This document defines those files, explains their purpose, and provides starter templates.
 
-These files are not bureaucratic overhead. They are working documents that the AI reads at the start of each session. They eliminate the "catch-up" problem where context is lost between sessions, reduce onboarding time for new team members, and produce the evidence trail required for R&D tax credit claims.
+These files are not bureaucratic overhead. They are working documents that the AI reads at the start of each session. They eliminate the "catch-up" problem where context is lost between sessions, reduce onboarding time for any future contributor, and produce a defensible evidence trail of what was built, when, and by whom.
 
 ---
 
@@ -67,7 +67,7 @@ The AI reads this file at the start of every session. It defines how the AI shou
 - Architectural decisions (those go in `RESTART.md`)
 - Task lists (those go in `BACKLOG.md`)
 - User preferences or feedback (those go in `MEMORY.md`)
-- General Loman Cavendish Limited policies (those are in the framework documents)
+- General framework policies (those live in the other framework documents)
 
 ### Anti-Patterns
 
@@ -348,4 +348,4 @@ When starting a new project:
 
 ---
 
-*Loman Cavendish Limited — Standard project file structure for AI-assisted development.*
+*Andrew (Andi) MCBURNIE — Standard project file structure for AI-assisted development.*
