@@ -1,3 +1,13 @@
+/*
+ * Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+ *
+ * This file is part of CRANIS2 — a personally-owned, personally-funded
+ * software product. Unauthorised copying, modification, distribution,
+ * or commercial use is prohibited. For licence enquiries:
+ * andi.mcburnie@gmail.com
+ */
+
 import pool from '../db/pool.js';
 import neo4j from 'neo4j-driver';
 import crypto from 'crypto';

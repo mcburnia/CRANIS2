@@ -1,3 +1,13 @@
+/*
+ * Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+ *
+ * This file is part of CRANIS2 — a personally-owned, personally-funded
+ * software product. Unauthorised copying, modification, distribution,
+ * or commercial use is prohibited. For licence enquiries:
+ * andi.mcburnie@gmail.com
+ */
+
 // language-plugins.ts
 // Plugin system for detecting programming languages and extracting import/dependency information for SBOM generation.
 // No external dependencies – all detection and parsing uses regex/string matching.

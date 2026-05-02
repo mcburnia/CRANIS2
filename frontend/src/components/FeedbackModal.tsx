@@ -1,3 +1,13 @@
+/*
+ * Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+ *
+ * This file is part of CRANIS2 — a personally-owned, personally-funded
+ * software product. Unauthorised copying, modification, distribution,
+ * or commercial use is prohibited. For licence enquiries:
+ * andi.mcburnie@gmail.com
+ */
+
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Send, MessageSquare, Bug, Lightbulb, Loader2, CheckCircle2 } from 'lucide-react';

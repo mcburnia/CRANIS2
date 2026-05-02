@@ -1,3 +1,13 @@
+/*
+ * Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+ *
+ * This file is part of CRANIS2 — a personally-owned, personally-funded
+ * software product. Unauthorised copying, modification, distribution,
+ * or commercial use is prohibited. For licence enquiries:
+ * andi.mcburnie@gmail.com
+ */
+
 .aretention-page { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
 .aretention-loading {
   display: flex; align-items: center; justify-content: center; gap: 0.75rem;

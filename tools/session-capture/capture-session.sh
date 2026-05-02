@@ -1,4 +1,12 @@
 #!/bin/bash
+# Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+#
+# This file is part of CRANIS2 — a personally-owned, personally-funded
+# software product. Unauthorised copying, modification, distribution,
+# or commercial use is prohibited. For licence enquiries:
+# andi.mcburnie@gmail.com
+
 #
 # CRANIS2 Session Capture — captures Claude Code conversation to evidence repo
 #

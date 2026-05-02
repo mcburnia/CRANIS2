@@ -1,3 +1,13 @@
+<!--
+  Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+  SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+
+  This file is part of CRANIS2 — a personally-owned, personally-funded
+  software product. Unauthorised copying, modification, distribution,
+  or commercial use is prohibited. For licence enquiries:
+  andi.mcburnie@gmail.com
+-->
+
 # CLAUDE.md — CRANIS2 Project Instructions
 
 Read this file at the start of every session. It defines how to work with this project and the user's operating preferences.

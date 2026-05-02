@@ -18,7 +18,6 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "neo4j-driver": "^6.0.1",
-
     "pg": "^8.13.0",
     "pkijs": "^3.3.3",
     "pvutils": "^1.1.5",
@@ -39,7 +38,6 @@
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.0.0",
-
     "@types/pg": "^8.11.0",
     "@types/semver": "^7.7.1",
     "@types/spdx-expression-parse": "^3.0.5",
@@ -57,5 +55,8 @@
     "brace-expansion": "^5.0.5",
     "postcss": "^8.5.10",
     "flatted": "^3.4.2"
-  }
+  },
+  "license": "LicenseRef-Cranis2-Proprietary",
+  "author": "Andrew (Andi) MCBURNIE <andi.mcburnie@gmail.com>",
+  "private": true
 }

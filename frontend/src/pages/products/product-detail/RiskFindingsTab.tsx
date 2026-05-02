@@ -1,3 +1,13 @@
+/*
+ * Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+ *
+ * This file is part of CRANIS2 — a personally-owned, personally-funded
+ * software product. Unauthorised copying, modification, distribution,
+ * or commercial use is prohibited. For licence enquiries:
+ * andi.mcburnie@gmail.com
+ */
+
 import { useState, useEffect } from 'react';
 import {
   Shield, AlertTriangle, CheckCircle2, ChevronRight, ChevronDown, Loader2, Download, X, RefreshCw, Info, Sparkles, Copy, Check, ListChecks,

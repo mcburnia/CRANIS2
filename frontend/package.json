@@ -44,5 +44,7 @@
     "brace-expansion": "^5.0.5",
     "postcss": "^8.5.10",
     "flatted": "^3.4.2"
-  }
+  },
+  "license": "LicenseRef-Cranis2-Proprietary",
+  "author": "Andrew (Andi) MCBURNIE <andi.mcburnie@gmail.com>"
 }

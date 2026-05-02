@@ -1,3 +1,13 @@
+<!--
+  Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+  SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+
+  This file is part of CRANIS2 — a personally-owned, personally-funded
+  software product. Unauthorised copying, modification, distribution,
+  or commercial use is prohibited. For licence enquiries:
+  andi.mcburnie@gmail.com
+-->
+
 # CRANIS2 — Comprehensive Test Review
 
 **Date:** 2026-03-14 (updated after P0–P5 completion)

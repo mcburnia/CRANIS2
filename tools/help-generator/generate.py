@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+# Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+#
+# This file is part of CRANIS2 — a personally-owned, personally-funded
+# software product. Unauthorised copying, modification, distribution,
+# or commercial use is prohibited. For licence enquiries:
+# andi.mcburnie@gmail.com
+
 """
 Generate all 19 additional CRANIS2 help pages.
 Each page has a Beck map SVG and interactive station instructions.

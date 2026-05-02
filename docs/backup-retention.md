@@ -1,3 +1,13 @@
+<!--
+  Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+  SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+
+  This file is part of CRANIS2 — a personally-owned, personally-funded
+  software product. Unauthorised copying, modification, distribution,
+  or commercial use is prohibited. For licence enquiries:
+  andi.mcburnie@gmail.com
+-->
+
 # CRANIS2 — Backup Retention & Recovery
 
 This document describes the production backup architecture, retention scheme, encryption, and recovery procedures. **Treat it as part of the operational runbook.** It must be kept current — if any script, key location, or schedule changes, update this file in the same commit.

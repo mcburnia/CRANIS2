@@ -1,3 +1,13 @@
+<!--
+  Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+  SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+
+  This file is part of CRANIS2 — a personally-owned, personally-funded
+  software product. Unauthorised copying, modification, distribution,
+  or commercial use is prohibited. For licence enquiries:
+  andi.mcburnie@gmail.com
+-->
+
 # CRANIS2 — Operations & Succession Documentation
 
 This directory is the operator handbook for CRANIS2. It is the document set someone needs in order to keep the platform running, look after customers, and protect the business — particularly if the founder is unavailable.

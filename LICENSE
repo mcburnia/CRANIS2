@@ -1,0 +1,47 @@
+SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+
+CRANIS2 PROPRIETARY LICENCE
+
+Copyright © 2026 Andrew (Andi) MCBURNIE. All rights reserved.
+
+CRANIS2 is a personally-owned, personally-funded software product.
+The source code, configuration, documentation, design assets, and all
+other content in this repository (collectively, "the Software") are
+the exclusive intellectual property of Andrew (Andi) MCBURNIE.
+
+PERMITTED USE
+You may view this code only if you have been granted access for a
+specific reference, audit, or evaluation purpose. No other rights
+are granted.
+
+PROHIBITED WITHOUT WRITTEN PERMISSION
+The following are prohibited without prior written permission from
+Andrew (Andi) MCBURNIE:
+
+  - Copying, reproducing, or storing the Software in any form
+  - Modifying the Software or creating derivative works
+  - Distributing, sublicensing, selling, leasing, or otherwise
+    transferring the Software, in whole or in part
+  - Using the Software in any commercial context
+  - Using the Software to provide a hosted or managed service
+  - Reverse engineering, decompiling, or extracting source code
+    from compiled or minified artefacts
+  - Removing, altering, or obscuring this licence notice or any
+    copyright header in any file
+
+NO WARRANTY
+The Software is provided "as is", without warranty of any kind,
+express or implied, including but not limited to the warranties of
+merchantability, fitness for a particular purpose, and
+non-infringement. In no event shall Andrew (Andi) MCBURNIE be
+liable for any claim, damages, or other liability arising from,
+out of, or in connection with the Software or its use.
+
+LICENCE ENQUIRIES
+For commercial licensing, source-code access, or any other licence
+enquiries, contact: andi.mcburnie@gmail.com
+
+GOVERNING LAW
+This licence is governed by the laws of England and Wales. Any
+dispute arising under it is subject to the exclusive jurisdiction
+of the courts of England and Wales.

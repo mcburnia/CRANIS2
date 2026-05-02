@@ -8,5 +8,8 @@
   "dependencies": {
     "express": "^5.1.0",
     "pg": "^8.13.0"
-  }
+  },
+  "license": "LicenseRef-Cranis2-Proprietary",
+  "author": "Andrew (Andi) MCBURNIE <andi.mcburnie@gmail.com>",
+  "private": true
 }

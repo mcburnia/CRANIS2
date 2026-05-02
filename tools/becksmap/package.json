@@ -9,6 +9,7 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "MIT",
-  "author": "Andi McBurnie"
+  "license": "LicenseRef-Cranis2-Proprietary",
+  "author": "Andrew (Andi) MCBURNIE <andi.mcburnie@gmail.com>",
+  "private": true
 }

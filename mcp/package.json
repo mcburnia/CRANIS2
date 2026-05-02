@@ -1,7 +1,7 @@
 {
   "name": "@cranis2/mcp-server",
   "version": "1.0.0",
-  "description": "CRANIS2 MCP server — CRA compliance tools for IDE AI assistants",
+  "description": "CRANIS2 MCP server \u2014 CRA compliance tools for IDE AI assistants",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -26,5 +26,8 @@
   "overrides": {
     "hono": "^4.12.14",
     "@hono/node-server": "^1.19.13"
-  }
+  },
+  "license": "LicenseRef-Cranis2-Proprietary",
+  "author": "Andrew (Andi) MCBURNIE <andi.mcburnie@gmail.com>",
+  "private": true
 }
