@@ -209,12 +209,12 @@ test.describe('Compliance Reports @acceptance', () => {
       await page.waitForLoadState('networkidle');
 
       await page.getByRole('button', { name: /Generate Report/i }).click();
-      await page.waitForTimeout(3000);
 
-      // Summary row should show severity labels
-      const body = await page.textContent('body');
-      expect(body).toContain('Critical');
-      expect(body).toContain('High');
+      // Wait for the summary row to appear — auto-retries until visible or 15s.
+      // The previous fixed waitForTimeout(3000) was flaky when the API took
+      // longer than 3s in a busy run.
+      await expect(page.locator('body')).toContainText('Critical', { timeout: 15000 });
+      await expect(page.locator('body')).toContainText('High', { timeout: 15000 });
     });
 
     test('product selector appears after first generate', async ({ page }) => {

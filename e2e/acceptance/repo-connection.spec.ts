@@ -202,7 +202,7 @@ test.describe('Repository Connection @acceptance', () => {
     await expect(page.getByRole('button', { name: /Connect Self-Hosted Provider/i })).toBeVisible();
   });
 
-  test('API returns 5 supported providers', async () => {
+  test('API returns 6 supported providers', async () => {
     const response = await fetch(`${BASE_URL}/api/repo/providers`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -211,21 +211,22 @@ test.describe('Repository Connection @acceptance', () => {
     const providers = await response.json();
     expect(Array.isArray(providers)).toBe(true);
 
-    // Should have 5 providers: github, codeberg, gitea, forgejo, gitlab
+    // Should have 6 providers: github, codeberg, gitea, forgejo, gitlab, bitbucket
     const providerIds = providers.map((p: any) => p.id);
     expect(providerIds).toContain('github');
     expect(providerIds).toContain('codeberg');
     expect(providerIds).toContain('gitea');
     expect(providerIds).toContain('forgejo');
     expect(providerIds).toContain('gitlab');
-    expect(providers.length).toBe(5);
+    expect(providerIds).toContain('bitbucket');
+    expect(providers.length).toBe(6);
 
-    // Verify self-hosted flags
+    // Verify self-hosted flags — gitea, forgejo, gitlab are self-hosted; github, codeberg, bitbucket are not
     const selfHosted = providers.filter((p: any) => p.selfHosted);
-    expect(selfHosted.length).toBe(3); // gitea, forgejo, gitlab
+    expect(selfHosted.length).toBe(3);
 
     const oauthProviders = providers.filter((p: any) => p.oauthSupported);
-    expect(oauthProviders.length).toBeGreaterThanOrEqual(2); // at least github, codeberg
+    expect(oauthProviders.length).toBeGreaterThanOrEqual(3); // at least github, codeberg, bitbucket
   });
 
   test('filter bar displays provider options', async ({ page }) => {

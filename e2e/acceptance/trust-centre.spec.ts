@@ -28,10 +28,41 @@ test.describe('Trust Centre Settings @acceptance', () => {
   // Store original profile values for cleanup
   let originalTagline: string | null = null;
   let originalDescription: string | null = null;
+  let originalPlan: string | null = null;
   let token: string;
+  let platformAdminToken: string;
+
+  // Trust Centre profile editing requires the Pro plan. The seeded
+  // Manufacturer-Active org runs on `standard` so we need a platform-admin
+  // to upgrade it for the duration of this suite, then restore in afterAll.
+  const MFG_ACTIVE_ORG_ID = 'a0000001-0000-0000-0000-000000000001';
 
   test.beforeAll(async () => {
     token = await apiLogin(TEST_USERS.mfgAdmin, TEST_PASSWORD);
+    platformAdminToken = await apiLogin(TEST_USERS.platformAdmin, TEST_PASSWORD);
+
+    // Capture the org's current plan so we can restore it later, then
+    // upgrade to Pro for the duration of the suite.
+    const orgsResp = await fetch(`${BASE_URL}/api/admin/orgs`, {
+      headers: { Authorization: `Bearer ${platformAdminToken}` },
+    });
+    if (orgsResp.ok) {
+      const orgs = await orgsResp.json();
+      const list = Array.isArray(orgs) ? orgs : (orgs.orgs ?? []);
+      const ours = list.find((o: any) => o.id === MFG_ACTIVE_ORG_ID);
+      originalPlan = ours?.plan ?? 'standard';
+    } else {
+      originalPlan = 'standard';
+    }
+
+    await fetch(`${BASE_URL}/api/admin/orgs/${MFG_ACTIVE_ORG_ID}/plan`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${platformAdminToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ plan: 'pro' }),
+    });
 
     // Save original profile values for cleanup
     const profile = await apiGet('/api/trust-centre/profile', token);
@@ -49,6 +80,22 @@ test.describe('Trust Centre Settings @acceptance', () => {
         });
       } catch {
         // Best effort cleanup — don't fail tests if revert doesn't work
+      }
+    }
+
+    // Restore the org's original billing plan
+    if (platformAdminToken && originalPlan) {
+      try {
+        await fetch(`${BASE_URL}/api/admin/orgs/${MFG_ACTIVE_ORG_ID}/plan`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${platformAdminToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ plan: originalPlan }),
+        });
+      } catch {
+        // Best effort
       }
     }
   });
