@@ -45,7 +45,9 @@
  */
 
 import pool from '../db/pool.js';
+import { createHash } from 'crypto';
 import { createNotification } from './notifications.js';
+import { requestTimestamp, getTsaUrl } from './rfc3161.js';
 
 // --- Policy ---
 
@@ -203,11 +205,181 @@ export function buildNotificationBody(
   return parts.join(' ');
 }
 
+// --- Awareness evidence (P10b-2) ---
+
+/**
+ * Canonical evidence document hashed and submitted to the RFC 3161 TSA.
+ * The schema_version field guards against future breaking changes — a
+ * verifier reading a legacy attestation can still decode it correctly.
+ *
+ * Field selection rationale: every field that materially defines the
+ * regulatory situation at the awareness moment must be in the document,
+ * so a future audit can reconstruct exactly what CRANIS2 told the
+ * manufacturer about. The TSA-signed hash binds the entire snapshot to
+ * a verifiable wall-clock moment.
+ */
+export interface AwarenessEvidence {
+  schema_version: '1';
+  awareness_at: string; // ISO 8601 UTC
+  org_id: string;
+  product_id: string;
+  finding: {
+    id: string;
+    source: string;
+    source_id: string;
+    severity: string;
+    cvss_score: number | null;
+    dependency_purl: string;
+    kev_listed: boolean;
+    kev_due_date: string | null;
+    kev_known_ransomware: boolean;
+    epss_score: number | null;
+    epss_percentile: number | null;
+  };
+  trigger_reason: TriggerReason;
+}
+
+/**
+ * Stable JSON serialisation: keys sorted at every nesting level, no
+ * incidental whitespace. This guarantees the SHA-256 hash is a function
+ * of the *content* and not of insertion order or formatting choices.
+ */
+export function canonicalJson(value: unknown): string {
+  function sortKeys(v: unknown): unknown {
+    if (v === null || typeof v !== 'object' || v instanceof Date) return v;
+    if (Array.isArray(v)) return v.map(sortKeys);
+    const o = v as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(o).sort()) out[k] = sortKeys(o[k]);
+    return out;
+  }
+  return JSON.stringify(sortKeys(value));
+}
+
+export interface EvidenceFinding {
+  id: string;
+  source: string;
+  sourceId: string;
+  severity: string;
+  cvssScore: number | null;
+  dependencyPurl: string;
+  kevListed: boolean;
+  kevDueDate: string | null;
+  kevKnownRansomware: boolean;
+  epssScore: number | null;
+  epssPercentile: number | null;
+}
+
+/**
+ * Build the canonical awareness-evidence document. Pure function — every
+ * input is captured explicitly, no NOW()-style implicit time, no DB
+ * lookups. Same inputs → byte-identical output → same SHA-256.
+ */
+export function buildAwarenessEvidence(params: {
+  awarenessAt: Date;
+  orgId: string;
+  productId: string;
+  finding: EvidenceFinding;
+  reason: TriggerReason;
+}): AwarenessEvidence {
+  const { awarenessAt, orgId, productId, finding, reason } = params;
+  return {
+    schema_version: '1',
+    awareness_at: awarenessAt.toISOString(),
+    org_id: orgId,
+    product_id: productId,
+    finding: {
+      id: finding.id,
+      source: finding.source,
+      source_id: finding.sourceId,
+      severity: finding.severity,
+      cvss_score: finding.cvssScore,
+      dependency_purl: finding.dependencyPurl,
+      kev_listed: finding.kevListed,
+      kev_due_date: finding.kevDueDate,
+      kev_known_ransomware: finding.kevKnownRansomware,
+      epss_score: finding.epssScore,
+      epss_percentile: finding.epssPercentile,
+    },
+    trigger_reason: reason,
+  };
+}
+
+export function hashAwarenessEvidence(evidence: AwarenessEvidence): string {
+  return createHash('sha256').update(canonicalJson(evidence), 'utf8').digest('hex');
+}
+
+/**
+ * Submit the awareness-evidence hash to the configured RFC 3161 TSA and
+ * persist the returned token onto the report row. Non-blocking: a TSA
+ * failure logs and returns false — the report still exists with its
+ * evidence document and hash, and the next engine pass's backfill loop
+ * will retry.
+ */
+async function stampAwarenessAttestation(reportId: string, evidenceHash: string): Promise<boolean> {
+  try {
+    const tsaUrl = getTsaUrl();
+    const token = await requestTimestamp(evidenceHash, tsaUrl);
+    await pool.query(
+      `UPDATE cra_reports
+       SET awareness_tsa_token = $1::bytea,
+           awareness_tsa_url = $2,
+           awareness_attested_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $3`,
+      [token, tsaUrl, reportId]
+    );
+    console.log(
+      '[CRA-TRIGGER] TSA attestation completed for report ' + reportId.slice(0, 8) +
+      ' (' + token.length + ' bytes from ' + tsaUrl + ')'
+    );
+    return true;
+  } catch (err: any) {
+    console.error(
+      '[CRA-TRIGGER] TSA attestation failed (non-blocking) for report ' + reportId + ': ' +
+      (err?.message || err)
+    );
+    return false;
+  }
+}
+
+/**
+ * Retry RFC 3161 stamping for any auto-triggered report that has an
+ * evidence hash but no token yet. Bounded by the LIMIT so a long-running
+ * outage doesn't make a single engine pass try to stamp thousands of
+ * reports at once.
+ */
+async function backfillMissingAttestations(): Promise<{ stamped: number; failures: number }> {
+  const pending = await pool.query(
+    `SELECT id, awareness_evidence_hash
+     FROM cra_reports
+     WHERE auto_triggered = TRUE
+       AND awareness_evidence_hash IS NOT NULL
+       AND awareness_tsa_token IS NULL
+     ORDER BY created_at ASC
+     LIMIT 50`
+  );
+
+  let stamped = 0;
+  let failures = 0;
+  for (const row of pending.rows) {
+    const ok = await stampAwarenessAttestation(row.id, row.awareness_evidence_hash);
+    if (ok) stamped++;
+    else failures++;
+  }
+  if (pending.rows.length > 0) {
+    console.log('[CRA-TRIGGER] Backfill: ' + stamped + ' stamped, ' + failures + ' still pending');
+  }
+  return { stamped, failures };
+}
+
 // --- Engine entry point ---
 
 export interface TriggerRunResult {
   created: number;
   alerted: number;
+  attestationsStamped: number;
+  attestationsPending: number;
   errors: string[];
 }
 
@@ -221,7 +393,7 @@ export async function runCraTriggerEngine(): Promise<TriggerRunResult> {
   const policy = await loadTriggerPolicy();
   if (!policy.enabled) {
     console.log('[CRA-TRIGGER] Engine disabled via platform_settings; skipping');
-    return { created: 0, alerted: 0, errors: [] };
+    return { created: 0, alerted: 0, attestationsStamped: 0, attestationsPending: 0, errors: [] };
   }
 
   console.log(
@@ -232,10 +404,11 @@ export async function runCraTriggerEngine(): Promise<TriggerRunResult> {
   // Find open / acknowledged actively-exploited findings without an existing
   // auto-triggered report. Resolved / dismissed findings are excluded — the
   // manufacturer has already taken a decision on those, so re-triggering
-  // would be noise.
+  // would be noise. Includes source + dependency_purl so the awareness-
+  // evidence document is complete (P10b-2).
   const candidates = await pool.query(
     `SELECT vf.id AS finding_id, vf.org_id, vf.product_id, vf.severity, vf.cvss_score,
-            vf.source_id, vf.title,
+            vf.source, vf.source_id, vf.title, vf.dependency_purl,
             vf.kev_listed, vf.kev_due_date, vf.kev_known_ransomware,
             vf.epss_score, vf.epss_percentile
      FROM vulnerability_findings vf
@@ -249,10 +422,11 @@ export async function runCraTriggerEngine(): Promise<TriggerRunResult> {
 
   let created = 0;
   let alerted = 0;
+  let attestationsStamped = 0;
   const errors: string[] = [];
 
   for (const row of candidates.rows) {
-    const finding: CandidateFinding = {
+    const finding: CandidateFinding & { source: string; dependencyPurl: string } = {
       findingId: row.finding_id,
       orgId: row.org_id,
       productId: row.product_id,
@@ -260,6 +434,8 @@ export async function runCraTriggerEngine(): Promise<TriggerRunResult> {
       cvssScore: row.cvss_score !== null && row.cvss_score !== undefined ? parseFloat(row.cvss_score) : null,
       sourceId: row.source_id,
       title: row.title,
+      source: row.source ?? '',
+      dependencyPurl: row.dependency_purl ?? '',
       kevListed: row.kev_listed === true,
       kevDueDate: row.kev_due_date instanceof Date
         ? row.kev_due_date.toISOString().slice(0, 10)
@@ -274,13 +450,23 @@ export async function runCraTriggerEngine(): Promise<TriggerRunResult> {
 
     try {
       let reportId: string | null = null;
+      let evidenceHash: string | null = null;
       if (reason.action === 'trigger') {
-        reportId = await createTriggerReport(finding, reason);
-        if (reportId) created++;
+        const result = await createTriggerReport(finding, reason);
+        reportId = result.reportId;
+        evidenceHash = result.evidenceHash;
+        if (reportId && result.created) created++;
       } else {
         alerted++;
       }
       await sendTriggerNotification(finding, reason, reportId);
+
+      // Best-effort RFC 3161 attestation. Failure is non-blocking — the
+      // backfill loop on the next engine pass retries.
+      if (reportId && evidenceHash) {
+        const ok = await stampAwarenessAttestation(reportId, evidenceHash);
+        if (ok) attestationsStamped++;
+      }
     } catch (err: any) {
       const message = err?.message || String(err);
       errors.push(finding.findingId + ': ' + message);
@@ -288,17 +474,35 @@ export async function runCraTriggerEngine(): Promise<TriggerRunResult> {
     }
   }
 
+  // Retry stamping for any earlier reports whose TSA round-trip failed.
+  const backfill = await backfillMissingAttestations();
+  attestationsStamped += backfill.stamped;
+
   console.log(
     '[CRA-TRIGGER] Complete: ' + created + ' reports created, ' +
-    alerted + ' alerts only, ' + errors.length + ' errors'
+    alerted + ' alerts only, ' + attestationsStamped + ' attestations stamped, ' +
+    backfill.failures + ' attestations still pending, ' + errors.length + ' errors'
   );
-  return { created, alerted, errors };
+  return {
+    created,
+    alerted,
+    attestationsStamped,
+    attestationsPending: backfill.failures,
+    errors,
+  };
+}
+
+interface CreateTriggerReportResult {
+  reportId: string | null;
+  evidenceHash: string | null;
+  /** True if this call inserted a fresh row; false if a concurrent run had already inserted. */
+  created: boolean;
 }
 
 async function createTriggerReport(
-  finding: CandidateFinding,
+  finding: CandidateFinding & { source: string; dependencyPurl: string },
   reason: TriggerReason,
-): Promise<string | null> {
+): Promise<CreateTriggerReportResult> {
   const awarenessAt = new Date();
   const deadlines = calculateAwarenessDeadlines(awarenessAt);
 
@@ -309,33 +513,67 @@ async function createTriggerReport(
   );
   const csirtCountry = orgBilling.rows[0]?.csirt_country ?? null;
 
+  // Build the canonical awareness-evidence document and its hash. The hash
+  // is what gets RFC 3161-stamped (asynchronously); the document is stored
+  // alongside so a verifier can later recompute the hash and check the
+  // TSA token's content reference.
+  const evidence = buildAwarenessEvidence({
+    awarenessAt,
+    orgId: finding.orgId,
+    productId: finding.productId,
+    finding: {
+      id: finding.findingId,
+      source: finding.source,
+      sourceId: finding.sourceId,
+      severity: finding.severity,
+      cvssScore: finding.cvssScore,
+      dependencyPurl: finding.dependencyPurl,
+      kevListed: finding.kevListed,
+      kevDueDate: finding.kevDueDate,
+      kevKnownRansomware: finding.kevKnownRansomware,
+      epssScore: finding.epssScore,
+      epssPercentile: finding.epssPercentile,
+    },
+    reason,
+  });
+  const evidenceHash = hashAwarenessEvidence(evidence);
+
   const result = await pool.query(
     `INSERT INTO cra_reports (
        org_id, product_id, report_type, status, awareness_at,
        early_warning_deadline, notification_deadline, final_report_deadline,
        csirt_country, linked_finding_id, sensitivity_tlp, created_by,
-       actively_exploited, auto_triggered, trigger_reason
-     ) VALUES ($1, $2, 'vulnerability', 'draft', $3, $4, $5, $6, $7, $8, 'AMBER', NULL, TRUE, TRUE, $9::jsonb)
+       actively_exploited, auto_triggered, trigger_reason,
+       awareness_evidence_json, awareness_evidence_hash
+     ) VALUES ($1, $2, 'vulnerability', 'draft', $3, $4, $5, $6, $7, $8, 'AMBER', NULL, TRUE, TRUE, $9::jsonb, $10::jsonb, $11)
      ON CONFLICT (linked_finding_id) WHERE auto_triggered = TRUE AND linked_finding_id IS NOT NULL DO NOTHING
      RETURNING id`,
     [
       finding.orgId, finding.productId, awarenessAt,
       deadlines.earlyWarning, deadlines.notification, deadlines.finalReport,
       csirtCountry, finding.findingId, JSON.stringify(reason),
+      JSON.stringify(evidence), evidenceHash,
     ]
   );
 
   if (result.rows.length === 0) {
-    // Concurrent run already inserted the report — fetch the existing id so
-    // the notification can still link to it.
+    // Concurrent run already inserted the report — fetch the existing id +
+    // hash so the notification can still link to it and the caller can
+    // skip its own stamping (the concurrent run is responsible for that).
     const existing = await pool.query(
-      'SELECT id FROM cra_reports WHERE linked_finding_id = $1 AND auto_triggered = TRUE LIMIT 1',
+      `SELECT id, awareness_evidence_hash FROM cra_reports
+       WHERE linked_finding_id = $1 AND auto_triggered = TRUE LIMIT 1`,
       [finding.findingId]
     );
-    return existing.rows[0]?.id ?? null;
+    const row = existing.rows[0];
+    return {
+      reportId: row?.id ?? null,
+      evidenceHash: row?.awareness_evidence_hash ?? null,
+      created: false,
+    };
   }
 
-  return result.rows[0].id;
+  return { reportId: result.rows[0].id, evidenceHash, created: true };
 }
 
 async function sendTriggerNotification(

@@ -30,8 +30,11 @@ import {
   buildTriggerReason,
   calculateAwarenessDeadlines,
   buildNotificationBody,
+  buildAwarenessEvidence,
+  hashAwarenessEvidence,
+  canonicalJson,
 } from '../../src/services/cra-trigger-engine.js';
-import type { CraTriggerPolicy, TriggerReason } from '../../src/services/cra-trigger-engine.js';
+import type { CraTriggerPolicy, TriggerReason, EvidenceFinding } from '../../src/services/cra-trigger-engine.js';
 
 describe('parseTriggerPolicy', () => {
   it('returns sensible defaults for an empty settings object', () => {
@@ -243,5 +246,131 @@ describe('buildNotificationBody', () => {
     expect(triggeredBody).toContain('clock has started');
     expect(alertBody).toContain('Awareness recorded');
     expect(alertBody).not.toContain('auto-created');
+  });
+});
+
+describe('canonicalJson (P10b-2)', () => {
+  it('produces identical output for objects with different key insertion orders', () => {
+    const a = { z: 1, a: { y: 2, x: 3 } };
+    const b = { a: { x: 3, y: 2 }, z: 1 };
+    expect(canonicalJson(a)).toBe(canonicalJson(b));
+  });
+
+  it('preserves array order (only object keys are sorted)', () => {
+    expect(canonicalJson({ list: [3, 1, 2] })).toBe('{"list":[3,1,2]}');
+  });
+
+  it('handles null / number / string / boolean primitives', () => {
+    expect(canonicalJson(null)).toBe('null');
+    expect(canonicalJson(42)).toBe('42');
+    expect(canonicalJson('hello')).toBe('"hello"');
+    expect(canonicalJson(true)).toBe('true');
+  });
+
+  it('emits compact JSON (no whitespace between tokens)', () => {
+    expect(canonicalJson({ a: 1, b: 2 })).toBe('{"a":1,"b":2}');
+  });
+});
+
+describe('buildAwarenessEvidence + hashAwarenessEvidence (P10b-2)', () => {
+  const baseFinding: EvidenceFinding = {
+    id: 'f-1',
+    source: 'nvd',
+    sourceId: 'CVE-2021-44228',
+    severity: 'critical',
+    cvssScore: 10.0,
+    dependencyPurl: 'pkg:maven/log4j-core@2.14.0',
+    kevListed: true,
+    kevDueDate: '2021-12-24',
+    kevKnownRansomware: true,
+    epssScore: 0.9753,
+    epssPercentile: 0.9999,
+  };
+  const baseReason: TriggerReason = {
+    source: 'kev',
+    action: 'trigger',
+    kev: { dueDate: '2021-12-24', knownRansomware: true },
+  };
+  const awarenessAt = new Date('2026-05-06T10:00:00.000Z');
+
+  it('produces a complete document with all evidence fields', () => {
+    const ev = buildAwarenessEvidence({
+      awarenessAt,
+      orgId: 'org-1',
+      productId: 'prod-1',
+      finding: baseFinding,
+      reason: baseReason,
+    });
+    expect(ev.schema_version).toBe('1');
+    expect(ev.awareness_at).toBe('2026-05-06T10:00:00.000Z');
+    expect(ev.org_id).toBe('org-1');
+    expect(ev.product_id).toBe('prod-1');
+    expect(ev.finding.id).toBe('f-1');
+    expect(ev.finding.source_id).toBe('CVE-2021-44228');
+    expect(ev.finding.kev_listed).toBe(true);
+    expect(ev.finding.epss_score).toBe(0.9753);
+    expect(ev.trigger_reason.source).toBe('kev');
+  });
+
+  it('produces a deterministic hash — same inputs → same hash', () => {
+    const ev1 = buildAwarenessEvidence({ awarenessAt, orgId: 'o', productId: 'p', finding: baseFinding, reason: baseReason });
+    const ev2 = buildAwarenessEvidence({ awarenessAt, orgId: 'o', productId: 'p', finding: baseFinding, reason: baseReason });
+    expect(hashAwarenessEvidence(ev1)).toBe(hashAwarenessEvidence(ev2));
+    expect(hashAwarenessEvidence(ev1)).toMatch(/^[0-9a-f]{64}$/); // SHA-256 hex
+  });
+
+  it('produces a different hash when the awareness moment changes', () => {
+    const ev1 = buildAwarenessEvidence({ awarenessAt, orgId: 'o', productId: 'p', finding: baseFinding, reason: baseReason });
+    const ev2 = buildAwarenessEvidence({
+      awarenessAt: new Date('2026-05-06T10:00:01.000Z'),
+      orgId: 'o', productId: 'p', finding: baseFinding, reason: baseReason,
+    });
+    expect(hashAwarenessEvidence(ev1)).not.toBe(hashAwarenessEvidence(ev2));
+  });
+
+  it('produces a different hash when the finding state changes (CVSS bumped)', () => {
+    const ev1 = buildAwarenessEvidence({ awarenessAt, orgId: 'o', productId: 'p', finding: baseFinding, reason: baseReason });
+    const ev2 = buildAwarenessEvidence({
+      awarenessAt, orgId: 'o', productId: 'p',
+      finding: { ...baseFinding, cvssScore: 9.5 },
+      reason: baseReason,
+    });
+    expect(hashAwarenessEvidence(ev1)).not.toBe(hashAwarenessEvidence(ev2));
+  });
+
+  it('produces a different hash when the trigger reason changes (KEV → EPSS)', () => {
+    const ev1 = buildAwarenessEvidence({ awarenessAt, orgId: 'o', productId: 'p', finding: baseFinding, reason: baseReason });
+    const epssReason: TriggerReason = {
+      source: 'epss',
+      action: 'trigger',
+      epss: { score: 0.97, percentile: 0.99, threshold: 0.95 },
+    };
+    const ev2 = buildAwarenessEvidence({ awarenessAt, orgId: 'o', productId: 'p', finding: baseFinding, reason: epssReason });
+    expect(hashAwarenessEvidence(ev1)).not.toBe(hashAwarenessEvidence(ev2));
+  });
+
+  it('produces the SAME hash regardless of finding-field iteration order in source data', () => {
+    // Even if upstream code constructs the finding object with keys in a
+    // different order, the canonicalisation guarantees a stable hash.
+    const findingForward: EvidenceFinding = {
+      id: 'f', source: 'nvd', sourceId: 'CVE-X', severity: 'high',
+      cvssScore: 8.0, dependencyPurl: 'p', kevListed: false, kevDueDate: null,
+      kevKnownRansomware: false, epssScore: 0.96, epssPercentile: 0.99,
+    };
+    // Same logical content, different literal order
+    const findingReverse = {
+      epssPercentile: 0.99, epssScore: 0.96, kevKnownRansomware: false,
+      kevDueDate: null, kevListed: false, dependencyPurl: 'p', cvssScore: 8.0,
+      severity: 'high', sourceId: 'CVE-X', source: 'nvd', id: 'f',
+    } as EvidenceFinding;
+
+    const reason: TriggerReason = {
+      source: 'epss',
+      action: 'trigger',
+      epss: { score: 0.96, percentile: 0.99, threshold: 0.95 },
+    };
+    const ev1 = buildAwarenessEvidence({ awarenessAt, orgId: 'o', productId: 'p', finding: findingForward, reason });
+    const ev2 = buildAwarenessEvidence({ awarenessAt, orgId: 'o', productId: 'p', finding: findingReverse, reason });
+    expect(hashAwarenessEvidence(ev1)).toBe(hashAwarenessEvidence(ev2));
   });
 });

@@ -634,6 +634,27 @@ export async function initDb() {
     // last line of defence under concurrent runs).
     await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_cra_reports_auto_finding ON cra_reports(linked_finding_id) WHERE auto_triggered = TRUE AND linked_finding_id IS NOT NULL`);
 
+    // P10b-2 — RFC3161 awareness-attestation columns. The trigger engine
+    // builds a canonical JSON evidence document at the moment of awareness,
+    // SHA-256 hashes it, and submits the hash to a Time Stamping Authority
+    // for an RFC 3161 signed timestamp token. The token, the canonical JSON,
+    // and the hash together form a tamper-evident record that the
+    // manufacturer "became aware" at a verifiable moment in time — which
+    // is the regulatory pivot point for the CRA Art. 14 24-hour clock.
+    //
+    // awareness_attested_at is NULL until the TSA round-trip succeeds. If
+    // the TSA is unreachable at trigger time, the report still exists with
+    // its evidence document and hash; a backfill pass on the next engine
+    // run retries the stamping.
+    await client.query(`ALTER TABLE cra_reports ADD COLUMN IF NOT EXISTS awareness_evidence_json JSONB`);
+    await client.query(`ALTER TABLE cra_reports ADD COLUMN IF NOT EXISTS awareness_evidence_hash VARCHAR(64)`);
+    await client.query(`ALTER TABLE cra_reports ADD COLUMN IF NOT EXISTS awareness_tsa_token BYTEA`);
+    await client.query(`ALTER TABLE cra_reports ADD COLUMN IF NOT EXISTS awareness_tsa_url TEXT`);
+    await client.query(`ALTER TABLE cra_reports ADD COLUMN IF NOT EXISTS awareness_attested_at TIMESTAMPTZ`);
+    // Partial index over auto-triggered reports that still need attestation,
+    // so the backfill loop's SELECT is cheap even with thousands of reports.
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_awareness_pending ON cra_reports(id) WHERE auto_triggered = TRUE AND awareness_evidence_hash IS NOT NULL AND awareness_tsa_token IS NULL`);
+
     // CRA Article 14 – report stage submissions
     await client.query(`
       CREATE TABLE IF NOT EXISTS cra_report_stages (
