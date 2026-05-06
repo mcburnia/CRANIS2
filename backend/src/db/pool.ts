@@ -513,6 +513,48 @@ export async function initDb() {
       );
     `);
 
+    // P10a — Threat-intel enrichment: CISA Known Exploited Vulnerabilities
+    // Source: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+    // Refreshed daily by services/threat-intel.ts via scheduler.ts
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS vuln_db_kev (
+        cve_id VARCHAR(30) PRIMARY KEY,
+        vendor_project TEXT,
+        product TEXT,
+        vulnerability_name TEXT,
+        date_added DATE,
+        short_description TEXT,
+        required_action TEXT,
+        due_date DATE,
+        known_ransomware_use BOOLEAN DEFAULT FALSE,
+        notes TEXT,
+        cwes JSONB DEFAULT '[]',
+        source_url TEXT,
+        sync_batch_id UUID,
+        ingested_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_kev_date_added ON vuln_db_kev(date_added DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_kev_due_date ON vuln_db_kev(due_date) WHERE due_date IS NOT NULL`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_kev_ransomware ON vuln_db_kev(known_ransomware_use) WHERE known_ransomware_use = TRUE`);
+
+    // P10a — Threat-intel enrichment: FIRST EPSS exploitation probability scores
+    // Source: https://epss.cyentia.com/epss_scores-current.csv.gz
+    // Refreshed daily by services/threat-intel.ts via scheduler.ts
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS vuln_db_epss (
+        cve_id VARCHAR(30) PRIMARY KEY,
+        score NUMERIC(5,4),
+        percentile NUMERIC(5,4),
+        model_version TEXT,
+        scored_at DATE,
+        sync_batch_id UUID,
+        ingested_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_epss_score ON vuln_db_epss(score DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_db_epss_percentile ON vuln_db_epss(percentile DESC)`);
+
 
     // User feedback & bug reports
     await client.query(`

@@ -14,6 +14,7 @@ import { decrypt } from '../utils/encryption.js';
 import { createNotification } from './notifications.js';
 import { runPlatformScan } from './vulnerability-scanner.js';
 import { syncVulnDatabases } from './vuln-db-sync.js';
+import { refreshThreatIntel } from './threat-intel.js';
 import {
   getRepo as githubGetRepo, getContributors as githubGetContributors,
   getLanguages as githubGetLanguages, getSBOM as githubGetSBOM,
@@ -66,6 +67,11 @@ const WEBHOOK_HEALTH_HOUR = 6;
 // Hour of the day to sync vulnerability databases (0-23, default: 1 AM – before SBOM sync)
 const VULN_DB_SYNC_HOUR = 1;
 
+// Hour of the day to refresh threat-intel feeds — CISA KEV + FIRST EPSS (0-23, default: 2 AM).
+// Runs after the CVE/advisory sync (hour 1) and before the platform scan (hour 3) so that
+// every scan's findings are enriched with the freshest KEV/EPSS data.
+const THREAT_INTEL_HOUR = 2;
+
 // Hour of the day to check for approaching end-of-support dates (0-23, default: 7 AM)
 const SUPPORT_CHECK_HOUR = 7;
 
@@ -88,6 +94,7 @@ const TRUST_EVAL_HOUR = 6;
 let lastSyncDate = '';
 let lastVulnScanDate = '';
 let lastVulnDbSyncDate = '';
+let lastThreatIntelDate = '';
 let lastBillingCheckDate = '';
 let lastEscrowDepositDate = '';
 let lastWebhookHealthDate = '';
@@ -537,6 +544,24 @@ async function runDailyVulnDbSync(): Promise<void> {
     logger.info('[VULN-DB-SCHEDULER] Daily DB sync complete');
   } catch (err: any) {
     console.error('[VULN-DB-SCHEDULER] Daily DB sync failed:', err.message);
+  }
+}
+
+async function runDailyThreatIntelRefresh(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (lastThreatIntelDate === todayStr) return; // Already ran today
+
+  const now = new Date();
+  if (now.getHours() < THREAT_INTEL_HOUR) return; // Not yet time
+
+  lastThreatIntelDate = todayStr;
+  logger.info('[THREAT-INTEL-SCHEDULER] Starting daily threat-intel refresh (KEV + EPSS)...');
+
+  try {
+    await refreshThreatIntel();
+    logger.info('[THREAT-INTEL-SCHEDULER] Daily threat-intel refresh complete');
+  } catch (err: any) {
+    console.error('[THREAT-INTEL-SCHEDULER] Daily threat-intel refresh failed:', err.message);
   }
 }
 
@@ -1506,11 +1531,12 @@ async function runWeeklyTrustEvaluation() {
 }
 
 export function startScheduler(): void {
-  logger.info('[SCHEDULER] Started – checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00, scheduled snapshots at ' + SNAPSHOT_SCHEDULE_HOUR + ':00, retention expiry at ' + RETENTION_EXPIRY_HOUR + ':00, reserve sufficiency on 1st at ' + RESERVE_SUFFICIENCY_HOUR + ':00');
+  logger.info('[SCHEDULER] Started – checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, threat-intel refresh at ' + THREAT_INTEL_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00, scheduled snapshots at ' + SNAPSHOT_SCHEDULE_HOUR + ':00, retention expiry at ' + RETENTION_EXPIRY_HOUR + ':00, reserve sufficiency on 1st at ' + RESERVE_SUFFICIENCY_HOUR + ':00');
 
   // Run check periodically – all three have hour-gating and date-tracking
   setInterval(() => {
     runDailyVulnDbSync().catch(err => console.error('[SCHEDULER] Uncaught error in DB sync:', err));
+    runDailyThreatIntelRefresh().catch(err => console.error('[SCHEDULER] Uncaught error in threat-intel refresh:', err));
     runDailySync().catch(err => console.error('[SCHEDULER] Uncaught error in SBOM sync:', err));
     runDailyVulnScan().catch(err => console.error('[SCHEDULER] Uncaught error in vuln scan:', err));
     runDailyBillingChecks().catch(err => console.error('[SCHEDULER] Uncaught error in billing checks:', err));
