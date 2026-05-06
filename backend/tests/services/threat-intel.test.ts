@@ -34,6 +34,9 @@ import {
   parseKevEntry,
   parseEpssDataLine,
   extractEpssMetadata,
+  emptyEnrichment,
+  mapEnrichmentRow,
+  dedupeCveIds,
 } from '../../src/services/threat-intel.js';
 
 describe('isValidCveId', () => {
@@ -195,5 +198,129 @@ describe('extractEpssMetadata', () => {
   it('returns nulls for non-comment lines', () => {
     expect(extractEpssMetadata('CVE-2021-44228,0.97,0.99')).toEqual({ modelVersion: null, scoredAt: null });
     expect(extractEpssMetadata('')).toEqual({ modelVersion: null, scoredAt: null });
+  });
+});
+
+describe('emptyEnrichment', () => {
+  it('returns an inert default with all fields safely false / null', () => {
+    const e = emptyEnrichment();
+    expect(e).toEqual({
+      kevListed: false,
+      kevDueDate: null,
+      kevKnownRansomware: false,
+      epssScore: null,
+      epssPercentile: null,
+    });
+  });
+
+  it('returns a fresh object each call (no shared mutable state)', () => {
+    const a = emptyEnrichment();
+    const b = emptyEnrichment();
+    a.kevListed = true;
+    expect(b.kevListed).toBe(false); // mutating a must not leak into b
+  });
+});
+
+describe('mapEnrichmentRow', () => {
+  it('maps a fully-populated row (KEV + EPSS hits, dueDate as Date)', () => {
+    const result = mapEnrichmentRow({
+      kev_listed: true,
+      kev_due_date: new Date('2021-12-24T00:00:00Z'),
+      kev_known_ransomware: true,
+      epss_score: '0.9753', // pg returns NUMERIC as string
+      epss_percentile: '0.9999',
+    });
+    expect(result).toEqual({
+      kevListed: true,
+      kevDueDate: '2021-12-24',
+      kevKnownRansomware: true,
+      epssScore: 0.9753,
+      epssPercentile: 0.9999,
+    });
+  });
+
+  it('maps a row that hit only KEV (no EPSS data)', () => {
+    const result = mapEnrichmentRow({
+      kev_listed: true,
+      kev_due_date: new Date('2024-06-01T00:00:00Z'),
+      kev_known_ransomware: false,
+      epss_score: null,
+      epss_percentile: null,
+    });
+    expect(result.kevListed).toBe(true);
+    expect(result.kevDueDate).toBe('2024-06-01');
+    expect(result.epssScore).toBe(null);
+    expect(result.epssPercentile).toBe(null);
+  });
+
+  it('maps a row that hit only EPSS (no KEV listing)', () => {
+    const result = mapEnrichmentRow({
+      kev_listed: false,
+      kev_due_date: null,
+      kev_known_ransomware: false,
+      epss_score: '0.0123',
+      epss_percentile: '0.4567',
+    });
+    expect(result.kevListed).toBe(false);
+    expect(result.kevDueDate).toBe(null);
+    expect(result.kevKnownRansomware).toBe(false);
+    expect(result.epssScore).toBeCloseTo(0.0123);
+    expect(result.epssPercentile).toBeCloseTo(0.4567);
+  });
+
+  it('handles a row that missed both caches', () => {
+    const result = mapEnrichmentRow({
+      kev_listed: false,
+      kev_due_date: null,
+      kev_known_ransomware: false,
+      epss_score: null,
+      epss_percentile: null,
+    });
+    expect(result).toEqual(emptyEnrichment());
+  });
+
+  it('coerces non-boolean truthy values for safety (e.g. "t" string from raw drivers)', () => {
+    // mapEnrichmentRow only treats strict === true as KEV-listed; a string "t"
+    // or a 1 must NOT escalate to true, since the SQL query always returns a
+    // proper boolean. This keeps callers safe if a raw driver layer ever
+    // changes its boolean coercion.
+    expect(mapEnrichmentRow({ kev_listed: 't' as any, kev_due_date: null, kev_known_ransomware: 1 as any, epss_score: null, epss_percentile: null }).kevListed).toBe(false);
+    expect(mapEnrichmentRow({ kev_listed: 't' as any, kev_due_date: null, kev_known_ransomware: 1 as any, epss_score: null, epss_percentile: null }).kevKnownRansomware).toBe(false);
+  });
+
+  it('truncates string ISO dates to YYYY-MM-DD', () => {
+    const result = mapEnrichmentRow({
+      kev_listed: true,
+      kev_due_date: '2021-12-24T15:30:00Z',
+      kev_known_ransomware: false,
+      epss_score: null,
+      epss_percentile: null,
+    });
+    expect(result.kevDueDate).toBe('2021-12-24');
+  });
+});
+
+describe('dedupeCveIds', () => {
+  it('filters out non-CVE ids (GHSA, malformed) and dedupes', () => {
+    const input = [
+      'CVE-2021-44228',
+      'CVE-2021-44228', // duplicate — must dedupe
+      'GHSA-jfh8-c2jp-5v3q', // GHSA — must drop
+      'CVE-2024-1234567',
+      'not a real id', // malformed — must drop
+      '',
+    ];
+    const result = dedupeCveIds(input);
+    expect(result.sort()).toEqual(['CVE-2021-44228', 'CVE-2024-1234567']);
+  });
+
+  it('returns empty array for empty / nullish input', () => {
+    expect(dedupeCveIds([])).toEqual([]);
+    expect(dedupeCveIds(null as any)).toEqual([]);
+    expect(dedupeCveIds(undefined as any)).toEqual([]);
+  });
+
+  it('returns empty array when no input ids are valid CVEs', () => {
+    expect(dedupeCveIds(['GHSA-jfh8-c2jp-5v3q', 'GHSA-vwcq-pjj7-rhpv'])).toEqual([]);
   });
 });

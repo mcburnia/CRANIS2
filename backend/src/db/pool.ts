@@ -418,6 +418,18 @@ export async function initDb() {
     await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ`);
     await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS resolved_by VARCHAR(255)`);
 
+    // P10a-2 — Threat-intel enrichment columns on vulnerability_findings.
+    // Populated at scan time from vuln_db_kev / vuln_db_epss; null/false when the
+    // finding's source_id is not a CVE id (e.g. GHSA-only advisory) or when no
+    // entry exists in the enrichment caches.
+    await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS kev_listed BOOLEAN DEFAULT FALSE`);
+    await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS kev_due_date DATE`);
+    await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS kev_known_ransomware BOOLEAN DEFAULT FALSE`);
+    await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS epss_score NUMERIC(5,4)`);
+    await client.query(`ALTER TABLE vulnerability_findings ADD COLUMN IF NOT EXISTS epss_percentile NUMERIC(5,4)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_findings_kev_listed ON vulnerability_findings(kev_listed) WHERE kev_listed = TRUE`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_vuln_findings_epss_score ON vulnerability_findings(epss_score DESC NULLS LAST) WHERE epss_score IS NOT NULL`);
+
     // Local vulnerability database – OSV/GHSA advisories cache
     await client.query(`
       CREATE TABLE IF NOT EXISTS vuln_db_advisories (

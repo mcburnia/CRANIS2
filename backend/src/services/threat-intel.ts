@@ -436,6 +436,103 @@ export async function refreshThreatIntel(): Promise<void> {
   }
 }
 
+// --- Finding-level enrichment ---
+
+export interface FindingEnrichment {
+  kevListed: boolean;
+  kevDueDate: string | null;
+  kevKnownRansomware: boolean;
+  epssScore: number | null;
+  epssPercentile: number | null;
+}
+
+const EMPTY_ENRICHMENT: FindingEnrichment = {
+  kevListed: false,
+  kevDueDate: null,
+  kevKnownRansomware: false,
+  epssScore: null,
+  epssPercentile: null,
+};
+
+export function emptyEnrichment(): FindingEnrichment {
+  return { ...EMPTY_ENRICHMENT };
+}
+
+/**
+ * Pure row-mapper for the enrichment JOIN result. Extracted for unit testing.
+ * Postgres returns DATE as Date object, NUMERIC as string — both are normalised
+ * here.
+ */
+export function mapEnrichmentRow(row: {
+  kev_listed?: unknown;
+  kev_due_date?: unknown;
+  kev_known_ransomware?: unknown;
+  epss_score?: unknown;
+  epss_percentile?: unknown;
+}): FindingEnrichment {
+  const dueDateRaw = row.kev_due_date;
+  let kevDueDate: string | null = null;
+  if (dueDateRaw instanceof Date) {
+    kevDueDate = dueDateRaw.toISOString().slice(0, 10);
+  } else if (typeof dueDateRaw === 'string' && dueDateRaw.length > 0) {
+    kevDueDate = dueDateRaw.slice(0, 10);
+  }
+
+  const score = row.epss_score;
+  const percentile = row.epss_percentile;
+
+  return {
+    kevListed: row.kev_listed === true,
+    kevDueDate,
+    kevKnownRansomware: row.kev_known_ransomware === true,
+    epssScore: score !== null && score !== undefined ? parseFloat(String(score)) : null,
+    epssPercentile: percentile !== null && percentile !== undefined ? parseFloat(String(percentile)) : null,
+  };
+}
+
+/**
+ * Filter an arbitrary list of source ids down to the deduped set of valid
+ * CVE ids. GHSA-only advisories (no CVE alias) and malformed ids are dropped
+ * — KEV and EPSS are CVE-keyed so non-CVE ids could never match.
+ */
+export function dedupeCveIds(sourceIds: ReadonlyArray<string>): string[] {
+  if (!Array.isArray(sourceIds) || sourceIds.length === 0) return [];
+  return Array.from(new Set(sourceIds.filter(isValidCveId)));
+}
+
+/**
+ * Build a CVE → enrichment map for a batch of source ids. Source ids that
+ * are not valid CVE ids (e.g. GHSA-only advisories without a CVE alias) are
+ * silently dropped — the caller falls back to emptyEnrichment() for those.
+ *
+ * Single LEFT JOIN over both caches; one round-trip per scan regardless of
+ * how many findings need enriching.
+ */
+export async function enrichByCveIds(sourceIds: string[]): Promise<Map<string, FindingEnrichment>> {
+  const map = new Map<string, FindingEnrichment>();
+  const unique = dedupeCveIds(sourceIds);
+  if (unique.length === 0) return map;
+
+  const result = await pool.query(
+    `SELECT t.cve_id,
+            (k.cve_id IS NOT NULL) AS kev_listed,
+            k.due_date AS kev_due_date,
+            COALESCE(k.known_ransomware_use, FALSE) AS kev_known_ransomware,
+            e.score AS epss_score,
+            e.percentile AS epss_percentile
+     FROM unnest($1::text[]) AS t(cve_id)
+     LEFT JOIN vuln_db_kev k USING (cve_id)
+     LEFT JOIN vuln_db_epss e USING (cve_id)`,
+    [unique]
+  );
+
+  for (const row of result.rows) {
+    map.set(row.cve_id, mapEnrichmentRow(row));
+  }
+
+  return map;
+}
+
 // --- Admin stats ---
 
 export interface ThreatIntelStats {
