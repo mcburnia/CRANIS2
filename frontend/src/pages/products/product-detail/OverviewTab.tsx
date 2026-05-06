@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import OnboardingWizard from '../../../components/OnboardingWizard';
 import ConformityAssessmentCard from '../../../components/ConformityAssessmentCard';
+import RegulatoryStatePanel from '../../../components/RegulatoryStatePanel';
 import NbAssessmentCard from './NbAssessmentCard';
 import MsRegistrationCard from './MsRegistrationCard';
 import type {
@@ -97,6 +98,10 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
   }, [product.id, product.craCategory]);
   return (
     <div className="pd-overview-grid">
+      {/* P10c — CRA Art. 14 regulatory state. Renders only when there are
+          open Art. 14 reports for this product; renders nothing otherwise. */}
+      <RegulatoryStatePanel productId={product.id} />
+
       {/* GitHub Repo Card – only if synced */}
       {ghData.synced && ghData.repo && (
         <div className="pd-card pd-card-github">

@@ -14,6 +14,7 @@ import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { isActivelyExploited } from '../services/threat-intel.js';
+import { deriveReportState, summariseRegulatoryState, findSoonestReport } from '../services/regulatory-state.js';
 
 const router = Router();
 
@@ -329,6 +330,62 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Failed to create CRA report:', err);
     res.status(500).json({ error: 'Failed to create report' });
+  }
+});
+
+/* ── GET /api/cra-reports/regulatory-state/:productId — P10c ─────────────────
+ *
+ * Per-product CRA Art. 14 "regulatory state" snapshot. Consolidates every
+ * open report against the product into a single payload with deadline
+ * countdowns, overdue flags, and a soonest-deadline summary, so the UI
+ * can render a prominent "open obligations" panel without doing the
+ * countdown maths in JS.
+ */
+router.get('/regulatory-state/:productId', requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const productId = req.params.productId as string;
+
+  try {
+    const orgId = await getOrgId(userId);
+    if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+    // Verify product belongs to this org via Neo4j
+    const driver = getDriver();
+    const session = driver.session();
+    try {
+      const check = await session.run(
+        'MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product {id: $productId}) RETURN p.id',
+        { orgId, productId }
+      );
+      if (check.records.length === 0) {
+        res.status(404).json({ error: 'Product not found in your organisation' }); return;
+      }
+    } finally {
+      await session.close();
+    }
+
+    // Open reports = anything not yet closed or finalised
+    const reportsResult = await pool.query(
+      `SELECT id, report_type, status, awareness_at,
+              early_warning_deadline, notification_deadline, final_report_deadline,
+              actively_exploited, auto_triggered, linked_finding_id,
+              awareness_attested_at, created_at
+       FROM cra_reports
+       WHERE org_id = $1 AND product_id = $2
+         AND status NOT IN ('closed', 'final_report_sent')
+       ORDER BY awareness_at ASC NULLS LAST, created_at ASC`,
+      [orgId, productId]
+    );
+
+    const now = new Date();
+    const reports = reportsResult.rows.map((r: any) => deriveReportState(r, now));
+    const soonest = findSoonestReport(reports);
+    const summary = summariseRegulatoryState(reports);
+
+    res.json({ reports, soonest, summary });
+  } catch (err) {
+    console.error('Failed to fetch regulatory state:', err);
+    res.status(500).json({ error: 'Failed to fetch regulatory state' });
   }
 });
 
