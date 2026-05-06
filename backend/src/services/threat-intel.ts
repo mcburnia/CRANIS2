@@ -34,6 +34,9 @@ import { createInterface } from 'readline';
 // products. Imported lazily-shaped via a function reference so a future
 // circular import (engine importing from threat-intel) stays safe.
 import { runCraTriggerEngine } from './cra-trigger-engine.js';
+// Submission-attestation backfill (P10d) — retries any RFC 3161 stamping
+// that failed at the original submission moment (TSA outage etc.).
+import { backfillPendingSubmissionAttestations } from './submission-attestation.js';
 
 // --- Constants ---
 
@@ -429,6 +432,15 @@ export async function refreshThreatIntel(): Promise<void> {
     await runCraTriggerEngine();
   } catch (err: any) {
     errors.push('cra_trigger_engine: ' + (err?.message || err));
+  }
+
+  // P10d — Retry RFC 3161 stamping for any prior stage submission whose
+  // TSA round-trip failed at the original submission moment. Bounded by
+  // an internal LIMIT so a long TSA outage doesn't blow up the daily run.
+  try {
+    await backfillPendingSubmissionAttestations();
+  } catch (err: any) {
+    errors.push('submission_attestation_backfill: ' + (err?.message || err));
   }
 
   const durationSeconds = (Date.now() - startTime) / 1000;

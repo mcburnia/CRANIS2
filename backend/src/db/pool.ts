@@ -669,6 +669,27 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_stages_report ON cra_report_stages(report_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_stages_stage ON cra_report_stages(report_id, stage)`);
 
+    // P10d — Submission authorisation attestation. When a user submits a
+    // CRA Art. 14 stage to ENISA / the CSIRT via CRANIS2, the platform
+    // captures an explicit authorisation record (email + IP + user-agent
+    // at the moment of submission), builds a canonical JSON evidence
+    // document, SHA-256 hashes it, and submits the hash to a Time
+    // Stamping Authority for an RFC 3161 signed timestamp. Together
+    // these prove that a specific human user authorised the submission
+    // at a verifiable wall-clock moment — the outbound counterpart to
+    // P10b-2's awareness attestation.
+    await client.query(`ALTER TABLE cra_report_stages ADD COLUMN IF NOT EXISTS authorised_by_email VARCHAR(255)`);
+    await client.query(`ALTER TABLE cra_report_stages ADD COLUMN IF NOT EXISTS authorised_ip INET`);
+    await client.query(`ALTER TABLE cra_report_stages ADD COLUMN IF NOT EXISTS authorised_user_agent TEXT`);
+    await client.query(`ALTER TABLE cra_report_stages ADD COLUMN IF NOT EXISTS submission_evidence_json JSONB`);
+    await client.query(`ALTER TABLE cra_report_stages ADD COLUMN IF NOT EXISTS submission_evidence_hash VARCHAR(64)`);
+    await client.query(`ALTER TABLE cra_report_stages ADD COLUMN IF NOT EXISTS submission_tsa_token BYTEA`);
+    await client.query(`ALTER TABLE cra_report_stages ADD COLUMN IF NOT EXISTS submission_tsa_url TEXT`);
+    await client.query(`ALTER TABLE cra_report_stages ADD COLUMN IF NOT EXISTS submission_attested_at TIMESTAMPTZ`);
+    // Backfill loop's index — find stages that have an evidence hash but
+    // no TSA token yet (i.e. TSA was unreachable at submission time).
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_stages_attestation_pending ON cra_report_stages(id) WHERE submission_evidence_hash IS NOT NULL AND submission_tsa_token IS NULL`);
+
     // IP Proof – timestamped SBOM snapshots
     await client.query(`
       CREATE TABLE IF NOT EXISTS ip_proof_snapshots (

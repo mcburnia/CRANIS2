@@ -264,9 +264,40 @@ describe('/api/cra-reports', () => {
             summary: 'Critical vulnerability detected in lodash prototype pollution',
             member_states_detail: 'Affects EU-wide deployments',
           },
+          authorise: true, // P10d: explicit human-in-the-loop authorisation
         },
       });
       expect([200, 201]).toContain(res.status);
+      // P10d: response body now includes the attestation columns; the
+      // evidence hash should be a 64-char hex string.
+      expect(res.body.stage.submission_evidence_hash).toMatch(/^[0-9a-f]{64}$/);
+      expect(res.body.stage.authorised_by_email).toBeTruthy();
+    });
+
+    // P10d — explicit human-in-the-loop authorisation is required
+    it('should reject a regulatory-stage submission without authorise: true', async () => {
+      const createRes = await api.post('/api/cra-reports', {
+        auth: adminToken,
+        body: {
+          productId: TEST_IDS.products.gitlab,
+          reportType: 'vulnerability',
+          awarenessAt: new Date().toISOString(),
+          csirtCountry: 'DE',
+        },
+      });
+      expect(createRes.status).toBe(201);
+      const created = unwrapReport(createRes.body);
+
+      const res = await api.post(`/api/cra-reports/${created.id}/stages`, {
+        auth: adminToken,
+        body: {
+          stage: 'early_warning',
+          content: { summary: 'Test' },
+          // No `authorise: true` — must be rejected
+        },
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/authorisation/i);
     });
 
     it('should reject skipping stages (notification before early_warning)', async () => {
@@ -288,6 +319,8 @@ describe('/api/cra-reports', () => {
         body: {
           stage: 'notification',
           content: { vulnerability_details: 'Test' },
+          authorise: true, // pass the authorise gate so this test specifically
+                           // checks the stage-skip rejection, not the auth gate
         },
       });
       // Should reject — can't submit notification before early_warning

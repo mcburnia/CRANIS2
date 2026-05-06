@@ -15,6 +15,7 @@ import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { isActivelyExploited } from '../services/threat-intel.js';
 import { deriveReportState, summariseRegulatoryState, findSoonestReport } from '../services/regulatory-state.js';
+import { buildSubmissionEvidence, hashSubmissionEvidence, stampSubmissionAttestation } from '../services/submission-attestation.js';
 
 const router = Router();
 
@@ -503,6 +504,13 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
         submittedBy: s.submitted_by,
         submittedByEmail: s.submitted_by_email,
         submittedAt: s.submitted_at,
+        // P10d — submission authorisation attestation status. Frontend
+        // uses these to render the "TSA-attested" / "attestation pending"
+        // badge next to the submitted-on timestamp.
+        authorised_by_email: s.authorised_by_email ?? null,
+        submission_evidence_hash: s.submission_evidence_hash ?? null,
+        submission_attested_at: s.submission_attested_at ?? null,
+        submission_tsa_url: s.submission_tsa_url ?? null,
       })),
       linkedFinding,
     });
@@ -578,7 +586,14 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-/* ── POST /api/cra-reports/:id/stages – Submit a stage ───── */
+/* ── POST /api/cra-reports/:id/stages – Submit a stage ─────
+ *
+ * P10d: requires explicit `authorise: true` flag in the body and
+ * captures the user's session metadata + content as an
+ * RFC3161-attested authorisation record. Human-in-the-loop guarantee:
+ * the submission only proceeds when the client has explicitly
+ * authorised — there is no auto-submission path anywhere in CRANIS2.
+ */
 router.post('/:id/stages', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const email = (req as any).email;
@@ -588,13 +603,22 @@ router.post('/:id/stages', requireAuth, async (req: Request, res: Response) => {
     const orgId = await getOrgId(userId);
     if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
-    const { stage, content } = req.body;
+    const { stage, content, authorise } = req.body;
 
     if (!stage || !['early_warning', 'notification', 'final_report', 'intermediate'].includes(stage)) {
       res.status(400).json({ error: 'stage must be: early_warning, notification, final_report, or intermediate' }); return;
     }
     if (!content || typeof content !== 'object' || Array.isArray(content)) {
       res.status(400).json({ error: 'content must be a JSON object' }); return;
+    }
+    // P10d: explicit human authorisation required for terminal stages.
+    // Intermediate updates (status notes etc.) skip the gate so the form
+    // remains usable as a working draft area.
+    if (stage !== 'intermediate' && authorise !== true) {
+      res.status(400).json({
+        error: 'Submission requires explicit authorisation. Send `authorise: true` in the body to confirm regulatory submission.',
+      });
+      return;
     }
 
     const report = await pool.query(
@@ -622,10 +646,47 @@ router.post('/:id/stages', requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
+    const reqData = extractRequestData(req);
+    const ipForAttestation = reqData.ipAddress && reqData.ipAddress !== 'unknown' ? reqData.ipAddress : null;
+    const userAgentForAttestation = reqData.userAgent && reqData.userAgent !== 'unknown' ? reqData.userAgent : null;
+
+    // P10d: build the canonical authorisation-evidence document and hash
+    // it for the same-row attestation. Skip for intermediate stages —
+    // those are working-state updates, not regulatory submissions.
+    const isRegulatorySubmission = stage !== 'intermediate';
+    const submittedAt = new Date();
+    let evidenceJson: any = null;
+    let evidenceHash: string | null = null;
+    if (isRegulatorySubmission) {
+      const evidence = buildSubmissionEvidence({
+        submittedAt,
+        reportId,
+        stage,
+        content,
+        userId,
+        email,
+        ip: ipForAttestation,
+        userAgent: userAgentForAttestation,
+      });
+      evidenceJson = evidence;
+      evidenceHash = hashSubmissionEvidence(evidence);
+    }
+
     const stageResult = await pool.query(
-      `INSERT INTO cra_report_stages (report_id, stage, content, submitted_by)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [reportId, stage, JSON.stringify(content), userId]
+      `INSERT INTO cra_report_stages (
+         report_id, stage, content, submitted_by, submitted_at,
+         authorised_by_email, authorised_ip, authorised_user_agent,
+         submission_evidence_json, submission_evidence_hash
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10) RETURNING *`,
+      [
+        reportId, stage, JSON.stringify(content), userId, submittedAt,
+        isRegulatorySubmission ? email : null,
+        isRegulatorySubmission ? ipForAttestation : null,
+        isRegulatorySubmission ? userAgentForAttestation : null,
+        evidenceJson ? JSON.stringify(evidenceJson) : null,
+        evidenceHash,
+      ]
     );
 
     let newStatus = currentStatus;
@@ -640,13 +701,18 @@ router.post('/:id/stages', requireAuth, async (req: Request, res: Response) => {
       );
     }
 
-    const reqData = extractRequestData(req);
     await recordEvent({
       userId, email,
       eventType: 'cra_report_stage_submitted',
       ...reqData,
-      metadata: { reportId, stage, newStatus },
+      metadata: { reportId, stage, newStatus, authorised: isRegulatorySubmission },
     });
+
+    // Best-effort RFC 3161 attestation. Failure is non-blocking — a
+    // future backfill pass retries.
+    if (isRegulatorySubmission && evidenceHash) {
+      await stampSubmissionAttestation(stageResult.rows[0].id, evidenceHash);
+    }
 
     res.status(201).json({
       stage: stageResult.rows[0],

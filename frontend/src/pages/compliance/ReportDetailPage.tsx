@@ -27,6 +27,12 @@ interface Stage {
   submittedBy: string;
   submittedByEmail: string;
   submittedAt: string;
+  // P10d: submission authorisation attestation. submission_attested_at
+  // is non-null once the RFC 3161 TSA round-trip has completed.
+  authorised_by_email?: string | null;
+  submission_evidence_hash?: string | null;
+  submission_attested_at?: string | null;
+  submission_tsa_url?: string | null;
 }
 
 interface LinkedFinding {
@@ -225,22 +231,42 @@ export default function ReportDetailPage() {
   }
 
   async function handleSubmitStage(stage: StageKey) {
+    let content: Record<string, any> = {};
+
+    if (stage === 'early_warning') {
+      content = { ...earlyWarningForm };
+    } else if (stage === 'notification') {
+      content = { ...notificationForm };
+    } else if (stage === 'final_report') {
+      content = { ...finalForm };
+    }
+
+    // P10d — explicit human-in-the-loop authorisation. The window.confirm
+    // captures unambiguous user intent before the request hits the
+    // backend; the body's `authorise: true` flag passes that intent
+    // through to the route handler, which records it as an
+    // RFC3161-attested authorisation entry on cra_report_stages.
+    const stageLabel = stage === 'early_warning' ? 'Early Warning (24h)'
+      : stage === 'notification' ? 'Full Notification (72h)'
+      : 'Final Report';
+    const confirmed = window.confirm(
+      'You are about to submit the ' + stageLabel + ' stage as your ' +
+      'organisation’s authorised regulatory communication for this CRA Art. 14 report.\n\n' +
+      'CRANIS2 will record:\n' +
+      '  • The full submitted content\n' +
+      '  • Your email and session metadata\n' +
+      '  • An RFC 3161-signed timestamp from a Time Stamping Authority\n\n' +
+      'This creates a tamper-evident record that you authorised this submission. ' +
+      'Proceed?'
+    );
+    if (!confirmed) return;
+
     setSubmitting(true);
     try {
-      let content: Record<string, any> = {};
-
-      if (stage === 'early_warning') {
-        content = { ...earlyWarningForm };
-      } else if (stage === 'notification') {
-        content = { ...notificationForm };
-      } else if (stage === 'final_report') {
-        content = { ...finalForm };
-      }
-
       const res = await fetch(`/api/cra-reports/${id}/stages`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ stage, content }),
+        body: JSON.stringify({ stage, content, authorise: true }),
       });
 
       if (res.ok) {
@@ -448,6 +474,53 @@ export default function ReportDetailPage() {
                         <div className="rd-timeline-submitted">
                           <CheckCircle2 size={12} />
                           Submitted {formatDate(ts.stage.submittedAt)}
+                          {/* P10d — RFC 3161 attestation badge. Green when the
+                              TSA round-trip succeeded, amber when it's still
+                              pending (will be retried by the daily backfill). */}
+                          {ts.stage.submission_evidence_hash && (
+                            ts.stage.submission_attested_at ? (
+                              <span
+                                title={
+                                  'RFC 3161 timestamp attestation completed at ' +
+                                  formatDate(ts.stage.submission_attested_at) +
+                                  (ts.stage.submission_tsa_url ? ' via ' + ts.stage.submission_tsa_url : '') +
+                                  '. Hash: ' + (ts.stage.submission_evidence_hash || '').slice(0, 16) + '…'
+                                }
+                                style={{
+                                  marginLeft: '0.4rem',
+                                  fontSize: '0.6rem',
+                                  padding: '0.05rem 0.4rem',
+                                  borderRadius: '3px',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  background: 'rgba(34, 197, 94, 0.15)',
+                                  color: '#22c55e',
+                                  border: '1px solid rgba(34, 197, 94, 0.4)',
+                                  letterSpacing: '0.04em',
+                                }}
+                              >
+                                ✓ TSA-attested
+                              </span>
+                            ) : (
+                              <span
+                                title="Authorisation evidence recorded; RFC 3161 TSA round-trip pending — will retry on next daily backfill"
+                                style={{
+                                  marginLeft: '0.4rem',
+                                  fontSize: '0.6rem',
+                                  padding: '0.05rem 0.4rem',
+                                  borderRadius: '3px',
+                                  fontWeight: 600,
+                                  textTransform: 'uppercase',
+                                  background: 'rgba(245, 158, 11, 0.1)',
+                                  color: '#f59e0b',
+                                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                                  letterSpacing: '0.04em',
+                                }}
+                              >
+                                attestation pending
+                              </span>
+                            )
+                          )}
                           <button className="rd-view-btn" onClick={() => setActiveStage(activeStage === ts.key ? null : ts.key)}>
                             {activeStage === ts.key ? 'Hide' : 'View'}
                           </button>

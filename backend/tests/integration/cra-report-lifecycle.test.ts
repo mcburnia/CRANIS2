@@ -85,6 +85,7 @@ describe('Integration: CRA Report Full Lifecycle', () => {
           affected_versions: '>=4.0.0 <4.17.21',
           member_states_detail: 'Affects EU-wide deployments in Germany and France',
         },
+        authorise: true, // P10d
       },
     });
     expect([200, 201]).toContain(res.status);
@@ -138,6 +139,7 @@ describe('Integration: CRA Report Full Lifecycle', () => {
           corrective_measures: 'Updated to lodash@4.17.21',
           impact_assessment: 'High — allows RCE in certain configurations',
         },
+        authorise: true, // P10d
       },
     });
     expect([200, 201]).toContain(res.status);
@@ -231,6 +233,7 @@ describe('Integration: CRA Incident Report Lifecycle', () => {
       body: {
         stage: 'early_warning',
         content: { summary: 'Security incident — unauthorized access detected' },
+        authorise: true, // P10d
       },
     });
     expect([200, 201]).toContain(ewRes.status);
@@ -241,6 +244,7 @@ describe('Integration: CRA Incident Report Lifecycle', () => {
       body: {
         stage: 'notification',
         content: { vulnerability_details: 'Unauthorized access via exposed API key' },
+        authorise: true, // P10d
       },
     });
     expect([200, 201]).toContain(notifRes.status);
