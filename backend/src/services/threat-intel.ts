@@ -533,6 +533,118 @@ export async function enrichByCveIds(sourceIds: string[]): Promise<Map<string, F
   return map;
 }
 
+// --- Prioritisation policy ---
+
+export type Severity = 'critical' | 'high' | 'medium' | 'low';
+
+const SEVERITY_RANK: Record<string, number> = {
+  low: 1,
+  medium: 2,
+  high: 3,
+  critical: 4,
+};
+
+function rankToSeverity(rank: number): Severity {
+  if (rank >= 4) return 'critical';
+  if (rank >= 3) return 'high';
+  if (rank >= 2) return 'medium';
+  return 'low';
+}
+
+export interface ThreatIntelPolicy {
+  /** EPSS at or above this score bumps severity one tier (default 0.9). */
+  epssBumpThreshold: number;
+  /** EPSS strictly below this AND CVSS < 4.0 caps severity at low (default 0.01). */
+  epssDeprioritiseThreshold: number;
+}
+
+export const DEFAULT_THREAT_INTEL_POLICY: ThreatIntelPolicy = {
+  epssBumpThreshold: 0.9,
+  epssDeprioritiseThreshold: 0.01,
+};
+
+export interface PriorityInput {
+  severity: string;
+  cvssScore: number | null;
+}
+
+export interface PriorityResult {
+  severity: Severity;
+  /** One or more lines to prepend to the finding's existing mitigation text. */
+  prefixLines: string[];
+}
+
+/**
+ * Apply threat-intel-driven prioritisation to a finding. Pure function — does
+ * not mutate `finding` or `enrichment`. Caller assigns the returned severity
+ * and prepends the prefix lines to the mitigation.
+ *
+ * Rules (in order; first match wins for severity, all matching prefix lines
+ * are emitted so the user sees the full evidence chain):
+ *
+ *   1. KEV-listed → severity = critical, prefix names CISA KEV, due date
+ *      (when present), and ransomware flag (when set). Active-exploitation
+ *      framing supports the CRA Art. 14 24-hour reporting trigger.
+ *
+ *   2. EPSS ≥ epssBumpThreshold (default 0.9, top ~10%) and not already on
+ *      KEV → bump severity one tier (low → medium → high → critical, cap at
+ *      critical). Prefix records the EPSS evidence.
+ *
+ *   3. EPSS < epssDeprioritiseThreshold (default 0.01) AND CVSS < 4.0 AND
+ *      not on KEV → cap severity at low. Prefix records the rationale so
+ *      reviewers can override if local context dictates.
+ *
+ * The KEV path always wins over the deprioritise path: if a CVE is on KEV,
+ * a low EPSS score is irrelevant — exploitation is already observed.
+ */
+export function applyThreatIntelPriority(
+  finding: PriorityInput,
+  enrichment: FindingEnrichment,
+  policy: ThreatIntelPolicy = DEFAULT_THREAT_INTEL_POLICY,
+): PriorityResult {
+  const startRank = SEVERITY_RANK[finding.severity?.toLowerCase()] ?? SEVERITY_RANK.medium;
+  let rank = startRank;
+  const prefixLines: string[] = [];
+
+  if (enrichment.kevListed) {
+    rank = SEVERITY_RANK.critical;
+    const dueText = enrichment.kevDueDate ? ' CISA federal due date ' + enrichment.kevDueDate + '.' : '';
+    const ransomwareText = enrichment.kevKnownRansomware ? ' Used in observed ransomware campaigns.' : '';
+    prefixLines.push(
+      'CISA KEV-listed: this vulnerability is on CISA’s Known Exploited Vulnerabilities catalogue.' +
+      dueText + ransomwareText +
+      ' Active exploitation in the wild — escalate immediately and assess CRA Art. 14 24-hour reporting eligibility.'
+    );
+  }
+
+  const epss = enrichment.epssScore;
+  const epssPct = enrichment.epssPercentile;
+
+  if (!enrichment.kevListed && epss !== null && epss >= policy.epssBumpThreshold) {
+    rank = Math.min(SEVERITY_RANK.critical, rank + 1);
+    const pctText = epssPct !== null
+      ? ' (' + (epssPct * 100).toFixed(1) + 'th percentile of likelihood)'
+      : '';
+    prefixLines.push(
+      'EPSS ' + epss.toFixed(4) + pctText + ' — high probability of exploitation in the next 30 days. Prioritise remediation.'
+    );
+  } else if (
+    !enrichment.kevListed &&
+    epss !== null &&
+    epss < policy.epssDeprioritiseThreshold &&
+    finding.cvssScore !== null &&
+    finding.cvssScore < 4.0
+  ) {
+    rank = SEVERITY_RANK.low;
+    prefixLines.push(
+      'Low exploitation probability (EPSS ' + epss.toFixed(4) + ') and low CVSS (' +
+      finding.cvssScore.toFixed(1) + ') — deprioritise unless local context dictates otherwise.'
+    );
+  }
+
+  return { severity: rankToSeverity(rank), prefixLines };
+}
+
 // --- Admin stats ---
 
 export interface ThreatIntelStats {

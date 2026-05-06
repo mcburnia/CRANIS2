@@ -37,7 +37,10 @@ import {
   emptyEnrichment,
   mapEnrichmentRow,
   dedupeCveIds,
+  applyThreatIntelPriority,
+  DEFAULT_THREAT_INTEL_POLICY,
 } from '../../src/services/threat-intel.js';
+import type { FindingEnrichment } from '../../src/services/threat-intel.js';
 
 describe('isValidCveId', () => {
   it('accepts a canonical 4-digit-suffix CVE', () => {
@@ -322,5 +325,122 @@ describe('dedupeCveIds', () => {
 
   it('returns empty array when no input ids are valid CVEs', () => {
     expect(dedupeCveIds(['GHSA-jfh8-c2jp-5v3q', 'GHSA-vwcq-pjj7-rhpv'])).toEqual([]);
+  });
+});
+
+describe('applyThreatIntelPriority', () => {
+  function enr(overrides: Partial<FindingEnrichment> = {}): FindingEnrichment {
+    return { ...emptyEnrichment(), ...overrides };
+  }
+
+  it('leaves severity unchanged and emits no prefix when enrichment is empty', () => {
+    const result = applyThreatIntelPriority({ severity: 'medium', cvssScore: 5.5 }, enr());
+    expect(result.severity).toBe('medium');
+    expect(result.prefixLines).toEqual([]);
+  });
+
+  it('KEV-listed bumps any starting severity straight to critical', () => {
+    for (const start of ['low', 'medium', 'high', 'critical'] as const) {
+      const result = applyThreatIntelPriority(
+        { severity: start, cvssScore: 5.0 },
+        enr({ kevListed: true, kevDueDate: '2021-12-24', kevKnownRansomware: true })
+      );
+      expect(result.severity).toBe('critical');
+      expect(result.prefixLines.length).toBe(1);
+      expect(result.prefixLines[0]).toContain('CISA KEV-listed');
+      expect(result.prefixLines[0]).toContain('2021-12-24');
+      expect(result.prefixLines[0]).toContain('ransomware');
+      expect(result.prefixLines[0]).toContain('CRA Art. 14');
+    }
+  });
+
+  it('KEV-listed without due date or ransomware emits a clean prefix', () => {
+    const result = applyThreatIntelPriority(
+      { severity: 'medium', cvssScore: 5.0 },
+      enr({ kevListed: true })
+    );
+    expect(result.severity).toBe('critical');
+    expect(result.prefixLines[0]).toContain('CISA KEV-listed');
+    expect(result.prefixLines[0]).not.toContain('federal due date');
+    expect(result.prefixLines[0]).not.toContain('ransomware');
+  });
+
+  it('EPSS ≥ 0.9 (no KEV) bumps severity exactly one tier', () => {
+    expect(applyThreatIntelPriority({ severity: 'low', cvssScore: 3.0 }, enr({ epssScore: 0.95, epssPercentile: 0.99 })).severity).toBe('medium');
+    expect(applyThreatIntelPriority({ severity: 'medium', cvssScore: 5.0 }, enr({ epssScore: 0.95, epssPercentile: 0.99 })).severity).toBe('high');
+    expect(applyThreatIntelPriority({ severity: 'high', cvssScore: 7.5 }, enr({ epssScore: 0.95, epssPercentile: 0.99 })).severity).toBe('critical');
+  });
+
+  it('EPSS ≥ 0.9 caps at critical (already-critical stays critical)', () => {
+    const result = applyThreatIntelPriority({ severity: 'critical', cvssScore: 9.5 }, enr({ epssScore: 0.99, epssPercentile: 0.999 }));
+    expect(result.severity).toBe('critical');
+  });
+
+  it('EPSS bump emits an EPSS-evidence prefix line with score and percentile', () => {
+    const result = applyThreatIntelPriority(
+      { severity: 'medium', cvssScore: 5.0 },
+      enr({ epssScore: 0.9234, epssPercentile: 0.9876 })
+    );
+    expect(result.prefixLines.length).toBe(1);
+    expect(result.prefixLines[0]).toContain('EPSS 0.9234');
+    expect(result.prefixLines[0]).toContain('98.8th percentile');
+    expect(result.prefixLines[0]).toContain('Prioritise remediation');
+  });
+
+  it('EPSS < 0.01 + CVSS < 4.0 (no KEV) caps severity at low and emits a deprioritise prefix', () => {
+    const result = applyThreatIntelPriority(
+      { severity: 'medium', cvssScore: 3.5 },
+      enr({ epssScore: 0.0005, epssPercentile: 0.05 })
+    );
+    expect(result.severity).toBe('low');
+    expect(result.prefixLines[0]).toContain('Low exploitation probability');
+    expect(result.prefixLines[0]).toContain('EPSS 0.0005');
+    expect(result.prefixLines[0]).toContain('low CVSS (3.5)');
+  });
+
+  it('EPSS < 0.01 but CVSS ≥ 4.0 leaves severity unchanged (deprioritise gate is conjunctive)', () => {
+    const result = applyThreatIntelPriority(
+      { severity: 'medium', cvssScore: 5.5 },
+      enr({ epssScore: 0.0005, epssPercentile: 0.05 })
+    );
+    expect(result.severity).toBe('medium');
+    expect(result.prefixLines).toEqual([]);
+  });
+
+  it('KEV beats deprioritise: low EPSS does not undo a KEV bump', () => {
+    const result = applyThreatIntelPriority(
+      { severity: 'medium', cvssScore: 3.0 },
+      enr({ kevListed: true, epssScore: 0.0005, epssPercentile: 0.05 })
+    );
+    expect(result.severity).toBe('critical');
+    expect(result.prefixLines[0]).toContain('CISA KEV-listed');
+    // Deprioritise prefix must not appear when KEV is listed
+    expect(result.prefixLines.some(l => l.includes('Low exploitation probability'))).toBe(false);
+  });
+
+  it('EPSS just below the bump threshold (0.89) does not bump', () => {
+    const result = applyThreatIntelPriority(
+      { severity: 'medium', cvssScore: 5.5 },
+      enr({ epssScore: 0.89, epssPercentile: 0.89 })
+    );
+    expect(result.severity).toBe('medium');
+    expect(result.prefixLines).toEqual([]);
+  });
+
+  it('respects a custom policy override', () => {
+    const policy = { epssBumpThreshold: 0.5, epssDeprioritiseThreshold: 0.05 };
+    expect(applyThreatIntelPriority({ severity: 'low', cvssScore: 3.0 }, enr({ epssScore: 0.55, epssPercentile: 0.7 }), policy).severity).toBe('medium');
+    // Same input under default policy (0.9 threshold) wouldn't bump
+    expect(applyThreatIntelPriority({ severity: 'low', cvssScore: 3.0 }, enr({ epssScore: 0.55, epssPercentile: 0.7 })).severity).toBe('low');
+  });
+
+  it('default policy thresholds match the documented values (0.9 / 0.01)', () => {
+    expect(DEFAULT_THREAT_INTEL_POLICY.epssBumpThreshold).toBe(0.9);
+    expect(DEFAULT_THREAT_INTEL_POLICY.epssDeprioritiseThreshold).toBe(0.01);
+  });
+
+  it('treats unknown / blank starting severity as medium for ranking purposes', () => {
+    expect(applyThreatIntelPriority({ severity: '' as any, cvssScore: null }, enr({ kevListed: true })).severity).toBe('critical');
+    expect(applyThreatIntelPriority({ severity: 'unknown' as any, cvssScore: null }, enr({ epssScore: 0.95, epssPercentile: 0.99 })).severity).toBe('high');
   });
 });
