@@ -13,6 +13,7 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
+import { isActivelyExploited } from '../services/threat-intel.js';
 
 const router = Router();
 
@@ -192,6 +193,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
       linkedFindingId: r.linked_finding_id,
       enisaReference: r.enisa_reference,
       sensitivityTlp: r.sensitivity_tlp,
+      activelyExploited: r.actively_exploited === true,
       createdBy: r.created_by,
       createdByEmail: r.created_by_email,
       stageCount: parseInt(r.stage_count) || 0,
@@ -263,10 +265,15 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
     }
 
     // If linked to a finding, validate it exists and fetch details for auto-populate (CR-1)
+    // and threat-intel context (P10a-5: actively_exploited derivation, KEV/EPSS evidence)
     let linkedFinding: any = null;
     if (linkedFindingId) {
       const findingCheck = await pool.query(
-        'SELECT id, title, severity, cvss_score, source, source_id, dependency_name, dependency_version, fixed_version, description FROM vulnerability_findings WHERE id = $1 AND org_id = $2',
+        `SELECT id, title, severity, cvss_score, source, source_id,
+                dependency_name, dependency_version, fixed_version, description,
+                kev_listed, kev_due_date, kev_known_ransomware,
+                epss_score, epss_percentile
+         FROM vulnerability_findings WHERE id = $1 AND org_id = $2`,
         [linkedFindingId, orgId]
       );
       if (findingCheck.rows.length === 0) {
@@ -275,13 +282,26 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       linkedFinding = findingCheck.rows[0];
     }
 
+    // P10a-5: Derive the active-exploitation flag from the linked finding's
+    // threat-intel evidence. Cached on the cra_reports row so list filters
+    // are cheap and so the legal "became aware at" record captures the
+    // exploitation signal known at the moment of report creation.
+    const activelyExploited = linkedFinding
+      ? isActivelyExploited({
+          kevListed: linkedFinding.kev_listed === true,
+          epssScore: linkedFinding.epss_score !== null && linkedFinding.epss_score !== undefined
+            ? parseFloat(linkedFinding.epss_score)
+            : null,
+        })
+      : false;
+
     const result = await pool.query(
       `INSERT INTO cra_reports (
         org_id, product_id, report_type, status, awareness_at,
         early_warning_deadline, notification_deadline, final_report_deadline,
         csirt_country, member_states_affected, linked_finding_id,
-        sensitivity_tlp, created_by
-      ) VALUES ($1, $2, $3, 'draft', $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        sensitivity_tlp, created_by, actively_exploited
+      ) VALUES ($1, $2, $3, 'draft', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *`,
       [
         orgId, productId, reportType, awareness,
@@ -289,7 +309,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         effectiveCsirtCountry,
         memberStatesAffected.length > 0 ? memberStatesAffected : null,
         linkedFindingId || null,
-        sensitivityTlp, userId,
+        sensitivityTlp, userId, activelyExploited,
       ]
     );
 
@@ -373,14 +393,27 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       [reportId]
     );
 
-    // Get linked finding details if applicable
-    let linkedFinding = null;
+    // Get linked finding details if applicable (P10a-5: include KEV/EPSS evidence)
+    let linkedFinding: any = null;
     if (r.linked_finding_id) {
       const f = await pool.query(
-        'SELECT id, title, severity, cvss_score, source, source_id, dependency_name, dependency_version, fixed_version, description FROM vulnerability_findings WHERE id = $1',
+        `SELECT id, title, severity, cvss_score, source, source_id,
+                dependency_name, dependency_version, fixed_version, description,
+                kev_listed, kev_due_date, kev_known_ransomware,
+                epss_score, epss_percentile
+         FROM vulnerability_findings WHERE id = $1`,
         [r.linked_finding_id]
       );
-      if (f.rows.length > 0) linkedFinding = f.rows[0];
+      if (f.rows.length > 0) {
+        const row = f.rows[0];
+        linkedFinding = {
+          ...row,
+          kev_listed: row.kev_listed === true,
+          kev_known_ransomware: row.kev_known_ransomware === true,
+          epss_score: row.epss_score !== null && row.epss_score !== undefined ? parseFloat(row.epss_score) : null,
+          epss_percentile: row.epss_percentile !== null && row.epss_percentile !== undefined ? parseFloat(row.epss_percentile) : null,
+        };
+      }
     }
 
     res.json({
@@ -400,6 +433,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
         linkedFindingId: r.linked_finding_id,
         enisaReference: r.enisa_reference,
         sensitivityTlp: r.sensitivity_tlp,
+        activelyExploited: r.actively_exploited === true,
         createdBy: r.created_by,
         createdByEmail: r.created_by_email,
         createdAt: r.created_at,

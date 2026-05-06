@@ -39,6 +39,7 @@ import {
   dedupeCveIds,
   applyThreatIntelPriority,
   DEFAULT_THREAT_INTEL_POLICY,
+  isActivelyExploited,
 } from '../../src/services/threat-intel.js';
 import type { FindingEnrichment } from '../../src/services/threat-intel.js';
 
@@ -442,5 +443,34 @@ describe('applyThreatIntelPriority', () => {
   it('treats unknown / blank starting severity as medium for ranking purposes', () => {
     expect(applyThreatIntelPriority({ severity: '' as any, cvssScore: null }, enr({ kevListed: true })).severity).toBe('critical');
     expect(applyThreatIntelPriority({ severity: 'unknown' as any, cvssScore: null }, enr({ epssScore: 0.95, epssPercentile: 0.99 })).severity).toBe('high');
+  });
+});
+
+describe('isActivelyExploited', () => {
+  it('returns true for KEV-listed regardless of EPSS', () => {
+    expect(isActivelyExploited({ kevListed: true, epssScore: null })).toBe(true);
+    expect(isActivelyExploited({ kevListed: true, epssScore: 0.0001 })).toBe(true);
+    expect(isActivelyExploited({ kevListed: true, epssScore: 0.99 })).toBe(true);
+  });
+
+  it('returns true for EPSS at the bump threshold (0.9) even without KEV', () => {
+    expect(isActivelyExploited({ kevListed: false, epssScore: 0.9 })).toBe(true);
+    expect(isActivelyExploited({ kevListed: false, epssScore: 0.95 })).toBe(true);
+  });
+
+  it('returns false for EPSS just below the threshold (0.89)', () => {
+    expect(isActivelyExploited({ kevListed: false, epssScore: 0.89 })).toBe(false);
+  });
+
+  it('returns false when both signals are absent', () => {
+    expect(isActivelyExploited({ kevListed: false, epssScore: null })).toBe(false);
+    expect(isActivelyExploited({ kevListed: false, epssScore: 0.5 })).toBe(false);
+    expect(isActivelyExploited({ kevListed: false, epssScore: 0.0001 })).toBe(false);
+  });
+
+  it('respects a custom EPSS threshold', () => {
+    const policy = { ...DEFAULT_THREAT_INTEL_POLICY, epssBumpThreshold: 0.5 };
+    expect(isActivelyExploited({ kevListed: false, epssScore: 0.55 }, policy)).toBe(true);
+    expect(isActivelyExploited({ kevListed: false, epssScore: 0.49 }, policy)).toBe(false);
   });
 });

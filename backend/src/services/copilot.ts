@@ -655,6 +655,14 @@ export interface IncidentReportContext {
     dependencyVersion: string;
     fixedVersion: string | null;
     description: string;
+    // P10a-5: threat-intel evidence carried into the AI draft prompt so
+    // the Copilot framing can correctly assert "actively exploited" or
+    // "high-probability exploitation" with citations.
+    kevListed: boolean;
+    kevDueDate: string | null;
+    kevKnownRansomware: boolean;
+    epssScore: number | null;
+    epssPercentile: number | null;
   } | null;
   previousStages: Record<string, Record<string, any>>;
 }
@@ -728,7 +736,9 @@ export async function gatherIncidentReportContext(
     r.linked_finding_id
       ? pool.query(
           `SELECT title, severity, cvss_score, source, source_id,
-                  dependency_name, dependency_version, fixed_version, description
+                  dependency_name, dependency_version, fixed_version, description,
+                  kev_listed, kev_due_date, kev_known_ransomware,
+                  epss_score, epss_percentile
            FROM vulnerability_findings WHERE id = $1`,
           [r.linked_finding_id]
         )
@@ -740,7 +750,7 @@ export async function gatherIncidentReportContext(
     ),
   ]);
 
-  // 3. Map linked finding
+  // 3. Map linked finding (P10a-5: also surface KEV/EPSS evidence)
   let linkedFinding: IncidentReportContext['linkedFinding'] = null;
   if (findingResult.rows.length > 0) {
     const f = findingResult.rows[0];
@@ -754,6 +764,13 @@ export async function gatherIncidentReportContext(
       dependencyVersion: f.dependency_version,
       fixedVersion: f.fixed_version,
       description: f.description,
+      kevListed: f.kev_listed === true,
+      kevDueDate: f.kev_due_date instanceof Date
+        ? f.kev_due_date.toISOString().slice(0, 10)
+        : (f.kev_due_date ?? null),
+      kevKnownRansomware: f.kev_known_ransomware === true,
+      epssScore: f.epss_score !== null && f.epss_score !== undefined ? parseFloat(f.epss_score) : null,
+      epssPercentile: f.epss_percentile !== null && f.epss_percentile !== undefined ? parseFloat(f.epss_percentile) : null,
     };
   }
 
@@ -795,6 +812,26 @@ export async function generateIncidentReportDraft(
   const fields = REPORT_STAGE_FIELDS[stage]?.[reportType];
   if (!fields) throw new Error(`Unknown stage/type: ${stage}/${reportType}`);
 
+  // P10a-5: surface threat-intel evidence so the Copilot can correctly
+  // assert "actively exploited" with citations.
+  const threatIntelLines: string[] = [];
+  if (linkedFinding) {
+    if (linkedFinding.kevListed) {
+      const dueText = linkedFinding.kevDueDate ? ` (CISA federal due date ${linkedFinding.kevDueDate})` : '';
+      const ransomwareText = linkedFinding.kevKnownRansomware ? '; observed in ransomware campaigns' : '';
+      threatIntelLines.push(
+        `- THREAT INTEL: ON CISA KNOWN EXPLOITED VULNERABILITIES CATALOGUE${dueText}${ransomwareText}. ` +
+        `This is the strongest public signal of active exploitation in the wild and is the regulatory basis for the CRA Art. 14 24-hour reporting trigger.`
+      );
+    }
+    if (linkedFinding.epssScore !== null) {
+      const pctText = linkedFinding.epssPercentile !== null
+        ? ` (${(linkedFinding.epssPercentile * 100).toFixed(1)}th percentile)`
+        : '';
+      threatIntelLines.push(`- EPSS: ${linkedFinding.epssScore.toFixed(4)}${pctText} probability of exploitation in the next 30 days.`);
+    }
+  }
+
   const findingBlock = linkedFinding
     ? `Linked vulnerability finding:
 - Title: ${linkedFinding.title}
@@ -802,7 +839,7 @@ export async function generateIncidentReportDraft(
 - Source: ${linkedFinding.source} – ${linkedFinding.sourceId}
 - Affected: ${linkedFinding.dependencyName}@${linkedFinding.dependencyVersion}
 - Fix: ${linkedFinding.fixedVersion || 'none available'}
-- Description: ${linkedFinding.description?.substring(0, 500) || 'N/A'}`
+- Description: ${linkedFinding.description?.substring(0, 500) || 'N/A'}${threatIntelLines.length > 0 ? '\n' + threatIntelLines.join('\n') : ''}`
     : 'No linked vulnerability finding.';
 
   const previousBlock = Object.keys(previousStages).length > 0

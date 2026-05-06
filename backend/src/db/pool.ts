@@ -616,6 +616,13 @@ export async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_status ON cra_reports(status)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_deadlines ON cra_reports(early_warning_deadline, notification_deadline, final_report_deadline)`);
 
+    // P10a-5 — Active-exploitation flag derived from the linked finding's
+    // threat-intel data at report-creation time. Cached on the row so list
+    // queries can filter cheaply and so the legal "became aware at" record
+    // captures the exploitation status known at that moment.
+    await client.query(`ALTER TABLE cra_reports ADD COLUMN IF NOT EXISTS actively_exploited BOOLEAN DEFAULT FALSE`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_actively_exploited ON cra_reports(actively_exploited) WHERE actively_exploited = TRUE`);
+
     // CRA Article 14 – report stage submissions
     await client.query(`
       CREATE TABLE IF NOT EXISTS cra_report_stages (

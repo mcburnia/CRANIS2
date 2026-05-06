@@ -645,6 +645,28 @@ export function applyThreatIntelPriority(
   return { severity: rankToSeverity(rank), prefixLines };
 }
 
+/**
+ * Decide whether a single finding's threat-intel evidence is sufficient to
+ * mark a CRA report (or any equivalent regulatory record) as relating to an
+ * "actively exploited" vulnerability under CRA Art. 14.
+ *
+ * KEV listing is the strongest public signal of active exploitation in the
+ * wild. EPSS at or above the bump threshold (default 0.9) is a strong
+ * probabilistic signal — high probability of exploitation in the next 30
+ * days. Either qualifies; both is stronger evidence again.
+ *
+ * Pure function — easy to test, easy to reuse from cra-reports.ts and from
+ * the future P10b trigger engine.
+ */
+export function isActivelyExploited(
+  enrichment: { kevListed: boolean; epssScore: number | null },
+  policy: ThreatIntelPolicy = DEFAULT_THREAT_INTEL_POLICY,
+): boolean {
+  if (enrichment.kevListed) return true;
+  if (enrichment.epssScore !== null && enrichment.epssScore >= policy.epssBumpThreshold) return true;
+  return false;
+}
+
 // --- Admin stats ---
 
 export interface ThreatIntelStats {
