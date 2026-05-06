@@ -1185,6 +1185,50 @@ sudo systemctl restart cloudflared
 
 ---
 
+## Roadmap — P10: Automated Art. 14 Trigger Engine
+
+**Strategic driver:** CRA Art. 14 requires manufacturers to notify ENISA (via the relevant CSIRT) within 24 hours of becoming aware of an **actively exploited** vulnerability in their product. CRANIS2 currently detects CVEs but has no mechanism to identify "actively exploited" status, no automatic incident creation on detection, and no defensible "became-aware-at" timestamp. P10 closes that gap.
+
+**Once shipped, P10 makes CRANIS2 the manufacturer's defensible early-warning system for Art. 14:** detection → awareness timestamp (RFC3161-stamped) → automatic incident creation → escalating reminders against the 24h/72h/14-day deadlines → pre-drafted ENISA notification with one-click submit-with-authorisation.
+
+### P10a — Threat-intel ingestion and enrichment (foundation)
+
+Adds the data sources that distinguish "CVE exists" from "CVE is being exploited."
+
+1. **Schema + ingestion + scheduler** — new `vuln_db_kev` and `vuln_db_epss` tables in `pool.ts initDb()`; `services/threat-intel.ts` with `refreshKev()` (CISA KEV JSON, ~1.3k entries, weekday updates) and `refreshEpss()` (FIRST EPSS daily CSV, ~270k rows); daily refresh wired into `scheduler.ts` at 03:00 / 03:30 UTC.
+2. **Scanner enrichment** — single batched join in `vulnerability-scanner.ts` adds `kev_listed`, `kev_due_date`, `kev_known_ransomware`, `epss_score`, `epss_percentile` columns to each finding.
+3. **Prioritisation logic** — `generateMitigation()` and severity normalisation: KEV listing → severity bumped to `critical` with KEV-specific mitigation prefix; EPSS ≥ 0.9 → severity bumped one tier; EPSS < 0.01 + low CVSS → tagged `triage_priority = low`.
+4. **UI surfacing** — red "KEV" pill on findings (tooltip with due date + ransomware flag), EPSS percentile chip, "KEV-listed only" + "EPSS ≥ X" filters on Risk Findings, dashboard stat *"Findings under active exploitation: N"*.
+5. **CRA report `actively_exploited` auto-flag** — `cra-reports.ts` and the Copilot incident-report draft prompt both consume KEV/EPSS context.
+
+### P10b — Art. 14 automated trigger engine
+
+Connects the new threat-intel layer to the existing incident lifecycle.
+
+- New service `services/cra-trigger-engine.ts` runs after each KEV/EPSS refresh; for every newly-actively-exploited CVE that matches a finding, creates an incident at `phase = detection`, severity P1, with timeline entry *"KEV-listed at HH:MM UTC. CRA Art. 14 24h clock started."*
+- **Awareness timestamp** stamped in `retention-ledger.ts` and RFC3161-signed via `rfc3161.ts` — this is the legally-defensible "became aware at" record.
+- **Configurable trigger policy** in `platform_settings`: KEV listing → always trigger (default); EPSS threshold → org-configurable (default 0.95); named threat-actor campaign → manual flag for now.
+
+### P10c — Deadline tracker and escalation
+
+- Scheduled job tracks open Art. 14 incidents against the 24h / 72h / 14-day windows.
+- Escalating notifications as deadlines approach (T-22h email, T-2h SMS-style alert, T-0 red banner).
+- Per-product "regulatory state" view: *"You became aware of CVE-X at 14:32 UTC on 2026-05-06. ENISA early warning due 14:32 UTC on 2026-05-07 (T-22h)."*
+
+### P10d — Pre-drafted ENISA notification with submit-with-authorisation flow
+
+- Copilot pre-drafts the 24h early-warning notification using `incident-response.ts` template, populated with CVE, KEV metadata, affected product, version range, customer count, immediate mitigation.
+- Draft sits in the incident detail page with explicit **"Submit to ENISA"** button — never auto-submitted. Submission goes through whatever transport ENISA's single reporting platform exposes (likely web form with pre-filled fields, possibly future API).
+- Submission events stamped in retention ledger as part of the evidence chain.
+
+### Sequencing and risk
+
+- P10a Step 1 (schema + ingestion + scheduler) is the riskiest commit because it touches `pool.ts` and the scheduler. Everything after that is additive.
+- After P10a + P10b, the **legally-defensible awareness record** is in place even before submission UI exists. That's the most important defensive guarantee.
+- Suggested test estimate: ~30–40 new backend tests across the four work packages.
+
+---
+
 **Previously completed (session 62, 2026-04-30) — production deployment day:**
 - **Production stack live at `https://cranis2.com`** — TLS via Let's Encrypt, certbot.timer auto-renew, host nginx on the Infomaniak VPS (`83.228.241.168`)
 - **Production NGINX config** — full adaptation of dev `nginx/default.conf` (15+ welcome routes, security headers including HSTS + Stripe-aware CSP, SPA fallback, 200M client_max_body_size). Deployed at `/etc/nginx/sites-available/cranis2`. Note: nginx 1.24 needs combined `listen 443 ssl http2;` syntax (not `http2 on;`).
