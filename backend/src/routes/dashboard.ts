@@ -202,7 +202,7 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
     }));
 
     // --- Postgres: vulnerability findings summary ---
-    let riskFindings = { total: 0, critical: 0, high: 0, medium: 0, low: 0, open: 0, dismissed: 0, lastScanAt: null as string | null };
+    let riskFindings = { total: 0, critical: 0, high: 0, medium: 0, low: 0, open: 0, dismissed: 0, activelyExploited: 0, lastScanAt: null as string | null };
     let productRiskMap: Record<string, { total: number; critical: number; high: number; open: number }> = {};
     if (productIds.length > 0) {
       const vulnResult = await pool.query(
@@ -228,6 +228,18 @@ router.get('/summary', requireAuth, async (req: Request, res: Response) => {
         if (row.severity === 'high') productRiskMap[row.product_id].high += cnt;
         if (row.status === 'open') productRiskMap[row.product_id].open += cnt;
       }
+
+      // P10a-4: count of actively-exploited open findings across the org.
+      // Same definition as isActivelyExploited(): on CISA KEV OR EPSS ≥ 0.9.
+      const activelyExploitedResult = await pool.query(
+        `SELECT count(*)::INT AS cnt
+         FROM vulnerability_findings
+         WHERE org_id = $1
+           AND status IN ('open', 'acknowledged')
+           AND (kev_listed = TRUE OR (epss_score IS NOT NULL AND epss_score >= 0.9))`,
+        [orgId]
+      );
+      riskFindings.activelyExploited = activelyExploitedResult.rows[0]?.cnt ?? 0;
 
       const lastScanResult = await pool.query(
         `SELECT MAX(completed_at) as last_scan

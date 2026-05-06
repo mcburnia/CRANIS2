@@ -40,6 +40,12 @@ interface LinkedFinding {
   dependency_version: string;
   fixed_version: string | null;
   description: string;
+  // P10a-4: threat-intel evidence carried through the API.
+  kev_listed?: boolean;
+  kev_due_date?: string | null;
+  kev_known_ransomware?: boolean;
+  epss_score?: number | null;
+  epss_percentile?: number | null;
 }
 
 interface Report {
@@ -58,6 +64,8 @@ interface Report {
   linkedFindingId: string | null;
   enisaReference: string | null;
   sensitivityTlp: string;
+  // P10a-5: derived from linked finding's KEV/EPSS at create time.
+  activelyExploited?: boolean;
   createdBy: string;
   createdByEmail: string;
   createdAt: string;
@@ -760,14 +768,79 @@ export default function ReportDetailPage() {
             </div>
           )}
 
+          {/* Actively-exploited banner (P10a-5) — surfaces the regulatory framing
+              that drives the 24-hour CRA Art. 14 reporting trigger. */}
+          {report.activelyExploited && (
+            <div
+              style={{
+                background: 'rgba(220, 38, 38, 0.08)',
+                border: '1px solid rgba(220, 38, 38, 0.4)',
+                borderLeft: '4px solid #dc2626',
+                borderRadius: '6px',
+                padding: '0.85rem 1rem',
+                marginBottom: '1rem',
+                color: '#dc2626',
+              }}
+            >
+              <strong style={{ display: 'block', marginBottom: '0.25rem', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>
+                Actively Exploited
+              </strong>
+              <span style={{ color: 'var(--text)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                The linked finding meets CRA Art. 14's "actively exploited" condition (on CISA KEV
+                or EPSS ≥ 0.9). The 24-hour ENISA early-warning notification timeline applies from
+                the awareness moment recorded on this report.
+              </span>
+            </div>
+          )}
+
           {/* Linked Finding */}
           {linkedFinding && (
             <div className="rd-linked-finding">
               <h3 className="rd-section-title">Linked Vulnerability Finding</h3>
               <div className="rd-finding-card">
-                <div className="rd-finding-header">
+                <div className="rd-finding-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <span className={`rd-severity rd-severity-${linkedFinding.severity}`}>{linkedFinding.severity}</span>
                   <span className="rd-finding-source">{linkedFinding.source}: {linkedFinding.source_id}</span>
+                  {linkedFinding.kev_listed && (
+                    <span
+                      title={
+                        'CISA Known Exploited Vulnerability' +
+                        (linkedFinding.kev_due_date ? '. CISA federal due date: ' + String(linkedFinding.kev_due_date).slice(0, 10) : '') +
+                        (linkedFinding.kev_known_ransomware ? '. Used in ransomware campaigns.' : '')
+                      }
+                      style={{
+                        fontSize: '0.65rem',
+                        padding: '0.1rem 0.45rem',
+                        borderRadius: '3px',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        background: 'rgba(220, 38, 38, 0.15)',
+                        color: '#dc2626',
+                        border: '1px solid rgba(220, 38, 38, 0.4)',
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      KEV{linkedFinding.kev_known_ransomware ? ' · RANSOMWARE' : ''}
+                    </span>
+                  )}
+                  {linkedFinding.epss_score !== null && linkedFinding.epss_score !== undefined && (
+                    <span
+                      title={'EPSS ' + linkedFinding.epss_score.toFixed(4) +
+                        (linkedFinding.epss_percentile != null ? ' (' + (linkedFinding.epss_percentile * 100).toFixed(1) + 'th percentile)' : '') +
+                        ' — probability of exploitation in the next 30 days'}
+                      style={{
+                        fontSize: '0.65rem',
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: '3px',
+                        fontWeight: 600,
+                        background: 'rgba(255,255,255,0.04)',
+                        color: linkedFinding.epss_score >= 0.9 ? '#dc2626' : linkedFinding.epss_score >= 0.5 ? '#f59e0b' : 'var(--muted)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                      }}
+                    >
+                      EPSS {linkedFinding.epss_percentile != null ? Math.round(linkedFinding.epss_percentile * 100) + '%' : linkedFinding.epss_score.toFixed(2)}
+                    </span>
+                  )}
                 </div>
                 <div className="rd-finding-title">{linkedFinding.title}</div>
                 <div className="rd-finding-detail">

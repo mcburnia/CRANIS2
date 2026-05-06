@@ -60,6 +60,7 @@ interface RiskFindingsSummary {
   low: number;
   open: number;
   dismissed: number;
+  activelyExploited: number;
   lastScanAt: string | null;
 }
 
@@ -381,6 +382,7 @@ export default function DashboardPage() {
         <StatCard label="Contributors" value={stats.totalContributors} color="amber" />
         <StatCard label="Dependencies" value={stats.totalDependencies} color="green" sub={`across ${stats.connectedRepos} repo${stats.connectedRepos !== 1 ? 's' : ''}`} />
         <StatCard label="Risk Findings" value={riskFindings.total} color={riskFindings.critical > 0 ? 'red' : riskFindings.high > 0 ? 'amber' : 'green'} sub={riskFindings.total > 0 ? `${riskFindings.open} open` : riskFindings.lastScanAt ? 'none found' : 'not scanned yet'} />
+        <StatCard label="Actively Exploited" value={riskFindings.activelyExploited || 0} color={(riskFindings.activelyExploited || 0) > 0 ? 'red' : 'green'} sub={(riskFindings.activelyExploited || 0) > 0 ? 'CRA Art. 14 trigger candidates' : 'none on KEV / high EPSS'} />
       </div>
 
       <div className="section">

@@ -13,6 +13,7 @@ import {
   Shield, AlertTriangle, CheckCircle2, ChevronRight, ChevronDown, Loader2, Download, X, RefreshCw, Info, Sparkles, Copy, Check, ListChecks,
 } from 'lucide-react';
 import PostScanTriageWizard from '../../../components/PostScanTriageWizard';
+import ThreatIntelBadges from '../../../components/ThreatIntelBadges';
 
 export default function RiskFindingsTab({ productId }: { productId: string }) {
   const [findings, setFindings] = useState<any[]>([]);
@@ -299,7 +300,10 @@ export default function RiskFindingsTab({ productId }: { productId: string }) {
           <div onClick={() => toggleExpand(f.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
             <span style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', borderRadius: '3px', fontWeight: 700, textTransform: 'uppercase' as const, background: `${severityColor[f.severity]}33`, color: severityColor[f.severity], minWidth: '55px', textAlign: 'center' as const }}>{f.severity}</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{f.title.substring(0, 120)}</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' as const }}>
+                <span>{f.title.substring(0, 120)}</span>
+                <ThreatIntelBadges f={f} />
+              </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--muted)', display: 'flex', gap: '1rem', flexWrap: 'wrap' as const }}>
                 <span>{f.source_id}</span>
                 <span>{f.dependency_name}@{f.dependency_version}</span>

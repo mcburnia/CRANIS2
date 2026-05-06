@@ -13,6 +13,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Shield, ChevronDown, ChevronRight, Clock, RefreshCw, FileText } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
+import ThreatIntelBadges from '../../components/ThreatIntelBadges';
 import { usePageMeta } from '../../hooks/usePageMeta';
 import './RiskFindingsPage.css';
 
@@ -31,6 +32,7 @@ interface FindingsSummary {
   openHigh: number;
   openMedium: number;
   openLow: number;
+  activelyExploited: number;
 }
 
 interface LastScan {
@@ -93,6 +95,7 @@ interface OverviewData {
     totalFindings: number; critical: number; high: number;
     medium: number; low: number; openFindings: number;
     openCritical: number; openHigh: number; openMedium: number; openLow: number;
+    activelyExploited: number;
   };
 }
 
@@ -119,6 +122,12 @@ interface Finding {
   dismissed_by: string | null;
   dismissed_reason: string | null;
   created_at: string;
+  // P10a-4: threat-intel enrichment fields populated by the scanner.
+  kev_listed?: boolean | null;
+  kev_due_date?: string | null;
+  kev_known_ransomware?: boolean | null;
+  epss_score?: number | string | null;
+  epss_percentile?: number | string | null;
 }
 
 interface PlatformScan {
@@ -139,7 +148,7 @@ interface PlatformScan {
   durationSeconds: number | null;
 }
 
-type Filter = 'all' | 'critical_high' | 'open' | 'dismissed';
+type Filter = 'all' | 'critical_high' | 'open' | 'dismissed' | 'actively_exploited';
 
 // FR-1: All triage statuses
 const TRIAGE_STATUSES = [
@@ -291,6 +300,7 @@ export default function RiskFindingsPage() {
     if (filter === 'critical_high') return p.findings.critical > 0 || p.findings.high > 0;
     if (filter === 'open') return p.findings.open > 0;
     if (filter === 'dismissed') return p.findings.dismissed > 0;
+    if (filter === 'actively_exploited') return (p.findings.activelyExploited || 0) > 0;
     return true;
   });
 
@@ -323,6 +333,7 @@ export default function RiskFindingsPage() {
 
       <div className="rf-stats">
         <StatCard label="Total Findings" value={totals.totalFindings} color="blue" sub={totals.openFindings + ' open'} />
+        <StatCard label="Actively Exploited" value={totals.activelyExploited || 0} color={(totals.activelyExploited || 0) > 0 ? 'red' : 'green'} sub={(totals.activelyExploited || 0) > 0 ? 'CISA KEV / EPSS ≥ 0.9 — CRA Art. 14 trigger candidates' : 'none on KEV / high EPSS'} />
         <StatCard label="Critical" value={totals.openCritical} color={totals.openCritical > 0 ? 'red' : 'green'} sub={totals.openCritical > 0 ? 'immediate action' : totals.critical > 0 ? totals.critical + ' resolved/dismissed' : 'none found'} />
         <StatCard label="High" value={totals.openHigh} color={totals.openHigh > 0 ? 'amber' : 'green'} sub={totals.openHigh > 0 ? 'review needed' : totals.high > 0 ? totals.high + ' resolved/dismissed' : 'none found'} />
         <StatCard label="Medium + Low" value={totals.openMedium + totals.openLow} color={totals.openMedium + totals.openLow > 0 ? 'blue' : 'green'} sub={totals.openMedium + totals.openLow > 0 ? totals.openMedium + ' medium, ' + totals.openLow + ' low' : (totals.medium + totals.low) > 0 ? (totals.medium + totals.low) + ' resolved/dismissed' : 'none found'} />
@@ -334,6 +345,7 @@ export default function RiskFindingsPage() {
             { key: 'all' as Filter, label: 'All' },
             { key: 'critical_high' as Filter, label: 'Critical + High' },
             { key: 'open' as Filter, label: 'Open Only' },
+            { key: 'actively_exploited' as Filter, label: 'Actively Exploited' },
             { key: 'dismissed' as Filter, label: 'Dismissed' },
           ]).map(f => (
             <button key={f.key} className={'rf-filter-btn ' + (filter === f.key ? 'active' : '')} onClick={() => setFilter(f.key)}>
@@ -509,7 +521,10 @@ export default function RiskFindingsPage() {
                       >
                         <span className={'rf-severity-badge ' + finding.severity}>{finding.severity}</span>
                         <div className="rf-finding-content">
-                          <div className="rf-finding-title">{finding.title.substring(0, 120)}</div>
+                          <div className="rf-finding-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span>{finding.title.substring(0, 120)}</span>
+                            <ThreatIntelBadges f={finding} />
+                          </div>
                           <div className="rf-finding-meta">
                             <span>{finding.source_id}</span>
                             <span>{finding.dependency_name}@{finding.dependency_version}</span>

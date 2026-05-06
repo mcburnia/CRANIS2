@@ -92,10 +92,27 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       [productIds, orgId]
     );
 
+    // P10a-4: per-product count of actively-exploited open findings.
+    // "Actively exploited" matches isActivelyExploited(): on CISA KEV OR EPSS ≥ 0.9.
+    // Limited to open + acknowledged so resolved/dismissed don't pad the count.
+    const activelyExploitedResult = await pool.query(
+      `SELECT product_id, count(*) as cnt
+       FROM vulnerability_findings
+       WHERE product_id = ANY($1) AND org_id = $2
+         AND status IN ('open', 'acknowledged')
+         AND (kev_listed = TRUE OR (epss_score IS NOT NULL AND epss_score >= 0.9))
+       GROUP BY product_id`,
+      [productIds, orgId]
+    );
+    const activelyExploitedMap = new Map<string, number>();
+    for (const row of activelyExploitedResult.rows) {
+      activelyExploitedMap.set(row.product_id, parseInt(row.cnt));
+    }
+
     const findingsMap = new Map<string, any>();
     for (const row of findingsResult.rows) {
       if (!findingsMap.has(row.product_id)) {
-        findingsMap.set(row.product_id, { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0, openCritical: 0, openHigh: 0, openMedium: 0, openLow: 0 });
+        findingsMap.set(row.product_id, { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0, openCritical: 0, openHigh: 0, openMedium: 0, openLow: 0, activelyExploited: 0 });
       }
       const pf = findingsMap.get(row.product_id);
       const count = parseInt(row.cnt);
@@ -114,14 +131,22 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
         if (row.severity === 'low') pf.openLow += count;
       }
     }
+    // Stitch in the actively-exploited count (separate query above)
+    for (const [pid, cnt] of activelyExploitedMap) {
+      if (!findingsMap.has(pid)) {
+        findingsMap.set(pid, { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0, openCritical: 0, openHigh: 0, openMedium: 0, openLow: 0, activelyExploited: 0 });
+      }
+      findingsMap.get(pid).activelyExploited = cnt;
+    }
 
     // Build response
     let totalCritical = 0, totalHigh = 0, totalMedium = 0, totalLow = 0, totalOpen = 0, totalAll = 0;
     let openCritical = 0, openHigh = 0, openMedium = 0, openLow = 0;
+    let totalActivelyExploited = 0;
 
     const enrichedProducts = products.map(p => {
       const scan = scanMap.get(p.id);
-      const findings = findingsMap.get(p.id) || { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0, openCritical: 0, openHigh: 0, openMedium: 0, openLow: 0 };
+      const findings = findingsMap.get(p.id) || { critical: 0, high: 0, medium: 0, low: 0, total: 0, open: 0, dismissed: 0, acknowledged: 0, mitigated: 0, resolved: 0, openCritical: 0, openHigh: 0, openMedium: 0, openLow: 0, activelyExploited: 0 };
 
       totalCritical += findings.critical;
       totalHigh += findings.high;
@@ -133,6 +158,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
       openHigh += findings.openHigh;
       openMedium += findings.openMedium;
       openLow += findings.openLow;
+      totalActivelyExploited += findings.activelyExploited || 0;
 
       return {
         id: p.id,
@@ -161,6 +187,7 @@ router.get('/overview', requireAuth, async (req: Request, res: Response) => {
         openHigh,
         openMedium,
         openLow,
+        activelyExploited: totalActivelyExploited,
       },
     });
   } catch (err) {
