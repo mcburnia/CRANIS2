@@ -95,7 +95,14 @@ describe('Cross-Organisation Access Control', () => {
     it('should not submit stage to other org report', async () => {
       const res = await api.post(`/api/cra-reports/${TEST_IDS.reports.draft}/stages`, {
         auth: impToken,
-        body: { stage: 'early_warning', content: { summary: 'Hacking attempt' } },
+        body: {
+          stage: 'early_warning',
+          content: { summary: 'Hacking attempt' },
+          authorise: true, // P10d — authorise is needed so this test specifically
+                           // exercises the cross-org rejection, not the auth gate.
+                           // (Cross-org rejection still wins; attacker cannot
+                           // bypass org isolation just by setting authorise=true.)
+        },
       });
       expect([403, 404]).toContain(res.status);
     });

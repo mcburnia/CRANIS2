@@ -1155,7 +1155,67 @@ sudo systemctl restart cloudflared
 
 *Update this section at the end of each working session.*
 
-**Last updated:** 2026-05-02 (session 63)
+**Last updated:** 2026-05-06 (session 64)
+
+**Recently completed (session 64) — P10 Automated CRA Art. 14 Trigger Engine SHIPPED:**
+
+- **P10a: Threat-intelligence enrichment** (5 commits, `50b1f40` → `67ac399`):
+  - **P10a-1 ingestion foundation** — daily refresh of CISA KEV (~1.3k entries) and FIRST EPSS (~270k scores) into `vuln_db_kev` / `vuln_db_epss`. Full-snapshot atomic via `sync_batch_id`. EPSS gunzipped on the fly via Node `zlib` (no temp files, no extra dependency). Defensive against empty-feed clobber. Wired into the scheduler at 02:00 UTC, slotted between vuln-db sync (01:00) and platform scan (03:00).
+  - **P10a-2 scanner enrichment** — `vulnerability_findings` gains 5 columns (`kev_listed`, `kev_due_date`, `kev_known_ransomware`, `epss_score`, `epss_percentile`). Single batched LEFT JOIN per scan via `enrichByCveIds`. Both scan paths populate the new columns at insert and on re-scan upserts.
+  - **P10a-3 prioritisation logic** — `applyThreatIntelPriority` pure helper: KEV-listed → critical, EPSS ≥ 0.9 → bump one tier, EPSS < 0.01 + CVSS < 4.0 → cap at low. Mitigation text regenerated with KEV/EPSS evidence prepended (CISA KEV reference, federal due date, ransomware flag, CRA Art. 14 framing).
+  - **P10a-5 actively_exploited auto-flag** on `cra_reports` — derived from linked finding's KEV/EPSS at create time via `isActivelyExploited` (KEV listed OR EPSS ≥ 0.9). Cached on the row, indexed for fast filter. Copilot incident-report draft prompt now appends KEV/EPSS context lines so AI-drafted ENISA notifications cite the active-exploitation evidence directly.
+  - **P10a-4 UI surfacing** — `ThreatIntelBadges` shared component (red KEV pill + EPSS percentile chip). Badges on Risk Findings list (cross-product + product-detail), "Actively Exploited" StatCard on the Risk Findings page and Dashboard, "Actively Exploited" filter button, "Actively Exploited" red pill on CRA reports list, prominent banner + KEV/EPSS evidence on CRA report detail.
+- **P10b: Automated trigger engine + cryptographic awareness anchor** (2 commits, `949aef2` + `b8441c0`):
+  - **P10b-1 trigger engine** — new `services/cra-trigger-engine.ts`. Pure helpers (`parseTriggerPolicy`, `buildTriggerReason`, `calculateAwarenessDeadlines`, `buildNotificationBody`) plus `runCraTriggerEngine()` entry point. Idempotent: unique partial index on `(linked_finding_id) WHERE auto_triggered = TRUE` + `ON CONFLICT DO NOTHING` + concurrent-run lookup. Configurable from day one via `platform_settings`: `cra_trigger.enabled`, `cra_trigger.kev_action` (`trigger`/`alert_only`), `cra_trigger.epss_threshold` (default 0.95). Wired into `refreshThreatIntel` so newly-actively-exploited CVEs auto-create a draft Art. 14 incident in the same daily cycle. Critical-severity bell notification per auto-trigger.
+  - **P10b-2 RFC 3161 awareness attestation** — 5 new columns on `cra_reports` (`awareness_evidence_json`, `awareness_evidence_hash`, `awareness_tsa_token`, `awareness_tsa_url`, `awareness_attested_at`). Pure helpers `canonicalJson` (stable JSON), `buildAwarenessEvidence`, `hashAwarenessEvidence`. `createTriggerReport` writes evidence + hash atomically with the row; `stampAwarenessAttestation` synchronously round-trips to FreeTSA (or configured TSA) and persists the signed token. Non-blocking: TSA failure leaves the report intact with evidence + hash; `backfillMissingAttestations` retries on each engine pass (bounded `LIMIT 50`).
+- **P10c: Per-product regulatory state view** (1 commit, `fe1ba49`):
+  - New `services/regulatory-state.ts` pure helpers (`formatHoursRemaining`, `deriveReportState`, `summariseRegulatoryState`, `findSoonestReport`).
+  - New endpoint `GET /api/cra-reports/regulatory-state/:productId` — consolidates open Art. 14 reports for a product into a single payload with per-report countdowns and a summary `{ overdue, urgent, approaching, autoTriggered, activelyExploited }`.
+  - New `RegulatoryStatePanel` frontend component on the product Overview tab. Renders nothing on healthy products; otherwise a banner colour-coded by worst urgency (red/amber/blue) with the soonest deadline headlined and a collapsible breakdown of every open report.
+  - Existing `checkCraDeadlines` already covers auto-triggered reports with 12h/4h/1h/overdue thresholds — no scheduler changes needed.
+- **P10d: Submit-with-authorisation + RFC 3161 stage attestation** (1 commit, `290d85f`):
+  - 8 new columns on `cra_report_stages` (`authorised_by_email`, `authorised_ip`, `authorised_user_agent`, `submission_evidence_json`, `submission_evidence_hash`, `submission_tsa_token`, `submission_tsa_url`, `submission_attested_at`).
+  - New service `services/submission-attestation.ts` mirroring the awareness pattern.
+  - `POST /:id/stages` now requires explicit `authorise: true` for terminal stages (400 + clear error otherwise). Captures user identity + IP + user-agent, builds canonical JSON evidence, hashes, INSERTs atomically, RFC 3161-stamps synchronously. Backfill loop wired into `refreshThreatIntel`.
+  - Frontend confirm dialog before submit (explains exactly what will be recorded). Timeline rows now show green "✓ TSA-attested" or amber "attestation pending" badge with hash tooltip.
+- **Test additions: 119 new unit tests + 1 new auth-gate test**, all passing:
+  - `services/threat-intel.test.ts` (52 tests)
+  - `services/cra-trigger-engine.test.ts` (33 tests)
+  - `services/regulatory-state.test.ts` (18 tests)
+  - `services/submission-attestation.test.ts` (16 tests)
+  - + new "rejects without authorise: true" in cra-reports.test.ts
+  - 6 existing stage-submit tests updated to pass `authorise: true`
+- **Brand pack** (commit `a3306fc`) — `docs/BRAND-PACK.md` extracted from the live UI for handing to external designers (CoWork etc.). Logo files inventoried, palette + typography + voice documented, quick-reference Canva block.
+- **Feedback memory saved** — [feedback_no_pause_for_confirmation.md](.claude/projects/-home-mcburnia-cranis2/memory/feedback_no_pause_for_confirmation.md): when the user has agreed a multi-step plan, don't append "want me to continue or pause?" prompts after each commit.
+- **Full regression run (Rule 6) — 2026-05-06:**
+  - **Backend (Vitest):** 123 files. Three full-suite runs to characterise stability:
+    - Run 1: **2,299 passed, 1 failed (fixed in-session), 13 skipped** in 5m 42s.
+    - Run 2: 2,239 / 5 / 69 in 7m 28s (heavy stress: 3 `TypeError: fetch failed` + 2 cascade flakes).
+    - Run 3: **2,298 passed, 2 failed, 13 skipped** in ~7 minutes (2 `TimeoutError` flakes).
+  - **All failures across all 3 runs were verified flakes** — every failing test passes in isolation. Pattern matches the documented backend-memory-pressure flakiness; "TimeoutError" should probably be added to the API client retry list (currently only retries UND_ERR_SOCKET / ECONNRESET).
+  - **Net effect of P10:** ~110 net-new tests, 0 real regressions. New stable baseline ≈ **2,298–2,299 passing**, 13 expected skipped.
+  - **E2E (Playwright):** runs locally on the user's Mac; not run from this session.
+- **Test count delta: +109 from baseline** (was 2,189; new floor 2,298). Every commit in P10 was verified clean against the test stack.
+
+**Operational reminders for next session / dev redeploy:**
+
+P10b-1, P10b-2, P10c, and P10d all touched the schema (`cra_reports` and `cra_report_stages` gained columns; `vuln_db_kev` / `vuln_db_epss` are new tables; `cra_trigger.*` settings seeded). Dev backend rebuild required to pick up the schema and the new behaviour:
+
+```bash
+source ~/.nvm/nvm.sh && cd ~/cranis2 && \
+  (cd frontend && npm run build) && \
+  (cd backend && npm run build) && \
+  docker compose up -d --build backend nginx
+```
+
+Manual browser smoke-pass owed against `dev.cranis2.dev` after rebuild. Pages to spot-check:
+- Dashboard — "Actively Exploited" StatCard
+- Risk Findings — KEV pill / EPSS chip / "Actively Exploited" filter
+- Product → Risk Findings tab — badges next to finding titles
+- Product → Overview — RegulatoryStatePanel banner (only visible if open Art. 14 reports exist)
+- Vulnerability Reports list — red "Actively Exploited" pill
+- Vulnerability Report detail — red banner + linked-finding KEV/EPSS evidence
+- Submit Early Warning → confirm dialog → timeline shows "✓ TSA-attested" badge
 
 **Recently completed (session 63) — ownership cleanup, evidence locker, full regression, rebuild prep:**
 
@@ -1185,9 +1245,11 @@ sudo systemctl restart cloudflared
 
 ---
 
-## Roadmap — P10: Automated Art. 14 Trigger Engine
+## Roadmap — P10: Automated Art. 14 Trigger Engine — **COMPLETE (2026-05-06)**
 
-**Strategic driver:** CRA Art. 14 requires manufacturers to notify ENISA (via the relevant CSIRT) within 24 hours of becoming aware of an **actively exploited** vulnerability in their product. CRANIS2 currently detects CVEs but has no mechanism to identify "actively exploited" status, no automatic incident creation on detection, and no defensible "became-aware-at" timestamp. P10 closes that gap.
+> **All four sub-epics shipped in session 64.** Eight commits from `50b1f40` (P10a-1) through `290d85f` (P10d) on `main`. End-to-end regulatory chain in place: KEV/EPSS detection → enrichment → prioritisation → automatic Art. 14 incident creation → RFC 3161-attested awareness moment → escalating deadline tracking → per-product regulatory-state visibility → human-authorised submission with RFC 3161-attested authorisation. See "Recently completed (session 64)" above for full detail.
+
+**Strategic driver (kept here for reference):** CRA Art. 14 requires manufacturers to notify ENISA (via the relevant CSIRT) within 24 hours of becoming aware of an **actively exploited** vulnerability in their product. CRANIS2 currently detects CVEs but has no mechanism to identify "actively exploited" status, no automatic incident creation on detection, and no defensible "became-aware-at" timestamp. P10 closes that gap.
 
 **Once shipped, P10 makes CRANIS2 the manufacturer's defensible early-warning system for Art. 14:** detection → awareness timestamp (RFC3161-stamped) → automatic incident creation → escalating reminders against the 24h/72h/14-day deadlines → pre-drafted ENISA notification with one-click submit-with-authorisation.
 
