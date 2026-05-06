@@ -623,6 +623,17 @@ export async function initDb() {
     await client.query(`ALTER TABLE cra_reports ADD COLUMN IF NOT EXISTS actively_exploited BOOLEAN DEFAULT FALSE`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_actively_exploited ON cra_reports(actively_exploited) WHERE actively_exploited = TRUE`);
 
+    // P10b — Auto-trigger lineage. When the CRA Art. 14 trigger engine creates
+    // a report from a newly-actively-exploited finding, it stamps these columns
+    // so the row carries its own evidence of why and how it was created.
+    await client.query(`ALTER TABLE cra_reports ADD COLUMN IF NOT EXISTS auto_triggered BOOLEAN DEFAULT FALSE`);
+    await client.query(`ALTER TABLE cra_reports ADD COLUMN IF NOT EXISTS trigger_reason JSONB`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_cra_reports_auto_triggered ON cra_reports(auto_triggered) WHERE auto_triggered = TRUE`);
+    // Prevent the trigger engine from creating duplicate reports for the same
+    // finding (the engine also checks before insert, but the constraint is the
+    // last line of defence under concurrent runs).
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_cra_reports_auto_finding ON cra_reports(linked_finding_id) WHERE auto_triggered = TRUE AND linked_finding_id IS NOT NULL`);
+
     // CRA Article 14 – report stage submissions
     await client.query(`
       CREATE TABLE IF NOT EXISTS cra_report_stages (
@@ -1001,6 +1012,25 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
         ('copilot.monthly_token_limit', '500000'::jsonb)
       ON CONFLICT (key) DO NOTHING
     `, [JSON.stringify(PRICE_ID)]);
+
+    // P10b — CRA Art. 14 auto-trigger policy defaults.
+    // Configurable from day one so an operator can tighten or relax the
+    // trigger thresholds without a code change.
+    //
+    // - cra_trigger.enabled: master kill-switch.
+    // - cra_trigger.kev_action: 'trigger' (auto-create incident) or
+    //   'alert_only' (notify but don't create a report).
+    // - cra_trigger.epss_threshold: EPSS at or above this (and not on KEV)
+    //   triggers. 0.95 is deliberately stricter than the prioritisation
+    //   threshold (0.9) to avoid noise in the regulatory record while still
+    //   catching the highest-probability exploitation forecasts.
+    await client.query(`
+      INSERT INTO platform_settings (key, value) VALUES
+        ('cra_trigger.enabled', 'true'::jsonb),
+        ('cra_trigger.kev_action', '"trigger"'::jsonb),
+        ('cra_trigger.epss_threshold', '0.95'::jsonb)
+      ON CONFLICT (key) DO NOTHING
+    `);
 
     // ── CRA Category Recommendation System ──
     // Risk attribute definitions (regulatory baseline with optional admin overrides)

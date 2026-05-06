@@ -29,6 +29,11 @@ import { randomUUID } from 'crypto';
 import { Readable } from 'stream';
 import { createGunzip } from 'zlib';
 import { createInterface } from 'readline';
+// runCraTriggerEngine is invoked at the end of refreshThreatIntel so newly
+// KEV-listed CVEs immediately surface as Art. 14 incidents on affected
+// products. Imported lazily-shaped via a function reference so a future
+// circular import (engine importing from threat-intel) stays safe.
+import { runCraTriggerEngine } from './cra-trigger-engine.js';
 
 // --- Constants ---
 
@@ -414,6 +419,16 @@ export async function refreshThreatIntel(): Promise<void> {
     await refreshEpss();
   } catch (err: any) {
     errors.push('epss: ' + (err?.message || err));
+  }
+
+  // P10b — Run the CRA Art. 14 auto-trigger engine after the threat-intel
+  // refresh so newly KEV-listed / high-EPSS CVEs that affect open findings
+  // produce a draft incident report in the same daily cycle. The engine is
+  // idempotent and policy-gated, so this is safe to invoke unconditionally.
+  try {
+    await runCraTriggerEngine();
+  } catch (err: any) {
+    errors.push('cra_trigger_engine: ' + (err?.message || err));
   }
 
   const durationSeconds = (Date.now() - startTime) / 1000;
