@@ -28,6 +28,10 @@ describe('Cloudflare Tunnel connectivity', () => {
     expect(res.status).toBe(200);
 
     const body = await res.json();
-    expect(body).toHaveProperty('status', 'ok');
+    // Accept either `ok` or `degraded` — both indicate the tunnel is up and
+    // the backend responded. `degraded` is returned when a deploy invariant
+    // (e.g. platform admin presence) is violated, which is orthogonal to
+    // tunnel reachability.
+    expect(['ok', 'degraded']).toContain(body.status);
   });
 });

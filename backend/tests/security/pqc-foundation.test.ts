@@ -379,6 +379,10 @@ describe('Backend JWT integration', () => {
     const res = await fetch(`${TEST_BASE_URL}/api/health`);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.status).toBe('ok');
+    // /api/health surfaces deploy invariants: status is `ok` only when a
+    // platform admin exists, otherwise `degraded`. Test stack does not seed
+    // an admin, so accept either as long as the contract is honoured.
+    expect(['ok', 'degraded']).toContain(body.status);
+    expect(typeof body.platformAdmins).toBe('number');
   });
 });

@@ -10,7 +10,7 @@
 
 import express from 'express';
 import cors from 'cors';
-import { initDb } from './db/pool.js';
+import { initDb, countPlatformAdmins } from './db/pool.js';
 import { initGraph, getDriver, closeDriver } from './db/neo4j.js';
 import authRoutes from './routes/auth.js';
 import orgRoutes from './routes/org.js';
@@ -161,9 +161,21 @@ app.use('/api/products', incidentRoutes);
 app.use('/api/org', nonprofitUserRouter);
 app.use('/api/account', accountRoutes);
 
-// Health check
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok' });
+// Health check — surfaces production invariants for monitoring.
+// `degraded` = backend is up but a deploy invariant is violated (e.g. no
+// platform admin exists, so /admin is unreachable). 200 in both cases so
+// uptime monitors don't page; consumers should treat `status` field, not
+// HTTP code, as the signal.
+app.get('/api/health', async (_req, res) => {
+  try {
+    const platformAdmins = await countPlatformAdmins();
+    res.json({
+      status: platformAdmins > 0 ? 'ok' : 'degraded',
+      platformAdmins,
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'error', error: 'health-check failed' });
+  }
 });
 
 // CRANIS2 document signing public key (for independent verification of signed archives)

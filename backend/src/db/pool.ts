@@ -2667,6 +2667,33 @@ Key data: Vulnerability findings and triage status, CVD policy URL, SBOM scan re
   } finally {
     client.release();
   }
+
+  await assertPlatformAdminInvariant();
+}
+
+export async function countPlatformAdmins(): Promise<number> {
+  const result = await pool.query<{ n: number }>(
+    'SELECT COUNT(*)::int AS n FROM users WHERE is_platform_admin = TRUE'
+  );
+  return result.rows[0]?.n ?? 0;
+}
+
+async function assertPlatformAdminInvariant() {
+  const adminCount = await countPlatformAdmins();
+  if (adminCount > 0) return;
+
+  if (process.env.NODE_ENV === 'production') {
+    console.error(
+      '[DB] CRITICAL: zero platform admins exist in production. ' +
+      'The /admin UI is unreachable until one is granted. Promote a user with: ' +
+      "UPDATE users SET is_platform_admin = TRUE WHERE email = '<your-email>';"
+    );
+  } else {
+    console.warn(
+      '[DB] No platform admins exist — /admin will return 403. ' +
+      'Set one with the SQL above when needed.'
+    );
+  }
 }
 
 export default pool;
