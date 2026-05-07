@@ -41,6 +41,8 @@ const HELP_ROUTES: HelpRoute[] = [
   { pattern: '/signup', help: '/help/ch1_01_account_creation.html' },
   { pattern: '/check-email', help: '/help/ch1_01_account_creation.html' },
   { pattern: '/verify-email', help: '/help/ch1_01_account_creation.html' },
+  { pattern: '/forgot-password', help: '/help/ch1_01_account_creation.html' },
+  { pattern: '/reset-password', help: '/help/ch1_01_account_creation.html' },
   { pattern: '/getting-started', help: '/help/ch1_02_org_setup.html' },
   { pattern: '/setup/org', help: '/help/ch1_02_org_setup.html' },
 

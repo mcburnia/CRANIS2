@@ -23,7 +23,7 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
-import { verifySessionToken } from '../utils/token.js';
+import { verifySessionToken, getTokenIssuedAt } from '../utils/token.js';
 import { verifyPassword } from '../utils/password.js';
 import { authRateLimit } from '../middleware/authRateLimit.js';
 import { createHash } from 'crypto';
@@ -46,6 +46,29 @@ async function requireAuth(req: Request, res: Response, next: Function) {
   try {
     const payload = verifySessionToken(token);
     if (!payload) { res.status(401).json({ error: 'Invalid token' }); return; }
+
+    // Enforce session-invalidation watermark: reject tokens issued before
+    // the user's last password reset / forced sign-out. Defends against a
+    // pre-reset token still being usable on /api/account/* (where
+    // CRAN-30 password and email mutations live).
+    const tokenIat = getTokenIssuedAt(token);
+    const userRow = await pool.query<{ sessions_invalidated_before: Date | null }>(
+      'SELECT sessions_invalidated_before FROM users WHERE id = $1',
+      [payload.userId]
+    );
+    if (userRow.rows.length === 0) {
+      res.status(401).json({ error: 'User not found' });
+      return;
+    }
+    const watermark = userRow.rows[0].sessions_invalidated_before;
+    if (watermark && tokenIat !== null) {
+      const watermarkSec = Math.floor(new Date(watermark).getTime() / 1000);
+      if (tokenIat < watermarkSec) {
+        res.status(401).json({ error: 'Session was invalidated. Please sign in again.' });
+        return;
+      }
+    }
+
     (req as any).userId = payload.userId;
     (req as any).email = payload.email;
     next();

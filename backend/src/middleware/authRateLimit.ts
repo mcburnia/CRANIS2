@@ -47,6 +47,11 @@ export const AUTH_RATE_LIMITS: Record<string, RateLimitConfig> = {
   invite:       { maxAttempts: 5,  windowMs: 60 * 60 * 1000 },  // 5 per hour
   data_export:  { maxAttempts: 5,  windowMs: 60 * 60 * 1000 },  // 5 per hour
   account_delete: { maxAttempts: 3,  windowMs: 60 * 60 * 1000 },  // 3 per hour
+  password_reset_request: { maxAttempts: 3,  windowMs: 60 * 60 * 1000 },   // 3 per hour
+  password_reset_confirm: { maxAttempts: 10, windowMs: 60 * 60 * 1000 },   // 10 per hour
+  account_password: { maxAttempts: 5,  windowMs: 60 * 60 * 1000 },         // 5 per hour
+  account_email:    { maxAttempts: 3,  windowMs: 60 * 60 * 1000 },         // 3 per hour
+  account_profile:  { maxAttempts: 20, windowMs: 60 * 60 * 1000 },         // 20 per hour
 };
 
 /** In-memory store: key = "category:ip" → entry */

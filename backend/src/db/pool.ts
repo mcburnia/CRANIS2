@@ -61,7 +61,51 @@ export async function initDb() {
         ALTER TABLE users ADD COLUMN IF NOT EXISTS invited_by UUID;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_at TIMESTAMPTZ;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_by VARCHAR(255);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name VARCHAR(120);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS pending_email VARCHAR(255);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS pending_email_token VARCHAR(255);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS pending_email_expires_at TIMESTAMPTZ;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS sessions_invalidated_before TIMESTAMPTZ;
       END $$;
+    `);
+
+    // Password-reset tokens — one row per reset request. Token is hashed
+    // at rest so a DB read does not leak working tokens. used_at enforces
+    // one-time-use; expires_at is a hard deadline (60 minutes from issue).
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token_hash VARCHAR(64) NOT NULL UNIQUE,
+        requesting_ip INET,
+        expires_at TIMESTAMPTZ NOT NULL,
+        used_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user
+        ON password_reset_tokens(user_id);
+      CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires
+        ON password_reset_tokens(expires_at);
+    `);
+
+    // Account security events — append-only audit trail for credential and
+    // profile changes (password reset, password change, email change,
+    // profile update). Used by CRAN-29 + CRAN-30. event_data is JSONB so
+    // event-specific context can be added without schema churn.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS auth_security_events (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        event_type VARCHAR(64) NOT NULL,
+        event_data JSONB DEFAULT '{}',
+        ip_address INET,
+        user_agent TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_auth_security_events_user
+        ON auth_security_events(user_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_auth_security_events_type
+        ON auth_security_events(event_type, created_at DESC);
     `);
 
     // User events table – passive telemetry

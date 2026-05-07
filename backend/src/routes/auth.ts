@@ -16,6 +16,10 @@ import { sendVerificationEmail } from '../services/email.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { getDriver } from '../db/neo4j.js';
 import { authRateLimit } from '../middleware/authRateLimit.js';
+import {
+  requestPasswordReset,
+  confirmPasswordReset,
+} from '../services/password-reset.js';
 
 const router = Router();
 
@@ -487,5 +491,80 @@ router.post('/accept-invite', authRateLimit('invite'), async (req: Request, res:
     res.status(500).json({ error: 'Failed to activate account. Please try again.' });
   }
 });
+
+// POST /api/auth/password-reset-request
+// Always returns 200 with the same body whether the email exists or not, to
+// prevent account enumeration. Real verification happens via email delivery.
+router.post(
+  '/password-reset-request',
+  authRateLimit('password_reset_request'),
+  async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      if (typeof email !== 'string' || !email.includes('@')) {
+        res.status(400).json({ error: 'Email is required.' });
+        return;
+      }
+
+      const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0].trim()
+        || req.ip
+        || null;
+
+      const outcome = await requestPasswordReset(email, ip);
+
+      // Constant body — never reveal whether the email is on file.
+      const body: { ok: true; devToken?: string } = { ok: true };
+      if (outcome.devToken && DEV_MODE) {
+        body.devToken = outcome.devToken;
+      }
+      res.json(body);
+    } catch (err) {
+      console.error('Password reset request error:', err);
+      // Even on internal failure we return 200 so the response shape is
+      // identical to the success path (no enumeration via error response).
+      res.json({ ok: true });
+    }
+  }
+);
+
+// POST /api/auth/password-reset
+// Confirms a reset token and updates the password. Does not require an
+// existing session. Invalidates all existing sessions on success.
+router.post(
+  '/password-reset',
+  authRateLimit('password_reset_confirm'),
+  async (req: Request, res: Response) => {
+    try {
+      const { token, password } = req.body;
+      if (typeof token !== 'string' || typeof password !== 'string') {
+        res.status(400).json({ error: 'Token and password are required.' });
+        return;
+      }
+
+      const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0].trim()
+        || req.ip
+        || null;
+      const ua = req.headers['user-agent'] || null;
+
+      const result = await confirmPasswordReset(token, password, ip, typeof ua === 'string' ? ua : null);
+
+      if (!result.success) {
+        if (result.reason === 'weak_password') {
+          res.status(400).json({ error: 'Password does not meet strength requirements.' });
+          return;
+        }
+        // For invalid_token / expired / already_used we collapse the message
+        // so attackers cannot distinguish "wrong token" from "valid-but-used".
+        res.status(400).json({ error: 'This reset link is invalid or has expired. Request a new one.' });
+        return;
+      }
+
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('Password reset confirm error:', err);
+      res.status(500).json({ error: 'Failed to reset password. Please try again.' });
+    }
+  }
+);
 
 export default router;

@@ -237,6 +237,18 @@ export const ROUTE_META: Record<string, PageMeta> = {
     canonical: '/accept-invite',
     noindex: true,
   },
+  '/forgot-password': {
+    title: 'Reset Your Password – CRANIS2',
+    description: 'Request a password reset link for your CRANIS2 account.',
+    canonical: '/forgot-password',
+    noindex: true,
+  },
+  '/reset-password': {
+    title: 'Choose New Password – CRANIS2',
+    description: 'Set a new password for your CRANIS2 account.',
+    canonical: '/reset-password',
+    noindex: true,
+  },
 };
 
 /* ── Authenticated page titles (all noindex) ── */

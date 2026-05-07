@@ -45,6 +45,42 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
 }
 
 
+export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
+  const from = process.env.EMAIL_FROM || 'info@cranis2.com';
+  const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+
+  await resend.emails.send({
+    from: `CRANIS2 <${from}>`,
+    to,
+    subject: 'Reset your CRANIS2 password',
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 2rem;">
+        <h1 style="font-size: 1.5rem; color: #e4e4e7; margin-bottom: 1rem;">
+          Reset your <span style="color: #3b82f6;">CRANIS2</span> password
+        </h1>
+        <p style="color: #8b8d98; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+          We received a request to reset the password for this account. Click the button below to choose a new password.
+        </p>
+        <a href="${resetUrl}" style="display: inline-block; background: #3b82f6; color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.95rem;">
+          Reset Password
+        </a>
+        <p style="color: #8b8d98; font-size: 0.8rem; margin-top: 1.5rem;">
+          This link expires in 60 minutes. If you did not request a reset, you can safely ignore this email — your password will not change.
+        </p>
+        <p style="color: #8b8d98; font-size: 0.8rem; margin-top: 0.75rem;">
+          For your security, completing the reset will also sign you out of any other devices currently signed in to this account.
+        </p>
+        <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 2rem 0;" />
+        <p style="color: #8b8d98; font-size: 0.75rem;">
+          CRANIS2 – CRA Compliance Made Simple
+        </p>
+      </div>
+    `,
+  });
+}
+
+
 export async function sendInviteEmail(to: string, token: string, inviterEmail: string): Promise<void> {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
   const from = process.env.EMAIL_FROM || 'info@cranis2.com';

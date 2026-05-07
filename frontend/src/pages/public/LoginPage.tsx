@@ -107,6 +107,9 @@ export default function LoginPage() {
           </form>
 
           <div className="auth-footer">
+            <Link to="/forgot-password">Forgot your password?</Link>
+          </div>
+          <div className="auth-footer">
             Don't have an account? <Link to="/signup">Sign up</Link>
           </div>
           <div className="auth-legal-links">

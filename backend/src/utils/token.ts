@@ -48,3 +48,19 @@ export function verifySessionToken(token: string): { userId: string; email: stri
     algorithms: [JWT_ALGORITHM],
   }) as { userId: string; email: string };
 }
+
+/**
+ * Return the token's `iat` (issued-at) claim in seconds-since-epoch, or null
+ * if it cannot be read. Used by middlewares that need to enforce a per-user
+ * session-invalidation watermark (e.g. reject all tokens issued before a
+ * password reset).
+ *
+ * NOTE: this does NOT verify the signature — callers are expected to first
+ * pass the token through verifySessionToken().
+ */
+export function getTokenIssuedAt(token: string): number | null {
+  const decoded = jwt.decode(token);
+  if (!decoded || typeof decoded !== 'object') return null;
+  const iat = (decoded as { iat?: unknown }).iat;
+  return typeof iat === 'number' ? iat : null;
+}
