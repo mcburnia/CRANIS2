@@ -45,6 +45,88 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
 }
 
 
+export interface NewSignupNotificationData {
+  newUserEmail: string;
+  preferredLanguage: string | null;
+  bonusCode: string | null;
+  affiliateName: string | null;
+  affiliateContactEmail: string | null;
+  referrer: string | null;
+  signedUpAtIso: string;
+}
+
+/**
+ * Send an internal admin notification when a new user signs up. Recipient
+ * is whatever ADMIN_NOTIFY_EMAIL resolves to (defaults to info@cranis2.com).
+ *
+ * This is a fire-and-forget side effect of the signup flow — failures
+ * MUST NOT bubble up to the user. Callers are expected to wrap with
+ * .catch() to log without rolling back the signup.
+ */
+export async function sendNewSignupNotification(data: NewSignupNotificationData): Promise<void> {
+  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL || 'info@cranis2.com';
+  const from = process.env.EMAIL_FROM || 'info@cranis2.com';
+
+  const bonusLine = data.bonusCode
+    ? `${data.bonusCode}${data.affiliateName ? ` — affiliate: ${data.affiliateName} (${data.affiliateContactEmail || 'no contact'})` : ''}`
+    : 'none';
+
+  const referrerLine = data.referrer ? data.referrer : '(direct / no referrer)';
+  const langLine = data.preferredLanguage || '(unset)';
+
+  await resend.emails.send({
+    from: `CRANIS2 <${from}>`,
+    to: adminEmail,
+    subject: `New CRANIS2 signup — ${data.newUserEmail}`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 540px; margin: 0 auto; padding: 1.5rem;">
+        <h1 style="font-size: 1.25rem; color: #e4e4e7; margin: 0 0 0.5rem 0;">
+          New <span style="color: #3b82f6;">CRANIS2</span> signup
+        </h1>
+        <p style="color: #8b8d98; font-size: 0.85rem; margin: 0 0 1.25rem 0;">
+          A new account has been registered.
+        </p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <tr>
+            <td style="color: #8b8d98; padding: 0.4rem 0; vertical-align: top; width: 38%;">Email</td>
+            <td style="color: #e4e4e7; padding: 0.4rem 0;"><strong>${escapeHtml(data.newUserEmail)}</strong></td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.4rem 0; vertical-align: top;">Signed up at (UTC)</td>
+            <td style="color: #e4e4e7; padding: 0.4rem 0;">${escapeHtml(data.signedUpAtIso)}</td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.4rem 0; vertical-align: top;">Preferred language</td>
+            <td style="color: #e4e4e7; padding: 0.4rem 0;">${escapeHtml(langLine)}</td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.4rem 0; vertical-align: top;">Source referrer</td>
+            <td style="color: #e4e4e7; padding: 0.4rem 0;">${escapeHtml(referrerLine)}</td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.4rem 0; vertical-align: top;">Bonus code</td>
+            <td style="color: #e4e4e7; padding: 0.4rem 0;">${escapeHtml(bonusLine)}</td>
+          </tr>
+        </table>
+        <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 1.5rem 0 1rem 0;" />
+        <p style="color: #8b8d98; font-size: 0.75rem; margin: 0;">
+          Sent automatically by CRANIS2 on each new signup. To change the recipient, set ADMIN_NOTIFY_EMAIL in the backend environment.
+        </p>
+      </div>
+    `,
+  });
+}
+
+/** Minimal HTML-escape for values interpolated into the email body. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
   const from = process.env.EMAIL_FROM || 'info@cranis2.com';

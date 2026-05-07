@@ -12,7 +12,7 @@ import { Router, Request, Response } from 'express';
 import pool from '../db/pool.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { generateVerificationToken, generateSessionToken } from '../utils/token.js';
-import { sendVerificationEmail } from '../services/email.js';
+import { sendVerificationEmail, sendNewSignupNotification, NewSignupNotificationData } from '../services/email.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { getDriver } from '../db/neo4j.js';
 import { authRateLimit } from '../middleware/authRateLimit.js';
@@ -50,9 +50,11 @@ router.post('/register', authRateLimit('register'), async (req: Request, res: Re
     // Validate bonus code if supplied. Self-referral (affiliate trying to use
     // their own code) is rejected to prevent abuse.
     let canonicalBonusCode: string | null = null;
+    let affiliateDisplayName: string | null = null;
+    let affiliateContactEmail: string | null = null;
     if (typeof bonusCode === 'string' && bonusCode.trim().length > 0) {
       const lookup = await pool.query(
-        `SELECT bonus_code, contact_email FROM affiliates
+        `SELECT bonus_code, contact_email, display_name FROM affiliates
          WHERE LOWER(bonus_code) = LOWER($1) AND enabled = TRUE LIMIT 1`,
         [bonusCode.trim()]
       );
@@ -65,6 +67,8 @@ router.post('/register', authRateLimit('register'), async (req: Request, res: Re
         return;
       }
       canonicalBonusCode = lookup.rows[0].bonus_code;
+      affiliateDisplayName = lookup.rows[0].display_name ?? null;
+      affiliateContactEmail = lookup.rows[0].contact_email ?? null;
     }
 
     // Extract server-side telemetry
@@ -153,6 +157,10 @@ router.post('/register', authRateLimit('register'), async (req: Request, res: Re
         metadata: { devMode: true },
       });
 
+      // Admin signup notification (DEV_MODE skips Resend in line with the
+      // verification-email pattern — use prod for end-to-end verification).
+      // Skipped here so test-stack regression runs do not blast info@cranis2.com.
+
       res.status(201).json({ message: 'Account created and verified (dev mode)', devMode: true, session: sessionToken });
       return;
     }
@@ -180,6 +188,25 @@ router.post('/register', authRateLimit('register'), async (req: Request, res: Re
       browserLanguage,
       browserTimezone,
       referrer: clientReferrer || reqData.referrer,
+    });
+
+    // Admin signup notification — fire-and-forget. Failures (e.g. Resend
+    // outage, unverified domain, missing API key) MUST NOT bubble up to
+    // the user's signup response. We log instead. The notification body
+    // includes the new user's email, the bonus code (if any) plus the
+    // resolved affiliate display_name + contact_email, the preferred
+    // language, the source referrer, and the signup timestamp.
+    const notifyData: NewSignupNotificationData = {
+      newUserEmail: email.toLowerCase(),
+      preferredLanguage: preferredLang || null,
+      bonusCode: canonicalBonusCode,
+      affiliateName: affiliateDisplayName,
+      affiliateContactEmail: affiliateContactEmail,
+      referrer: clientReferrer || reqData.referrer || null,
+      signedUpAtIso: new Date().toISOString(),
+    };
+    sendNewSignupNotification(notifyData).catch((err) => {
+      console.error('[admin-notify] failed to send signup notification:', err);
     });
 
     res.status(201).json({ message: 'Verification email sent' });
