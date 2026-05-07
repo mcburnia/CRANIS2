@@ -12,7 +12,13 @@ import { Router, Request, Response } from 'express';
 import pool from '../db/pool.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { generateVerificationToken, generateSessionToken } from '../utils/token.js';
-import { sendVerificationEmail, sendNewSignupNotification, NewSignupNotificationData } from '../services/email.js';
+import {
+  sendVerificationEmail,
+  sendNewSignupNotification,
+  sendAffiliateSignupNotification,
+  NewSignupNotificationData,
+  AffiliateSignupNotificationData,
+} from '../services/email.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
 import { getDriver } from '../db/neo4j.js';
 import { authRateLimit } from '../middleware/authRateLimit.js';
@@ -208,6 +214,34 @@ router.post('/register', authRateLimit('register'), async (req: Request, res: Re
     sendNewSignupNotification(notifyData).catch((err) => {
       console.error('[admin-notify] failed to send signup notification:', err);
     });
+
+    // Affiliate notification — only fired when the signup used a valid
+    // bonus code AND we have the affiliate's contact email + display name
+    // resolved earlier from the affiliates table. Privacy-clean: tells
+    // the affiliate that a conversion happened and which of their codes
+    // drove it, with a cumulative running count, but NEVER shares the new
+    // user's email, referrer, or language. Fire-and-forget on the same
+    // .catch() pattern as the admin notification.
+    if (canonicalBonusCode && affiliateContactEmail && affiliateDisplayName) {
+      const cumulative = await pool
+        .query<{ count: string }>(
+          'SELECT COUNT(*)::text AS count FROM users WHERE LOWER(bonus_code_used) = LOWER($1)',
+          [canonicalBonusCode],
+        )
+        .then((r) => Number.parseInt(r.rows[0]?.count ?? '0', 10))
+        .catch(() => 0);
+
+      const affiliateData: AffiliateSignupNotificationData = {
+        affiliateContactEmail,
+        affiliateDisplayName,
+        bonusCode: canonicalBonusCode,
+        signedUpAtIso: notifyData.signedUpAtIso,
+        cumulativeSignups: cumulative,
+      };
+      sendAffiliateSignupNotification(affiliateData).catch((err) => {
+        console.error('[affiliate-notify] failed to send affiliate signup notification:', err);
+      });
+    }
 
     res.status(201).json({ message: 'Verification email sent' });
   } catch (err) {

@@ -127,6 +127,77 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+export interface AffiliateSignupNotificationData {
+  /** Affiliate's contact email — the recipient. */
+  affiliateContactEmail: string;
+  /** Affiliate's display name — used to greet them by name. */
+  affiliateDisplayName: string;
+  /** The bonus code that was used (the affiliate's own code). */
+  bonusCode: string;
+  /** Signup moment in ISO 8601 UTC. */
+  signedUpAtIso: string;
+  /** Cumulative number of signups using this code (including this one). */
+  cumulativeSignups: number;
+}
+
+/**
+ * Notify an affiliate that someone has signed up using their bonus code.
+ *
+ * Privacy boundary: the new user's email, referrer, and preferred language
+ * are NOT included. The affiliate is told *that* a conversion happened and
+ * *which* of their codes drove it — never *who*. This avoids exposing PII
+ * the signup user did not knowingly consent to share with the referrer.
+ *
+ * Fire-and-forget — failures must not bubble to the signup response.
+ * Callers are expected to wrap in .catch().
+ */
+export async function sendAffiliateSignupNotification(
+  data: AffiliateSignupNotificationData,
+): Promise<void> {
+  const from = process.env.EMAIL_FROM || 'info@cranis2.com';
+  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL || 'info@cranis2.com';
+
+  await resend.emails.send({
+    from: `CRANIS2 <${from}>`,
+    to: data.affiliateContactEmail,
+    subject: `Your CRANIS2 affiliate code ${data.bonusCode} drove a new signup`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 540px; margin: 0 auto; padding: 1.5rem;">
+        <h1 style="font-size: 1.25rem; color: #e4e4e7; margin: 0 0 0.5rem 0;">
+          New signup on <span style="color: #3b82f6;">CRANIS2</span>
+        </h1>
+        <p style="color: #8b8d98; font-size: 0.95rem; line-height: 1.6; margin: 0 0 1rem 0;">
+          Hi ${escapeHtml(data.affiliateDisplayName)},
+        </p>
+        <p style="color: #8b8d98; font-size: 0.95rem; line-height: 1.6; margin: 0 0 1.25rem 0;">
+          Someone has just signed up to CRANIS2 using your affiliate code <strong style="color: #e4e4e7;">${escapeHtml(data.bonusCode)}</strong>. Commission tracking is automatic per your agreement.
+        </p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <tr>
+            <td style="color: #8b8d98; padding: 0.4rem 0; vertical-align: top; width: 50%;">Bonus code used</td>
+            <td style="color: #e4e4e7; padding: 0.4rem 0;"><strong>${escapeHtml(data.bonusCode)}</strong></td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.4rem 0; vertical-align: top;">Signed up at (UTC)</td>
+            <td style="color: #e4e4e7; padding: 0.4rem 0;">${escapeHtml(data.signedUpAtIso)}</td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.4rem 0; vertical-align: top;">Total signups using this code</td>
+            <td style="color: #e4e4e7; padding: 0.4rem 0;"><strong>${data.cumulativeSignups}</strong></td>
+          </tr>
+        </table>
+        <p style="color: #8b8d98; font-size: 0.85rem; line-height: 1.5; margin: 1.25rem 0 0 0;">
+          For privacy, we do not share the new user's identity with affiliates. Conversions are tracked automatically; commission accrues per your agreed terms and is reflected in your monthly statement.
+        </p>
+        <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 1.5rem 0 1rem 0;" />
+        <p style="color: #8b8d98; font-size: 0.75rem; margin: 0;">
+          You're receiving this because you're an active affiliate with bonus code ${escapeHtml(data.bonusCode)}. To stop notifications or update your contact email, reply to <a href="mailto:${escapeHtml(adminEmail)}" style="color: #3b82f6;">${escapeHtml(adminEmail)}</a>.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
   const from = process.env.EMAIL_FROM || 'info@cranis2.com';
