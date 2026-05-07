@@ -261,7 +261,7 @@ export const AUTH_PAGE_TITLES: Record<string, string> = {
   '/organisation': 'Organisation',
   '/audit-log': 'Audit Log',
   '/trust-centre/settings': 'Trust Centre Settings',
-  '/welcome': 'Welcome',
+  '/getting-started': 'Getting Started',
   '/setup/org': 'Organisation Setup',
 };
 

@@ -102,7 +102,7 @@ const router = createBrowserRouter([
           { path: '/marketplace/:orgId', element: <MarketplaceDetailRedirect /> },
           { path: '/docs', element: <DocsPage /> },
           { path: '/docs/:slug', element: <DocsPage /> },
-          { path: '/welcome', element: <WelcomePage /> },
+          { path: '/getting-started', element: <WelcomePage /> },
           { path: '/setup/org', element: <OrgSetupPage /> },
         ],
       },

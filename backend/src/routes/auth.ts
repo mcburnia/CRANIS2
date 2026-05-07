@@ -392,7 +392,7 @@ router.get('/verify-email', authRateLimit('verify'), async (req: Request, res: R
     });
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
-    res.redirect(`${frontendUrl}/welcome?session=${sessionToken}`);
+    res.redirect(`${frontendUrl}/getting-started?session=${sessionToken}`);
   } catch (err) {
     console.error('Verification error:', err);
     res.status(500).json({ error: 'Verification failed. Please try again.' });

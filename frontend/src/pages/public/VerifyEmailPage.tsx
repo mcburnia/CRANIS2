@@ -25,13 +25,13 @@ export default function VerifyEmailPage() {
     // If we have a session token, verification was done server-side and we were redirected
     if (session) {
       localStorage.setItem('session_token', session);
-      window.location.href = '/welcome';
+      window.location.href = '/getting-started';
       return;
     }
 
     // If we have a verification token, call the API
     if (token) {
-      // The backend GET /api/auth/verify-email will redirect us to /welcome?session=xxx
+      // The backend GET /api/auth/verify-email will redirect us to /getting-started?session=xxx
       // So we just redirect the browser there
       window.location.href = `/api/auth/verify-email?token=${token}`;
       return;

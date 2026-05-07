@@ -34,7 +34,7 @@ export default function WelcomePage() {
     if (session) {
       localStorage.setItem('session_token', session);
       // Clean the URL
-      window.history.replaceState({}, '', '/welcome');
+      window.history.replaceState({}, '', '/getting-started');
     }
   }, [searchParams]);
 

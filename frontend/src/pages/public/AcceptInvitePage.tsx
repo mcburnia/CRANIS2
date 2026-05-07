@@ -109,7 +109,7 @@ export default function AcceptInvitePage() {
       if (data.hasOrg) {
         navigate('/dashboard');
       } else {
-        navigate('/welcome');
+        navigate('/getting-started');
       }
     } catch {
       setError('Network error. Please try again.');

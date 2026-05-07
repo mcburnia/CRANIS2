@@ -143,10 +143,10 @@ export default function SignupPage() {
         return;
       }
 
-      // Dev mode: account is auto-verified, redirect to welcome
+      // Dev mode: account is auto-verified, redirect to the getting-started flow
       if (data.devMode && data.session) {
         localStorage.setItem('session_token', data.session);
-        navigate('/welcome');
+        navigate('/getting-started');
         return;
       }
 
