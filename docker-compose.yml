@@ -31,7 +31,9 @@ services:
     build: ./backend
     container_name: cranis2_backend
     ports:
-      - "3001:3001"
+      # Bind to localhost only — public traffic must arrive via the host
+      # nginx reverse proxy, never directly to the container.
+      - "127.0.0.1:3001:3001"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       RESEND_API_KEY: ${RESEND_API_KEY}
@@ -265,7 +267,9 @@ services:
     build: ./welcome
     container_name: cranis2_welcome
     ports:
-      - "3004:3004"
+      # Bind to localhost only — public traffic must arrive via the host
+      # nginx reverse proxy, never directly to the container.
+      - "127.0.0.1:3004:3004"
     environment:
       WELCOME_USER: ${WELCOME_USER}
       WELCOME_PASS: ${WELCOME_PASS}
