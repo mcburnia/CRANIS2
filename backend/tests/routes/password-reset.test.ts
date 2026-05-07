@@ -287,5 +287,43 @@ describe('CRAN-29: Password reset', () => {
       const noPw = await api.post('/api/auth/password-reset', { body: { token: 'something' } });
       expect(noPw.status).toBe(400);
     });
+
+    it('marks email_verified=TRUE on successful reset (user proved inbox access)', async () => {
+      // Simulate a user who registered but never clicked the verification
+      // email — then forgot their password. Without auto-verify-on-reset,
+      // they would be permanently locked out: reset succeeds but login
+      // fails with "verify email". Auto-verify treats the click of the
+      // reset link as proof of inbox access.
+      const email = `${TEST_EMAIL_BASE}-unverified-reset@cranis2.test`;
+      await cleanupUser(email);
+      await registerTestUser(email, TEST_PASSWORD);
+
+      // Force the user back to unverified state, as if they'd never clicked
+      // the original signup verification link.
+      const pool = getAppPool();
+      await pool.query('UPDATE users SET email_verified = FALSE WHERE email = $1', [email]);
+
+      const reqRes = await api.post('/api/auth/password-reset-request', { body: { email } });
+      const token = reqRes.body.devToken as string;
+
+      const reset = await api.post('/api/auth/password-reset', {
+        body: { token, password: NEW_PASSWORD },
+      });
+      expect(reset.status).toBe(200);
+
+      // Email is now considered verified — user can log in with the new
+      // password without hitting the "Please verify your email" wall.
+      const loginRes = await api.post('/api/auth/login', { body: { email, password: NEW_PASSWORD } });
+      expect(loginRes.status).toBe(200);
+      expect(loginRes.body.session).toBeTruthy();
+
+      const verifyCheck = await pool.query<{ email_verified: boolean }>(
+        'SELECT email_verified FROM users WHERE email = $1',
+        [email]
+      );
+      expect(verifyCheck.rows[0].email_verified).toBe(true);
+
+      await cleanupUser(email);
+    });
   });
 });

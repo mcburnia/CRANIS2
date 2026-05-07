@@ -149,9 +149,18 @@ export async function confirmPasswordReset(
     // whole-second precision; rounding up means any token issued in the
     // same second as the reset is reliably rejected (iat < watermarkSec),
     // while a new token issued in the *next* second is accepted.
+    //
+    // We also set email_verified = TRUE here. Successfully clicking the
+    // reset link proves the user has live access to the inbox, which is a
+    // stronger signal than the original signup verification (which only
+    // requires receiving an email at signup time). Without this, any user
+    // who signed up but never clicked the verify-email link, then forgot
+    // their password, would be permanently locked out — the reset would
+    // succeed but the subsequent login would fail with "verify email".
     await pool.query(
       `UPDATE users
           SET password_hash = $1,
+              email_verified = TRUE,
               sessions_invalidated_before = date_trunc('second', NOW()) + INTERVAL '1 second',
               updated_at = NOW()
         WHERE id = $2`,

@@ -149,13 +149,28 @@ export default function AccountSettingsPage() {
 // ─── Profile tab ─────────────────────────────────────────────────────────
 
 function ProfileTab({ account, onUpdated }: { account: AccountInfo; onUpdated: () => void }) {
+  // Existing user records may have a locale-style code stored from
+  // navigator.language (e.g. "en-GB"), but the validator accepts bare
+  // 2-letter codes only. Normalise on load: strip the region suffix and
+  // fall back to "en" if the result is not in the supported set.
+  const SUPPORTED_CODES = SUPPORTED_LANGUAGES.map((l) => l.code);
+  const initialLanguage = (() => {
+    const raw = account.preferredLanguage ?? '';
+    const base = raw.split('-')[0].toLowerCase();
+    return SUPPORTED_CODES.includes(base) ? base : 'en';
+  })();
   const [displayName, setDisplayName] = useState(account.displayName ?? '');
-  const [language, setLanguage] = useState(account.preferredLanguage ?? 'en');
+  const [language, setLanguage] = useState(initialLanguage);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const dirty = displayName !== (account.displayName ?? '') || language !== (account.preferredLanguage ?? 'en');
+  // The existing value may be locale-style; treat the form as dirty when the
+  // submitted language differs from the persisted one OR when the persisted
+  // value needs normalisation (so "Save changes" is enabled to fix the data).
+  const dirty =
+    displayName !== (account.displayName ?? '') ||
+    language !== account.preferredLanguage;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

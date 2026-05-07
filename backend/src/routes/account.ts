@@ -945,10 +945,22 @@ router.put('/profile', authRateLimit('account_profile'), requireAuth, async (req
     res.status(400).json({ error: 'Display name must be a string up to 120 characters.' });
     return;
   }
-  if (preferredLanguage !== undefined &&
-      (typeof preferredLanguage !== 'string' || !SUPPORTED_LANGUAGES.has(preferredLanguage))) {
-    res.status(400).json({ error: 'Unsupported language code.' });
-    return;
+  // Accept both 2-letter codes ("en") and locale-style ("en-GB") — the
+  // latter is what older signup records carry from navigator.language.
+  // Normalise to the bare base on the way in so the column is consistent
+  // going forward.
+  let normalisedLanguage: string | undefined;
+  if (preferredLanguage !== undefined) {
+    if (typeof preferredLanguage !== 'string' || preferredLanguage.length === 0) {
+      res.status(400).json({ error: 'Unsupported language code.' });
+      return;
+    }
+    const base = preferredLanguage.split('-')[0].toLowerCase();
+    if (!SUPPORTED_LANGUAGES.has(base)) {
+      res.status(400).json({ error: 'Unsupported language code.' });
+      return;
+    }
+    normalisedLanguage = base;
   }
 
   const updates: string[] = [];
@@ -957,8 +969,8 @@ router.put('/profile', authRateLimit('account_profile'), requireAuth, async (req
     params.push(displayName.trim() === '' ? null : displayName.trim());
     updates.push(`display_name = $${params.length}`);
   }
-  if (preferredLanguage !== undefined) {
-    params.push(preferredLanguage);
+  if (normalisedLanguage !== undefined) {
+    params.push(normalisedLanguage);
     updates.push(`preferred_language = $${params.length}`);
   }
   if (updates.length === 0) {

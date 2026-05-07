@@ -108,6 +108,42 @@ describe('CRAN-30: Account settings', () => {
       await cleanupUser(email);
     });
 
+    it('accepts locale-style codes (e.g. en-GB) and normalises to the base', async () => {
+      // Older signup records carry navigator.language values like "en-GB" in
+      // preferred_language. The validator must accept these and store the
+      // bare base ("en") so the column converges on a consistent shape.
+      const email = 'cran30-locale@cranis2.test';
+      await cleanupUser(email);
+      const token = await registerTestUser(email, TEST_PASSWORD);
+
+      const res = await api.put('/api/account/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+        body: { preferredLanguage: 'en-GB' },
+      });
+      expect(res.status).toBe(200);
+
+      const profile = await api.get('/api/account', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(profile.body.preferredLanguage).toBe('en');
+
+      await cleanupUser(email);
+    });
+
+    it('rejects locale-style codes whose base is unsupported (e.g. xx-YY)', async () => {
+      const email = 'cran30-badlocale@cranis2.test';
+      await cleanupUser(email);
+      const token = await registerTestUser(email, TEST_PASSWORD);
+
+      const res = await api.put('/api/account/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+        body: { preferredLanguage: 'xx-YY' },
+      });
+      expect(res.status).toBe(400);
+
+      await cleanupUser(email);
+    });
+
     it('rejects an oversized display name', async () => {
       const email = 'cran30-bigname@cranis2.test';
       await cleanupUser(email);
