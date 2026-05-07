@@ -195,6 +195,14 @@ export default function Sidebar({ onNavigate, orgName }: SidebarProps) {
       )}
       <div className="sidebar-footer">
         <span className="sidebar-user-email">{user?.email}</span>
+        <NavLink
+          to="/account"
+          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+          onClick={onNavigate}
+        >
+          <UserCircle size={18} className="nav-icon" />
+          Account Settings
+        </NavLink>
         <button className="nav-item logout-btn" onClick={handleLogout}>
           <LogOut size={18} className="nav-icon" />
           Sign Out

@@ -274,6 +274,7 @@ export const AUTH_PAGE_TITLES: Record<string, string> = {
   '/audit-log': 'Audit Log',
   '/trust-centre/settings': 'Trust Centre Settings',
   '/getting-started': 'Getting Started',
+  '/account': 'Account Settings',
   '/setup/org': 'Organisation Setup',
 };
 
