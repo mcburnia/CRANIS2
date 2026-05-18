@@ -30,6 +30,14 @@ export function providerLabel(provider: string): string {
   return PROVIDER_LABELS[provider] || provider.charAt(0).toUpperCase() + provider.slice(1);
 }
 
+// Ensure a URL has http(s):// so it's treated as absolute by the browser.
+// A schemeless value like "github.com/foo/bar" used as an href would otherwise
+// be resolved relative to the current page and never reach the intended host.
+export function ensureHttpScheme(url: string | null | undefined): string {
+  if (!url) return '';
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
 // ── CRA constants ────────────────────────────────────────────
 
 export const CRA_CATEGORY_HELP = 'The CRA defines four product categories with increasing obligations. Default: standard cybersecurity requirements (self-assessment, Module A). Important Class I: products with higher risk. Must use harmonised standards or third-party assessment. Important Class II: critical infrastructure products. Mandatory third-party conformity assessment (Module B+C or H). Critical: highest risk. Requires EU cybersecurity certification per Article 8(6).';

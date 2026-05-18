@@ -26,7 +26,7 @@ import type {
 } from './shared';
 import {
   LANGUAGE_COLORS, TYPE_LABELS,
-  providerLabel, formatDateTime, timeAgo,
+  providerLabel, formatDateTime, timeAgo, ensureHttpScheme,
 } from './shared';
 import ProviderIcon from './ProviderIcon';
 
@@ -354,7 +354,7 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
             <span className="pd-detail-label">Repository</span>
             <span className="pd-detail-value">
               {product.repoUrl ? (
-                <a href={product.repoUrl} target="_blank" rel="noopener noreferrer" className="pd-repo-detail-link">
+                <a href={ensureHttpScheme(product.repoUrl)} target="_blank" rel="noopener noreferrer" className="pd-repo-detail-link">
                   {product.repoUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\.git$/, '')} <ExternalLink size={10} />
                 </a>
               ) : '–'}

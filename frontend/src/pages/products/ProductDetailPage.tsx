@@ -39,7 +39,7 @@ import type {
 } from './product-detail/shared';
 import {
   PRODUCT_TYPES, TYPE_LABELS, CATEGORY_INFO, CRA_CATEGORY_HELP,
-  getTypeIcon, formatDate, providerLabel,
+  getTypeIcon, formatDate, providerLabel, ensureHttpScheme,
 } from './product-detail/shared';
 import ProviderIcon from './product-detail/ProviderIcon';
 import OverviewTab from './product-detail/OverviewTab';
@@ -579,7 +579,7 @@ export default function ProductDetailPage() {
               </span>
               {product.version && <span className="pd-version">v{product.version}</span>}
               {product.repoUrl && (
-                <a href={product.repoUrl} target="_blank" rel="noopener noreferrer" className="pd-repo-link" onClick={e => e.stopPropagation()}>
+                <a href={ensureHttpScheme(product.repoUrl)} target="_blank" rel="noopener noreferrer" className="pd-repo-link" onClick={e => e.stopPropagation()}>
                   <GitBranch size={12} /> Repository <ExternalLink size={10} />
                 </a>
               )}
