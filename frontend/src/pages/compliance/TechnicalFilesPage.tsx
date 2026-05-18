@@ -219,7 +219,7 @@ export default function TechnicalFilesPage() {
                   className="tfo-doc-btn"
                   onClick={() => handleDownloadDoc(product.id, product.name)}
                   disabled={downloadingDoc[product.id]}
-                  title="Download EU Declaration of Conformity (PDF)"
+                  title="Download EU Declaration of Conformity (Markdown)"
                 >
                   {downloadingDoc[product.id]
                     ? <Loader2 size={14} className="spin" />

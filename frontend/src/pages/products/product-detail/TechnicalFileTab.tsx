@@ -666,10 +666,10 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
                         className="btn tf-doc-download-btn"
                         onClick={handleDownloadDoc}
                         disabled={downloadingDoc}
-                        title="Download EU Declaration of Conformity as PDF"
+                        title="Download EU Declaration of Conformity as Markdown"
                       >
                         {downloadingDoc ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
-                        {downloadingDoc ? 'Generating…' : 'Download EU DoC PDF'}
+                        {downloadingDoc ? 'Generating…' : 'Download EU DoC (MD)'}
                       </button>
                     )}
                     {section.sectionKey === 'vulnerability_handling' && (
@@ -677,10 +677,10 @@ export default function TechnicalFileTab({ productId, techFileData, loading, onU
                         className="btn tf-doc-download-btn"
                         onClick={handleDownloadCvd}
                         disabled={downloadingCvd}
-                        title="Download Coordinated Vulnerability Disclosure policy as PDF"
+                        title="Download Coordinated Vulnerability Disclosure policy as Markdown"
                       >
                         {downloadingCvd ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
-                        {downloadingCvd ? 'Generating…' : 'Download CVD Policy'}
+                        {downloadingCvd ? 'Generating…' : 'Download CVD Policy (MD)'}
                       </button>
                     )}
                   </div>
