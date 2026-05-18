@@ -64,6 +64,8 @@ export default function AdminUsersPage() {
   // Action menu state
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ userId: string; email: string; action: 'suspend' | 'unsuspend' | 'delete' } | null>(null);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+  const [recentlyDeletedEmail, setRecentlyDeletedEmail] = useState<string | null>(null);
   const [editUser, setEditUser] = useState<{ id: string; email: string; orgRole: string | null } | null>(null);
   const [editEmail, setEditEmail] = useState('');
   const [editRole, setEditRole] = useState('');
@@ -182,6 +184,7 @@ export default function AdminUsersPage() {
   }
 
   async function handleDeleteUser(userId: string) {
+    if (!confirmAction || confirmAction.action !== 'delete') return;
     setActionLoading(true);
     setActionError('');
     try {
@@ -191,7 +194,13 @@ export default function AdminUsersPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) { const d = await res.json(); setActionError(d.error || 'Failed'); return; }
+      const deletedEmail = confirmAction.email;
       setConfirmAction(null);
+      setDeleteConfirmInput('');
+      setRecentlyDeletedEmail(deletedEmail);
+      window.setTimeout(() => {
+        setRecentlyDeletedEmail((current) => (current === deletedEmail ? null : current));
+      }, 3000);
       await fetchUsers();
     } catch { setActionError('Network error'); }
     finally { setActionLoading(false); }
@@ -274,6 +283,12 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
+      {recentlyDeletedEmail && (
+        <div className="au-success-banner">
+          <CheckCircle size={14} /> Deleted user <strong>{recentlyDeletedEmail}</strong>
+        </div>
+      )}
+
       <div className="au-user-table">
         <div className="au-table-header">
           <span className="au-col-email">Email</span>
@@ -335,6 +350,15 @@ export default function AdminUsersPage() {
               )}
             </div>
             <div className="au-col-actions">
+              {u.email !== currentUser?.email && !u.isPlatformAdmin && (
+                <button
+                  className="au-row-danger-btn"
+                  title={`Delete ${u.email}`}
+                  onClick={() => { setConfirmAction({ userId: u.id, email: u.email, action: 'delete' }); setDeleteConfirmInput(''); setActionMenuId(null); setActionError(''); }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
               <div className="au-action-menu-wrap">
                   <button className="au-action-trigger" onClick={(e) => { e.stopPropagation(); setActionMenuId(actionMenuId === u.id ? null : u.id); }}>
                     <MoreVertical size={16} />
@@ -351,11 +375,6 @@ export default function AdminUsersPage() {
                       ) : (
                         <button onClick={() => { setConfirmAction({ userId: u.id, email: u.email, action: 'suspend' }); setActionMenuId(null); setActionError(''); }}>
                           <Ban size={13} /> Suspend
-                        </button>
-                      )}
-                      {u.email !== currentUser?.email && (
-                        <button className="au-delete-action" onClick={() => { setConfirmAction({ userId: u.id, email: u.email, action: 'delete' }); setActionMenuId(null); setActionError(''); }}>
-                          <Trash2 size={13} /> Delete
                         </button>
                       )}
                     </div>
@@ -455,8 +474,11 @@ export default function AdminUsersPage() {
 
       {/* Confirm suspend/delete modal */}
       {confirmAction && (
-        <div className="au-modal-overlay" onClick={() => setConfirmAction(null)}>
+        <div className="au-modal-overlay" onClick={() => { setConfirmAction(null); setDeleteConfirmInput(''); }}>
           <div className="au-modal" onClick={e => e.stopPropagation()}>
+            {confirmAction.action === 'delete' && (
+              <div className="au-danger-banner">Permanent deletion — this cannot be undone</div>
+            )}
             <h3>
               {confirmAction.action === 'suspend' ? 'Suspend User' :
                confirmAction.action === 'unsuspend' ? 'Unsuspend User' : 'Delete User'}
@@ -466,22 +488,38 @@ export default function AdminUsersPage() {
                 ? `Suspend ${confirmAction.email}? They will not be able to log in until unsuspended.`
                 : confirmAction.action === 'unsuspend'
                 ? `Unsuspend ${confirmAction.email}? They will be able to log in again.`
-                : `Permanently delete ${confirmAction.email}? This will remove all their data and cannot be undone.`}
+                : `This will remove the user account for ${confirmAction.email}, invalidate all sessions, and detach them from their organisation.`}
             </p>
+            {confirmAction.action === 'delete' && (
+              <div className="au-confirm-field">
+                <label>To confirm, type <strong>{confirmAction.email}</strong></label>
+                <input
+                  className="au-invite-input"
+                  autoFocus
+                  value={deleteConfirmInput}
+                  onChange={e => setDeleteConfirmInput(e.target.value)}
+                  placeholder={confirmAction.email}
+                />
+              </div>
+            )}
             {actionError && <div className="au-invite-error">{actionError}</div>}
             <div className="au-modal-actions">
-              <button className="au-btn-cancel" onClick={() => setConfirmAction(null)} disabled={actionLoading}>Cancel</button>
+              <button className="au-btn-cancel" onClick={() => { setConfirmAction(null); setDeleteConfirmInput(''); }} disabled={actionLoading}>Cancel</button>
               <button
                 className={`au-btn-confirm ${confirmAction.action === 'delete' ? 'au-btn-revoke' : confirmAction.action === 'suspend' ? 'au-btn-revoke' : 'au-btn-grant'}`}
                 onClick={() => {
                   if (confirmAction.action === 'delete') handleDeleteUser(confirmAction.userId);
                   else handleSuspend(confirmAction.userId, confirmAction.action === 'suspend');
                 }}
-                disabled={actionLoading}
+                disabled={
+                  actionLoading ||
+                  (confirmAction.action === 'delete' &&
+                    deleteConfirmInput.trim().toLowerCase() !== confirmAction.email.toLowerCase())
+                }
               >
                 {actionLoading ? 'Processing...' :
                  confirmAction.action === 'suspend' ? 'Suspend' :
-                 confirmAction.action === 'unsuspend' ? 'Unsuspend' : 'Delete'}
+                 confirmAction.action === 'unsuspend' ? 'Unsuspend' : 'Delete user'}
               </button>
             </div>
           </div>

@@ -10,6 +10,7 @@
 
 import { useState, useEffect } from 'react';
 import { Building2, Users, Package, AlertTriangle, ChevronDown, ChevronRight, Shield, FileText, Loader, Search, ExternalLink, CheckCircle, MoreVertical, Trash2, Crown, Calendar, RefreshCw, Tag } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
@@ -104,6 +105,7 @@ function timeAgo(dateStr: string | null): string {
 
 export default function AdminOrgsPage() {
   usePageMeta();
+  const { user: currentUser } = useAuth();
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [totals, setTotals] = useState({ totalOrgs: 0, totalUsers: 0, totalProducts: 0 });
   const [loading, setLoading] = useState(true);
@@ -114,6 +116,8 @@ export default function AdminOrgsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ orgId: string; orgName: string; action: 'change_plan' | 'extend_trial' | 'delete' | 'evaluate_trust' | 'set_trust' } | null>(null);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+  const [recentlyDeletedOrg, setRecentlyDeletedOrg] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'standard' | 'pro'>('standard');
@@ -205,7 +209,7 @@ export default function AdminOrgsPage() {
   }
 
   async function handleDeleteOrg() {
-    if (!confirmAction) return;
+    if (!confirmAction || confirmAction.action !== 'delete') return;
     setActionLoading(true);
     setActionError('');
     try {
@@ -215,9 +219,15 @@ export default function AdminOrgsPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) { const d = await res.json(); setActionError(d.error || 'Failed'); return; }
+      const deletedName = confirmAction.orgName;
       setConfirmAction(null);
+      setDeleteConfirmInput('');
       setExpandedOrg(null);
       setOrgDetail(null);
+      setRecentlyDeletedOrg(deletedName);
+      window.setTimeout(() => {
+        setRecentlyDeletedOrg((current) => (current === deletedName ? null : current));
+      }, 3000);
       await fetchOrgs();
     } catch { setActionError('Network error'); }
     finally { setActionLoading(false); }
@@ -288,6 +298,12 @@ export default function AdminOrgsPage() {
         />
       </div>
 
+      {recentlyDeletedOrg && (
+        <div className="ao-success-banner">
+          <CheckCircle size={14} /> Deleted organisation <strong>{recentlyDeletedOrg}</strong>
+        </div>
+      )}
+
       <div className="ao-org-list">
         {filtered.length === 0 && (
           <div className="ao-empty">No organisations found</div>
@@ -334,29 +350,37 @@ export default function AdminOrgsPage() {
                   {timeAgo(org.lastActivity)}
                 </div>
               </div>
-              <div className="ao-action-menu-wrap" onClick={e => e.stopPropagation()}>
-                <button className="ao-action-trigger" onClick={() => setActionMenuId(actionMenuId === org.id ? null : org.id)}>
-                  <MoreVertical size={16} />
-                </button>
-                {actionMenuId === org.id && (
-                  <div className="ao-action-dropdown">
-                    <button onClick={() => openAction(org.id, org.name, 'change_plan')}>
-                      <Crown size={13} /> Change Plan
-                    </button>
-                    <button onClick={() => openAction(org.id, org.name, 'extend_trial')}>
-                      <Calendar size={13} /> Extend Trial
-                    </button>
-                    <button onClick={() => openAction(org.id, org.name, 'evaluate_trust')}>
-                      <RefreshCw size={13} /> Evaluate Trust
-                    </button>
-                    <button onClick={() => { setSelectedTrust(org.trustClassification || 'commercial'); setTrustReason(''); openAction(org.id, org.name, 'set_trust'); }}>
-                      <Tag size={13} /> Set Classification
-                    </button>
-                    <button className="ao-delete-action" onClick={() => openAction(org.id, org.name, 'delete')}>
-                      <Trash2 size={13} /> Delete Organisation
-                    </button>
-                  </div>
+              <div className="ao-row-actions" onClick={e => e.stopPropagation()}>
+                {org.id !== currentUser?.orgId && (
+                  <button
+                    className="ao-row-danger-btn"
+                    title={`Delete ${org.name}`}
+                    onClick={() => { setDeleteConfirmInput(''); openAction(org.id, org.name, 'delete'); }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 )}
+                <div className="ao-action-menu-wrap">
+                  <button className="ao-action-trigger" onClick={() => setActionMenuId(actionMenuId === org.id ? null : org.id)}>
+                    <MoreVertical size={16} />
+                  </button>
+                  {actionMenuId === org.id && (
+                    <div className="ao-action-dropdown">
+                      <button onClick={() => openAction(org.id, org.name, 'change_plan')}>
+                        <Crown size={13} /> Change Plan
+                      </button>
+                      <button onClick={() => openAction(org.id, org.name, 'extend_trial')}>
+                        <Calendar size={13} /> Extend Trial
+                      </button>
+                      <button onClick={() => openAction(org.id, org.name, 'evaluate_trust')}>
+                        <RefreshCw size={13} /> Evaluate Trust
+                      </button>
+                      <button onClick={() => { setSelectedTrust(org.trustClassification || 'commercial'); setTrustReason(''); openAction(org.id, org.name, 'set_trust'); }}>
+                        <Tag size={13} /> Set Classification
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -491,15 +515,34 @@ export default function AdminOrgsPage() {
       )}
 
       {confirmAction && confirmAction.action === 'delete' && (
-        <div className="ao-modal-overlay" onClick={() => setConfirmAction(null)}>
+        <div className="ao-modal-overlay" onClick={() => { setConfirmAction(null); setDeleteConfirmInput(''); }}>
           <div className="ao-modal" onClick={e => e.stopPropagation()}>
+            <div className="ao-danger-banner">Permanent deletion — this cannot be undone</div>
             <h3>Delete Organisation</h3>
-            <p>Permanently delete <strong>{confirmAction.orgName}</strong>? This removes all users, products, and data. This cannot be undone.</p>
+            <p>
+              This will remove <strong>{confirmAction.orgName}</strong> and cascade-delete every associated record:
+              all users, products, repositories, contributors, dependencies, SBOMs, vulnerability findings,
+              obligations, technical-file sections, billing rows, and the full organisation graph in Neo4j.
+            </p>
+            <div className="ao-confirm-field">
+              <label>To confirm, type <strong>{confirmAction.orgName}</strong></label>
+              <input
+                className="ao-confirm-input"
+                autoFocus
+                value={deleteConfirmInput}
+                onChange={e => setDeleteConfirmInput(e.target.value)}
+                placeholder={confirmAction.orgName}
+              />
+            </div>
             {actionError && <div className="ao-action-error">{actionError}</div>}
             <div className="ao-modal-actions">
-              <button className="ao-btn-cancel" onClick={() => setConfirmAction(null)} disabled={actionLoading}>Cancel</button>
-              <button className="ao-btn-confirm ao-btn-revoke" onClick={handleDeleteOrg} disabled={actionLoading}>
-                {actionLoading ? 'Deleting...' : 'Delete Organisation'}
+              <button className="ao-btn-cancel" onClick={() => { setConfirmAction(null); setDeleteConfirmInput(''); }} disabled={actionLoading}>Cancel</button>
+              <button
+                className="ao-btn-confirm ao-btn-revoke"
+                onClick={handleDeleteOrg}
+                disabled={actionLoading || deleteConfirmInput.trim() !== confirmAction.orgName}
+              >
+                {actionLoading ? 'Deleting...' : 'Delete organisation'}
               </button>
             </div>
           </div>

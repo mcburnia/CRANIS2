@@ -224,7 +224,24 @@ select.au-invite-input option { background: var(--surface); color: var(--text); 
 }
 
 /* Actions column */
-.au-col-actions { display: flex; align-items: center; justify-content: center; }
+.au-col-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.35rem; }
+
+/* Row-level danger button (Delete) — kept outside the kebab so destructive
+   actions are always visible, never tucked away under a "more" menu. */
+.au-row-danger-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 5px;
+  color: var(--red);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.au-row-danger-btn:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: var(--red);
+}
 
 .au-action-menu-wrap { position: relative; }
 
@@ -255,7 +272,46 @@ select.au-invite-input option { background: var(--surface); color: var(--text); 
 
 /* Update grid to include actions column */
 .au-table-header, .au-user-row {
-  grid-template-columns: 2fr 1.5fr 1fr 1fr 0.8fr 0.5fr !important;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 0.8fr 0.9fr !important;
+}
+
+/* Danger banner inside the delete-confirmation modal */
+.au-danger-banner {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: var(--red);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.85rem;
+  text-align: center;
+}
+
+/* Typed-confirmation input pairing */
+.au-confirm-field {
+  display: flex; flex-direction: column; gap: 0.4rem;
+  margin: 0 0 1rem;
+}
+.au-confirm-field label {
+  font-size: 0.8rem; color: var(--muted);
+}
+.au-confirm-field label strong {
+  color: var(--text); font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Inline success banner shown briefly after a destructive action */
+.au-success-banner {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: var(--green);
+  padding: 0.55rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
 }
 
 /* Org role badge */
