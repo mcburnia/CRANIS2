@@ -12,8 +12,14 @@ import { Router, Request, Response } from 'express';
 import pool from '../db/pool.js';
 import { verifySessionToken } from '../utils/token.js';
 import { recordEvent, extractRequestData } from '../services/telemetry.js';
+import {
+  sendFeedbackNotification,
+  FeedbackNotificationData,
+} from '../services/email.js';
 
 const router = Router();
+
+const DEV_SKIP_EMAIL = process.env.DEV_SKIP_EMAIL === 'true';
 
 async function requireAuth(req: Request, res: Response, next: Function) {
   const authHeader = req.headers.authorization;
@@ -69,6 +75,64 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       ...reqData,
       metadata: { feedbackId: result.rows[0].id, category: category || 'feedback' },
     });
+
+    // Support notification — fire-and-forget. Failures (Resend outage,
+    // misconfigured domain, missing API key) MUST NOT bubble up to the
+    // submitter; we log instead. Skipped in dev/test mode for the same
+    // reason sendVerificationEmail is skipped — regression runs would
+    // otherwise blast support@cranis2.com on every test feedback row.
+    if (!DEV_SKIP_EMAIL) {
+      const context = await pool.query<{
+        display_name: string | null;
+        org_role: string | null;
+        company_name: string | null;
+        plan: string | null;
+        status: string | null;
+      }>(
+        `SELECT u.display_name, u.org_role,
+                ob.company_name, ob.plan, ob.status
+           FROM users u
+           LEFT JOIN org_billing ob ON ob.org_id = u.org_id::text
+          WHERE u.id = $1`,
+        [userId],
+      ).catch(() => ({ rows: [] as Array<{
+        display_name: string | null;
+        org_role: string | null;
+        company_name: string | null;
+        plan: string | null;
+        status: string | null;
+      }> }));
+
+      const ctx = context.rows[0] || {
+        display_name: null, org_role: null, company_name: null, plan: null, status: null,
+      };
+      const now = new Date();
+      const submittedAtLocal = new Intl.DateTimeFormat('en-IE', {
+        timeZone: 'Europe/Dublin',
+        dateStyle: 'medium',
+        timeStyle: 'long',
+      }).format(now);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
+
+      const notifyData: FeedbackNotificationData = {
+        category: (category || 'feedback') as FeedbackNotificationData['category'],
+        subject,
+        body,
+        submitterEmail: email,
+        submitterDisplayName: ctx.display_name,
+        submitterOrgRole: ctx.org_role,
+        companyName: ctx.company_name,
+        plan: ctx.plan,
+        billingStatus: ctx.status,
+        pageUrl: pageUrl || null,
+        adminFeedbackUrl: `${frontendUrl}/admin/feedback`,
+        submittedAtIso: now.toISOString(),
+        submittedAtLocal,
+      };
+      sendFeedbackNotification(notifyData).catch((err) => {
+        console.error('[feedback-notify] failed to send support notification:', err);
+      });
+    }
 
     res.json({ id: result.rows[0].id, createdAt: result.rows[0].created_at });
   } catch (err) {

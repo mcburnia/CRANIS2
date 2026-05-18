@@ -198,6 +198,143 @@ export async function sendAffiliateSignupNotification(
   });
 }
 
+export interface FeedbackNotificationData {
+  /** Category of submission. */
+  category: 'feedback' | 'bug' | 'feature';
+  /** Verbatim subject typed by the user. */
+  subject: string;
+  /** Verbatim body typed by the user (preserves newlines in the rendered email). */
+  body: string;
+  /** Submitter's email address. */
+  submitterEmail: string;
+  /** Submitter's display name, if set. */
+  submitterDisplayName: string | null;
+  /** Submitter's role within their organisation (e.g. 'admin', 'editor'). */
+  submitterOrgRole: string | null;
+  /** Resolved company / organisation name from org_billing, if set. */
+  companyName: string | null;
+  /** Billing plan (e.g. 'standard', 'pro') — null if no org_billing row. */
+  plan: string | null;
+  /** Billing status (e.g. 'trial', 'active', 'grace') — null if no org_billing row. */
+  billingStatus: string | null;
+  /** In-app page the user was on when they submitted. */
+  pageUrl: string | null;
+  /** Frontend URL to deep-link the admin into the feedback list. */
+  adminFeedbackUrl: string;
+  /** Moment of submission in ISO 8601 UTC. */
+  submittedAtIso: string;
+  /** Same moment formatted in Europe/Dublin local time for at-a-glance reading. */
+  submittedAtLocal: string;
+}
+
+/**
+ * Build the subject line for a feedback notification email. Format:
+ * `[CRANIS2 <CATEGORY>] <subject>` — submitter's subject is truncated at
+ * 120 characters with an ellipsis so the line stays reasonable in mail clients.
+ */
+export function buildFeedbackEmailSubject(
+  category: FeedbackNotificationData['category'],
+  subject: string,
+): string {
+  const tag = `[CRANIS2 ${category.toUpperCase()}]`;
+  const trimmed = subject.trim();
+  const capped = trimmed.length > 120 ? `${trimmed.slice(0, 117)}...` : trimmed;
+  return `${tag} ${capped}`;
+}
+
+/**
+ * Send an internal support notification when a user submits via the in-app
+ * FeedbackModal. Recipient is whatever SUPPORT_NOTIFY_EMAIL resolves to
+ * (defaults to support@cranis2.com).
+ *
+ * Fire-and-forget side effect — failures MUST NOT bubble up to the API
+ * response. Callers are expected to wrap with .catch() to log without
+ * failing the user's submission.
+ */
+export async function sendFeedbackNotification(data: FeedbackNotificationData): Promise<void> {
+  const supportEmail = process.env.SUPPORT_NOTIFY_EMAIL || 'support@cranis2.com';
+  const from = process.env.EMAIL_FROM || 'info@cranis2.com';
+
+  const categoryColor = data.category === 'bug' ? '#ef4444' : data.category === 'feature' ? '#f59e0b' : '#3b82f6';
+  const categoryLabel = data.category === 'bug' ? 'BUG REPORT' : data.category === 'feature' ? 'FEATURE REQUEST' : 'FEEDBACK';
+
+  const replySubject = encodeURIComponent(`Re: ${data.subject}`);
+  const mailtoLink = `mailto:${data.submitterEmail}?subject=${replySubject}`;
+
+  const displayLine = data.submitterDisplayName
+    ? `${escapeHtml(data.submitterDisplayName)} &lt;${escapeHtml(data.submitterEmail)}&gt;`
+    : escapeHtml(data.submitterEmail);
+  const orgLine = data.companyName ? escapeHtml(data.companyName) : '(no company on org_billing)';
+  const roleLine = data.submitterOrgRole ? escapeHtml(data.submitterOrgRole) : '(unset)';
+  const planLine = data.plan
+    ? `${escapeHtml(data.plan)}${data.billingStatus ? ` (${escapeHtml(data.billingStatus)})` : ''}`
+    : '(no org_billing row)';
+  const pageLine = data.pageUrl ? escapeHtml(data.pageUrl) : '(unknown)';
+
+  await resend.emails.send({
+    from: `CRANIS2 <${from}>`,
+    to: supportEmail,
+    replyTo: data.submitterEmail,
+    subject: buildFeedbackEmailSubject(data.category, data.subject),
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 1.5rem;">
+        <div style="display: inline-block; background: ${categoryColor}; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 4px; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+          ${categoryLabel}
+        </div>
+        <h1 style="font-size: 1.15rem; color: #e4e4e7; margin: 0 0 1rem 0;">
+          ${escapeHtml(data.subject)}
+        </h1>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 1.25rem;">
+          <tr>
+            <td style="color: #8b8d98; padding: 0.35rem 0; vertical-align: top; width: 35%;">Submitter</td>
+            <td style="color: #e4e4e7; padding: 0.35rem 0;">${displayLine}</td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.35rem 0; vertical-align: top;">Organisation</td>
+            <td style="color: #e4e4e7; padding: 0.35rem 0;">${orgLine}</td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.35rem 0; vertical-align: top;">Role in org</td>
+            <td style="color: #e4e4e7; padding: 0.35rem 0;">${roleLine}</td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.35rem 0; vertical-align: top;">Plan</td>
+            <td style="color: #e4e4e7; padding: 0.35rem 0;">${planLine}</td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.35rem 0; vertical-align: top;">Page</td>
+            <td style="color: #e4e4e7; padding: 0.35rem 0;"><code style="background: #27272a; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.82rem;">${pageLine}</code></td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.35rem 0; vertical-align: top;">Submitted (UTC)</td>
+            <td style="color: #e4e4e7; padding: 0.35rem 0;">${escapeHtml(data.submittedAtIso)}</td>
+          </tr>
+          <tr>
+            <td style="color: #8b8d98; padding: 0.35rem 0; vertical-align: top;">Submitted (Europe/Dublin)</td>
+            <td style="color: #e4e4e7; padding: 0.35rem 0;">${escapeHtml(data.submittedAtLocal)}</td>
+          </tr>
+        </table>
+        <div style="background: #18181b; border: 1px solid #2a2d3a; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+          <p style="color: #8b8d98; font-size: 0.75rem; margin: 0 0 0.5rem 0; text-transform: uppercase; letter-spacing: 0.05em;">Message</p>
+          <pre style="color: #e4e4e7; font-family: inherit; font-size: 0.92rem; line-height: 1.55; margin: 0; white-space: pre-wrap; word-break: break-word;">${escapeHtml(data.body)}</pre>
+        </div>
+        <p style="margin: 0 0 1.5rem 0;">
+          <a href="${escapeHtml(data.adminFeedbackUrl)}" style="display: inline-block; background: #3b82f6; color: #fff; padding: 0.6rem 1.25rem; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.88rem; margin-right: 0.5rem;">
+            Open in admin panel
+          </a>
+          <a href="${mailtoLink}" style="display: inline-block; background: transparent; color: #3b82f6; padding: 0.6rem 1.25rem; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.88rem; border: 1px solid #2a2d3a;">
+            Reply to submitter
+          </a>
+        </p>
+        <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 1.5rem 0 1rem 0;" />
+        <p style="color: #8b8d98; font-size: 0.75rem; margin: 0;">
+          Sent automatically by CRANIS2 on each in-app feedback submission. To change the recipient, set SUPPORT_NOTIFY_EMAIL in the backend environment.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
   const from = process.env.EMAIL_FROM || 'info@cranis2.com';

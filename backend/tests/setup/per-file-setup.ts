@@ -15,6 +15,14 @@
  * Heavy work (seeding, rate-limit cleanup) is in globalSetup.
  */
 
+// Resend's constructor throws if RESEND_API_KEY is unset, which breaks any
+// unit test that imports services/email.ts (e.g. formatter unit tests). The
+// test stack itself injects a placeholder; mirror that here so in-process
+// unit tests can import the module without instantiating a real client.
+if (!process.env.RESEND_API_KEY) {
+  process.env.RESEND_API_KEY = 're_placeholder';
+}
+
 import { afterAll } from 'vitest';
 import { closeAllConnections, clearTokenCache } from './test-helpers.js';
 
