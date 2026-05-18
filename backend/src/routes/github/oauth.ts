@@ -342,20 +342,35 @@ function renderOAuthResultPage(frontendUrl: string, success: boolean, message: s
     <h2>${success ? `${providerLabel} Connected` : 'Connection Failed'}</h2>
     <p>${escapedMessage}</p>
     ${success
-      ? '<p class="auto-close">This window will close automatically...</p>'
+      ? '<p class="auto-close">This window will close automatically. <button class="close-btn" onclick="window.close()" style="margin-left:0.5rem;">Close now</button></p>'
       : '<button class="close-btn" onclick="window.close()">Close Window</button>'
     }
   </div>
   <script>
     (function() {
       var success = ${success ? 'true' : 'false'};
-      if (window.opener) {
-        if (success) {
-          window.opener.postMessage({ type: 'repo-oauth-success', provider: '${repoProvider}' }, '${frontendUrl}');
-          setTimeout(function() { window.close(); }, 1500);
-        } else {
-          window.opener.postMessage({ type: 'repo-oauth-error', provider: '${repoProvider}', message: '${escapedMessage}' }, '${frontendUrl}');
+      // Best-effort: notify the parent so its UI refreshes immediately.
+      // The cross-origin redirect through the provider (e.g. github.com) can
+      // sever window.opener under Chrome's Cross-Origin-Opener-Policy defaults
+      // — if so, this no-ops and the user closes via the Close-now button.
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage(
+            success
+              ? { type: 'repo-oauth-success', provider: '${repoProvider}' }
+              : { type: 'repo-oauth-error', provider: '${repoProvider}', message: '${escapedMessage}' },
+            '${frontendUrl}'
+          );
         }
+      } catch (_e) { /* ignore */ }
+
+      // Always attempt to auto-close on success — separately from the opener
+      // check, since window.close() on a window opened by window.open() does
+      // not require an intact opener reference.
+      if (success) {
+        setTimeout(function() {
+          try { window.close(); } catch (_e) { /* user can fall back to the button */ }
+        }, 1500);
       }
     })();
   </script>
