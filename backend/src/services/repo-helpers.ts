@@ -29,12 +29,24 @@ export async function getUserOrgId(userId: string): Promise<string | null> {
   return result.rows[0]?.org_id || null;
 }
 
-// Helper: get user's decrypted repo token for a specific provider
-export async function getUserRepoToken(userId: string, repoProvider?: RepoProvider): Promise<string | null> {
+// Helper: is this user an admin of their organisation?
+export async function isOrgAdmin(userId: string): Promise<boolean> {
+  const result = await pool.query('SELECT org_role FROM users WHERE id = $1', [userId]);
+  return result.rows[0]?.org_role === 'admin';
+}
+
+/**
+ * Get the organisation's decrypted repo token for a specific provider.
+ *
+ * Repo connections are org-level: all members of the org share one connection
+ * per provider (the canonical "company integration"), regardless of which
+ * member triggered any given sync.
+ */
+export async function getOrgRepoToken(orgId: string, repoProvider?: RepoProvider): Promise<string | null> {
   const query = repoProvider
-    ? 'SELECT access_token_encrypted FROM repo_connections WHERE user_id = $1 AND provider = $2'
-    : 'SELECT access_token_encrypted FROM repo_connections WHERE user_id = $1';
-  const params = repoProvider ? [userId, repoProvider] : [userId];
+    ? 'SELECT access_token_encrypted FROM repo_connections WHERE org_id = $1 AND provider = $2'
+    : 'SELECT access_token_encrypted FROM repo_connections WHERE org_id = $1';
+  const params = repoProvider ? [orgId, repoProvider] : [orgId];
   const result = await pool.query(query, params);
   if (result.rows.length === 0) return null;
   try {
@@ -43,18 +55,16 @@ export async function getUserRepoToken(userId: string, repoProvider?: RepoProvid
     return null;
   }
 }
-// Backward compat alias
-export const getUserGitHubToken = getUserRepoToken;
 
-/** Get user's decrypted token AND connection metadata for a specific provider */
-export async function getUserRepoConnection(
-  userId: string,
+/** Get the org's decrypted token AND connection metadata for a specific provider */
+export async function getOrgRepoConnection(
+  orgId: string,
   repoProvider?: RepoProvider
 ): Promise<{ token: string; instanceUrl: string | null; provider: RepoProvider } | null> {
   const query = repoProvider
-    ? 'SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE user_id = $1 AND provider = $2'
-    : 'SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE user_id = $1';
-  const params = repoProvider ? [userId, repoProvider] : [userId];
+    ? 'SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE org_id = $1 AND provider = $2'
+    : 'SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE org_id = $1';
+  const params = repoProvider ? [orgId, repoProvider] : [orgId];
   const result = await pool.query(query, params);
   if (result.rows.length === 0) return null;
   try {
@@ -68,15 +78,15 @@ export async function getUserRepoConnection(
   }
 }
 
-/** Resolve provider + token for a repo URL by checking user's connections */
+/** Resolve provider + token for a repo URL by checking the org's connections */
 export async function resolveRepoConnection(
-  userId: string,
+  orgId: string,
   repoUrl: string
 ): Promise<{ token: string; instanceUrl: string | null; provider: RepoProvider; owner: string; repo: string } | null> {
   // First try cloud providers
   const cloudProvider = provider.detectProvider(repoUrl);
   if (cloudProvider) {
-    const conn = await getUserRepoConnection(userId, cloudProvider);
+    const conn = await getOrgRepoConnection(orgId, cloudProvider);
     if (!conn) return null;
     const parsed = provider.parseRepoUrl(cloudProvider, repoUrl);
     if (!parsed) return null;
@@ -85,8 +95,8 @@ export async function resolveRepoConnection(
 
   // Try self-hosted: find a connection whose instance_url hostname matches the repo URL
   const allConns = await pool.query(
-    'SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE user_id = $1 AND instance_url IS NOT NULL',
-    [userId]
+    'SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE org_id = $1 AND instance_url IS NOT NULL',
+    [orgId]
   );
 
   let repoHostname;

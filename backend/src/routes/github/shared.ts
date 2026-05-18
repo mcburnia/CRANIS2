@@ -9,6 +9,7 @@
  */
 
 import { Request, Response } from 'express';
+import pool from '../../db/pool.js';
 import { verifySessionToken } from '../../utils/token.js';
 import type { RepoProvider } from '../../services/repo-provider.js';
 
@@ -42,5 +43,26 @@ export async function requireAuth(req: Request, res: Response, next: Function) {
     next();
   } catch {
     res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// Org-admin middleware — connecting and disconnecting the organisation's repo
+// integration is an org-wide action; only admins may change it. Members can
+// still read status and trigger syncs (those use requireAuth only).
+export async function requireOrgAdmin(req: Request, res: Response, next: Function) {
+  const userId = (req as any).userId;
+  if (!userId) { res.status(401).json({ error: 'Not authenticated' }); return; }
+  try {
+    const result = await pool.query('SELECT org_role FROM users WHERE id = $1', [userId]);
+    if (result.rows[0]?.org_role !== 'admin') {
+      res.status(403).json({
+        error: 'Organisation admin required',
+        message: 'Connecting or disconnecting a repository provider is restricted to organisation admins.',
+      });
+      return;
+    }
+    next();
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to verify role', message: err.message });
   }
 }

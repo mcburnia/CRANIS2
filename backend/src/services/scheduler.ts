@@ -105,44 +105,41 @@ let lastRetentionExpiryDate = '';
 let lastReserveSufficiencyMonth = '';
 let lastTrustEvalWeek = '';
 
-async function getProductRepoToken(productId: string, forProvider?: RepoProvider): Promise<{ token: string; userId: string; provider: RepoProvider; instanceUrl: string | null } | null> {
-  // Find the user who owns this product (via org) and has a repo connection
+async function getProductRepoToken(productId: string, forProvider?: RepoProvider): Promise<{ token: string; orgId: string; provider: RepoProvider; instanceUrl: string | null } | null> {
+  // Find the product's owning organisation and look up its org-level repo connection.
   const neo4jSession = getDriver().session();
   try {
-    // Also get repoUrl so we can auto-detect provider
     const result = await neo4jSession.run(
-      `MATCH (p:Product {id: $productId})-[:BELONGS_TO]->(o:Organisation)<-[:BELONGS_TO]-(u:User)
-       RETURN u.id as userId, p.repoUrl as repoUrl`,
+      `MATCH (p:Product {id: $productId})-[:BELONGS_TO]->(o:Organisation)
+       RETURN o.id AS orgId, p.repoUrl AS repoUrl
+       LIMIT 1`,
       { productId }
     );
     if (result.records.length === 0) return null;
 
-    const repoUrl = result.records[0].get('repoUrl');
+    const orgId: string = result.records[0].get('orgId');
+    const repoUrl: string | null = result.records[0].get('repoUrl');
 
-    // Auto-detect provider from repoUrl (supports cloud + self-hosted)
-    // First try cloud providers
-    let detectedProvider = forProvider || (repoUrl ? repoProvider.detectProvider(repoUrl) : null);
+    // Auto-detect provider from repoUrl (cloud first)
+    let detectedProvider: RepoProvider | null = forProvider || (repoUrl ? repoProvider.detectProvider(repoUrl) : null);
 
-    // Try cloud providers first
+    // Cloud provider lookup
     if (detectedProvider) {
-      for (const record of result.records) {
-        const userId = record.get('userId');
-        const tokenResult = await pool.query(
-          `SELECT access_token_encrypted, instance_url FROM repo_connections WHERE user_id = $1 AND provider = $2`,
-          [userId, detectedProvider]
-        );
-        if (tokenResult.rows.length > 0) {
-          return {
-            token: decrypt(tokenResult.rows[0].access_token_encrypted),
-            userId,
-            provider: detectedProvider,
-            instanceUrl: tokenResult.rows[0].instance_url || null,
-          };
-        }
+      const tokenResult = await pool.query(
+        `SELECT access_token_encrypted, instance_url FROM repo_connections WHERE org_id = $1 AND provider = $2`,
+        [orgId, detectedProvider]
+      );
+      if (tokenResult.rows.length > 0) {
+        return {
+          token: decrypt(tokenResult.rows[0].access_token_encrypted),
+          orgId,
+          provider: detectedProvider,
+          instanceUrl: tokenResult.rows[0].instance_url || null,
+        };
       }
     }
 
-    // If no cloud provider matched, try self-hosted by matching instance_url hostname
+    // Self-hosted by hostname match
     if (!detectedProvider && repoUrl) {
       let repoHostname;
       try {
@@ -150,52 +147,44 @@ async function getProductRepoToken(productId: string, forProvider?: RepoProvider
       } catch { /* ignore */ }
 
       if (repoHostname) {
-        for (const record of result.records) {
-          const userId = record.get('userId');
-          const allConns = await pool.query(
-            `SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE user_id = $1 AND instance_url IS NOT NULL`,
-            [userId]
-          );
-          for (const row of allConns.rows) {
-            try {
-              if (new URL(row.instance_url).hostname === repoHostname) {
-                return {
-                  token: decrypt(row.access_token_encrypted),
-                  userId,
-                  provider: row.provider as RepoProvider,
-                  instanceUrl: row.instance_url,
-                };
-              }
-            } catch { continue; }
-          }
+        const allConns = await pool.query(
+          `SELECT access_token_encrypted, instance_url, provider FROM repo_connections WHERE org_id = $1 AND instance_url IS NOT NULL`,
+          [orgId]
+        );
+        for (const row of allConns.rows) {
+          try {
+            if (new URL(row.instance_url).hostname === repoHostname) {
+              return {
+                token: decrypt(row.access_token_encrypted),
+                orgId,
+                provider: row.provider as RepoProvider,
+                instanceUrl: row.instance_url,
+              };
+            }
+          } catch { continue; }
         }
       }
     }
 
     // Final fallback: default to github
     if (!detectedProvider) detectedProvider = 'github';
-    for (const record of result.records) {
-      const userId = record.get('userId');
-      const tokenResult = await pool.query(
-        `SELECT access_token_encrypted FROM repo_connections WHERE user_id = $1 AND provider = $2`,
-        [userId, detectedProvider]
-      );
-      if (tokenResult.rows.length > 0) {
-        return {
-          token: decrypt(tokenResult.rows[0].access_token_encrypted),
-          userId,
-          provider: detectedProvider,
-          instanceUrl: null,
-        };
-      }
+    const tokenResult = await pool.query(
+      `SELECT access_token_encrypted FROM repo_connections WHERE org_id = $1 AND provider = $2`,
+      [orgId, detectedProvider]
+    );
+    if (tokenResult.rows.length > 0) {
+      return {
+        token: decrypt(tokenResult.rows[0].access_token_encrypted),
+        orgId,
+        provider: detectedProvider,
+        instanceUrl: null,
+      };
     }
     return null;
   } finally {
     await neo4jSession.close();
   }
 }
-// Backward compat alias
-const getProductGitHubToken = getProductRepoToken;
 
 async function autoSyncProduct(productId: string): Promise<boolean> {
   logger.info(`[AUTO-SYNC] Syncing product ${productId}`);

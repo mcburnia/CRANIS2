@@ -30,8 +30,7 @@ import { logger } from '../../utils/logger.js';
 import { logProductActivity } from '../../services/activity-log.js';
 import {
   getUserOrgId,
-  getUserRepoToken,
-  getUserRepoConnection,
+  getOrgRepoToken,
   resolveRepoConnection,
   extractPackageInfo,
   storeSBOM,
@@ -71,10 +70,11 @@ router.post('/sync/:productId', requireAuth, async (req: Request, res: Response)
       return;
     }
 
-    // Resolve provider + token from repo URL (supports cloud + self-hosted)
-    const repoConn = await resolveRepoConnection(userId, repoUrl);
+    // Resolve provider + token from repo URL (org-level connection;
+    // any member can trigger sync but the same token is used)
+    const repoConn = await resolveRepoConnection(orgId, repoUrl);
     if (!repoConn) {
-      res.status(400).json({ error: 'No provider connection found for this repository URL. Please connect your account first.' });
+      res.status(400).json({ error: 'No provider connection found for this repository URL. Ask an organisation admin to connect the provider.' });
       return;
     }
     const detectedProvider = repoConn.provider;
@@ -518,8 +518,8 @@ router.post('/sbom/:productId', requireAuth, async (req: Request, res: Response)
       return;
     }
 
-    // Resolve provider + token (supports cloud + self-hosted)
-    const sbomConn = await resolveRepoConnection(userId, repoUrl);
+    // Resolve provider + token (org-level)
+    const sbomConn = await resolveRepoConnection(orgId, repoUrl);
     if (!sbomConn) {
       res.status(400).json({ error: 'No provider connection found for this repository.' });
       return;
@@ -881,9 +881,12 @@ router.post('/codeberg/create-repo', requireAuth, async (req: Request, res: Resp
     return;
   }
 
-  const codebergToken = await getUserRepoToken(userId, 'codeberg');
+  const orgId = await getUserOrgId(userId);
+  if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
+
+  const codebergToken = await getOrgRepoToken(orgId, 'codeberg');
   if (!codebergToken) {
-    res.status(400).json({ error: 'Codeberg not connected. Please connect your Codeberg account first.' });
+    res.status(400).json({ error: 'Codeberg not connected. Ask an organisation admin to connect Codeberg.' });
     return;
   }
 

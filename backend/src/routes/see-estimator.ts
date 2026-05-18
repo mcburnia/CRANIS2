@@ -177,7 +177,7 @@ router.post(
         });
       }
 
-      const result = await runEstimateScan(productId, orgId, userId);
+      const result = await runEstimateScan(productId, orgId);
       res.json({ ...result, scanned: true });
     } catch (err: any) {
       console.error(`[SEE] Estimate scan error: ${err.message}`);
@@ -302,7 +302,7 @@ router.post(
         });
       }
 
-      const summary = await ingestCommits(productId, orgId, userId);
+      const summary = await ingestCommits(productId, orgId);
       res.json(summary);
     } catch (err: any) {
       console.error(`[SEE] Commit ingest error: ${err.message}`);
@@ -408,7 +408,7 @@ router.post(
         return res.status(403).json({ error: 'source_code_consent_required' });
       }
 
-      const result = await runBranchAnalysis(productId, orgId, userId);
+      const result = await runBranchAnalysis(productId, orgId);
       res.json(result);
     } catch (err: any) {
       console.error(`[SEE] Branch analysis error: ${err.message}`);

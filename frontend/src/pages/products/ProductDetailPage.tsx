@@ -15,6 +15,7 @@ import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import PageHeader from '../../components/PageHeader';
 import HelpTip from '../../components/HelpTip';
 import CategoryRecommenderModal from '../../components/CategoryRecommenderModal';
+import ConnectProviderModal from '../../components/ConnectProviderModal';
 import SupplyChainTab from '../../components/SupplyChainTab';
 import ComplianceVaultTab from './product-detail/ComplianceVaultTab';
 import CryptoInventoryTab from './product-detail/CryptoInventoryTab';
@@ -27,6 +28,7 @@ import {
   ExternalLink, Star, GitFork, Siren, Calculator,
 } from 'lucide-react';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { useAuth } from '../../context/AuthContext';
 import './ProductDetailPage.css';
 
 // Decomposed sub-modules
@@ -86,6 +88,8 @@ for (const group of TAB_GROUPS) {
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
+  const { user } = useAuth();
+  const isOrgAdmin = user?.orgRole === 'admin';
 
   const [product, setProduct] = useState<Product | null>(null);
   usePageMeta(product ? { title: product.name } : undefined);
@@ -93,6 +97,7 @@ export default function ProductDetailPage() {
   const [searchParams] = useSearchParams();
   const initialTab = (searchParams.get('tab') as TabKey) || 'overview';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+  const [oauthModalProvider, setOauthModalProvider] = useState<string | null>(null);
   const activeGroup = TAB_TO_GROUP[activeTab] || 'overview';
   const currentGroup = TAB_GROUPS.find(g => g.key === activeGroup);
 
@@ -364,8 +369,13 @@ export default function ProductDetailPage() {
     return 'github';
   }
 
-  async function handleConnectGitHub(providerOverride?: string) {
+  function handleConnectGitHub(providerOverride?: string) {
     const repoProvider = providerOverride || detectProvider(product?.repoUrl || '');
+    setOauthModalProvider(repoProvider);
+  }
+
+  async function initiateOAuthFlow(repoProvider: string) {
+    setOauthModalProvider(null);
     try {
       const token = localStorage.getItem('session_token');
       const res = await fetch('/api/github/connect-init', {
@@ -512,11 +522,16 @@ export default function ProductDetailPage() {
             <TypeIcon size={28} />
           </div>
           <div className="pd-header-actions">
-            {/* Repo connection buttons */}
-            {product.repoUrl && !isProviderConnected && (
+            {/* Repo connection buttons — admin-only (org-level integration) */}
+            {product.repoUrl && !isProviderConnected && isOrgAdmin && (
               <button className="pd-github-btn" onClick={() => handleConnectGitHub()}>
                 <ProviderIcon provider={currentProvider} size={14} /> Connect {providerLabel(currentProvider)}
               </button>
+            )}
+            {product.repoUrl && !isProviderConnected && !isOrgAdmin && (
+              <span className="pd-github-notice" title="Ask an organisation admin to connect this provider">
+                <ProviderIcon provider={currentProvider} size={14} /> {providerLabel(currentProvider)} not connected
+              </span>
             )}
             {isProviderConnected && product.repoUrl && (
               <button className={`pd-sync-btn ${sbomData.isStale ? 'pd-sync-stale' : 'pd-sync-fresh'}`} onClick={handleSync} disabled={syncing}>
@@ -720,12 +735,12 @@ export default function ProductDetailPage() {
 
       {/* Tab content */}
       <div className="pd-tab-content">
-        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} syncHistory={syncHistory} syncStats={syncStats} pushEvents={pushEvents} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} repoProvider={currentProvider} isProviderConnected={isProviderConnected} providerConnection={providerConnection} onSwitchTab={(tab) => { setActiveTab(tab as TabKey); window.history.replaceState({}, '', `?tab=${tab}`); }} onNavigate={(path) => navigate(path)} />}
+        {activeTab === 'overview' && <OverviewTab product={product} catInfo={catInfo} ghStatus={ghStatus} ghData={ghData} sbomData={sbomData} techFileProgress={techFileData.progress} versionHistory={versionHistory} syncHistory={syncHistory} syncStats={syncStats} pushEvents={pushEvents} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onDisconnect={handleDisconnectGitHub} repoProvider={currentProvider} isProviderConnected={isProviderConnected} providerConnection={providerConnection} isOrgAdmin={isOrgAdmin} onSwitchTab={(tab) => { setActiveTab(tab as TabKey); window.history.replaceState({}, '', `?tab=${tab}`); }} onNavigate={(path) => navigate(path)} />}
         {activeTab === 'obligations' && <ObligationsTab product={product} />}
         {activeTab === 'technical-file' && <TechnicalFileTab productId={productId!} techFileData={techFileData} loading={techFileLoading} onUpdate={fetchTechFileData} />}
         {activeTab === 'activity' && <ActivityTab productId={product.id} />}
         {activeTab === 'risk-findings' && <RiskFindingsTab productId={product.id} />}
-        {activeTab === 'dependencies' && <DependenciesTab ghData={ghData} sbomData={sbomData} sbomLoading={sbomLoading} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onRefreshSBOM={handleRefreshSBOM} repoProvider={currentProvider} isProviderConnected={isProviderConnected} />}
+        {activeTab === 'dependencies' && <DependenciesTab ghData={ghData} sbomData={sbomData} sbomLoading={sbomLoading} onConnect={handleConnectGitHub} onSync={handleSync} syncing={syncing} onRefreshSBOM={handleRefreshSBOM} repoProvider={currentProvider} isProviderConnected={isProviderConnected} isOrgAdmin={isOrgAdmin} />}
         {activeTab === 'supply-chain' && <SupplyChainTab productId={product.id} />}
         {activeTab === 'crypto-inventory' && <CryptoInventoryTab productId={product.id} />}
         {activeTab === 'field-issues' && <FieldIssuesTab productId={product.id} />}
@@ -802,6 +817,13 @@ export default function ProductDetailPage() {
             // Update the product category locally
             setProduct((prev) => prev ? { ...prev, craCategory: category } : null);
           }}
+        />
+      )}
+      {oauthModalProvider && (
+        <ConnectProviderModal
+          provider={oauthModalProvider}
+          onCancel={() => setOauthModalProvider(null)}
+          onConfirm={() => initiateOAuthFlow(oauthModalProvider)}
         />
       )}
     </>

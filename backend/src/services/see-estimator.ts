@@ -654,7 +654,6 @@ const CONCURRENT_FETCHES = 10;
 export async function runEstimateScan(
   productId: string,
   orgId: string,
-  userId: string,
 ): Promise<SEEAnalysisResult> {
   // Get repo connection from Neo4j
   const driver = getDriver();
@@ -681,9 +680,9 @@ export async function runEstimateScan(
 
   if (!repoUrl) throw new Error('No repository connected to this product');
 
-  // Resolve repo connection (token, provider, owner, repo)
-  const conn = await resolveRepoConnection(userId, repoUrl);
-  if (!conn) throw new Error('Cannot resolve repository connection. Ensure the repository is connected.');
+  // Resolve repo connection (token, provider, owner, repo) — org-level
+  const conn = await resolveRepoConnection(orgId, repoUrl);
+  if (!conn) throw new Error('Cannot resolve repository connection. Ensure your organisation has connected the provider.');
 
   const { token, provider, owner, repo, instanceUrl } = conn;
 

@@ -18,11 +18,12 @@ import type { GitHubData, SBOMData } from './shared';
 import { LANGUAGE_COLORS, providerLabel } from './shared';
 import ProviderIcon from './ProviderIcon';
 
-export default function DependenciesTab({ ghData, sbomData, sbomLoading, onConnect, onSync, syncing, onRefreshSBOM, repoProvider, isProviderConnected }: {
+export default function DependenciesTab({ ghData, sbomData, sbomLoading, onConnect, onSync, syncing, onRefreshSBOM, repoProvider, isProviderConnected, isOrgAdmin }: {
   ghData: GitHubData; sbomData: SBOMData; sbomLoading: boolean;
   onConnect: (provider?: string) => void; onSync: () => void; syncing: boolean; onRefreshSBOM: () => void;
   repoProvider: string;
   isProviderConnected: boolean;
+  isOrgAdmin: boolean;
 }) {
   const pLabel = providerLabel(repoProvider);
 
@@ -31,10 +32,16 @@ export default function DependenciesTab({ ghData, sbomData, sbomLoading, onConne
       <div className="pd-placeholder">
         <ProviderIcon provider={repoProvider} size={48} />
         <h3>Connect {pLabel} to Discover Dependencies</h3>
-        <p>Connect your {pLabel} account to scan the repository for dependencies, generate SBOMs, and identify contributors. The CRA requires a machine-readable SBOM (Article 13(11)).</p>
-        <button className="btn btn-primary" onClick={() => onConnect(repoProvider)}>
-          <ProviderIcon provider={repoProvider} size={18} /> Connect {pLabel}
-        </button>
+        {isOrgAdmin ? (
+          <>
+            <p>Connect your organisation's {pLabel} account to scan the repository for dependencies, generate SBOMs, and identify contributors. The CRA requires a machine-readable SBOM (Article 13(11)).</p>
+            <button className="btn btn-primary" onClick={() => onConnect(repoProvider)}>
+              <ProviderIcon provider={repoProvider} size={18} /> Connect {pLabel}
+            </button>
+          </>
+        ) : (
+          <p>Ask an organisation admin to connect {pLabel}. Once connected, every member can sync dependencies and generate SBOMs.</p>
+        )}
       </div>
     );
   }

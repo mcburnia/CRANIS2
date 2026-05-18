@@ -135,7 +135,6 @@ export interface ModuleChurn {
 export async function runBranchAnalysis(
   productId: string,
   orgId: string,
-  userId: string,
 ): Promise<BranchAnalysisResult> {
   // Resolve repo connection
   const neo4jSession = getDriver().session();
@@ -158,7 +157,7 @@ export async function runBranchAnalysis(
 
   if (!repoUrl) throw new Error('No repository connected');
 
-  const conn = await resolveRepoConnection(userId, repoUrl);
+  const conn = await resolveRepoConnection(orgId, repoUrl);
   if (!conn) throw new Error('Cannot resolve repository connection');
 
   const { token, provider, owner, repo, instanceUrl } = conn;

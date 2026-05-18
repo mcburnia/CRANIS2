@@ -60,7 +60,6 @@ export interface CommitActivityPoint {
 export async function ingestCommits(
   productId: string,
   orgId: string,
-  userId: string,
 ): Promise<CommitSummary> {
   // Resolve repo connection
   const neo4jSession = getDriver().session();
@@ -83,7 +82,7 @@ export async function ingestCommits(
 
   if (!repoUrl) throw new Error('No repository connected to this product');
 
-  const conn = await resolveRepoConnection(userId, repoUrl);
+  const conn = await resolveRepoConnection(orgId, repoUrl);
   if (!conn) throw new Error('Cannot resolve repository connection');
 
   const { token, provider, owner, repo, instanceUrl } = conn;

@@ -133,6 +133,15 @@
 .rp-conn-instance {
   font-size: 0.7rem; color: var(--muted);
 }
+.rp-conn-attribution {
+  display: block;
+  font-size: 0.7rem; color: var(--muted); font-style: italic;
+}
+.rp-conn-hint {
+  font-size: 0.8rem; color: var(--muted);
+  margin: 0 0 0.75rem; padding: 0.5rem 0.75rem;
+  background: var(--bg-subtle); border-radius: 6px;
+}
 
 .rp-conn-item-right {
   display: flex; align-items: center; gap: 0.75rem;

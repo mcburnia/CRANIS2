@@ -137,7 +137,8 @@ export async function initDb() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS repo_connections (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        user_id UUID REFERENCES users(id) NOT NULL,
+        org_id UUID,
+        connected_by_user_id UUID REFERENCES users(id),
         provider VARCHAR(20) NOT NULL DEFAULT 'github',
         provider_user_id VARCHAR(255),
         provider_username VARCHAR(255),
@@ -147,7 +148,8 @@ export async function initDb() {
         github_avatar_url TEXT,
         access_token_encrypted TEXT NOT NULL,
         token_scope VARCHAR(255),
-        connected_at TIMESTAMPTZ DEFAULT NOW()
+        connected_at TIMESTAMPTZ DEFAULT NOW(),
+        instance_url VARCHAR(500)
       );
     `);
     // Migration: add provider columns and migrate data
@@ -168,15 +170,80 @@ export async function initDb() {
         provider_avatar_url = github_avatar_url
       WHERE provider_user_id IS NULL AND github_user_id IS NOT NULL;
     `);
-    // Update constraint: was UNIQUE(user_id), now UNIQUE(user_id, provider)
+
+    // ── Migrate connections from per-user to per-organisation scope ──
+    // Single shared org-level integration. user_id becomes audit-only
+    // (renamed to connected_by_user_id).
+    await client.query(`
+      ALTER TABLE repo_connections ADD COLUMN IF NOT EXISTS org_id UUID;
+    `);
     await client.query(`
       DO $$ BEGIN
-        ALTER TABLE repo_connections DROP CONSTRAINT IF EXISTS github_connections_user_id_key;
-        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'repo_connections_user_provider_unique') THEN
-          ALTER TABLE repo_connections ADD CONSTRAINT repo_connections_user_provider_unique UNIQUE(user_id, provider);
+        IF EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name = 'repo_connections' AND column_name = 'user_id')
+           AND NOT EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name = 'repo_connections' AND column_name = 'connected_by_user_id') THEN
+          ALTER TABLE repo_connections RENAME COLUMN user_id TO connected_by_user_id;
         END IF;
       END $$;
     `);
+    // Audit field — never required to be set
+    await client.query(`
+      ALTER TABLE repo_connections ALTER COLUMN connected_by_user_id DROP NOT NULL;
+    `);
+    // Backfill org_id from users.org_id via the connecting user
+    await client.query(`
+      UPDATE repo_connections rc
+      SET org_id = u.org_id
+      FROM users u
+      WHERE u.id = rc.connected_by_user_id
+        AND rc.org_id IS NULL
+        AND u.org_id IS NOT NULL;
+    `);
+    // Drop the old per-user uniqueness so we can move to per-org
+    await client.query(`
+      ALTER TABLE repo_connections DROP CONSTRAINT IF EXISTS repo_connections_user_provider_unique;
+      ALTER TABLE repo_connections DROP CONSTRAINT IF EXISTS github_connections_user_id_key;
+    `);
+    // Collapse duplicates introduced by the model shift: if two users in the
+    // same org connected the same provider, keep the most-recently-connected
+    // row and drop the older ones. Loud log so operators see what happened.
+    const dedup = await client.query(`
+      WITH dups AS (
+        SELECT id FROM (
+          SELECT id, ROW_NUMBER() OVER (
+            PARTITION BY org_id, provider, COALESCE(instance_url, '')
+            ORDER BY connected_at DESC NULLS LAST, id
+          ) AS rn
+          FROM repo_connections
+          WHERE org_id IS NOT NULL
+        ) ranked
+        WHERE rn > 1
+      )
+      DELETE FROM repo_connections WHERE id IN (SELECT id FROM dups)
+      RETURNING id, org_id, provider, provider_username
+    `);
+    if (dedup.rowCount && dedup.rowCount > 0) {
+      console.warn(`[initDb] repo_connections: removed ${dedup.rowCount} duplicate(s) during org-scope migration:`,
+        dedup.rows.map(r => `${r.provider}/${r.provider_username} (org=${r.org_id})`).join(', '));
+    }
+    // Org-scoped uniqueness — split by instance_url nullability so NULL
+    // doesn't defeat the constraint
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS repo_connections_org_provider_cloud_unique
+        ON repo_connections (org_id, provider)
+        WHERE instance_url IS NULL;
+    `);
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS repo_connections_org_provider_selfhosted_unique
+        ON repo_connections (org_id, provider, instance_url)
+        WHERE instance_url IS NOT NULL;
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_repo_connections_org_provider
+        ON repo_connections (org_id, provider);
+    `);
+
     // Allow NULL in legacy github_* columns (Codeberg connections don't use them)
     await client.query(`
       ALTER TABLE repo_connections ALTER COLUMN github_user_id DROP NOT NULL;

@@ -83,14 +83,14 @@ export async function ensureWebhook(
 }
 
 /**
- * Remove all webhooks for repositories owned by a user for a given provider.
- * Called when a user disconnects their repo connection.
+ * Remove all webhooks for repositories owned by an organisation for a given
+ * provider. Called when an admin disconnects their org's repo connection.
  * Best-effort – logs errors but does not throw.
  */
 export async function removeWebhooksForUser(
   prov: RepoProvider,
   token: string,
-  userId: string,
+  orgId: string,
   instanceUrl?: string
 ): Promise<void> {
   if (prov === 'gitlab') return;
@@ -98,10 +98,10 @@ export async function removeWebhooksForUser(
   const session = getDriver().session();
   try {
     const result = await session.run(
-      `MATCH (u:User {id: $userId})-[:REPO_CONNECTED]->(r:Repository)
+      `MATCH (o:Organisation {id: $orgId})<-[:BELONGS_TO]-(p:Product)-[:HAS_REPO]->(r:Repository)
        WHERE r.provider = $provider AND r.webhookId IS NOT NULL
-       RETURN r.url AS url, r.webhookId AS webhookId, r.owner AS owner, r.name AS name`,
-      { userId, provider: prov }
+       RETURN DISTINCT r.url AS url, r.webhookId AS webhookId, r.owner AS owner, r.name AS name`,
+      { orgId, provider: prov }
     );
 
     for (const record of result.records) {

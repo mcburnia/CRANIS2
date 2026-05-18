@@ -17,6 +17,7 @@ import {
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import { usePageMeta } from '../../hooks/usePageMeta';
+import { useAuth } from '../../context/AuthContext';
 import './ReposPage.css';
 
 // Codeberg SVG icon (not in lucide)
@@ -79,6 +80,7 @@ interface Connection {
   scope: string;
   connectedAt: string;
   instanceUrl: string | null;
+  connectedByEmail: string | null;
 }
 
 type Filter = 'all' | 'connected' | 'disconnected' | 'github' | 'codeberg' | 'bitbucket';
@@ -116,6 +118,8 @@ function detectProvider(url: string): string {
 // ─── Provider Connections Panel ──────────────────────────────────
 
 function ProviderConnections({ onConnectionChange }: { onConnectionChange: () => void }) {
+  const { user } = useAuth();
+  const isOrgAdmin = user?.orgRole === 'admin';
   const [providers, setProviders] = useState<ProviderDef[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [expanded, setExpanded] = useState(false);
@@ -173,7 +177,7 @@ function ProviderConnections({ onConnectionChange }: { onConnectionChange: () =>
   };
 
   const handleDisconnect = async (prov: string) => {
-    if (!confirm(`Disconnect ${prov}? This will remove access to repositories on this provider.`)) return;
+    if (!confirm(`Disconnect ${prov} for your organisation? Every member's repo syncs will stop until it is reconnected.`)) return;
     try {
       const res = await fetch(`/api/repo/disconnect/${prov}`, {
         method: 'DELETE',
@@ -201,7 +205,7 @@ function ProviderConnections({ onConnectionChange }: { onConnectionChange: () =>
       <div className="rp-conn-header" onClick={() => setExpanded(!expanded)}>
         <div className="rp-conn-title">
           <Link2 size={16} />
-          <span>Provider Connections</span>
+          <span>Organisation Provider Connections</span>
           <span className="rp-conn-count">
             {connections.length} connected
             {connectableCount > 0 && ` \u2022 ${connectableCount} available`}
@@ -212,6 +216,12 @@ function ProviderConnections({ onConnectionChange }: { onConnectionChange: () =>
 
       {expanded && (
         <div className="rp-conn-body">
+          {!isOrgAdmin && (
+            <p className="rp-conn-hint">
+              These integrations are shared by everyone in your organisation. Only an organisation admin can connect or disconnect a provider.
+            </p>
+          )}
+
           {/* Connected providers */}
           {connections.length > 0 && (
             <div className="rp-conn-list">
@@ -225,25 +235,32 @@ function ProviderConnections({ onConnectionChange }: { onConnectionChange: () =>
                       {c.instanceUrl && (
                         <span className="rp-conn-instance">{c.instanceUrl}</span>
                       )}
+                      {c.connectedByEmail && (
+                        <span className="rp-conn-attribution">
+                          connected by {c.connectedByEmail}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="rp-conn-item-right">
                     <span className="rp-conn-status connected"><Check size={12} /> Connected</span>
-                    <button className="rp-conn-disconnect" onClick={() => handleDisconnect(c.provider)} title="Disconnect">
-                      <Unlink size={13} />
-                    </button>
+                    {isOrgAdmin && (
+                      <button className="rp-conn-disconnect" onClick={() => handleDisconnect(c.provider)} title="Disconnect">
+                        <Unlink size={13} />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Self-hosted PAT connect form */}
-          {!showPatForm ? (
+          {/* Self-hosted PAT connect form \u2014 admin-only */}
+          {isOrgAdmin && !showPatForm ? (
             <button className="rp-conn-add-btn" onClick={() => setShowPatForm(true)}>
               <Key size={14} /> Connect Self-Hosted Provider (PAT)
             </button>
-          ) : (
+          ) : isOrgAdmin && showPatForm ? (
             <div className="rp-pat-form">
               <div className="rp-pat-form-header">
                 <Key size={14} />
@@ -294,7 +311,7 @@ function ProviderConnections({ onConnectionChange }: { onConnectionChange: () =>
                 {patLoading ? <><Loader size={14} className="spin" /> Validating...</> : 'Test & Connect'}
               </button>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

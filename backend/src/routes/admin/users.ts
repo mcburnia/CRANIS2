@@ -295,7 +295,9 @@ router.delete('/users/:userId', requirePlatformAdmin, async (req: Request, res: 
     await pool.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
     await pool.query('DELETE FROM user_events WHERE user_id = $1', [userId]);
     await pool.query('DELETE FROM feedback WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM repo_connections WHERE user_id = $1', [userId]);
+    // Repo connections are org-level — anonymise the audit field rather than
+    // deleting the connection (deleting one member should not orphan the org).
+    await pool.query('UPDATE repo_connections SET connected_by_user_id = NULL WHERE connected_by_user_id = $1', [userId]);
     await pool.query('DELETE FROM users WHERE id = $1', [userId]);
 
     const reqData = extractRequestData(req);

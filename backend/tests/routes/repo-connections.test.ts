@@ -522,4 +522,115 @@ describe('/api/repo', () => {
       expect(forgejoConnections.length).toBe(1);
     });
   });
+
+  // ─── Org-level scope + admin gating ──────────────────────────────────
+  // Repo connections belong to the organisation, not the individual user.
+  // Connect/disconnect is restricted to org admins; member can still read
+  // status and benefit from the shared connection.
+
+  describe('org-level scope + admin gating', () => {
+    let memberToken: string;
+    let forgejoPat: string;
+
+    beforeAll(async () => {
+      memberToken = await loginTestUser(TEST_USERS.mfgMember1);
+
+      const tokenRes = await fetch(`${FORGEJO_INSTANCE_URL}/api/v1/users/${FORGEJO_ADMIN_USER}/tokens`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Basic ' + btoa(`${FORGEJO_ADMIN_USER}:${FORGEJO_ADMIN_PASS}`),
+        },
+        body: JSON.stringify({ name: `test-org-scope-${Date.now()}`, scopes: ['read:user', 'read:repository'] }),
+      });
+      forgejoPat = (await tokenRes.json()).sha1;
+    });
+
+    afterAll(async () => {
+      // best-effort cleanup
+      await api.delete('/api/repo/disconnect/forgejo', { auth: token });
+    });
+
+    it('should reject connect-pat from a non-admin member', async () => {
+      const res = await api.post('/api/repo/connect-pat', {
+        auth: memberToken,
+        body: { provider: 'forgejo', instanceUrl: FORGEJO_INSTANCE_URL, accessToken: forgejoPat },
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toMatch(/admin/i);
+    });
+
+    it('should reject disconnect from a non-admin member', async () => {
+      // First, admin connects so a connection exists to (attempt to) disconnect
+      await api.post('/api/repo/connect-pat', {
+        auth: token,
+        body: { provider: 'forgejo', instanceUrl: FORGEJO_INSTANCE_URL, accessToken: forgejoPat },
+      });
+      const res = await api.delete('/api/repo/disconnect/forgejo', { auth: memberToken });
+      expect(res.status).toBe(403);
+    });
+
+    it('should let a non-admin member see the org-level connection in status', async () => {
+      // Admin already connected in previous test
+      const res = await api.get('/api/repo/status', { auth: memberToken });
+      expect(res.status).toBe(200);
+      const forgejo = res.body.connections.find((c: any) => c.provider === 'forgejo');
+      expect(forgejo).toBeTruthy();
+      expect(forgejo.username).toBe(FORGEJO_ADMIN_USER);
+    });
+
+    it('should record connected_by_email when admin connects', async () => {
+      const res = await api.get('/api/repo/status', { auth: token });
+      const forgejo = res.body.connections.find((c: any) => c.provider === 'forgejo');
+      expect(forgejo).toBeTruthy();
+      expect(forgejo.connectedByEmail).toBe(TEST_USERS.mfgAdmin);
+    });
+  });
+
+  // ─── Bitbucket OAuth — admin gating parity ─────────────────────────────
+  // Bitbucket uses OAuth (not PAT) so we test the admin gate on /connect-init.
+  // The middleware runs before the OAuth-config check, so a non-admin always
+  // gets 403 regardless of whether BITBUCKET_CLIENT_ID is set; an admin gets
+  // 200 (with connectionToken) when configured, or 500 (config error) when not
+  // — but never 403. This proves the gate fires for cloud-OAuth providers too.
+
+  describe('bitbucket oauth — admin gating parity', () => {
+    let memberToken: string;
+
+    beforeAll(async () => {
+      memberToken = await loginTestUser(TEST_USERS.mfgMember1);
+    });
+
+    it('should reject connect-init for bitbucket from a non-admin member', async () => {
+      const res = await api.post('/api/repo/connect-init', {
+        auth: memberToken,
+        body: { provider: 'bitbucket' },
+      });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toMatch(/admin/i);
+    });
+
+    it('should let an admin past the gate for bitbucket connect-init', async () => {
+      const res = await api.post('/api/repo/connect-init', {
+        auth: token,
+        body: { provider: 'bitbucket' },
+      });
+      // Admin must NOT be blocked by the admin gate
+      expect(res.status).not.toBe(403);
+      // Either configured (200 + token) or not configured (500). Either proves
+      // the admin gate passed.
+      if (res.status === 200) {
+        expect(typeof res.body.connectionToken).toBe('string');
+      } else {
+        expect(res.status).toBe(500);
+        expect(res.body.error).toMatch(/bitbucket/i);
+      }
+    });
+
+    it('should reject disconnect of bitbucket from a non-admin member', async () => {
+      const res = await api.delete('/api/repo/disconnect/bitbucket', { auth: memberToken });
+      expect(res.status).toBe(403);
+      expect(res.body.error).toMatch(/admin/i);
+    });
+  });
 });

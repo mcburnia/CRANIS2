@@ -355,10 +355,13 @@ router.get('/data-export', authRateLimit('data_export'), requireAuth, async (req
     }
 
     // ── Repository connections (tokens excluded) ─────────────────────────
+    // Repo connections are org-level — export those visible to the user's org
+    // plus any rows that audit-record this user as the connector.
     const repoResult = await pool.query(
       `SELECT provider, provider_username, provider_avatar_url, connected_at
-       FROM repo_connections WHERE user_id = $1`,
-      [userId]
+       FROM repo_connections
+       WHERE org_id = $1 OR connected_by_user_id = $2`,
+      [orgId, userId]
     );
 
     // ── Products (org-scoped) ────────────────────────────────────────────
@@ -574,12 +577,12 @@ router.get('/data-export', authRateLimit('data_export'), requireAuth, async (req
  * rejected with 409 — they must transfer admin role first.
  *
  * Deletion cascade:
- * - Immediately deleted: user record, user_events, repo_connections,
- *   feedback, api_keys, copilot_cache, notifications, Neo4j User node
+ * - Immediately deleted: user record, user_events, feedback, api_keys,
+ *   copilot_cache, notifications, Neo4j User node
  * - Anonymised (not deleted): billing records (7-year tax obligation),
- *   product_activity_log entries (audit trail)
- * - Left intact: org data, products, compliance records — these belong
- *   to the organisation, not the individual user
+ *   product_activity_log entries (audit trail), repo_connections audit field
+ * - Left intact: org data, products, compliance records, the org-level repo
+ *   integration — these belong to the organisation, not the individual user
  *
  * GDPR Article 17 — Right to erasure.
  *
@@ -684,9 +687,12 @@ router.delete('/', authRateLimit('account_delete'), requireAuth, async (req: Req
       }
     }
 
-    // 1. Delete repo_connections (contains encrypted OAuth tokens)
+    // 1. Repo connections — now org-level. Deleting a member must not strip
+    // the organisation's integration; just null out the audit field that
+    // points to this user. (If the user is the sole org admin, account
+    // deletion is blocked earlier in this handler.)
     const rcResult = await pool.query(
-      'DELETE FROM repo_connections WHERE user_id = $1',
+      'UPDATE repo_connections SET connected_by_user_id = NULL WHERE connected_by_user_id = $1',
       [userId]
     );
     deleted.repoConnections = rcResult.rowCount || 0;

@@ -17,7 +17,8 @@ import { PROVIDER_REGISTRY } from '../../services/repo-provider.js';
 import * as provider from '../../services/repo-provider.js';
 import type { RepoProvider } from '../../services/repo-provider.js';
 import { removeWebhooksForUser } from '../../services/webhook.js';
-import { requireAuth, pendingStates, connectionTokens } from './shared.js';
+import { getUserOrgId } from '../../services/repo-helpers.js';
+import { requireAuth, requireOrgAdmin, pendingStates, connectionTokens } from './shared.js';
 
 const router = Router();
 
@@ -34,10 +35,13 @@ router.get('/providers', requireAuth, (_req: Request, res: Response) => {
 });
 
 // ─── POST /connect-pat – PAT-based connection for self-hosted providers ───
-router.post('/connect-pat', requireAuth, async (req: Request, res: Response) => {
+router.post('/connect-pat', requireAuth, requireOrgAdmin, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const userEmail = (req as any).email;
   const { provider: prov, instanceUrl, accessToken } = req.body;
+
+  const orgId = await getUserOrgId(userId);
+  if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
   // Validate required fields
   if (!prov || !instanceUrl || !accessToken) {
@@ -69,15 +73,22 @@ router.post('/connect-pat', requireAuth, async (req: Request, res: Response) => 
     // Encrypt the token
     const encryptedToken = encrypt(accessToken);
 
-    // Store connection
+    // Store connection at org level. PAT connections always have a non-NULL
+    // instance_url, so we conflict on the self-hosted partial unique index.
     await pool.query(
-      `INSERT INTO repo_connections (user_id, provider, instance_url, provider_user_id, provider_username,
-         provider_avatar_url, access_token_encrypted, token_scope)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pat')
-       ON CONFLICT ON CONSTRAINT repo_connections_user_provider_unique DO UPDATE SET
-         instance_url = $3, provider_user_id = $4, provider_username = $5,
-         provider_avatar_url = $6, access_token_encrypted = $7, token_scope = 'pat', connected_at = NOW()`,
-      [userId, prov, normalised, String(user.id), user.login, user.avatar_url, encryptedToken]
+      `INSERT INTO repo_connections (org_id, connected_by_user_id, provider, instance_url,
+         provider_user_id, provider_username, provider_avatar_url, access_token_encrypted, token_scope)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pat')
+       ON CONFLICT (org_id, provider, instance_url) WHERE instance_url IS NOT NULL
+       DO UPDATE SET
+         connected_by_user_id = EXCLUDED.connected_by_user_id,
+         provider_user_id = EXCLUDED.provider_user_id,
+         provider_username = EXCLUDED.provider_username,
+         provider_avatar_url = EXCLUDED.provider_avatar_url,
+         access_token_encrypted = EXCLUDED.access_token_encrypted,
+         token_scope = 'pat',
+         connected_at = NOW()`,
+      [orgId, userId, prov, normalised, String(user.id), user.login, user.avatar_url, encryptedToken]
     );
 
     // Record telemetry
@@ -111,7 +122,7 @@ router.post('/connect-pat', requireAuth, async (req: Request, res: Response) => 
 });
 
 // ─── POST /api/github/connect-init ──────────────────────────────
-router.post('/connect-init', requireAuth, async (req: Request, res: Response) => {
+router.post('/connect-init', requireAuth, requireOrgAdmin, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const repoProvider = (req.body?.provider || 'github') as RepoProvider;
 
@@ -238,16 +249,33 @@ router.get('/callback/{:provider}', async (req: Request, res: Response) => {
     const providerUser = await provider.getAuthenticatedUser(repoProvider, tokenData.access_token);
     const encryptedToken = encrypt(tokenData.access_token);
 
+    const pendingOrgId = await getUserOrgId(pending.userId);
+    if (!pendingOrgId) {
+      console.error(`[OAUTH-CALLBACK] No org_id for user ${pending.userId} — cannot complete connect`);
+      res.send(renderOAuthResultPage(frontendUrl, false, 'No organisation found for your account. Set up your organisation first.', repoProvider));
+      return;
+    }
+
+    // Cloud provider (github/codeberg/bitbucket) — instance_url is NULL, so
+    // conflict on the cloud partial unique index.
     await pool.query(
-      `INSERT INTO repo_connections (user_id, provider, provider_user_id, provider_username, provider_avatar_url,
-         github_user_id, github_username, github_avatar_url, access_token_encrypted, token_scope)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       ON CONFLICT ON CONSTRAINT repo_connections_user_provider_unique DO UPDATE SET
-         provider_user_id = $3, provider_username = $4, provider_avatar_url = $5,
-         github_user_id = $6, github_username = $7, github_avatar_url = $8,
-         access_token_encrypted = $9, token_scope = $10, connected_at = NOW()`,
+      `INSERT INTO repo_connections (org_id, connected_by_user_id, provider, provider_user_id, provider_username,
+         provider_avatar_url, github_user_id, github_username, github_avatar_url, access_token_encrypted, token_scope)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       ON CONFLICT (org_id, provider) WHERE instance_url IS NULL
+       DO UPDATE SET
+         connected_by_user_id = EXCLUDED.connected_by_user_id,
+         provider_user_id = EXCLUDED.provider_user_id,
+         provider_username = EXCLUDED.provider_username,
+         provider_avatar_url = EXCLUDED.provider_avatar_url,
+         github_user_id = EXCLUDED.github_user_id,
+         github_username = EXCLUDED.github_username,
+         github_avatar_url = EXCLUDED.github_avatar_url,
+         access_token_encrypted = EXCLUDED.access_token_encrypted,
+         token_scope = EXCLUDED.token_scope,
+         connected_at = NOW()`,
       [
-        pending.userId, repoProvider,
+        pendingOrgId, pending.userId, repoProvider,
         String(providerUser.id), providerUser.login, providerUser.avatar_url,
         repoProvider === 'github' ? providerUser.id : null,
         repoProvider === 'github' ? providerUser.login : null,
@@ -332,12 +360,19 @@ function renderOAuthResultPage(frontendUrl: string, success: boolean, message: s
 }
 
 // ─── GET /api/github/status ─────────────────────────────────────
+// Org-scoped: every member sees their organisation's integration.
 router.get('/status', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
+  const orgId = await getUserOrgId(userId);
+  if (!orgId) { res.json({ connected: false, connections: [] }); return; }
 
   const result = await pool.query(
-    'SELECT provider, provider_username, provider_avatar_url, token_scope, connected_at, instance_url FROM repo_connections WHERE user_id = $1',
-    [userId]
+    `SELECT rc.provider, rc.provider_username, rc.provider_avatar_url, rc.token_scope,
+            rc.connected_at, rc.instance_url, rc.connected_by_user_id, u.email AS connected_by_email
+       FROM repo_connections rc
+       LEFT JOIN users u ON u.id = rc.connected_by_user_id
+       WHERE rc.org_id = $1`,
+    [orgId]
   );
 
   if (result.rows.length === 0) {
@@ -353,6 +388,7 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
     scope: conn.token_scope,
     connectedAt: conn.connected_at,
     instanceUrl: conn.instance_url || null,
+    connectedByEmail: conn.connected_by_email || null,
   }));
 
   // Backward compat: surface the GitHub connection at top level
@@ -363,33 +399,37 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
     githubAvatarUrl: ghConn?.provider_avatar_url || ghConn?.github_avatar_url || undefined,
     scope: ghConn?.token_scope || undefined,
     connectedAt: ghConn?.connected_at || undefined,
+    connectedByEmail: ghConn?.connected_by_email || undefined,
     connections,
   });
 });
 
 // ─── DELETE /api/github/disconnect/{:provider} ───────────────────
-router.delete('/disconnect/{:provider}', requireAuth, async (req: Request, res: Response) => {
+// Org-admin only — disconnecting affects every member of the organisation.
+router.delete('/disconnect/{:provider}', requireAuth, requireOrgAdmin, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   const userEmail = (req as any).email;
   const disconnectProvider = (req.params.provider || 'github') as RepoProvider;
+  const orgId = await getUserOrgId(userId);
+  if (!orgId) { res.status(403).json({ error: 'No organisation found' }); return; }
 
   // Retrieve token before deleting connection – needed for webhook cleanup (non-blocking)
   try {
     const connRow = await pool.query(
-      'SELECT access_token_encrypted, instance_url FROM repo_connections WHERE user_id = $1 AND provider = $2',
-      [userId, disconnectProvider]
+      'SELECT access_token_encrypted, instance_url FROM repo_connections WHERE org_id = $1 AND provider = $2',
+      [orgId, disconnectProvider]
     );
     if (connRow.rows.length > 0 && connRow.rows[0].access_token_encrypted) {
       const decryptedToken = decrypt(connRow.rows[0].access_token_encrypted);
-      await removeWebhooksForUser(disconnectProvider, decryptedToken, userId, connRow.rows[0].instance_url || undefined);
+      await removeWebhooksForUser(disconnectProvider, decryptedToken, orgId, connRow.rows[0].instance_url || undefined);
     }
   } catch (err: any) {
     console.error(`[DISCONNECT] Webhook cleanup failed (non-blocking): ${err.message}`);
   }
 
   const result = await pool.query(
-    'DELETE FROM repo_connections WHERE user_id = $1 AND provider = $2 RETURNING provider_username',
-    [userId, disconnectProvider]
+    'DELETE FROM repo_connections WHERE org_id = $1 AND provider = $2 RETURNING provider_username',
+    [orgId, disconnectProvider]
   );
 
   if (result.rows.length === 0) {

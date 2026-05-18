@@ -49,7 +49,7 @@ interface ProductChecklistPD {
   steps: ChecklistStepPD[];
 }
 
-export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, techFileProgress: _techFileProgress, versionHistory, syncHistory, syncStats, pushEvents, onConnect, onSync, syncing, onDisconnect, repoProvider, isProviderConnected, providerConnection, onSwitchTab, onNavigate }: {
+export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomData: _sbomData, techFileProgress: _techFileProgress, versionHistory, syncHistory, syncStats, pushEvents, onConnect, onSync, syncing, onDisconnect, repoProvider, isProviderConnected, providerConnection, isOrgAdmin, onSwitchTab, onNavigate }: {
   product: Product; catInfo: { label: string; color: string; desc: string };
   ghStatus: GitHubStatus; ghData: GitHubData; sbomData: SBOMData;
   techFileProgress: { total: number; completed: number; inProgress: number; notStarted: number };
@@ -61,6 +61,7 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
   repoProvider: string;
   isProviderConnected: boolean;
   providerConnection?: RepoConnection;
+  isOrgAdmin: boolean;
   onSwitchTab: (tab: string) => void;
   onNavigate: (path: string) => void;
 }) {
@@ -152,9 +153,11 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
             <div className="gh-account-row">
               {(providerConnection?.avatarUrl || ghStatus.githubAvatarUrl) && <img src={providerConnection?.avatarUrl || ghStatus.githubAvatarUrl || ''} alt="" className="gh-account-avatar" />}
               <span className="gh-account-name">Connected as {providerConnection?.username || ghStatus.githubUsername}</span>
-              <button className="gh-disconnect-btn" onClick={() => onDisconnect(repoProvider)} title={`Disconnect ${pLabel}`}>
-                <Unplug size={12} />
-              </button>
+              {isOrgAdmin && (
+                <button className="gh-disconnect-btn" onClick={() => onDisconnect(repoProvider)} title={`Disconnect ${pLabel} for your organisation`}>
+                  <Unplug size={12} />
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -167,11 +170,19 @@ export default function OverviewTab({ product, catInfo, ghStatus, ghData, sbomDa
             <ProviderIcon provider={repoProvider} size={18} />
             <h3>Connect {pLabel}</h3>
           </div>
-          <p className="gh-connect-desc">Connect your {pLabel} account to sync repository data, discover contributors, and analyse dependencies.</p>
-          <button className="btn btn-primary gh-connect-btn" onClick={() => onConnect(repoProvider)}>
-            <ProviderIcon provider={repoProvider} size={16} /> Connect {pLabel}
-          </button>
-          <p className="gh-connect-note">Read-only access. CRANIS2 will never write to your repositories.</p>
+          {isOrgAdmin ? (
+            <>
+              <p className="gh-connect-desc">Connect your organisation's {pLabel} account to sync repository data, discover contributors, and analyse dependencies. The connection is shared across every member of your organisation.</p>
+              <button className="btn btn-primary gh-connect-btn" onClick={() => onConnect(repoProvider)}>
+                <ProviderIcon provider={repoProvider} size={16} /> Connect {pLabel}
+              </button>
+              <p className="gh-connect-note">Read-only access. CRANIS2 will never write to your repositories.</p>
+            </>
+          ) : (
+            <p className="gh-connect-desc">
+              Ask an organisation admin to connect {pLabel}. Repository integrations are configured once per organisation and shared with all members.
+            </p>
+          )}
         </div>
       )}
 

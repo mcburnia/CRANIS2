@@ -415,9 +415,13 @@ router.delete('/orgs/:orgId', requirePlatformAdmin, async (req: Request, res: Re
       if (userIds.length > 0) {
         await pool.query('DELETE FROM feedback WHERE user_id = ANY($1)', [userIds]);
         await pool.query('DELETE FROM user_events WHERE user_id = ANY($1)', [userIds]);
-        await pool.query('DELETE FROM repo_connections WHERE user_id = ANY($1)', [userIds]);
         await pool.query('DELETE FROM trust_centre_contact_log WHERE from_user_id = ANY($1)', [userIds]);
       }
+
+      // Repo connections are org-level: delete by org_id (covers the case
+      // where users have already been removed but the org still has a stale
+      // integration row).
+      await pool.query('DELETE FROM repo_connections WHERE org_id = $1', [orgId]);
 
       // Org billing and users last
       await pool.query('DELETE FROM org_billing WHERE org_id = $1', [orgId]);
