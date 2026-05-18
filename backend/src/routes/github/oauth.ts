@@ -219,8 +219,12 @@ router.get('/connect/{:provider}', async (req: Request, res: Response) => {
   }
 });
 
-// ─── GET /api/github/callback/{:provider} ────────────────────────
-router.get('/callback/{:provider}', async (req: Request, res: Response) => {
+// ─── GET /api/github/callback{/:provider} ────────────────────────
+// Both shapes must match: bare /api/github/callback (the historic GitHub
+// OAuth App redirect URI, no provider segment) and /api/repo/callback/codeberg
+// (the canonical per-provider form). The brace must enclose the leading "/"
+// or path-to-regexp v8 leaves the slash as required and bare /callback 404s.
+router.get('/callback{/:provider}', async (req: Request, res: Response) => {
   const { code, state } = req.query;
   const frontendUrl = process.env.FRONTEND_URL || 'http://192.168.1.107:3002';
 

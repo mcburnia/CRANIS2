@@ -633,4 +633,34 @@ describe('/api/repo', () => {
       expect(res.body.error).toMatch(/admin/i);
     });
   });
+
+  // ─── OAuth callback route shape — both bare and per-provider forms ─────
+  // Regression for the path-to-regexp v8 trap: `/callback/{:provider}` makes
+  // only the provider optional and leaves the leading slash required, so the
+  // historic GitHub redirect URI `/api/github/callback` (no segment) 404s.
+  // We hit each URL with dummy query params and assert the route matches
+  // (non-404) — even an "invalid state" page comes back as 200 because the
+  // route is mounted; only a missing route would yield 404.
+
+  describe('oauth callback route shape', () => {
+    it('matches bare /api/github/callback (the historic GitHub redirect URI)', async () => {
+      const res = await api.get('/api/github/callback?code=x&state=y');
+      expect(res.status).not.toBe(404);
+    });
+
+    it('matches /api/github/callback/github (per-provider form on the legacy mount)', async () => {
+      const res = await api.get('/api/github/callback/github?code=x&state=y');
+      expect(res.status).not.toBe(404);
+    });
+
+    it('matches /api/repo/callback/codeberg (per-provider form on the canonical mount)', async () => {
+      const res = await api.get('/api/repo/callback/codeberg?code=x&state=y');
+      expect(res.status).not.toBe(404);
+    });
+
+    it('matches /api/repo/callback/bitbucket (per-provider form on the canonical mount)', async () => {
+      const res = await api.get('/api/repo/callback/bitbucket?code=x&state=y');
+      expect(res.status).not.toBe(404);
+    });
+  });
 });
