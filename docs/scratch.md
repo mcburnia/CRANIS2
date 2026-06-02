@@ -10,6 +10,8 @@
 
 # CRANIS2 — Active Backlog
 
+Updated: 2026-06-02 — **the live working backlog now lives in Jira `CRAN`** (`andimcburnie.atlassian.net`, board 34). Every item below is mirrored there as an agile ticket with estimates, plus 11 new business/GTM/QA/legal/ops epics (CRAN-423–479) that are Jira-native (not duplicated here). Treat Jira as the working set; this file is the narrative seed. See the `jira-cran-mirror` memory + `staging/` toolchain.
+
 Updated: 2026-04-30 (session 62 — production deployment day)
 
 For completed work history, see `.claude/projects/-home-mcburnia-cranis2/memory/completed_work.md`
