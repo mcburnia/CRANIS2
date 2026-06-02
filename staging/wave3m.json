@@ -1,0 +1,32 @@
+[
+ {
+  "key": "CRAN-74",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. Discovery / Design Spike\n*As a* product owner,\n*I want* to inventory what CRANIS2 does today against what compliance staff actually do operationally, ranked by leverage,\n*so that* the forward roadmap targets the highest-value regulatory gaps deliberately.\n\nh3. Definition of Done\n* *Given* the analysis, *when* complete, *then* {{docs/CRA-GAP-ANALYSIS-2026-05-06.md}} exists and seeds the CRAN-1…CRAN-28 epics + the CRA-completeness backlog.\n\nh3. Outcome / Notes\nProduced the 20-gap inventory across CRA/GDPR/NIS2/AI-Act + 6 CRA-completeness items; baseline of current coverage documented.\n\nh3. Sources\ndocs/CRA-GAP-ANALYSIS-2026-05-06.md (session 65).\n"
+ },
+ {
+  "key": "CRAN-75",
+  "points": 3,
+  "effort": "2d",
+  "description": "h3. Discovery / Design Spike\n*As a* product owner / strategist,\n*I want* to refine the strategy through a customer filter (software builders) and a regulation filter (statutory only) plus a two-sided market,\n*so that* the roadmap is re-ranked around the viral operator-loop and out-of-scope work is dropped.\n\nh3. Definition of Done\n* *Given* the refinement, *when* applied, *then* Tier 1 splits into Group A/B, 5 epics rescope, CRAN-21 is withdrawn, CRAN-22 superseded, and 3 new epic candidates (Operator Dashboard, PLD recast, DORA Art. 28) are added.\n\nh3. Outcome / Notes\nRecorded as the 2026-05-13 'Revised strategic frame' in the gap-analysis doc; rule-of-law filter excludes ISO/SOC/EUCC/insurance.\n\nh3. Sources\ndocs/CRA-GAP-ANALYSIS-2026-05-06.md (Revised strategic frame, 2026-05-13).\n"
+ },
+ {
+  "key": "CRAN-76",
+  "points": 3,
+  "effort": "2d",
+  "description": "h3. Discovery / Design Spike\n*As a* platform operator,\n*I want* to design a backup-first, documented dev→prod promotion process with a migration-assessment gate,\n*so that* production updates become a repeatable, safe procedure that can never delete customer data.\n\nh3. Definition of Done\n* *Given* the design, *when* complete, *then* {{docs/promotion-process.md}} documents the model + migration-assessment gate (backlog #100/#101).\n\nh3. Outcome / Notes\nSPIKE-03; motivated by the launch-day affiliate-schema direct-DDL incident; feeds CLAUDE.md rules 12-14 and the implementation story CRAN-402.\n\nh3. Sources\ndocs/promotion-process.md.\n"
+ },
+ {
+  "key": "CRAN-77",
+  "points": 3,
+  "effort": "2d",
+  "description": "h3. Discovery / Design Spike\n*As a* framework owner,\n*I want* to extract a product-agnostic AI-collaborative software-development methodology,\n*so that* the working practices are documented as a reusable scaffold for any product or new collaborator.\n\nh3. Definition of Done\n* *Given* the framework, *when* complete, *then* {{docs/methodology-prompt.md}} captures the collaboration model, principles, and a project addendum (§14).\n\nh3. Outcome / Notes\nCodifies the single-human-partner + AI-assistant model, test discipline, decomposition rules, and memory practices.\n\nh3. Sources\ndocs/methodology-prompt.md.\n"
+ },
+ {
+  "key": "CRAN-78",
+  "points": 3,
+  "effort": "2d",
+  "description": "h3. Discovery / Design Spike\n*As a* engineering leader,\n*I want* to review the existing architecture and decide the highest-leverage changes for a future rebuild,\n*so that* a rebuild starts from a deliberate, documented set of stack decisions rather than re-deriving them.\n\nh3. Definition of Done\n* *Given* the review, *when* complete, *then* the stack is assessed fit-for-purpose with recommended additions recorded (TanStack Query, zod, Kysely + node-pg-migrate, graphile-worker, pino, CI-from-commit-1).\n\nh3. Outcome / Notes\nConducted in-session; recommendations to apply on the MBP rebuild (see CRAN-360 rebuild prep).\n\nh3. Sources\nSession 63 architectural-review notes.\n"
+ }
+]

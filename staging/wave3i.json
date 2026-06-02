@@ -1,0 +1,152 @@
+[
+ {
+  "key": "CRAN-63",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* founder / engineering leader,\n*I want* an engine that turns my git history into structured, provenanced evidence of how the software was built,\n*so that* I can produce IP-provenance, R&D and competence evidence from real commit data without ever persisting source code.\n\nh3. Scope\n8-phase SEE: read-only consent + LOC/effort/cost + exec report; paginated commit ingestion + dev attribution; branch analysis + 9-type classifier + rewrite ratio; experimentation detection + R&D evidence; architecture/test evolution + module inference; evidence-graph + provenance queries; multi-regulation reports + immutable storage; session capture + competence profiling + Claude Code hooks.\n\nh3. Acceptance Criteria\n* *Given* {{services/see-*.test.ts}}, *when* run, *then* estimator/classifier/session suites pass.\n* *Given* any analysis, *when* run, *then* source code is never persisted (audited).\n* *Given* the evidence graph, *then* 5 provenance queries return results on a populated fixture.\n\nh3. Child Stories\n* CRAN-267…CRAN-274 (Phases A–H)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-267",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* engineering leader,\n*I want* a consent model, LOC estimation, effort/cost calc and an executive report,\n*so that* I get a costed, source-safe build summary the moment a repo is analysed.\n\nh3. Acceptance Criteria\n* *Given* {{services/see-estimator.test.ts}}, *then* file classification + language detection + LOC + report generation are covered.\n* *Given* any run, *then* source code is never persisted (audited).\n\nh3. Implementation Notes\nPhase A; productivity/complexity coefficients recalibrated (Session 52).\n\nh3. Sources\nSEE Phase A commits.\n"
+ },
+ {
+  "key": "CRAN-268",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* engineering leader,\n*I want* paginated, resumable commit-history ingestion with developer attribution,\n*so that* even 100K+-commit repos ingest reliably and attribute work to developers.\n\nh3. Acceptance Criteria\n* *Given* a re-run, *then* ingestion resumes from the last cursor.\n\nh3. Implementation Notes\nPhase B; Neo4j {{Developer}} + {{AUTHORED}} edges.\n\nh3. Sources\nSEE Phase B commits.\n"
+ },
+ {
+  "key": "CRAN-269",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* engineering leader,\n*I want* branch analysis, a 9-type commit classifier and rewrite ratios,\n*so that* commit history is categorised deterministically for evidence reporting.\n\nh3. Acceptance Criteria\n* *Given* {{services/see-classifier.test.ts}}, *then* all 9 types classify deterministically.\n\nh3. Implementation Notes\nPhase C; long/short/merged/abandoned branches; feature/fix/refactor/docs/test/chore/spike/merge/wip.\n\nh3. Sources\nSEE Phase C commits.\n"
+ },
+ {
+  "key": "CRAN-270",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* engineering leader,\n*I want* experimentation detection and an R&D evidence report,\n*so that* I can evidence genuine experimentation for IP-provenance / due-diligence.\n\nh3. Acceptance Criteria\n* *Given* the 5 algorithms, *then* each has positive + negative test cases.\n\nh3. Implementation Notes\nPhase D; refactoring waves / prototype branches / rapid iteration / high rewrite / fix-after-feature; SHA-256 hashed report (reframed from R&D-tax to IP-provenance in Session 63).\n\nh3. Sources\nSEE Phase D commits.\n"
+ },
+ {
+  "key": "CRAN-271",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* engineering leader,\n*I want* architecture- and test-evolution detection with module inference,\n*so that* I can show how the system's structure and test coverage evolved.\n\nh3. Acceptance Criteria\n* *Given* the analysis, *then* {{SEEModule}} nodes link to the Product/Dependency/Contributor graph.\n\nh3. Implementation Notes\nPhase E; restructuring/migrations/API changes/decomposition.\n\nh3. Sources\nSEE Phase E commits.\n"
+ },
+ {
+  "key": "CRAN-272",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* auditor / due-diligence reviewer,\n*I want* an evidence graph with provenance queries,\n*so that* I can trace any SEE finding back to the underlying CRANIS2 data.\n\nh3. Acceptance Criteria\n* *Given* a populated fixture, *then* 5 provenance queries return non-empty results.\n\nh3. Implementation Notes\nPhase F; links SEE outputs to Product/Dependency/Vulnerability/Obligation; graph-summary completeness report.\n\nh3. Sources\nSEE Phase F commits.\n"
+ },
+ {
+  "key": "CRAN-273",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* multi-regulation evidence reports in immutable storage,\n*so that* I can emit CRA/NIS2/AI-Act/DORA/ISO/R&D reports that can't be altered after the fact.\n\nh3. Acceptance Criteria\n* *Given* each report type, *then* it generates with content + hash.\n* *Given* a written report, *then* it is immutable.\n\nh3. Implementation Notes\nPhase G; report-type registry + hash chain.\n\nh3. Sources\nSEE Phase G commits.\n"
+ },
+ {
+  "key": "CRAN-274",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* engineering leader,\n*I want* session capture, competence profiling and Claude Code hooks,\n*so that* AI-assisted work sessions are captured and profiled into competence evidence.\n\nh3. Acceptance Criteria\n* *Given* {{services/see-session.test.ts}}, *then* domain detection + industry refs + competence levels are covered.\n* *Given* {{tools/session-capture/setup-hooks.sh}}, *then* it generates correct hook config (PascalCase {{SessionEnd}}).\n\nh3. Implementation Notes\nPhase H; 10 competence domains; reads JSONL transcript→Markdown; Session 54 rewrite fixed event name + stdin/transcript handling (tested vs a 688-line transcript).\n\nh3. Sources\nSEE Phase H + session-capture rewrite.\n"
+ },
+ {
+  "key": "CRAN-65",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* reader of CRANIS2 documentation (admin or contributor),\n*I want* all documentation split into Admin and Contributor audiences with SEE + source-code guarantees,\n*so that* I read only what's relevant to my role, and the source-code handling guarantees are explicit everywhere.\n\nh3. Scope\nTwo-audience rewrite across EXECUTIVE-SUMMARY, CAPABILITIES-AND-SAFEGUARDS, welcome site, USER-GUIDE v4.0, FAQ v4.0, HELP-GUIDE-STANDARD v2.0, and a frontend audience filter.\n\nh3. Acceptance Criteria\n* *Given* each doc, *when* read, *then* it carries the two-audience split + SEE content + source-code guarantee.\n* *Given* DocsPage, *when* the filter toggles, *then* the visible TOC changes.\n\nh3. Child Stories\n* CRAN-293…CRAN-299\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-293",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* reader,\n*I want* the executive summary rewritten with audiences + SEE + source guarantees,\n*so that* the top-level doc reflects the two-audience model and SEE.\n\nh3. Acceptance Criteria\n* *Given* {{docs/EXECUTIVE-SUMMARY.md}}, *then* it carries the two-audience split + SEE section + source-code guarantee.\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 53 + 63 ownership-rewrite commits.\n"
+ },
+ {
+  "key": "CRAN-294",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* reader,\n*I want* the capabilities & safeguards doc updated for SEE + security,\n*so that* the safeguards doc documents SEE, crypto security and infra hardening.\n\nh3. Acceptance Criteria\n* *Given* {{docs/CRANIS2-CAPABILITIES-AND-SAFEGUARDS.md}}, *then* §2.22 (SEE), §4.1 (source handling), §4.5/4.6 (crypto + hardening) are present.\n\nh3. Implementation Notes\nFour-table store/SEE-consent/never-store/never-do layout.\n\nh3. Sources\nSession 53 + WS-documentation commits.\n"
+ },
+ {
+  "key": "CRAN-295",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* prospective customer,\n*I want* the welcome site updated with the Contributor audience + SEE,\n*so that* the public site reflects both audiences and the real SEE capability.\n\nh3. Acceptance Criteria\n* *Given* {{welcome/public/index.html}}, *then* the Contributor card + SEE/Session-Capture cards + source-code guarantee callout are present.\n\nh3. Implementation Notes\nMarketplace reframed '(Planned)'; SEE added to Pro pricing.\n\nh3. Sources\nSession 53 welcome-site commits.\n"
+ },
+ {
+  "key": "CRAN-296",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* user,\n*I want* the user guide reorganised into audience groups (v4.0),\n*so that* I can find guidance by audience and the SEE features are documented.\n\nh3. Acceptance Criteria\n* *Given* {{docs/USER-GUIDE.md}}, *then* it carries the v4.0 header + 7 audience-tagged groups + SEE sections 41-43.\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 53 user-guide rewrite.\n"
+ },
+ {
+  "key": "CRAN-297",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* user,\n*I want* the FAQ updated for SEE and contributors (v4.0),\n*so that* common SEE/session-capture questions are answered and source-code answers carry the read-only guarantee.\n\nh3. Acceptance Criteria\n* *Given* {{docs/FAQ.md}}, *then* it carries the v4.0 header + 3 new sections.\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 53 FAQ rewrite.\n"
+ },
+ {
+  "key": "CRAN-298",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* documentation author,\n*I want* the help-guide standard moved to a two-track model (v2.0),\n*so that* help content maps to Admin/Contributor tracks rather than 5 roles.\n\nh3. Acceptance Criteria\n* *Given* {{docs/HELP-GUIDE-STANDARD.md}}, *then* it carries the v2.0 header + two-track mapping + HTML audience-tag spec.\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 53 standard rewrite.\n"
+ },
+ {
+  "key": "CRAN-299",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* user,\n*I want* an audience filter in the in-app docs and help panel,\n*so that* I can filter docs to my audience and the help panel routes correctly across tabs.\n\nh3. Acceptance Criteria\n* *Given* DocsPage, *then* the All/Admin/Contributor toggle filters the TOC.\n* *Given* a tab change, *then* HelpPanelContext re-routes on {{cranis2:tab-change}}.\n\nh3. Implementation Notes\n{{seo/meta-config.ts}} featureList 8→16 + SEE FAQ JSON-LD.\n\nh3. Sources\nSession 53 frontend commits.\n"
+ },
+ {
+  "key": "CRAN-66",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* engineer maintaining the platform,\n*I want* an isolated, deterministic, well-covered test stack with automated nightly runs,\n*so that* tests run safely against a separate stack, flakes are minimised, coverage is high, and results are reported automatically.\n\nh3. Scope\nIsolated test stack (separate containers/DB/ports, 5-layer safety); ~300 new tests lifting route coverage to 98.5%; API-client retry on transient socket errors; deterministic IDs + rate-limit cleanup; nightly runner + Trello; E2E video-on-failure + rate-limit bypass; react-is dep fix.\n\nh3. Acceptance Criteria\n* *Given* {{scripts/test-stack.sh start}}, *then* the isolated stack comes up with startup guards.\n* *Given* the suite, *then* route coverage is 98.5% and transient-socket flakes are retried to 0.\n* *Given* the nightly runner, *then* it posts results to Trello.\n\nh3. Child Stories\n* CRAN-300…CRAN-305 + CRAN-369 (react-is)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-300",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* an isolated test stack on separate containers, DB and ports,\n*so that* tests can never touch dev/prod data.\n\nh3. Acceptance Criteria\n* *Given* {{scripts/test-stack.sh start}}, *then* the test stack comes up; {{stop}} frees ~900MB.\n* *Given* startup, *then* {{pool.ts}}/{{neo4j.ts}} guards verify URLs match {{CRANIS2_TEST_MODE}} and exit on mismatch.\n\nh3. Implementation Notes\nbackend_test:3011, neo4j_test 7476/7699, {{cranis2_test}} DB; {{--profile test}} only; 5-layer safety.\n\nh3. Sources\nSession 56 isolated-test-stack commits.\n"
+ },
+ {
+  "key": "CRAN-301",
+  "points": 8,
+  "effort": "5d",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* ~300 new tests lifting route coverage to 98.5%,\n*so that* logic is well-covered and regressions are caught early.\n\nh3. Acceptance Criteria\n* *Given* the coverage report, *then* {{routes/}} is at 98.5% (65/66).\n* *Given* the 17 test files, *then* ~300 new tests pass.\n\nh3. Implementation Notes\nSEE (209) + route-gap (~50) + admin (~30) + service unit tests; ~1,664→~1,957 total.\n\nh3. Sources\nSession 53 test-hardening commits.\n"
+ },
+ {
+  "key": "CRAN-302",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* the test API client to retry transient socket errors,\n*so that* memory-pressure flakes don't fail otherwise-green runs.\n\nh3. Acceptance Criteria\n* *Given* {{backend/tests/helpers/api-client.ts}}, *then* retry logic is present.\n* *Given* nightly runs, *then* transient-cause failures drop from 3-10 to 0.\n\nh3. Implementation Notes\nRetries {{UND_ERR_SOCKET}}/{{ECONNRESET}} ×2 with backoff.\n\nh3. Sources\nSession 53 flaky-test-fix commits.\n"
+ },
+ {
+  "key": "CRAN-303",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* deterministic test IDs and rate-limit cleanup,\n*so that* re-runs converge on the same fixtures and don't leak state.\n\nh3. Acceptance Criteria\n* *Given* a fresh run, *then* IDs are deterministic ({{e0000001-...}}).\n* *Given* {{public-api-v1.test.ts}} afterAll, *then* billing plans restore to standard.\n\nh3. Implementation Notes\n{{ON CONFLICT (id) DO UPDATE}}; globalSetup seeds once + cleans rate limits; {{clean-rate-limits.ts}}.\n\nh3. Sources\nSession 53 + 56 test-helpers commits.\n"
+ },
+ {
+  "key": "CRAN-304",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a nightly test runner posting results to Trello,\n*so that* I see pass/fail every morning without running anything.\n\nh3. Acceptance Criteria\n* *Given* cron, *then* {{scripts/nightly-tests.sh}} runs at 20:00 UTC.\n* *Given* a run, *then* a Trello card appears the next morning.\n\nh3. Implementation Notes\nLogs with 14-day retention; Trello board {{69b076fb70d3d0cf561032b7}}.\n\nh3. Sources\nSession 58+ nightly-runner commits.\n"
+ },
+ {
+  "key": "CRAN-305",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* E2E video on failure and an E2E rate-limit bypass,\n*so that* I can debug failed E2E runs and the suite doesn't exhaust rate limits.\n\nh3. Acceptance Criteria\n* *Given* a failed E2E test, *then* a video artefact appears in {{e2e/test-results/}}.\n* *Given* {{--profile test}}, *then* the rate-limit bypass token is recognised.\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 58 visual-testing commits.\n"
+ },
+ {
+  "key": "CRAN-369",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* react-is as an explicit dependency with a deduped lockfile,\n*so that* the dependency tree is correct and reproducible.\n\nh3. Acceptance Criteria\n* *Given* {{package.json}}, *then* {{react-is}} is an explicit dep and the lockfile is deduped.\n\nh3. Implementation Notes\n\n\nh3. Sources\nCommit {{af2abf8}} (2026-05-07).\n"
+ }
+]

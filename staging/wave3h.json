@@ -1,0 +1,224 @@
+[
+ {
+  "key": "CRAN-56",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer,\n*I want* to capture, classify and correlate field-reported issues and promote real ones to CRA reports,\n*so that* post-market signals are tracked and the incident-relevant ones flow into Art. 14 rather than being lost.\n\nh3. Scope\nCRA Art. 16 post-market monitoring: field-issue intake + schema; incident/non-incident classification; product/version/SBOM correlation; status workflow with promote-to-CRA-report.\n\nh3. Acceptance Criteria\n* *Given* {{routes/field-issues.test.ts}}, *when* run, *then* 33 tests pass.\n* *Given* an incident-classified issue, *when* promoted, *then* a CRA Art. 14 report is created.\n\nh3. Child Stories\n* CRAN-237 P1 intake+schema\n* CRAN-238 P2 classification\n* CRAN-239 P3 product/version correlation\n* CRAN-240 P4 workflow + CRA-report link\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-237",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* support engineer,\n*I want* to log field-reported issues against a product,\n*so that* post-market signals are captured in one place.\n\nh3. Acceptance Criteria\n* *Given* {{pool.ts initDb()}}, *then* {{field_issues (org_id, product_id, status, classified_as)}} exists.\n* *Given* {{routes/field-issues.test.ts}}, *then* Phase-1 tests pass.\n\nh3. Implementation Notes\nIntake endpoint + basic UI.\n\nh3. Sources\n#46 Phase 1 commits.\n"
+ },
+ {
+  "key": "CRAN-238",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* field issues classified as incident vs non-incident,\n*so that* only incident-relevant issues drive Art. 14 attention.\n\nh3. Acceptance Criteria\n* *Given* {{routes/field-issues.test.ts}}, *then* classification transitions are covered.\n\nh3. Implementation Notes\nIncident (Art. 14) vs quality/UX/feature.\n\nh3. Sources\n#46 Phase 2 commits.\n"
+ },
+ {
+  "key": "CRAN-239",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* each field issue correlated to a product + version + SBOM snapshot,\n*so that* a reported vuln pattern can be matched to the dependency tree.\n\nh3. Acceptance Criteria\n* *Given* a field issue, *then* it links to {{product_id}}, version and a snapshot.\n\nh3. Implementation Notes\nCorrelation for vuln-pattern matching.\n\nh3. Sources\n#46 Phase 3 commits.\n"
+ },
+ {
+  "key": "CRAN-240",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* a full status workflow with promote-to-CRA-report,\n*so that* an incident-classified field issue becomes an Art. 14 report in one step.\n\nh3. Acceptance Criteria\n* *Given* {{routes/field-issues.test.ts}}, *then* 33 tests pass.\n* *Given* {{POST /api/field-issues/:id/promote-to-cra-report}}, *then* the promote flow is verified.\n\nh3. Implementation Notes\nopen/triaging/classified/linked/closed.\n\nh3. Sources\n#46 Phase 4 commits.\n"
+ },
+ {
+  "key": "CRAN-57",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer of an Important-II / Critical product,\n*I want* a Notified Body directory plus per-product assessment tracking,\n*so that* I can choose an NB and manage the whole engagement from application to certificate in one place.\n\nh3. Scope\nEU-register-seeded NB directory; per-product NB assessment records; milestones + correspondence; outcome storage + UI.\n\nh3. Acceptance Criteria\n* *Given* {{routes/notified-bodies.test.ts}} + {{nb-assessment.test.ts}}, *then* 54 tests pass.\n* *Given* an assessment, *then* its milestones + correspondence + outcome are tracked.\n\nh3. Child Stories\n* CRAN-241 P1 directory seed\n* CRAN-242 P2 assessment record\n* CRAN-243 P3 milestones + correspondence\n* CRAN-244 P4 outcome + UI\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-241",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a seeded Notified Body directory,\n*so that* I can find an NB by number, country and scope.\n\nh3. Acceptance Criteria\n* *Given* {{routes/notified-bodies.test.ts}}, *then* it passes.\n* *Given* a fresh init, *then* seed rows >0.\n\nh3. Implementation Notes\n{{notified_bodies}} from the EU register.\n\nh3. Sources\n#48 Phase 1 commits.\n"
+ },
+ {
+  "key": "CRAN-242",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a per-product NB assessment record,\n*so that* I can track which NB I applied to and where the application stands.\n\nh3. Acceptance Criteria\n* *Given* {{routes/nb-assessment.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\n{{nb_assessments}}: NB, application date/ref, status.\n\nh3. Sources\n#48 Phase 2 commits.\n"
+ },
+ {
+  "key": "CRAN-243",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* milestones and a correspondence log per assessment,\n*so that* the NB engagement has a complete audit trail.\n\nh3. Acceptance Criteria\n* *Given* an assessment, *then* {{nb_assessments.milestones}} + {{nb_correspondence}} populate.\n\nh3. Implementation Notes\nsubmitted/accepted/pre-audit/audit/cert-issued/renewed.\n\nh3. Sources\n#48 Phase 3 commits.\n"
+ },
+ {
+  "key": "CRAN-244",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* the assessment outcome stored with a timeline UI,\n*so that* I have the certificate/decision/expiry recorded and visible.\n\nh3. Acceptance Criteria\n* *Given* {{notified-bodies.test.ts}} + {{nb-assessment.test.ts}}, *then* 54 tests pass.\n* *Given* the UI, *then* it surfaces the timeline + outcome.\n\nh3. Implementation Notes\ncertificate/decision/expiry/scope-limitations.\n\nh3. Sources\n#48 Phase 4 commits.\n"
+ },
+ {
+  "key": "CRAN-58",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer marketing across the EU,\n*I want* to register with market-surveillance authorities per Member State and track status,\n*so that* I meet my Art. 20 registration duty in each jurisdiction and can see status across all products.\n\nh3. Scope\nRegistration schema + Member State / SPOC directory; per-jurisdiction registration; status workflow + correspondence + renewal flags; per-product UI + cross-product matrix.\n\nh3. Acceptance Criteria\n* *Given* {{routes/market-surveillance.test.ts}} + {{ms-registration.test.ts}}, *then* 40 tests pass.\n* *Given* a registration approaching expiry, *then* a renewal notification fires.\n\nh3. Child Stories\n* CRAN-245 P1 schema + MS directory\n* CRAN-246 P2 per-jurisdiction registration\n* CRAN-247 P3 status + correspondence\n* CRAN-248 P4 UI + overview\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-245",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a registration schema and Member State contact directory,\n*so that* I know where and how to register in each jurisdiction.\n\nh3. Acceptance Criteria\n* *Given* {{routes/market-surveillance.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\nPer-org/per-jurisdiction rows; MS contact points + SPOCs.\n\nh3. Sources\n#49 Phase 1 commits.\n"
+ },
+ {
+  "key": "CRAN-246",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* to register per Member State where I market a product,\n*so that* each jurisdiction's registration is recorded with status.\n\nh3. Acceptance Criteria\n* *Given* {{routes/ms-registration.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\nreference/contact/jurisdiction/status pending|confirmed|rejected.\n\nh3. Sources\n#49 Phase 2 commits.\n"
+ },
+ {
+  "key": "CRAN-247",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* status transitions, correspondence and renewal flagging per jurisdiction,\n*so that* I'm warned before a registration lapses.\n\nh3. Acceptance Criteria\n* *Given* a registration nearing expiry, *then* a renewal flag triggers a notification.\n\nh3. Implementation Notes\nPer-jurisdiction correspondence log.\n\nh3. Sources\n#49 Phase 3 commits.\n"
+ },
+ {
+  "key": "CRAN-248",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a per-product UI and cross-product registration matrix,\n*so that* I can see registration status across every product and jurisdiction.\n\nh3. Acceptance Criteria\n* *Given* {{market-surveillance.test.ts}} + {{ms-registration.test.ts}}, *then* 40 tests pass.\n\nh3. Implementation Notes\nCross-product matrix.\n\nh3. Sources\n#49 Phase 4 commits.\n"
+ },
+ {
+  "key": "CRAN-59",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* NIS2-relevant entity,\n*I want* a supplier risk register with criticality, treatments and evidence,\n*so that* I can discharge the NIS2 Art. 21(2)(d) supply-chain risk-management duty with an auditable register.\n\nh3. Scope\nSupplier registry + schema; criticality classification with rationale; per-supplier risk-treatment log; evidence attachment + Markdown report export.\n\nh3. Acceptance Criteria\n* *Given* {{routes/supply-chain-risk.test.ts}}, *when* run, *then* 8 tests pass.\n* *Given* a supplier, *then* criticality + risk treatments + evidence are recorded.\n\nh3. Child Stories\n* CRAN-249 P1 registry+schema\n* CRAN-250 P2 criticality\n* CRAN-251 P3 risk-treatment log\n* CRAN-252 P4 evidence + export\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-249",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* NIS2 entity,\n*I want* a per-org supplier registry,\n*so that* I have a single inventory of my suppliers and when each was last assessed.\n\nh3. Acceptance Criteria\n* *Given* {{routes/supply-chain-risk.test.ts}}, *then* it passes.\n* *Given* the schema, *then* a {{suppliers}} table exists.\n\nh3. Implementation Notes\nname/service/criticality/contact/last-assessed.\n\nh3. Sources\n#51 Phase 1 commits.\n"
+ },
+ {
+  "key": "CRAN-250",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* NIS2 entity,\n*I want* each supplier classified by criticality with a rationale,\n*so that* I focus risk effort on the suppliers that matter most.\n\nh3. Acceptance Criteria\n* *Given* a save, *then* criticality (critical/important/standard) + rationale are required.\n\nh3. Implementation Notes\n\n\nh3. Sources\n#51 Phase 2 commits.\n"
+ },
+ {
+  "key": "CRAN-251",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* NIS2 entity,\n*I want* a per-supplier risk-treatment log,\n*so that* each identified risk has an owner, treatment and due date.\n\nh3. Acceptance Criteria\n* *Given* a supplier, *then* the risk-treatment log is visible.\n\nh3. Implementation Notes\naccept/mitigate/transfer/avoid + owner + due + status.\n\nh3. Sources\n#51 Phase 3 commits.\n"
+ },
+ {
+  "key": "CRAN-252",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* NIS2 entity,\n*I want* evidence attachment and a register export,\n*so that* I can hand an auditor the supply-chain risk register with supporting evidence.\n\nh3. Acceptance Criteria\n* *Given* {{routes/supply-chain-risk.test.ts}}, *then* 8 tests pass.\n\nh3. Implementation Notes\nMarkdown export.\n\nh3. Sources\n#51 Phase 4 commits.\n"
+ },
+ {
+  "key": "CRAN-60",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* incident-response lead,\n*I want* an internal incident lifecycle distinct from external CRA reporting,\n*so that* my team can run an incident through detect→recover→post-mortem with RACI, evidence and a timeline export.\n\nh3. Scope\nIncident schema + intake; workflow stages (detect/contain/eradicate/recover/post-mortem); RACI + evidence attachments; Markdown timeline export.\n\nh3. Acceptance Criteria\n* *Given* {{routes/incidents.test.ts}}, *when* run, *then* 33 tests pass.\n* *Given* the stages, *then* transitions are enforced (no recover before contain).\n\nh3. Child Stories\n* CRAN-253 P1 schema+intake\n* CRAN-254 P2 workflow stages\n* CRAN-255 P3 RACI + evidence\n* CRAN-256 P4 timeline export\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-253",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* incident-response lead,\n*I want* an internal incident record and intake,\n*so that* org-internal incidents are tracked separately from external Art. 14 reports.\n\nh3. Acceptance Criteria\n* *Given* {{routes/incidents.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\n{{incidents}} schema.\n\nh3. Sources\n#52 Phase 1 commits.\n"
+ },
+ {
+  "key": "CRAN-254",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* incident-response lead,\n*I want* staged incident workflow,\n*so that* the team follows detect→contain→eradicate→recover→post-mortem in order.\n\nh3. Acceptance Criteria\n* *Given* the stages, *then* transitions are enforced (cannot recover before contain).\n\nh3. Implementation Notes\nEach stage: owner/started/completed/summary.\n\nh3. Sources\n#52 Phase 2 commits.\n"
+ },
+ {
+  "key": "CRAN-255",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* incident-response lead,\n*I want* RACI assignments and per-stage evidence,\n*so that* responsibilities and supporting evidence are recorded.\n\nh3. Acceptance Criteria\n* *Given* RACI roles, *then* they are selectable from a per-org list.\n\nh3. Implementation Notes\n{{incident_responders}} join table.\n\nh3. Sources\n#52 Phase 3 commits.\n"
+ },
+ {
+  "key": "CRAN-256",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* incident-response lead,\n*I want* a Markdown incident-timeline export,\n*so that* I can produce a complete post-incident record.\n\nh3. Acceptance Criteria\n* *Given* {{routes/incidents.test.ts}}, *then* 33 tests pass.\n* *Given* help guide {{ch6_05}}, *then* it is complete with a Beck-map route.\n\nh3. Implementation Notes\n\n\nh3. Sources\n#52 Phase 4 + session 58 help-guide rewrite.\n"
+ },
+ {
+  "key": "CRAN-61",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* engineer / compliance officer,\n*I want* a crypto inventory with PQC-readiness classification per product,\n*so that* I know which algorithms and libraries each product uses and how quantum-ready it is.\n\nh3. Scope\nAlgorithm + library registries with deprecation + NIST PQC classification; per-product crypto-inventory entries; PQC readiness classification + score; Markdown report + admin registry editing.\n\nh3. Acceptance Criteria\n* *Given* {{services/crypto-inventory.test.ts}} + {{routes/crypto-inventory.test.ts}}, *then* they pass.\n* *Given* a product, *then* a deterministic PQC-readiness score is computed.\n\nh3. Child Stories\n* CRAN-257 P1 registries\n* CRAN-258 P2 per-product entries\n* CRAN-259 P3 readiness classification\n* CRAN-260 P4 report + admin edit\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-257",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* seeded algorithm and library registries with deprecation/PQC classification,\n*so that* the platform knows which crypto is deprecated and which is PQC.\n\nh3. Acceptance Criteria\n* *Given* {{services/crypto-inventory.test.ts}}, *then* registries are covered + seeded.\n\nh3. Implementation Notes\nRSA-1024/SHA-1 deprecated; ML-DSA/ML-KEM/SLH-DSA PQC.\n\nh3. Sources\n#53 Phase 1 commits.\n"
+ },
+ {
+  "key": "CRAN-258",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* contributor,\n*I want* to log my product's crypto libraries, algorithms and use-cases,\n*so that* my product has a complete crypto inventory.\n\nh3. Acceptance Criteria\n* *Given* {{routes/crypto-inventory.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\n{{crypto_inventory_entries}}.\n\nh3. Sources\n#53 Phase 2 commits.\n"
+ },
+ {
+  "key": "CRAN-259",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* each inventory entry classified for PQC readiness,\n*so that* I see a readiness score per product.\n\nh3. Acceptance Criteria\n* *Given* the entries, *then* a deterministic readiness score is computed.\n\nh3. Implementation Notes\nPQC-ready / classical-but-secure / deprecated.\n\nh3. Sources\n#53 Phase 3 commits.\n"
+ },
+ {
+  "key": "CRAN-260",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* a crypto report export and admin registry editing,\n*so that* I can export the inventory and keep the registries current.\n\nh3. Acceptance Criteria\n* *Given* the report, *then* it generates with the full inventory + readiness summary.\n\nh3. Implementation Notes\n{{/admin/crypto-inventory}}; help guide {{ch6_04}} uses CRANIS2 as the PQC example.\n\nh3. Sources\n#53 Phase 4 commits.\n"
+ },
+ {
+  "key": "CRAN-62",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* OSS maintainer or non-profit,\n*I want* a verification path to free CRANIS2 access,\n*so that* trusted OSS stewards and non-profits can use the platform without the contributor-based fee.\n\nh3. Scope\nVerification schema + lifecycle; self-service application + evidence intake; admin review; free-access billing entitlement; annual renewal cadence; UI + tests.\n\nh3. Acceptance Criteria\n* *Given* {{routes/nonprofit-verification.test.ts}}, *when* run, *then* it passes.\n* *Given* an approved org, *then* it bypasses the billing gate; *given* expiry-30d, *then* a renewal notice fires.\n\nh3. Child Stories\n* CRAN-261 P1 verification schema\n* CRAN-262 P2 application + evidence\n* CRAN-263 P3 admin review\n* CRAN-264 P4 free-access entitlement\n* CRAN-265 P5 renewal cadence\n* CRAN-266 P6 UI + tests\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-261",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a verification schema with a status lifecycle,\n*so that* applications move through a clear review lifecycle.\n\nh3. Acceptance Criteria\n* *Given* {{routes/nonprofit-verification.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\n{{nonprofit_verifications}} + {{trusted_oss_orgs}}; requested/under_review/approved/rejected/revoked.\n\nh3. Sources\n#58 Phase 1 commits.\n"
+ },
+ {
+  "key": "CRAN-262",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* OSS maintainer / non-profit,\n*I want* a self-service application with evidence intake,\n*so that* I can apply and submit proof of OSS-stewardship or charity status.\n\nh3. Acceptance Criteria\n* *Given* the application form, *then* it captures all evidence fields.\n\nh3. Implementation Notes\nGitHub org link / OSS-stewardship attestation; charity-register lookup.\n\nh3. Sources\n#58 Phase 2 commits.\n"
+ },
+ {
+  "key": "CRAN-263",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* to approve, reject or revoke verifications with an audit trail,\n*so that* decisions are deliberate and recorded with a reason.\n\nh3. Acceptance Criteria\n* *Given* the approve/reject endpoints, *then* they are {{requirePlatformAdmin}}-gated.\n\nh3. Implementation Notes\nAudit-logged decision + reason.\n\nh3. Sources\n#58 Phase 3 commits.\n"
+ },
+ {
+  "key": "CRAN-264",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* approved OSS/non-profit org,\n*I want* a free-access entitlement that overrides billing,\n*so that* my approved org isn't charged the contributor fee.\n\nh3. Acceptance Criteria\n* *Given* an approved org, *then* it bypasses the billing gate.\n\nh3. Implementation Notes\nEntitlement honoured by the billing gate.\n\nh3. Sources\n#58 Phase 4 commits.\n"
+ },
+ {
+  "key": "CRAN-265",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* an annual renewal cadence with advance notice,\n*so that* entitlements stay current and orgs are warned before expiry.\n\nh3. Acceptance Criteria\n* *Given* expiry minus 30 days, *then* a renewal-due notification fires.\n\nh3. Implementation Notes\nRe-verify evidence annually.\n\nh3. Sources\n#58 Phase 5 commits.\n"
+ },
+ {
+  "key": "CRAN-266",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* applicant / admin,\n*I want* the verification UI and full test coverage,\n*so that* the whole flow is usable end-to-end and verified.\n\nh3. Acceptance Criteria\n* *Given* the UI, *then* application + admin review render; *given* the suite, *then* the verification tests pass.\n\nh3. Implementation Notes\nPhase 6 consolidation.\n\nh3. Sources\n#58 Phase 6 commits.\n"
+ }
+]

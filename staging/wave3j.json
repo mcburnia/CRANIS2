@@ -1,0 +1,182 @@
+[
+ {
+  "key": "CRAN-67",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* platform operator,\n*I want* a complete backup/restore/upgrade toolchain with GFS retention and customer-data invariants,\n*so that* I can patch and upgrade safely, always recover, and never lose customer data.\n\nh3. Scope\nbackup/restore/verify scripts (Postgres+Neo4j, GFS retention); full upgrade pipeline with auto-rollback; security-patch with auto-revert; manual rollback; USB air-gap copy; runbooks; CLAUDE.md invariants (rules 12-14).\n\nh3. Acceptance Criteria\n* *Given* {{integration/system-scripts.test.ts}}, *when* run, *then* the scripts are covered.\n* *Given* an upgrade health-check failure, *then* auto-rollback triggers.\n* *Given* any prod state change, *then* a pre-change backup is mandatory (rule 12) and customer data is never dropped (rule 14).\n\nh3. Child Stories\n* CRAN-306…CRAN-314\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-306",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a backup script with GFS retention,\n*so that* I have point-in-time DB backups retained on a grandfather-father-son schedule.\n\nh3. Acceptance Criteria\n* *Given* {{integration/system-scripts.test.ts}}, *then* it's covered.\n* *Given* a run, *then* backups land in {{backups/<frequency>/<timestamp>/}}.\n\nh3. Implementation Notes\nPostgres (cranis2+forgejo)+Neo4j; 7d/4w/3m/30d-pre-upgrade; {{--pre-upgrade}}/{{--postgres-only}} flags.\n\nh3. Sources\nWS1 commits.\n"
+ },
+ {
+  "key": "CRAN-307",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* an interactive restore with safety backup,\n*so that* I can restore confidently without clobbering current state by accident.\n\nh3. Acceptance Criteria\n* *Given* the script, *then* it refuses to run without confirmation and takes a safety backup first.\n\nh3. Implementation Notes\nHealth-checks after restore.\n\nh3. Sources\nWS1 commits.\n"
+ },
+ {
+  "key": "CRAN-308",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a weekly backup-verification job,\n*so that* silently-broken backups are caught before I need them.\n\nh3. Acceptance Criteria\n* *Given* a valid backup, *then* the script exits 0; otherwise non-zero with explanation.\n* *Given* cron, *then* it runs weekly.\n\nh3. Implementation Notes\nSpins up temp containers, restores, validates, cleans up.\n\nh3. Sources\nWS1 commits.\n"
+ },
+ {
+  "key": "CRAN-309",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a full upgrade pipeline with auto-rollback,\n*so that* upgrades are pre-flighted, backed up and self-healing on failure.\n\nh3. Acceptance Criteria\n* *Given* a pre-flight failure, *then* the script aborts cleanly.\n* *Given* a health-check failure, *then* auto-rollback triggers.\n\nh3. Implementation Notes\npre-flight → backup → pull → build → deploy → health → rollback.\n\nh3. Sources\nWS1 commits.\n"
+ },
+ {
+  "key": "CRAN-310",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a security-patch script that auto-reverts on test failure,\n*so that* I can apply audit fixes safely.\n\nh3. Acceptance Criteria\n* *Given* tests pass, *then* patches stay; *given* tests fail, *then* {{git restore}} reverts.\n\nh3. Implementation Notes\n{{npm audit fix}} across all workspaces + test suite.\n\nh3. Sources\nWS1 commits.\n"
+ },
+ {
+  "key": "CRAN-311",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a manual rollback by code/DB/both,\n*so that* I can recover to a known-good point on demand.\n\nh3. Acceptance Criteria\n* *Given* the script, *then* it prompts for scope and performs restore + git reset cleanly.\n\nh3. Implementation Notes\nLists rollback points (backups + git tags).\n\nh3. Sources\nWS1 commits.\n"
+ },
+ {
+  "key": "CRAN-312",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* an air-gapped USB copy of the latest backup,\n*so that* I have offline recovery independent of dev/prod.\n\nh3. Acceptance Criteria\n* *Given* the USB volume, *then* it holds the 4 most recent backups, older rotated off.\n\nh3. Implementation Notes\n\n\nh3. Sources\nWS1 commits.\n"
+ },
+ {
+  "key": "CRAN-313",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* backup/restore and upgrade/patching runbooks,\n*so that* the procedures are documented with decision trees.\n\nh3. Acceptance Criteria\n* *Given* {{docs/backup-and-restore.md}} + {{docs/upgrade-and-patching.md}}, *then* both exist at HEAD.\n\nh3. Implementation Notes\n\n\nh3. Sources\nWS1 commits.\n"
+ },
+ {
+  "key": "CRAN-314",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* AI-assisted maintainer,\n*I want* operating invariants codified in CLAUDE.md,\n*so that* prod changes are always backup-first and never destroy customer data.\n\nh3. Acceptance Criteria\n* *Given* CLAUDE.md, *then* rules 12 (pre-change backup), 13 (schema-as-code), 14 (customer-data invariant) are present.\n\nh3. Implementation Notes\nBacked by the WS1 toolchain.\n\nh3. Sources\nSession 62 CLAUDE.md rule commits.\n"
+ },
+ {
+  "key": "CRAN-68",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* security engineer,\n*I want* a post-quantum cryptographic foundation across JWTs, encryption and signing,\n*so that* the platform resists algorithm-confusion attacks today and Harvest-Now-Decrypt-Later quantum attacks tomorrow.\n\nh3. Scope\nHS256 JWT pinning; HKDF key derivation; versioned encryption (v1 legacy / v2 HKDF); Node 24 for native ML-DSA-65; hybrid Ed25519+ML-DSA-65 signing; snapshot signature side-cars; public key endpoint + generator.\n\nh3. Acceptance Criteria\n* *Given* {{security/pqc-foundation.test.ts}} (25) + {{hybrid-signing.test.ts}} (23) + {{jwt-manipulation.test.ts}}, *then* they pass.\n* *Given* a v1 ciphertext, *then* it still decrypts; new writes use v2.\n\nh3. Child Stories\n* CRAN-315…CRAN-321\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-315",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* security engineer,\n*I want* JWT algorithm pinned to HS256,\n*so that* alg:none and algorithm-confusion attacks are defeated.\n\nh3. Acceptance Criteria\n* *Given* {{security/jwt-manipulation.test.ts}}, *then* alg-none / RS256 / HS512 confusion are rejected.\n\nh3. Implementation Notes\nPinned in both sign() and verify().\n\nh3. Sources\nWS2 Part 1 commit.\n"
+ },
+ {
+  "key": "CRAN-316",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* security engineer,\n*I want* an HKDF key-derivation module,\n*so that* keys are domain-separated by purpose from a single master secret.\n\nh3. Acceptance Criteria\n* *Given* {{security/pqc-foundation.test.ts}}, *then* HKDF outputs match RFC 5869 vectors.\n\nh3. Implementation Notes\n{{lib/key-derivation.ts}} HKDF-SHA256; JWT secret derived + per-process cached.\n\nh3. Sources\nWS2 Part 1 commit.\n"
+ },
+ {
+  "key": "CRAN-317",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* security engineer,\n*I want* versioned encryption with backward-compatible reads,\n*so that* encrypted data migrates to HKDF-derived keys without breaking existing ciphertext.\n\nh3. Acceptance Criteria\n* *Given* {{security/pqc-foundation.test.ts}}, *then* 25 tests pass incl. mixed v1+v2 cohabitation.\n\nh3. Implementation Notes\n{{v2:iv:tag:ciphertext}} HKDF-derived; {{v1:...}} auto-detected + decrypted with raw key.\n\nh3. Sources\nWS2 Part 1 commit.\n"
+ },
+ {
+  "key": "CRAN-318",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* Node 24 for native ML-DSA-65 support,\n*so that* post-quantum signing uses native OpenSSL, not a WASM polyfill.\n\nh3. Acceptance Criteria\n* *Given* the container, *then* {{node --version}} is 24.x and {{openssl version}} is 3.5+.\n\nh3. Implementation Notes\nDockerfile {{node:22-alpine}}→{{node:24-alpine}}.\n\nh3. Sources\nWS2 Part 2 commit.\n"
+ },
+ {
+  "key": "CRAN-319",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* security engineer,\n*I want* hybrid Ed25519 + ML-DSA-65 signing,\n*so that* signatures are valid classically and post-quantum, with graceful fallback.\n\nh3. Acceptance Criteria\n* *Given* {{security/hybrid-signing.test.ts}}, *then* 23 tests pass.\n* *Given* {{CRANIS2_SIGNING_KEY_MLDSA}} unset, *then* it degrades to Ed25519-only.\n\nh3. Implementation Notes\n{{signDocument()}} dual sig; {{verifyHybridSignature()}} AND-logic.\n\nh3. Sources\nWS2 Part 2 commit.\n"
+ },
+ {
+  "key": "CRAN-320",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* snapshot signature side-cars,\n*so that* each snapshot ZIP carries both signatures for independent verification.\n\nh3. Acceptance Criteria\n* *Given* a snapshot ZIP, *then* {{.sig}} + {{.sig.mldsa}} are written beside it.\n\nh3. Implementation Notes\n{{compliance-snapshot.ts}} + {{retention-certificate.ts}} carry both.\n\nh3. Sources\nWS2 Part 2 commit.\n"
+ },
+ {
+  "key": "CRAN-321",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* third-party verifier,\n*I want* a public ML-DSA-65 key endpoint + generator,\n*so that* anyone can verify CRANIS2 signatures and operators can mint keys.\n\nh3. Acceptance Criteria\n* *Given* {{/.well-known/cranis2-signing-key-mldsa.pem}}, *then* it returns a valid PEM.\n* *Given* the generator, *then* it produces both key pairs in one run.\n\nh3. Implementation Notes\n\n\nh3. Sources\nWS2 Part 2 commit.\n"
+ },
+ {
+  "key": "CRAN-69",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* security engineer / platform operator,\n*I want* the platform hardened and a full key-rotation toolchain,\n*so that* the attack surface is minimised and all secrets rotate on a documented cadence.\n\nh3. Scope\nDB ports bound to localhost; Forgejo creds in .env + rotated; auth rate limiting (no Retry-After leak); CORS locked to FRONTEND_URL; welcome default creds removed; npm-audit zero; credential/encryption/signing rotation scripts + age checker; rotation runbook.\n\nh3. Acceptance Criteria\n* *Given* {{security/hardening.test.ts}} (29) + {{key-rotation.test.ts}} (41), *then* they pass.\n* *Given* the DB ports, *then* they bind to 127.0.0.1 only.\n* *Given* npm audit, *then* all 5 workspaces report 0 vulnerabilities.\n\nh3. Child Stories\n* CRAN-322…CRAN-332\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-322",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* security engineer,\n*I want* database ports bound to localhost only,\n*so that* DB/Forgejo containers aren't reachable from public interfaces.\n\nh3. Acceptance Criteria\n* *Given* {{docker-compose.yml}}, *then* bindings are {{127.0.0.1:5433}}, {{7475}}, {{7688}}, {{3003}}.\n\nh3. Implementation Notes\n\n\nh3. Sources\nWS3 commits.\n"
+ },
+ {
+  "key": "CRAN-323",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* security engineer,\n*I want* Forgejo credentials moved to .env and rotated,\n*so that* no hardcoded Forgejo credentials remain.\n\nh3. Acceptance Criteria\n* *Given* {{docker-compose.yml}}, *then* it references {{FORGEJO_*}} env vars with no hardcoded creds.\n\nh3. Implementation Notes\n\n\nh3. Sources\nWS3 commits.\n"
+ },
+ {
+  "key": "CRAN-324",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* security engineer,\n*I want* per-category auth rate limiting with no timing leak,\n*so that* brute-force is throttled and attackers can't probe the reset window.\n\nh3. Acceptance Criteria\n* *Given* {{security/hardening.test.ts}}, *then* 29 tests pass.\n* *Given* a 429, *then* it has NO {{Retry-After}} header (asserted).\n\nh3. Implementation Notes\nlogin 5/15min, register 3/hr, verify 10/hr, invite 5/hr.\n\nh3. Sources\nWS3 commits.\n"
+ },
+ {
+  "key": "CRAN-325",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* security engineer,\n*I want* CORS restricted to FRONTEND_URL,\n*so that* only the real frontend origin is allowed.\n\nh3. Acceptance Criteria\n* *Given* a pre-flight from another origin, *then* no CORS header is returned.\n\nh3. Implementation Notes\nWas previously permissive.\n\nh3. Sources\nWS3 commits.\n"
+ },
+ {
+  "key": "CRAN-326",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* security engineer,\n*I want* welcome-site default credentials removed,\n*so that* no hardcoded admin creds; missing env fails fast.\n\nh3. Acceptance Criteria\n* *Given* {{grep -r \"admin@example\" welcome/}}, *then* zero occurrences.\n* *Given* a missing required env var, *then* {{requireEnv()}} throws at startup.\n\nh3. Implementation Notes\n\n\nh3. Sources\nWS3 commits.\n"
+ },
+ {
+  "key": "CRAN-327",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* security engineer,\n*I want* zero npm-audit vulnerabilities across all workspaces,\n*so that* the dependency tree carries no known vulnerabilities.\n\nh3. Acceptance Criteria\n* *Given* {{npm audit}} per workspace (backend/frontend/e2e/mcp/welcome), *then* each reports 0 at session-60 close.\n\nh3. Implementation Notes\nMaintained via the WS1 patch script.\n\nh3. Sources\nWS3 + session 59/60 dep-bump commits.\n"
+ },
+ {
+  "key": "CRAN-328",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a monthly credential-rotation script,\n*so that* DB passwords, JWT secret and welcome secret rotate monthly.\n\nh3. Acceptance Criteria\n* *Given* {{security/key-rotation.test.ts}}, *then* the rotation flow is covered.\n\nh3. Implementation Notes\n\n\nh3. Sources\nWS3 Part 2 commits.\n"
+ },
+ {
+  "key": "CRAN-329",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* an annual lab-based encryption-key rotation,\n*so that* the master key rotates without touching prod directly.\n\nh3. Acceptance Criteria\n* *Given* the script, *then* re-encryption runs against a backup of prod, not prod.\n\nh3. Implementation Notes\nDecrypts+re-encrypts PATs on the lab server; deploy in maintenance window.\n\nh3. Sources\nWS3 Part 2 commits.\n"
+ },
+ {
+  "key": "CRAN-330",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a prod-side script to apply a rotation package,\n*so that* rotation prepared in the lab is applied safely in the maintenance window.\n\nh3. Acceptance Criteria\n* *Given* an invalid package signature, *then* the script aborts cleanly.\n\nh3. Implementation Notes\n\n\nh3. Sources\nWS3 Part 2 commits.\n"
+ },
+ {
+  "key": "CRAN-331",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* signing-key rotation plus an overdue-rotation checker,\n*so that* signing keys rotate annually and overdue rotations are flagged.\n\nh3. Acceptance Criteria\n* *Given* {{security/key-rotation.test.ts}}, *then* 41 tests pass.\n* *Given* a weekly cron, *then* {{check-rotation-age.sh}} warns when a rotation is overdue.\n\nh3. Implementation Notes\n{{rotate-signing-keys.sh}} archives old public keys for historical verification.\n\nh3. Sources\nWS3 Part 2 commits.\n"
+ },
+ {
+  "key": "CRAN-332",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a key-rotation runbook,\n*so that* all rotations are documented with the HNDL threat context.\n\nh3. Acceptance Criteria\n* *Given* {{docs/key-rotation.md}}, *then* it exists at HEAD.\n\nh3. Implementation Notes\nHarvest-Now-Decrypt-Later context.\n\nh3. Sources\nWS3 Part 2 docs commit.\n"
+ }
+]

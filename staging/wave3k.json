@@ -1,0 +1,194 @@
+[
+ {
+  "key": "CRAN-70",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* data controller / data subject,\n*I want* CRANIS2 to be GDPR-compliant for its own processing,\n*so that* users have a real privacy policy, terms, data-export and deletion rights, and the controller is correctly identified.\n\nh3. Scope\nAudit-derived Privacy Policy + ToS (Beta); essential-only cookie assessment (no banner); dynamic /docs/:slug + footer links; data export + account deletion + retention cleanup endpoints; personal-ownership rewrite (Andi as controller, CNIL lead authority).\n\nh3. Acceptance Criteria\n* *Given* {{routes/account.test.ts}} + {{routes/docs.test.ts}}, *then* export/delete + slug routing pass (27 GDPR tests).\n* *Given* the policies, *then* they name Andi personally as controller and CNIL as lead authority.\n\nh3. Child Stories\n* CRAN-333…CRAN-338\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-333",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* data subject,\n*I want* a GDPR-compliant Privacy Policy from a real data audit,\n*so that* I can see exactly what PII is processed, by whom, and for how long.\n\nh3. Acceptance Criteria\n* *Given* {{docs/PRIVACY-POLICY.md}}, *then* it carries the audit-derived inventory.\n* *Given* the frontend, *then* it renders at {{/docs/privacy-policy}}.\n\nh3. Implementation Notes\nCovers PII categories, sub-processors (Stripe/Resend/Anthropic/Git), retention, DSR rights; Beta-flagged.\n\nh3. Sources\nSession 57 GDPR commits.\n"
+ },
+ {
+  "key": "CRAN-334",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* user,\n*I want* Terms of Service with beta + AI-limitation disclaimers,\n*so that* the legal terms of use are clear before I rely on the platform.\n\nh3. Acceptance Criteria\n* *Given* {{docs/TERMS-OF-SERVICE.md}}, *then* it's at HEAD and served at {{/docs/terms-of-service}}.\n\nh3. Implementation Notes\nLiability cap; governing law England & Wales.\n\nh3. Sources\nSession 57 GDPR commits.\n"
+ },
+ {
+  "key": "CRAN-335",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* data subject,\n*I want* confirmation that only essential storage is used,\n*so that* no cookie-consent banner is needed and I know what's stored.\n\nh3. Acceptance Criteria\n* *Given* the Privacy Policy, *then* it lists exactly two storage items (JWT + help-panel width).\n\nh3. Implementation Notes\nEssential-only per GDPR/ePrivacy.\n\nh3. Sources\nSession 57 GDPR commits.\n"
+ },
+ {
+  "key": "CRAN-336",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* user,\n*I want* dynamic doc routing and footer legal links,\n*so that* I can reach any doc by slug and find the legal links everywhere.\n\nh3. Acceptance Criteria\n* *Given* {{routes/docs.test.ts}}, *then* dynamic slug routing is covered.\n* *Given* login/signup/accept-invite/landing/docs, *then* footer links are visible.\n\nh3. Implementation Notes\n{{/docs/:slug}}; {{doc_pages}} seeds privacy-policy + terms-of-service.\n\nh3. Sources\nSession 57 GDPR commits.\n"
+ },
+ {
+  "key": "CRAN-337",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* data subject,\n*I want* data export, account deletion and retention cleanup,\n*so that* I can exercise my GDPR Art. 15/17/20 rights and data isn't kept forever.\n\nh3. Acceptance Criteria\n* *Given* {{routes/account.test.ts}}, *then* export + delete are covered (27 tests).\n* *Given* {{routes/admin/data-retention.ts}}, *then* the cleanup job is exposed.\n\nh3. Implementation Notes\nArt. 15/20 export; Art. 17 deletion; Art. 5(1)(e) retention cleanup.\n\nh3. Sources\nSession 57 GDPR commits.\n"
+ },
+ {
+  "key": "CRAN-338",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* data controller,\n*I want* the policies rewritten to name the real controller,\n*so that* the controller/operator is correctly identified as an individual with the right supervisory authority.\n\nh3. Acceptance Criteria\n* *Given* the Privacy Policy + ToS, *then* both name Andi personally (La Vallée, 50150 Sourdeval, France) as controller and CNIL as lead authority.\n\nh3. Implementation Notes\nGeneric GDPR (no UK GDPR); governing law England & Wales for future UK NewCo.\n\nh3. Sources\nSession 63 personal-ownership rewrite commits.\n"
+ },
+ {
+  "key": "CRAN-71",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* platform owner / affiliate,\n*I want* an affiliate programme with bonus codes, ledger, statements and a self-service dashboard,\n*so that* affiliates drive signups via discount codes and can see their own earnings, while I manage the ledger centrally.\n\nh3. Scope\nSchema + signup bonus-code integration; admin affiliates page + ledger; monthly statement automation; self-service affiliate dashboard; 35 Vitest tests.\n\nh3. Acceptance Criteria\n* *Given* {{admin-affiliates}} + {{affiliate}} + {{auth-bonus-code}} + {{bonus-code}} tests, *then* 35 pass.\n* *Given* a validated code at signup, *then* it applies a discount and {{users.canonicalBonusCode}} is set.\n\nh3. Child Stories\n* CRAN-339…CRAN-343\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-339",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* new user with a code,\n*I want* bonus-code validation wired into signup,\n*so that* a valid affiliate code applies a discount at signup.\n\nh3. Acceptance Criteria\n* *Given* {{auth-bonus-code.test.ts}} + {{bonus-code.test.ts}}, *then* they pass.\n* *Given* a used code, *then* {{users.canonicalBonusCode}} is populated.\n\nh3. Implementation Notes\n{{bonus_codes}}/{{affiliate_ledger}}/{{affiliates}}; canonicalisation (lowercased, dashes kept).\n\nh3. Sources\nSession 60 Phase 1 commits.\n"
+ },
+ {
+  "key": "CRAN-340",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* an admin affiliates page with ledger management,\n*so that* I can manage affiliates and their ledgers centrally.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-affiliates.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\n389-line router; list/create/edit; credit/debit/payout; on-demand statements.\n\nh3. Sources\nSession 60 Phase 2 commits.\n"
+ },
+ {
+  "key": "CRAN-341",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* affiliate,\n*I want* automated monthly statements,\n*so that* I receive a monthly statement of my earnings without asking.\n\nh3. Acceptance Criteria\n* *Given* the statement template, *then* it renders ledger summary + balance + payout history.\n\nh3. Implementation Notes\n312-line service; runs 1st of month for the prior month.\n\nh3. Sources\nSession 60 Phase 3 commits.\n"
+ },
+ {
+  "key": "CRAN-342",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* affiliate,\n*I want* a self-service dashboard for my codes and earnings,\n*so that* I can see my own bonus codes, ledger and balance.\n\nh3. Acceptance Criteria\n* *Given* {{routes/affiliate.test.ts}}, *then* it passes.\n* *Given* an affiliate-flagged user, *then* the sidebar shows the Affiliate section.\n\nh3. Implementation Notes\n311-line route + 392-line page.\n\nh3. Sources\nSession 60 Phase 4 commits.\n"
+ },
+ {
+  "key": "CRAN-343",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* full test coverage of the affiliate programme,\n*so that* the programme is verified end-to-end.\n\nh3. Acceptance Criteria\n* *Given* the 4 test files, *then* 35 tests pass.\n\nh3. Implementation Notes\nadmin-affiliates / affiliate / auth-bonus-code / bonus-code.\n\nh3. Sources\nSession 60 Phase 5 commits.\n"
+ },
+ {
+  "key": "CRAN-72",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* platform owner,\n*I want* CRANIS2 live in production on cranis2.com,\n*so that* real customers can sign up on an EU-sovereign, TLS-secured, backed-up production deployment.\n\nh3. Scope\nInfomaniak VPS + domain; host NGINX + Let's Encrypt auto-renew; Docker stack deploy + prod env; localhost-bound app containers; GFS backup + age-encrypted dev mirror; /welcome→/getting-started; affiliate schema patch (with debt #100); prod smoke test; outstanding user-side tasks.\n\nh3. Acceptance Criteria\n* *Given* {{https://cranis2.com}}, *then* it returns 200 with a valid LE cert (auto-renew active).\n* *Given* a prod smoke test, *then* signup→verify→/getting-started works end-to-end.\n\nh3. Child Stories\n* CRAN-344…CRAN-351 (+ user-side outstanding tracked at CRAN-377)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-344",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* an EU VPS and the cranis2.com domain,\n*so that* production runs on EU-sovereign infrastructure on the real domain.\n\nh3. Acceptance Criteria\n* *Given* {{dig cranis2.com}}, *then* it resolves to the VPS IP.\n\nh3. Implementation Notes\nInfomaniak VPS; DNS pointed.\n\nh3. Sources\nSession 62 launch commits.\n"
+ },
+ {
+  "key": "CRAN-345",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* host NGINX with auto-renewing Let's Encrypt TLS,\n*so that* the site is HTTPS with certs that renew themselves.\n\nh3. Acceptance Criteria\n* *Given* {{https://cranis2.com}}, *then* 200 + valid LE cert.\n* *Given* {{systemctl list-timers}}, *then* the renew timer is active.\n\nh3. Implementation Notes\nHost NGINX terminates TLS, proxies into the Docker stack.\n\nh3. Sources\nSession 62 launch commits.\n"
+ },
+ {
+  "key": "CRAN-346",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* the Docker stack deployed with production env config,\n*so that* prod runs the full stack with correct settings.\n\nh3. Acceptance Criteria\n* *Given* {{docker compose ps}}, *then* all services run on prod.\n* *Given* {{.env}}, *then* it has the documented prod values.\n\nh3. Implementation Notes\n{{FRONTEND_URL=https://cranis2.com}}, {{LOG_LEVEL=info}}, {{DEV_SKIP_EMAIL=false}}, {{EMAIL_FROM=info@poste.cranis2.com}}.\n\nh3. Sources\nSession 62 launch commits.\n"
+ },
+ {
+  "key": "CRAN-347",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* security engineer,\n*I want* app containers bound to localhost in prod (replayed to dev),\n*so that* only NGINX is publicly reachable, and dev compose matches prod.\n\nh3. Acceptance Criteria\n* *Given* {{docker-compose.yml}}, *then* {{127.0.0.1:3001:3001}} + {{127.0.0.1:3004:3004}}.\n\nh3. Implementation Notes\nApplied on prod at launch; replayed to dev via {{20980de}}.\n\nh3. Sources\nCommit {{20980de}} (2026-05-07 01:42).\n"
+ },
+ {
+  "key": "CRAN-348",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* GFS prod backups with an age-encrypted dev mirror,\n*so that* prod is retained on a GFS schedule and dev holds an encrypted offsite copy.\n\nh3. Acceptance Criteria\n* *Given* {{docs/backup-retention.md}}, *then* it documents the full scheme.\n* *Given* dev cron, *then* a 03:00 UTC age-pull runs.\n\nh3. Implementation Notes\n7d/4w/12m via WS1; age key escrowed on a keyring USB.\n\nh3. Sources\nSession 62 backup-arch commits.\n"
+ },
+ {
+  "key": "CRAN-349",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* new user,\n*I want* the post-signup landing renamed to /getting-started (replayed to dev),\n*so that* the landing route reads clearly and dev/prod converge.\n\nh3. Acceptance Criteria\n* *Given* the 7 frontend files, *then* they use {{/getting-started}}.\n* *Given* {{routes/auth.ts}}, *then* it redirects there after verification.\n\nh3. Implementation Notes\nApplied on prod; brought back into git via {{ede802f}}.\n\nh3. Sources\nCommit {{ede802f}} (2026-05-07 01:41).\n"
+ },
+ {
+  "key": "CRAN-350",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* the affiliate schema applied to prod on launch day,\n*so that* the affiliate tables exist in prod (with the back-port to initDb tracked as debt).\n\nh3. Acceptance Criteria\n* *Given* the remediation, *then* affiliate tables are added to {{pool.ts initDb()}} with idempotent guards (tracked as #100/CRAN-401).\n\nh3. Implementation Notes\nDirect prod DDL because initDb lacked the tables; motivated CLAUDE.md rule 13 + SPIKE-03.\n\nh3. Sources\nSession 62 launch notes; scratch.md #100.\n"
+ },
+ {
+  "key": "CRAN-351",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* a production smoke test of the core flow,\n*so that* I've confirmed signup→verify→getting-started works live.\n\nh3. Acceptance Criteria\n* *Given* a manual prod smoke test, *then* a verified user lands on {{/getting-started}}.\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 62 close notes.\n"
+ },
+ {
+  "key": "CRAN-73",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* sole owner of CRANIS2,\n*I want* the codebase cleaned of corporate attribution and correctly licensed to me personally,\n*so that* the IP, licensing, copyright and provenance all reflect personal ownership, ready for due diligence or a future NewCo.\n\nh3. Scope\nProprietary LICENSE + SPDX; idempotent licence-header sweep (757 files); 2023-2026 copyright range; email standardisation; entity scrub (Gibbs/Loman/Cavendish); R&D-tax framing stripped + reframed; evidence locker; memory hygiene + rebuild prep; INVESTOR-PITCH drop.\n\nh3. Acceptance Criteria\n* *Given* a repo grep, *then* no corporate-entity / HMRC / © 2026 references remain (excluding evidence/scratch).\n* *Given* the LICENSE + headers, *then* re-running the sweep is a zero-diff no-op.\n\nh3. Child Stories\n* CRAN-353…CRAN-360 + CRAN-368\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-353",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* owner,\n*I want* a proprietary LICENSE with an SPDX identifier,\n*so that* the licensing terms are explicit and machine-identifiable.\n\nh3. Acceptance Criteria\n* *Given* repo root, *then* {{LICENSE}} defines {{LicenseRef-Cranis2-Proprietary}} (Andi MCBURNIE, England & Wales).\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 63 commits.\n"
+ },
+ {
+  "key": "CRAN-354",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* owner,\n*I want* an idempotent licence-header sweep across the codebase,\n*so that* every in-scope file carries the proprietary header without churn on re-run.\n\nh3. Acceptance Criteria\n* *Given* a re-run, *then* zero diff.\n* *Given* the 25 scripts, *then* they retain 0755.\n\nh3. Implementation Notes\n757 files headed; 8 package.json get {{license}}+{{author}}; permission-preservation bug fixed.\n\nh3. Sources\nSession 63 commits.\n"
+ },
+ {
+  "key": "CRAN-355",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* owner,\n*I want* the copyright range set to 2023-2026,\n*so that* copyright reflects the August-2023 ideation.\n\nh3. Acceptance Criteria\n* *Given* {{grep -r \"© 2026 \"}} (excl. evidence/scratch), *then* zero matches at HEAD.\n\nh3. Implementation Notes\nAnchored to the FTI/SNRG NIST assessment (June 2023).\n\nh3. Sources\nSession 63 commits.\n"
+ },
+ {
+  "key": "CRAN-356",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* owner,\n*I want* the contact email standardised,\n*so that* one canonical contact email across all artefacts.\n\nh3. Acceptance Criteria\n* *Given* {{grep -r \"andi.mcburnie@gmail.com\"}} (excl. evidence), *then* only acceptable refs (.env/git config) remain.\n\nh3. Implementation Notes\n{{andi@mcburnie.com}}; author field in all 8 package.json.\n\nh3. Sources\nSession 63 commits.\n"
+ },
+ {
+  "key": "CRAN-357",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* owner,\n*I want* every corporate-attribution reference removed,\n*so that* no third-party entity is attributed anywhere in the repo.\n\nh3. Acceptance Criteria\n* *Given* {{grep -r \"Loman|Cavendish|Gibbs\"}} (excl. evidence/node_modules), *then* zero matches at HEAD.\n\nh3. Implementation Notes\n15 files; AI-coder framework rewritten to personal framing; loman-cavendish-capabilities→personal-capabilities; 99-succession rewritten for executors/heirs.\n\nh3. Sources\nSession 63 commits.\n"
+ },
+ {
+  "key": "CRAN-358",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* owner,\n*I want* the R&D-Tax-Relief framing stripped and reframed,\n*so that* tax framing that doesn't apply to an individual is gone, the underlying value preserved.\n\nh3. Acceptance Criteria\n* *Given* {{grep -r \"HMRC\"}} (excl. evidence/scratch), *then* zero matches at HEAD.\n\nh3. Implementation Notes\nRemoved from STANDARDS.md + SESSION-TEMPLATE.md; reframed as IP-provenance / audit / due-diligence value.\n\nh3. Sources\nSession 63 commits.\n"
+ },
+ {
+  "key": "CRAN-359",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* owner,\n*I want* an evidence locker with binaries kept local-only,\n*so that* provenance evidence is indexed but sensitive binaries never get pushed.\n\nh3. Acceptance Criteria\n* *Given* {{evidence/README.md}}, *then* it indexes Entry #1 (FTI/SNRG NIST assessment) + Entry #2 (engagement analysis).\n* *Given* {{evidence/.gitignore}}, *then* binaries stay local-only.\n\nh3. Implementation Notes\nEntry #1 PDF SHA-256 recorded; held on the dev Mac Mini, never pushed.\n\nh3. Sources\nSession 63 commits + {{fb39bb0}}.\n"
+ },
+ {
+  "key": "CRAN-360",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* owner / future maintainer,\n*I want* memory hygiene and rebuild preparation,\n*so that* future sessions never re-introduce corporate framing and the MBP rebuild target is ready.\n\nh3. Acceptance Criteria\n* *Given* the memory dir, *then* {{project_ownership.md}}, {{seis_strategy.md}}, {{rebuild_plan.md}} are present and {{user_profile.md}} is scrubbed.\n* *Given* {{ssh mbp}}, *then* the MacBook Pro is reachable.\n\nh3. Implementation Notes\nMBP 10.0.0.117 (Ubuntu 24.04, Docker 29.4); /home/andi/cranis2 + 4xxx ports reserved; Forgejo primary, Codeberg mirror.\n\nh3. Sources\nSession 63 memory + rebuild-prep commits.\n"
+ },
+ {
+  "key": "CRAN-368",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* owner,\n*I want* the superseded investor pitch removed,\n*so that* stale positioning docs don't linger in the tree.\n\nh3. Acceptance Criteria\n* *Given* HEAD, *then* {{docs/INVESTOR-PITCH.md}} does not exist and {{MARKET-PITCH.md}} is canonical.\n\nh3. Implementation Notes\nStaged a long-pending unstaged deletion.\n\nh3. Sources\nCommit {{801f127}} (2026-05-07 07:44).\n"
+ }
+]

@@ -1,0 +1,164 @@
+[
+ {
+  "key": "CRAN-53",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer with a long-lived product,\n*I want* a tamper-evident, signed 10-year vault of my compliance evidence,\n*so that* I can prove an unbroken, independently-witnessed compliance record for the regulatory retention period.\n\nh3. Scope\nVault schema + snapshot capture; hybrid-signed manifests; anti-tamper hash chain; scheduled snapshots; periodic re-verification; customer + admin ledger views; one-off backfill; auto-extend policy.\n\nh3. Acceptance Criteria\n* *Given* {{routes/retention-ledger.test.ts}} + {{snapshot-schedule.test.ts}} + {{admin-retention-ledger.test.ts}}, *then* they pass.\n* *Given* a snapshot, *when* taken, *then* it carries {{.sig}} + {{.sig.mldsa}} and chains via {{previous_hash}}.\n* *Given* re-verification, *when* run, *then* hash + signature + RFC3161 token are re-checked and the result stored.\n\nh3. Child Stories\n* CRAN-213…CRAN-221 (schema → signed manifest → hash chain → scheduled → re-verify → customer view → admin view → backfill → auto-extend)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-213",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* the vault schema and a snapshot-capture pipeline,\n*so that* point-in-time compliance evidence can be captured and stored.\n\nh3. Acceptance Criteria\n* *Given* {{pool.ts initDb()}}, *then* {{compliance_snapshots}}, {{retention_ledger}}, {{snapshot_schedules}} exist.\n* *Given* a manual trigger, *then* a snapshot is created.\n\nh3. Implementation Notes\nPhase A foundation.\n\nh3. Sources\nP8 Phase A commits.\n"
+ },
+ {
+  "key": "CRAN-214",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* each snapshot ZIP signed with Ed25519 + ML-DSA-65,\n*so that* snapshots are cryptographically attributable and quantum-resistant.\n\nh3. Acceptance Criteria\n* *Given* a snapshot ZIP, *then* both {{.sig}} and {{.sig.mldsa}} exist beside it.\n\nh3. Implementation Notes\nPhase B; reuses the hybrid-signing service (CRAN-140).\n\nh3. Sources\nP8 Phase B commits.\n"
+ },
+ {
+  "key": "CRAN-215",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* an anti-tamper hash chain over the retention ledger,\n*so that* any tampering with the evidence record is detectable.\n\nh3. Acceptance Criteria\n* *Given* {{routes/retention-ledger.test.ts}}, *then* chain verification is covered.\n\nh3. Implementation Notes\nPhase C; {{previous_hash}} chains each row; verification job reports broken links.\n\nh3. Sources\nP8 Phase C commits.\n"
+ },
+ {
+  "key": "CRAN-216",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* snapshots taken automatically on a schedule,\n*so that* evidence accrues without manual effort.\n\nh3. Acceptance Criteria\n* *Given* {{routes/snapshot-schedule.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\nPhase D; {{snapshot_schedules}} + nightly scheduler per active product.\n\nh3. Sources\nP8 Phase D commits.\n"
+ },
+ {
+  "key": "CRAN-217",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* periodic re-verification of every snapshot,\n*so that* I know my historical evidence still verifies years later.\n\nh3. Acceptance Criteria\n* *Given* the re-verification job, *then* it runs on schedule and stores the result on {{retention_ledger}}.\n\nh3. Implementation Notes\nPhase E; re-hash + re-verify signature + re-verify RFC3161 token.\n\nh3. Sources\nP8 Phase E commits.\n"
+ },
+ {
+  "key": "CRAN-218",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a customer-facing retention-ledger view,\n*so that* I can see my own vault state at a glance.\n\nh3. Acceptance Criteria\n* *Given* a product with snapshots, *when* viewed, *then* the ledger renders (taken / last-verified / chain status).\n\nh3. Implementation Notes\nPhase F; read-only.\n\nh3. Sources\nP8 Phase F commits.\n"
+ },
+ {
+  "key": "CRAN-219",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* an admin retention-ledger view with integrity warnings,\n*so that* I can spot orphan rows and broken chains across all orgs.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-retention-ledger.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\nPhase G; cross-org with orphan + hash-chain warnings.\n\nh3. Sources\nP8 Phase G commits.\n"
+ },
+ {
+  "key": "CRAN-220",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a one-off backfill of snapshots for pre-vault products,\n*so that* products that pre-date the vault still get a complete record.\n\nh3. Acceptance Criteria\n* *Given* the funding-run script in {{scripts/}}, *when* run, *then* it produces backfilled rows.\n\nh3. Implementation Notes\nPhase H; one-off backfill.\n\nh3. Sources\nP8 funding-run commits.\n"
+ },
+ {
+  "key": "CRAN-221",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* retention to auto-extend while a product is still active,\n*so that* evidence for a live product is never lost when a scheduled end approaches.\n\nh3. Acceptance Criteria\n* *Given* a fixture product approaching its scheduled end, *when* still active, *then* the end-date auto-extends.\n\nh3. Implementation Notes\nPhase I; prevents premature expiry.\n\nh3. Sources\nP8 auto-extend commits.\n"
+ },
+ {
+  "key": "CRAN-54",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* prospective customer on the public site,\n*I want* free self-assessment wizards for CRA, NIS2, Importer and PQC readiness,\n*so that* I can gauge my regulatory readiness publicly and become a lead, with frictionless verified-email reuse.\n\nh3. Scope\nPublic CRA / NIS2 / Importer Art. 18 / PQC self-assessment wizards on the welcome site; cross-system verified-emails (90-day TTL) across 6 flows; assessment landing page + launch-list subscription; 12 measured growth funnels.\n\nh3. Acceptance Criteria\n* *Given* {{routes/conformity-assessment.test.ts}}, *then* the CRA assessment is covered; the {{/conformity/*}} routes render each wizard.\n* *Given* an already-verified email, *when* it returns, *then* the 6 welcome-site flows skip code entry.\n* *Given* a launch-list signup, *when* submitted, *then* it writes to {{welcome_leads}}.\n\nh3. Child Stories\n* CRAN-222…CRAN-227 (CRA / NIS2 / Importer / PQC / verified-emails / landing + launch-list)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-222",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* prospective customer,\n*I want* a public CRA self-assessment wizard,\n*so that* I get a CRA-readiness score + recommendations before signing up.\n\nh3. Acceptance Criteria\n* *Given* {{routes/conformity-assessment.test.ts}}, *then* the CRA assessment is covered.\n* *Given* {{/conformity/cra}}, *then* the wizard renders.\n\nh3. Implementation Notes\nWalks product details + supply chain + obligations → score + recommendations.\n\nh3. Sources\nP9 CRA-assessment commits.\n"
+ },
+ {
+  "key": "CRAN-223",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* in-scope NIS2 entity,\n*I want* a public NIS2 self-assessment wizard,\n*so that* I can gauge my NIS2 readiness on the same pattern.\n\nh3. Acceptance Criteria\n* *Given* {{/conformity/nis2}}, *then* the wizard renders.\n\nh3. Implementation Notes\nSame wizard pattern as CRA.\n\nh3. Sources\nP9 NIS2-assessment commits.\n"
+ },
+ {
+  "key": "CRAN-224",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* importer,\n*I want* an Importer Art. 18 self-assessment,\n*so that* I understand my importer obligations and whether my manufacturer is compliant.\n\nh3. Acceptance Criteria\n* *Given* {{/conformity/importer}}, *then* the wizard renders.\n\nh3. Implementation Notes\nVerifies manufacturer compliance + distributor/importer obligations (CRA Art. 18).\n\nh3. Sources\nP9 importer-assessment commits.\n"
+ },
+ {
+  "key": "CRAN-225",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* security-conscious prospect,\n*I want* a PQC-readiness self-assessment,\n*so that* I get a post-quantum readiness score against NIST PQC standards.\n\nh3. Acceptance Criteria\n* *Given* {{/conformity/pqc}}, *then* the wizard renders.\n* *Given* the page, *then* it carries the 'practises what it preaches' trust banner.\n\nh3. Implementation Notes\nCrypto-inventory inputs → classify against NIST PQC → score.\n\nh3. Sources\nP9 PQC-assessment commits.\n"
+ },
+ {
+  "key": "CRAN-226",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* returning visitor,\n*I want* verified emails recognised across the welcome site and main app,\n*so that* I don't re-verify my email on every funnel I touch.\n\nh3. Acceptance Criteria\n* *Given* the 6 welcome-site flows, *when* an already-verified email returns, *then* code entry is skipped.\n* *Given* {{verified_emails}}, *then* it populates cross-flow (90-day TTL).\n\nh3. Implementation Notes\n{{welcome/lib/verified-emails.js}} checks welcome DB + main-app {{users.email_verified}}; {{/send-code}} returns {{alreadyVerified}}; {{/verify}} accepts {{skipCode}} with server re-validation; no enumeration; disposables excluded.\n\nh3. Sources\nSession 59 verified-emails commits.\n"
+ },
+ {
+  "key": "CRAN-227",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* an assessment landing page with launch-list subscription,\n*so that* I capture leads with shareable previews and measure the growth funnels.\n\nh3. Acceptance Criteria\n* *Given* the landing page, *then* it renders with OG/Twitter share tags.\n* *Given* a launch-list signup, *then* it writes to {{welcome_leads}}.\n\nh3. Implementation Notes\n12 growth funnels measured end-to-end.\n\nh3. Sources\nP9 landing-page + launch-list commits.\n"
+ },
+ {
+  "key": "CRAN-55",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer of a regulated product,\n*I want* the whole Art. 14 chain automated from threat-intel detection to authorised submission,\n*so that* an actively-exploited vulnerability auto-creates an attested, deadline-tracked Art. 14 report without me watching the feeds.\n\nh3. Scope\nKEV + EPSS ingestion; scan-time enrichment; KEV/EPSS-driven prioritisation; UI surfacing; {{actively_exploited}} auto-flag; automated Art. 14 trigger; RFC3161 awareness attestation; per-product regulatory-state view; submit-with-authorisation + RFC3161 on stage submit.\n\nh3. Acceptance Criteria\n* *Given* {{services/threat-intel.test.ts}} + {{cra-trigger-engine.test.ts}} + {{regulatory-state.test.ts}} + {{submission-attestation.test.ts}}, *then* they pass.\n* *Given* an actively-exploited finding on a regulated product, *when* detected, *then* a {{cra_reports}} row is auto-created with {{awareness_at}} + RFC3161 token and the 24h clock starts.\n\nh3. Child Stories\n* CRAN-228…CRAN-236 (KEV/EPSS ingestion → enrichment → prioritisation → UI → auto-flag → trigger → awareness attestation → regulatory state → submit-with-auth)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-228",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* scheduled ingestion of CISA KEV and FIRST EPSS feeds,\n*so that* the platform knows which CVEs are actively exploited and their exploitation probability.\n\nh3. Acceptance Criteria\n* *Given* {{services/threat-intel.test.ts}}, *then* ingestion + refresh are covered.\n* *Given* a scheduled refresh, *then* {{kev_catalogue}} is populated.\n\nh3. Implementation Notes\nP10a-1; {{kev_catalogue}} + {{epss_scores}}.\n\nh3. Sources\nP10a-1 commits.\n"
+ },
+ {
+  "key": "CRAN-229",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* findings enriched with KEV/EPSS state at scan time,\n*so that* each finding carries its exploitation signal, not just CVSS.\n\nh3. Acceptance Criteria\n* *Given* a finding row, *then* it exposes {{kev: bool}}, {{epss_score}}, {{epss_percentile}}.\n\nh3. Implementation Notes\nP10a-2; joined to KEV+EPSS at scan time.\n\nh3. Sources\nP10a-2 commits.\n"
+ },
+ {
+  "key": "CRAN-230",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* findings prioritised by KEV/EPSS over raw CVSS,\n*so that* I act on what's actually being exploited first.\n\nh3. Acceptance Criteria\n* *Given* the risk-findings sort, *then* it is KEV-first, EPSS-percentile-desc, CVSS-desc.\n\nh3. Implementation Notes\nP10a-3; an EPSS-high finding outranks a high-CVSS no-signal finding.\n\nh3. Sources\nP10a-3 commits.\n"
+ },
+ {
+  "key": "CRAN-231",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* KEV / actively-exploited / EPSS surfaced in the findings UI,\n*so that* I can see exploitation status at a glance.\n\nh3. Acceptance Criteria\n* *Given* the risk-findings table, *then* it renders a KEV badge + EPSS percentile column.\n\nh3. Implementation Notes\nP10a-4; KEV badge + actively-exploited chip + EPSS percentile.\n\nh3. Sources\nP10a-4 commits.\n"
+ },
+ {
+  "key": "CRAN-232",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* an actively_exploited flag auto-derived on CRA reports,\n*so that* reports created from exploited findings are flagged automatically.\n\nh3. Acceptance Criteria\n* *Given* a report created from a finding, *then* {{cra_reports.actively_exploited}} is populated from KEV/EPSS state.\n\nh3. Implementation Notes\nP10a-5.\n\nh3. Sources\nP10a-5 commits.\n"
+ },
+ {
+  "key": "CRAN-233",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* Art. 14 auto-triggered when an actively-exploited vuln hits a regulated product,\n*so that* the statutory clock starts and stakeholders are alerted the moment exploitation is detected.\n\nh3. Acceptance Criteria\n* *Given* {{services/cra-trigger-engine.test.ts}}, *then* it passes.\n* *Given* detection, *then* a {{cra_reports}} row is auto-created with {{awareness_at = NOW()}}, stakeholders notified, 24h track started (integration-verified).\n\nh3. Implementation Notes\nP10b-1.\n\nh3. Sources\nCommit {{949aef2}} (2026-05-06 09:34).\n"
+ },
+ {
+  "key": "CRAN-234",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* an RFC3161 timestamp on the awareness moment of auto-triggered reports,\n*so that* the 24h clock has an independent witness of when awareness began.\n\nh3. Acceptance Criteria\n* *Given* an auto-trigger, *then* {{cra_reports.awareness_rfc3161_token}} is populated.\n\nh3. Implementation Notes\nP10b-2.\n\nh3. Sources\nCommit {{b8441c0}} (2026-05-06 09:42).\n"
+ },
+ {
+  "key": "CRAN-235",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* the dedicated per-product regulatory-state surface,\n*so that* I see the active Art. 14 track and countdown for a product.\n\nh3. Acceptance Criteria\n* *Given* {{services/regulatory-state.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\nP10c; 24h/72h/14d countdown chips. (Report-flow side is CRAN-133.)\n\nh3. Sources\nCommit {{fe1ba49}} (2026-05-06 10:13).\n"
+ },
+ {
+  "key": "CRAN-236",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* submit-with-authorisation + RFC3161 on each Art. 14 stage submit,\n*so that* every submission records who authorised it, when, with an independent timestamp.\n\nh3. Acceptance Criteria\n* *Given* {{services/submission-attestation.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\nP10d. (Report-flow side is CRAN-132.)\n\nh3. Sources\nCommit {{290d85f}} (2026-05-06 10:29).\n"
+ }
+]

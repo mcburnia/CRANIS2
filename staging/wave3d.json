@@ -1,0 +1,170 @@
+[
+ {
+  "key": "CRAN-41",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer,\n*I want* cryptographic, independently-witnessed proof of my IP and compliance state at points in time,\n*so that* I can demonstrate authorship and an unbroken compliance record, future-proofed against quantum attack.\n\nh3. Scope\nRFC 3161 timestamping (pure-Node ASN.1, FreeTSA); deterministic compliance snapshots with a hash-chained retention ledger; hybrid Ed25519 + ML-DSA-65 signing; a public signing-key endpoint + key generator.\n\nh3. Acceptance Criteria\n* *Given* {{routes/ip-proof.test.ts}}, *when* run, *then* snapshot create/verify/export are covered.\n* *Given* a snapshot, *when* signed, *then* both {{.sig}} (Ed25519) and {{.sig.mldsa}} (ML-DSA-65) are produced and {{verifyHybridSignature}} AND-requires both.\n* *Given* {{retention_ledger}}, *when* validated, *then* the {{previous_hash}} chain holds.\n\nh3. Child Stories\n* CRAN-138 RFC 3161 IP proof\n* CRAN-139 Compliance snapshot + retention ledger\n* CRAN-140 Hybrid signing (Ed25519 + ML-DSA-65)\n* CRAN-141 Public signing-key endpoint + generator\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-138",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* RFC 3161 timestamp proof of my artefacts using a pure-Node ASN.1 implementation,\n*so that* I have independent, verifiable proof of authorship with no third-party library dependency for timestamping.\n\nh3. Acceptance Criteria\n* *Given* {{routes/ip-proof.test.ts}}, *when* run, *then* snapshot create / verify / export are covered.\n* *Given* the timestamping path, *when* inspected, *then* the ASN.1 DER encoder/decoder are pure Node (no native bindings).\n\nh3. Implementation Notes\nFreeTSA.org RFC 3161; hash → token request → store both; verify re-hashes + checks the token signature; export proof ZIP + verification helper.\n\nh3. Sources\nCommit {{eb0f7e6}} (2026-02-24 13:45, IP-proof concern).\n"
+ },
+ {
+  "key": "CRAN-139",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* deterministic point-in-time compliance snapshots in a tamper-evident ledger,\n*so that* I keep an unbroken, hash-chained record of my evidence over time.\n\nh3. Acceptance Criteria\n* *Given* {{routes/compliance-snapshots.test.ts}}, *when* run, *then* create/list/verify are covered.\n* *Given* {{retention_ledger.previous_hash}}, *when* the verification job runs, *then* the chain validates.\n\nh3. Implementation Notes\n{{compliance_snapshot.ts}} builds the snapshot, writes ZIP + signatures; ledger chains via {{previous_hash}}.\n\nh3. Sources\nWS2 + P8 commits.\n"
+ },
+ {
+  "key": "CRAN-140",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* manufacturer concerned about long-term verifiability,\n*I want* documents signed with both Ed25519 and post-quantum ML-DSA-65,\n*so that* my signatures remain verifiable even against a future quantum adversary, with graceful fallback today.\n\nh3. Acceptance Criteria\n* *Given* {{security/hybrid-signing.test.ts}}, *when* run, *then* 23 tests pass.\n* *Given* a snapshot ZIP, *when* signed, *then* both {{.sig}} and {{.sig.mldsa}} are written.\n* *Given* {{CRANIS2_SIGNING_KEY_MLDSA}} unset, *when* signing, *then* it degrades gracefully to Ed25519-only.\n\nh3. Implementation Notes\n{{signDocument()}} returns Ed25519 (64B) + ML-DSA-65 (3309B); {{verifyHybridSignature()}} is AND-logic; carried in {{CertificateResult}}.\n\nh3. Sources\nWS2 Part 2 commits ({{services/signing.ts}}).\n"
+ },
+ {
+  "key": "CRAN-141",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* third party verifying a CRANIS2 signature,\n*I want* a public ML-DSA-65 key endpoint and a key-generation script,\n*so that* anyone can fetch the public key to verify signatures, and operators can generate the key pairs.\n\nh3. Acceptance Criteria\n* *Given* {{/.well-known/cranis2-signing-key-mldsa.pem}}, *when* fetched, *then* it returns 200 + a valid ML-DSA-65 PEM public key.\n* *Given* {{scripts/generate-signing-keys.sh}}, *when* run, *then* it outputs both key pairs + base64 for {{.env}}.\n\nh3. Implementation Notes\nEnables third-party signature verification.\n\nh3. Sources\nWS2 Part 2 commits.\n"
+ },
+ {
+  "key": "CRAN-42",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer,\n*I want* automatic licence classification, compatibility checking and a due-diligence export,\n*so that* I understand my dependency-licence risk against my distribution model and can hand investors/acquirers a ready package.\n\nh3. Scope\nSPDX classification + risk with acknowledge/waive; transitive depth tagging; a distribution-model-aware compatibility matrix (FSF conflict table); a due-diligence ZIP; manual-sync auto-triggers licence scan + IP proof.\n\nh3. Acceptance Criteria\n* *Given* {{routes/license-scan.test.ts}}, *when* run, *then* classification + risk + matrix are covered.\n* *Given* a product's distribution model, *when* assessed, *then* verdicts are compatible/incompatible/review_needed using the 14-entry FSF conflict table.\n* *Given* a manual sync, *when* run, *then* licence scan + IP-proof timestamping fire immediately.\n\nh3. Child Stories\n* CRAN-142…CRAN-146 (classification → depth → matrix → DD export → auto-trigger)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-142",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* every dependency licence classified by SPDX with a risk/acknowledge/waive workflow,\n*so that* I can see and formally accept or waive copyleft and unknown-licence risk.\n\nh3. Acceptance Criteria\n* *Given* {{routes/license-scan.test.ts}}, *when* run, *then* classification + risk are covered.\n* *Given* {{licence_findings}}, *when* inspected, *then* {{acknowledged_by}}/{{acknowledged_at}}/{{waiver_reason}} exist.\n\nh3. Implementation Notes\nClasses: permissive / copyleft_weak / copyleft_strong / unknown; critical copyleft routed to security_contact + compliance_officer.\n\nh3. Sources\nCommit {{eb0f7e6}} (2026-02-24, licence-scan concern).\n"
+ },
+ {
+  "key": "CRAN-143",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* direct-vs-transitive depth tagged on dependency edges,\n*so that* I can distinguish my direct dependencies' licences from deep transitive ones.\n\nh3. Acceptance Criteria\n* *Given* a synced product, *when* queried, *then* {{MATCH ()-[r:DEPENDS_ON]->() WHERE r.depth IS NOT NULL}} returns >0.\n* *Given* a {{NOASSERTION}} licence, *when* enriched, *then* the npm-registry fallback updates the field.\n\nh3. Implementation Notes\nSPDX relationships parsed to tag depth (CRANIS2 itself: 89 direct, 295 transitive).\n\nh3. Sources\nCommit {{eb0f7e6}} (transitive-enrichment concern).\n"
+ },
+ {
+  "key": "CRAN-144",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a licence-compatibility matrix aware of how I distribute the product,\n*so that* I get a verdict on licence conflicts specific to proprietary/SaaS/library/internal distribution.\n\nh3. Acceptance Criteria\n* *Given* {{routes/license-scan.test.ts}}, *when* run, *then* the matrix is covered.\n* *Given* the FSF conflict table, *when* inspected, *then* 14 known incompatibilities are present.\n\nh3. Implementation Notes\nPure rules engine; verdicts compatible/incompatible/review_needed; integrated into scanner, recheck endpoint, badges/filters, DD export.\n\nh3. Sources\nCommit {{5199d40}} (2026-02-25 14:24).\n"
+ },
+ {
+  "key": "CRAN-145",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* founder preparing for due diligence,\n*I want* an investor-ready due-diligence ZIP per product,\n*so that* I can hand an acquirer/investor a complete licence + SBOM + vuln evidence package in one click.\n\nh3. Acceptance Criteria\n* *Given* {{routes/due-diligence.test.ts}}, *when* run, *then* ZIP generation is covered.\n* *Given* {{integration/due-diligence-export.test.ts}} + E2E {{due-diligence-package.spec.ts}}, *then* they pass.\n\nh3. Implementation Notes\nZIP = MD report + CycloneDX SBOM + licence CSV + vuln summary JSON + full licence texts; shared {{sbom-service.ts}} extracted.\n\nh3. Sources\nCommit {{4dd6841}} (2026-02-25 10:15).\n"
+ },
+ {
+  "key": "CRAN-146",
+  "points": 2,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* user resyncing a product,\n*I want* a manual sync to also run the licence scan and IP-proof timestamping,\n*so that* a user-driven resync produces fresh licence + IP evidence immediately, not just on the 2 AM schedule.\n\nh3. Acceptance Criteria\n* *Given* a manual sync ({{POST /api/github/sync/:productId}}), *when* triggered, *then* {{runLicenseScan()}} + IP-proof timestamping fire.\n\nh3. Implementation Notes\nPreviously only the scheduler ran these.\n\nh3. Sources\nCommit {{eb0f7e6}} (manual-sync auto-trigger concern).\n"
+ },
+ {
+  "key": "CRAN-43",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer,\n*I want* consolidated compliance packages, reports, checklist, scorecard and history per product,\n*so that* I can see my CRA readiness at a glance and export the full evidence bundle on demand.\n\nh3. Scope\nPer-product compliance package ZIP + reports; categorised gap detection; Recharts historical timeline; Annex I Part I + article-driven compliance checklist; dashboard CRA scorecard (capped 100%); cross-product heat map.\n\nh3. Acceptance Criteria\n* *Given* {{routes/reports.test.ts}} + {{integration/compliance-package-journey.test.ts}}, *when* run, *then* package + reports are covered.\n* *Given* the checklist + scorecard, *when* derived, *then* they are deterministic and the readiness % caps at 100.\n* *Given* the timeline, *when* rendered, *then* it shows status/findings/verdicts over time.\n\nh3. Child Stories\n* CRAN-147…CRAN-151 + CRAN-364 (heat map)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-147",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a per-product compliance package plus individual reports,\n*so that* I can export all CRA-evidence artefacts for a product as one bundle or as separate documents.\n\nh3. Acceptance Criteria\n* *Given* {{routes/reports.test.ts}} + {{routes/product-reports.test.ts}}, *when* run, *then* they pass.\n* *Given* {{integration/compliance-package-journey.test.ts}} + E2E {{reports.spec.ts}}, *then* they pass.\n\nh3. Implementation Notes\nZIP bundle + Annex VII MD / conformity / dependencies CSV / vuln summary JSON / IP proof.\n\nh3. Sources\nPhase 2 compliance-package commits.\n"
+ },
+ {
+  "key": "CRAN-148",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* SBOM compliance gaps categorised with actionable guidance,\n*so that* I understand exactly why any component is missing evidence and what to do about it.\n\nh3. Acceptance Criteria\n* *Given* {{routes/compliance-gaps.test.ts}}, *when* run, *then* categorisation + endpoint are covered.\n\nh3. Implementation Notes\nCategories no_version/unsupported_ecosystem/not_found/fetch_error/pending; debounced {{sendComplianceGapNotification()}}; frontend breakdown panel.\n\nh3. Sources\nCommits {{f11bc40}} + {{0302d55}}.\n"
+ },
+ {
+  "key": "CRAN-149",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* a historical compliance timeline per product,\n*so that* I can see how obligations, findings and licence verdicts changed over time.\n\nh3. Acceptance Criteria\n* *Given* {{routes/compliance-timeline.test.ts}}, *when* run, *then* it passes.\n* *Given* a product with history, *when* rendered, *then* the Recharts chart shows at least one data series.\n\nh3. Implementation Notes\nLive actionable-findings count on the summary card (session-60 fix).\n\nh3. Sources\nCommit {{5e11e33}} (2026-02-25 15:01) + session 60 fix.\n"
+ },
+ {
+  "key": "CRAN-150",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* a CRA compliance checklist derived from real obligation + tech-file + scan state,\n*so that* I get a deterministic per-product checklist instead of a manual tick-box exercise.\n\nh3. Acceptance Criteria\n* *Given* {{routes/compliance-checklist.test.ts}}, *when* run, *then* it passes.\n* *Given* replays, *when* derived, *then* the checklist is deterministic.\n\nh3. Implementation Notes\nAnnex I Part I + article-driven; {{routes/compliance-checklist.ts}}.\n\nh3. Sources\nPhase 2 commits.\n"
+ },
+ {
+  "key": "CRAN-151",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a dashboard CRA-readiness scorecard,\n*so that* I can see a single readiness % aggregating obligations, findings and tech-file completeness.\n\nh3. Acceptance Criteria\n* *Given* {{routes/dashboard.test.ts}}, *when* run, *then* the scorecard is covered.\n* *Given* an edge case, *when* computed, *then* readiness caps at 100% (session-60 fix, verified by fixture).\n\nh3. Implementation Notes\nP0 scorecard.\n\nh3. Sources\nP0 phase commits + session 60 cap fix.\n"
+ },
+ {
+  "key": "CRAN-364",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer with multiple products,\n*I want* a cross-product dashboard heat map,\n*so that* I can see readiness / risk / obligation status across all products at a glance.\n\nh3. Acceptance Criteria\n* *Given* an org with ≥1 product, *when* the Dashboard loads, *then* the heat map renders coloured cells per product × dimension.\n\nh3. Implementation Notes\nP2 #11 heat map.\n\nh3. Sources\nP2 #11 commits.\n"
+ },
+ {
+  "key": "CRAN-44",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* platform user,\n*I want* in-app and email notifications, stakeholder routing, and a full activity/audit trail,\n*so that* the right people are alerted to the right events, and every action is auditable.\n\nh3. Scope\nNotifications API + service + sidebar bell; role-based stakeholder routing (Resend + in-app); audit log with live data + system events; mobile column reorder; webhook audit logging; product activity feed; notifications page filters; UX tooltips; feedback-notify to support.\n\nh3. Acceptance Criteria\n* *Given* {{routes/notifications.test.ts}}, *when* run, *then* create/list/mark-read are covered.\n* *Given* an event, *when* routed, *then* it reaches the role-based recipients via the right channel.\n* *Given* the audit log, *when* listed, *then* webhook/system events appear with user='system'.\n\nh3. Child Stories\n* CRAN-152…CRAN-158 + CRAN-365 (tooltips) + CRAN-366 (feedback notify)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-152",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* user,\n*I want* in-app notifications with a sidebar bell and a full notifications page,\n*so that* I see what needs my attention without leaving the app.\n\nh3. Acceptance Criteria\n* *Given* {{routes/notifications.test.ts}}, *when* run, *then* create/list/mark-read are covered.\n* *Given* E2E {{notifications.spec.ts}}, *then* the bell + page are covered.\n\nh3. Implementation Notes\n{{notifications}} table {{(user_id, org_id, kind, payload_json, read_at)}}; bell badge with polling.\n\nh3. Sources\nCommit {{e553f1e}} (2026-02-22, notifications concern).\n"
+ },
+ {
+  "key": "CRAN-153",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer / security contact,\n*I want* notifications routed to the right role-based recipients,\n*so that* events reach the person responsible (security, compliance, tech-file owner, IR lead, admin), not a generic inbox.\n\nh3. Acceptance Criteria\n* *Given* {{services/alert-emails.test.ts}}, *when* run, *then* per-role routing is covered.\n* *Given* {{stakeholders}}, *when* inspected, *then* per-role contact rows exist.\n\nh3. Implementation Notes\nResend email channel + in-app bell.\n\nh3. Sources\nCommit {{e553f1e}} (stakeholder-notify concern).\n"
+ },
+ {
+  "key": "CRAN-154",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a live audit log of all org events including system/webhook events,\n*so that* I can review who did what, with full request detail, including system-originated events.\n\nh3. Acceptance Criteria\n* *Given* {{routes/audit-log.test.ts}} + {{routes/audit.test.ts}}, *when* run, *then* listing + event-type filter are covered.\n* *Given* a webhook event, *when* listed, *then* it appears with user='system' (LEFT JOIN, not JOIN).\n\nh3. Implementation Notes\n{{GET /api/audit-log}} over {{user_events}}; filters + pagination (25/page) + total; expandable row detail.\n\nh3. Sources\nCommits {{c68d6e3}} + {{625908f}} (LEFT JOIN fix).\n"
+ },
+ {
+  "key": "CRAN-155",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* user on a small screen,\n*I want* the audit-log columns reordered so the useful ones come first,\n*so that* the audit log is readable on mobile.\n\nh3. Acceptance Criteria\n* *Given* AuditLogPage, *when* rendered, *then* the header order is Event/User/Location/Time/IP/Device.\n\nh3. Implementation Notes\nReordered from Event/User/IP/Device/Location/Time.\n\nh3. Sources\nCommit {{2e20f48}} (2026-02-22 05:37).\n"
+ },
+ {
+  "key": "CRAN-156",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* webhook push events recorded in the audit trail,\n*so that* system-originated SBOM-stale events are auditable like user events.\n\nh3. Acceptance Criteria\n* *Given* {{webhooks/github-webhook.test.ts}}, *when* run, *then* the audit-log write is covered.\n* *Given* a push webhook, *when* received, *then* a {{webhook_sbom_stale}} row exists with repo URL + product ID.\n\nh3. Implementation Notes\nDirect insert with NULL user_id; try/catch + console.error for silent-failure debug.\n\nh3. Sources\nCommits {{516fbee}} + {{ac98a10}} + {{5ff6da4}}.\n"
+ },
+ {
+  "key": "CRAN-157",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* product owner,\n*I want* a per-product activity feed,\n*so that* I can see a product's recent syncs, scans, obligation changes, tech-file edits and escrow deposits in one place.\n\nh3. Acceptance Criteria\n* *Given* {{routes/product-activity.test.ts}}, *when* run, *then* it passes.\n* *Given* the Overview tab, *when* loaded, *then* the activity feed is visible.\n\nh3. Implementation Notes\n{{routes/product-activity.ts}}.\n\nh3. Sources\nP2 activity-log commits.\n"
+ },
+ {
+  "key": "CRAN-158",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* user,\n*I want* filters and bulk mark-as-read on the notifications page,\n*so that* I can manage a busy notifications list efficiently.\n\nh3. Acceptance Criteria\n* *Given* E2E {{notifications.spec.ts}}, *when* run, *then* filter + mark-as-read paths are covered.\n\nh3. Implementation Notes\nFilter by kind / read state; bulk mark-as-read; refresh.\n\nh3. Sources\nP0 notification commits.\n"
+ },
+ {
+  "key": "CRAN-365",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* user new to CRA/NIS2 terminology,\n*I want* plain-English tooltips across the product and admin surfaces,\n*so that* I understand regulatory jargon in context without leaving the page.\n\nh3. Acceptance Criteria\n* *Given* the identified controls, *when* hovered, *then* tooltips appear with copy reviewed against the editorial standard.\n\nh3. Implementation Notes\nTooltip pass across product detail tabs + admin panel (P1 #7).\n\nh3. Sources\nP1 #7 commits.\n"
+ },
+ {
+  "key": "CRAN-366",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* an email to support@cranis2.com on every in-app feedback submission,\n*so that* I'm notified of feedback/bugs/feature requests immediately, able to reply straight to the submitter.\n\nh3. Acceptance Criteria\n* *Given* {{tests/services/feedback-notify.test.ts}}, *when* run, *then* 4 unit tests pass (casing / whitespace / 120-char truncation / boundary).\n* *Given* {{tests/routes/feedback.test.ts}}, *then* 4 tests pass after the notify path.\n* *Given* {{buildFeedbackEmailSubject()}}, *then* it is exported and unit-testable independently of Resend.\n\nh3. Implementation Notes\nSubject {{[CRANIS2 <CATEGORY>] <subject>}}; HTML body with submitter/org/role/plan/page/message + UTC+Dublin timestamps + admin deep link; {{replyTo}}=submitter; non-blocking; suppressed in {{DEV_SKIP_EMAIL}}.\n\nh3. Sources\nCommit {{e65a684}} (2026-05-18 13:48).\n"
+ }
+]

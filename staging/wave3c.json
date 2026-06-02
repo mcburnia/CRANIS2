@@ -1,0 +1,116 @@
+[
+ {
+  "key": "CRAN-38",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer,\n*I want* a structured, auto-fillable CRA Annex VII technical file with exportable compliance documents,\n*so that* I can assemble and maintain the regulator-facing technical documentation without starting from a blank page.\n\nh3. Scope\n8-section Annex VII editor + Annex I Part I checklist; cross-product overview; 37-template document library; deterministic Batch Fill wizard; EU DoC + CVD Markdown export; PDF→Markdown migration.\n\nh3. Acceptance Criteria\n* *Given* the editor, *when* used, *then* all 8 Annex VII sections autosave with author/last-updated metadata ({{routes/technical-files.test.ts}}).\n* *Given* the Batch Fill wizard, *when* run, *then* it auto-populates 4 sections + obligation evidence non-destructively.\n* *Given* the DoC/CVD exports, *when* downloaded, *then* they return Markdown.\n\nh3. Child Stories\n* CRAN-125…CRAN-130 (editor → overview → templates → batch fill → exports → PDF→MD)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-125",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* an 8-section Annex VII technical-file editor with an Annex I Part I checklist,\n*so that* I can author every required section of the technical file in one structured place.\n\nh3. Acceptance Criteria\n* *Given* {{routes/technical-files.test.ts}}, *when* run, *then* per-product section CRUD is covered.\n* *Given* {{technical_file_sections}}, *when* inspected, *then* {{(org_id, product_id, section_key)}} is unique.\n* *Given* E2E {{technical-files.spec.ts}}, *then* section edit is covered.\n\nh3. Implementation Notes\n8 sections (Product Description → Change Management); per-section autosave + author/last-updated metadata; Annex I Part I checklist on the Compliance tab.\n\nh3. Sources\nCommit {{ceddd7c}} (2026-02-21) + Phase 2 obligation-engine commits.\n"
+ },
+ {
+  "key": "CRAN-126",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* a cross-product technical-file overview with deep links,\n*so that* I can see tech-file progress across all products and jump straight to a section.\n\nh3. Acceptance Criteria\n* *Given* {{routes/technical-files-overview.test.ts}}, *when* run, *then* the rollup is covered.\n* *Given* {{/products/<id>?tab=technical-file&section=risk-assessment}}, *when* opened, *then* it lands correctly.\n\nh3. Implementation Notes\nSummary stats + filter buttons + per-product deep links.\n\nh3. Sources\nCommit {{a4f8a45}} (2026-02-22, overview concern).\n"
+ },
+ {
+  "key": "CRAN-127",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a library of compliance document templates auto-populated from my data,\n*so that* I can generate DoC, CVD policy, post-market plan and more without rewriting boilerplate.\n\nh3. Acceptance Criteria\n* *Given* {{routes/document-templates.test.ts}}, *when* run, *then* it passes.\n* *Given* {{document_templates}}, *when* seeded, *then* the full list (37 templates) is visible on the Templates page.\n\nh3. Implementation Notes\nAuto-population from org/product/SBOM data; help-guide route ch4_05.\n\nh3. Sources\nP6 #35/#36/#37 phase commits.\n"
+ },
+ {
+  "key": "CRAN-128",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a Batch Fill wizard that deterministically auto-populates technical-file sections,\n*so that* I can pre-fill the tech file from existing data without losing any edits I've already made.\n\nh3. Acceptance Criteria\n* *Given* {{routes/batch-fill.test.ts}}, *when* run, *then* the auto-population pipeline is covered.\n* *Given* the help guide {{ch4_05}}, *then* it has 6 stations + Beck-map JSON.\n* *Given* pre-existing section content, *when* batch-filled, *then* it is never overwritten without explicit re-confirm.\n\nh3. Implementation Notes\n6-station wizard; auto-fills 4 Annex VII sections + obligation evidence.\n\nh3. Sources\nSession 54 ch4_05 + auto-fill commits ({{routes/technical-file/batch-fill.ts}}).\n"
+ },
+ {
+  "key": "CRAN-129",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* to download the EU DoC and CVD policy as Markdown,\n*so that* I get auditable, diffable compliance documents from the technical-file tab.\n\nh3. Acceptance Criteria\n* *Given* {{GET .../declaration-of-conformity/pdf}}, *when* called, *then* it returns {{text/markdown}} with a {{.md}} filename.\n* *Given* {{GET .../cvd-policy/pdf}}, *when* called, *then* ditto.\n* *Given* the buttons, *when* viewed, *then* they read '(MD)' not 'PDF'.\n\nh3. Implementation Notes\nRoute path kept as {{/pdf}} for URL stability; visual-PDF rendering is a separate planned project.\n\nh3. Sources\nCommit {{b81b52e}} (2026-05-18 12:00).\n"
+ },
+ {
+  "key": "CRAN-130",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* the six PDF generators replaced by Markdown emitters and pdfkit removed,\n*so that* compliance output is auditable and diffable, and a heavy dependency is gone.\n\nh3. Acceptance Criteria\n* *Given* {{backend/package.json}} at HEAD, *when* grepped, *then* {{pdfkit}} is absent.\n* *Given* the 6 former PDF endpoints, *when* called, *then* they return {{text/markdown}}.\n\nh3. Implementation Notes\nMarkdown pipes cleanly into downstream tools; visual PDF deferred to real demand.\n\nh3. Sources\n#45 PDF→MD migration commits.\n"
+ },
+ {
+  "key": "CRAN-39",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer hit by an actively-exploited vulnerability,\n*I want* a three-stage CRA Art. 14 notification workflow with attestation and deadline tracking,\n*so that* I can discharge my 24h/72h/14d ENISA-CSIRT reporting duty with an independently-witnessed audit trail.\n\nh3. Scope\nThree-stage workflow (Early Warning / Notification / Final Report) with CSIRT country + TLP; submit-with-authorisation + RFC 3161 attestation (P10d); per-product regulatory-state countdown (P10c); smart deadline alerts (P1 #8).\n\nh3. Acceptance Criteria\n* *Given* {{routes/cra-reports.test.ts}}, *when* run, *then* each stage's draft + submit is covered.\n* *Given* a stage submit, *when* authorised, *then* user+timestamp+UA+IP and an RFC 3161 token are co-stored.\n* *Given* an approaching deadline, *when* it nears, *then* alerts fire at the documented offsets.\n\nh3. Child Stories\n* CRAN-131 Three-stage workflow\n* CRAN-132 Submit-with-authorisation + RFC3161 (P10d)\n* CRAN-133 Regulatory-state view (P10c)\n* CRAN-361 Smart deadline alerts (P1 #8)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-131",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a three-stage Art. 14 notification workflow with per-stage deadlines,\n*so that* I can file the Early Warning, Notification and Final Report against their statutory clocks.\n\nh3. Acceptance Criteria\n* *Given* {{routes/cra-reports.test.ts}}, *when* run, *then* each stage's draft + submit is covered.\n* *Given* {{cra_reports}}, *when* inspected, *then* it has {{awareness_at}}, {{early_warning_at}}, {{notification_at}}, {{final_report_at}}, {{csirt_country}}, {{tlp}}.\n* *Given* E2E {{reports.spec.ts}}, *then* create-from-finding is covered.\n\nh3. Implementation Notes\nEarly Warning (24h) / Notification (72h) / Final (14d–1m); CSIRT country selection; TLP RED/AMBER/GREEN/CLEAR.\n\nh3. Sources\nCommit {{624eb8e}} (2026-02-24 10:44).\n"
+ },
+ {
+  "key": "CRAN-132",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* stage submissions to capture who authorised them plus an RFC 3161 timestamp,\n*so that* every Art. 14 submission carries an independently-witnessed record of who authorised what, and when.\n\nh3. Acceptance Criteria\n* *Given* {{services/submission-attestation.test.ts}}, *when* run, *then* attestation capture + token co-store are covered.\n* *Given* a stage submit, *when* authorised, *then* {{cra_reports.attestation_user_id}} + {{attestation_rfc3161_token}} are populated.\n\nh3. Implementation Notes\nCaptures user + timestamp + UA + IP and co-stores an RFC 3161 token (P10d).\n\nh3. Sources\nCommit {{290d85f}} (2026-05-06 10:29).\n"
+ },
+ {
+  "key": "CRAN-133",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a regulatory-state panel showing my live Art. 14 deadline countdown,\n*so that* I can see the current stage, deadline and time remaining at a glance on the product page.\n\nh3. Acceptance Criteria\n* *Given* {{services/regulatory-state.test.ts}}, *when* run, *then* it passes.\n* *Given* the panel, *when* rendered, *then* countdown chips (24h/72h/14d) update live.\n\nh3. Implementation Notes\nSurfaces the active Art. 14 track with stage + deadline + time-remaining (P10c).\n\nh3. Sources\nCommit {{fe1ba49}} (2026-05-06 10:13).\n"
+ },
+ {
+  "key": "CRAN-361",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* scheduled alerts as each Art. 14 deadline approaches,\n*so that* I'm warned ahead of every statutory cutoff rather than discovering it late.\n\nh3. Acceptance Criteria\n* *Given* {{services/alert-emails.test.ts}}, *when* run, *then* deadline-approaching emails are covered.\n* *Given* the scheduler, *when* it runs, *then* alerts fire at T-12h (24h), T-24h (72h), T-72h (14d).\n\nh3. Implementation Notes\nRouted to stakeholders via the standard notification channels (P1 #8).\n\nh3. Sources\nP1 #8 commits.\n"
+ },
+ {
+  "key": "CRAN-40",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* compliance officer,\n*I want* a role-aware obligations engine that maps every CRA obligation onto every product,\n*so that* I always know which of my obligations apply, their status, and how that status is derived from live evidence.\n\nh3. Scope\nObligations table + cross-product tracker; 35-obligation registry (manufacturer/importer/distributor/OSS steward); role-aware applicability + derivation ({{effective = max(manual, derived)}}); batched ensure; end-of-life calculator; EU-AR decision tree.\n\nh3. Acceptance Criteria\n* *Given* {{routes/obligations.test.ts}}, *when* run, *then* list/update/status transitions are covered.\n* *Given* {{services/obligation-engine-roles.test.ts}}, *when* run, *then* 35 obligations + role mapping are verified.\n* *Given* a manual {{met}} vs derived {{not_started}}, *then* the manual status is preserved.\n\nh3. Child Stories\n* CRAN-134…CRAN-137 + CRAN-362 (EoL calculator) + CRAN-363 (EU-AR decision tree)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-134",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* an obligations table and cross-product tracker with inline status,\n*so that* I can track each product's obligations and update their status in place.\n\nh3. Acceptance Criteria\n* *Given* {{routes/obligations.test.ts}}, *when* run, *then* list/update/status transitions are covered.\n* *Given* {{obligations}}, *when* inspected, *then* {{(org_id, product_id, obligation_key)}} is unique at HEAD.\n\nh3. Implementation Notes\nStatus {{not_started}}/{{in_progress}}/{{met}}; inline dropdown on product detail; {{ON CONFLICT DO NOTHING}} keeps ensure-paths idempotent.\n\nh3. Sources\nCommit {{a4f8a45}} (2026-02-22, obligations concern).\n"
+ },
+ {
+  "key": "CRAN-135",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* a registry of all 35 CRA obligations tagged by category and role,\n*so that* the engine knows the full obligation set and which roles each applies to.\n\nh3. Acceptance Criteria\n* *Given* {{services/obligation-engine-roles.test.ts}}, *when* run, *then* 35 obligations enumerate with role-applicability verified.\n* *Given* {{CraRole}}, *when* inspected, *then* it is {{manufacturer|importer|distributor|open_source_steward}}.\n\nh3. Implementation Notes\n19 manufacturer (Art. 13/14/16/20/32/Annexes) + 10 importer (Art. 18) + 6 distributor (Art. 19); each carries {{appliesTo}} + {{appliesToRoles}}; OSS stewards share the manufacturer set.\n\nh3. Sources\nPhase 2 + role-aware commits ({{services/obligation-engine.ts}}).\n"
+ },
+ {
+  "key": "CRAN-136",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* role-aware applicability filtering and live status derivation,\n*so that* obligation status reflects my actual product/SBOM/scan/tech-file state, never overriding my manual entries.\n\nh3. Acceptance Criteria\n* *Given* {{integration/role-specific-obligations.test.ts}}, *when* run, *then* each role's derivation path is covered.\n* *Given* E2E {{role-aware-obligations.spec.ts}}, *then* it passes.\n* *Given* a manual {{met}} vs derived {{not_started}}, *then* the manual status is preserved.\n\nh3. Implementation Notes\n{{getApplicableObligations(category, role?)}} + {{computeDerivedStatuses(...)}}; {{effectiveStatus = max(manual, derived)}}.\n\nh3. Sources\nRole-aware obligations commits.\n"
+ },
+ {
+  "key": "CRAN-137",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* batched obligation upserts chunked under Postgres parameter limits,\n*so that* bulk obligation ensures are efficient and safe at scale.\n\nh3. Acceptance Criteria\n* *Given* {{services/obligation-engine.ts}}, *when* inspected, *then* {{ensureObligationsBatch}} exports with chunking (500).\n* *Given* the codebase, *when* grepped, *then* 10 call sites use it.\n\nh3. Implementation Notes\n{{craRole}} flows from the org's Neo4j {{craRole}} property.\n\nh3. Sources\nRole-aware obligations commits.\n"
+ },
+ {
+  "key": "CRAN-362",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* an end-of-life notification calculator for the end-of-support obligation,\n*so that* I know when I must notify customers ahead of a product's end-of-support.\n\nh3. Acceptance Criteria\n* *Given* an end-of-life date, *when* set, *then* the calculator surfaces the customer-notice deadline on the product detail page.\n* *Given* the calculator output, *when* computed, *then* {{end-of-support-notice}} obligation derivation reflects it.\n\nh3. Implementation Notes\nCRA Art. 13(8) end-of-support helper (#54).\n\nh3. Sources\n#54 commits.\n"
+ },
+ {
+  "key": "CRAN-363",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer unsure of their CRA role,\n*I want* an interactive decision tree for whether I need an EU Authorised Representative,\n*so that* I get a deterministic recommendation that also drives obligation derivation.\n\nh3. Acceptance Criteria\n* *Given* a fixed set of answers, *when* the tree runs, *then* it produces a deterministic recommendation.\n* *Given* the recommendation, *when* made, *then* {{authorised_representative_appointed}} derivation reflects it.\n\nh3. Implementation Notes\nWalks EU-established? / Manufacturer? / Distributor? / Importer? / OSS Steward? (Art. 17, #55).\n\nh3. Sources\n#55 commits.\n"
+ }
+]

@@ -1,0 +1,314 @@
+[
+ {
+  "key": "CRAN-370",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* non-English-speaking prospective customer,\n*I want* the CRANIS2 UI and generated documents available in my own language,\n*so that* I can adopt the platform for CRA compliance across the EU without an English-language barrier.\n\nh3. Scope\nMulti-language internationalisation of the React frontend (and key generated artefacts). Currently English-only. Parked post-launch; scope to be confirmed by the discovery spike.\n\nh3. Acceptance Criteria\n* *Given* a supported non-English locale, *when* a user selects it, *then* all primary UI surfaces render in that language and the choice persists.\n* *Given* the i18n infrastructure, *when* a new string is added, *then* it flows through the translation pipeline rather than being hard-coded.\n\nh3. Child Stories\n* CRAN-380 — Discovery spike: scope + framework decision\n* CRAN-381 — i18n infrastructure (translation files, runtime, language switch)\n* CRAN-382 — First language pack (FR / DE / ES / IT / NL)\n\n_This epic is forward work (To Do); story points + effort aggregate from its child stories._\n"
+ },
+ {
+  "key": "CRAN-380",
+  "points": 3,
+  "effort": "2d",
+  "description": "h3. User Story\n*As a* frontend engineer,\n*I want* to run a discovery spike that decides the i18n framework, string-extraction approach, and locale scope,\n*so that* the infrastructure work starts from a deliberate, documented decision rather than an ad-hoc choice.\n\nh3. Acceptance Criteria\n* *Given* the spike, *when* complete, *then* a short ADR records the chosen i18n library (e.g. react-i18next vs FormatJS), the string-extraction strategy, locale list, and pluralisation/date/number handling.\n* *Given* the recommendation, *then* it estimates the infrastructure + first-pack effort.\n\nh3. Source\nBacklog #59; docs/scratch.md (parked, post-launch).\n"
+ },
+ {
+  "key": "CRAN-381",
+  "points": 8,
+  "effort": "5d",
+  "description": "h3. User Story\n*As a* frontend engineer,\n*I want* to lay down the i18n runtime — translation files, a provider/runtime, and a language switcher,\n*so that* every UI string resolves through a single translation layer and the app can render in any installed locale.\n\nh3. Acceptance Criteria\n* *Given* the chosen framework, *when* integrated, *then* a translation provider wraps the app and a default English catalogue is extracted.\n* *Given* the language switcher, *when* a locale is selected, *then* the UI re-renders and the preference persists (per existing user preferred-language).\n* *Given* a missing key, *when* rendered, *then* it falls back to English without crashing.\n\nh3. Source\nBacklog #59; depends on CRAN-380.\n"
+ },
+ {
+  "key": "CRAN-382",
+  "points": 8,
+  "effort": "5d",
+  "description": "h3. User Story\n*As a* compliance user in the EU,\n*I want* the first non-English language packs — French, German, Spanish, Italian and Dutch,\n*so that* the five largest EU-language audiences can use CRANIS2 in their own language.\n\nh3. Acceptance Criteria\n* *Given* each of FR / DE / ES / IT / NL, *when* selected, *then* all primary UI surfaces are fully translated and reviewed.\n* *Given* the packs, *when* the suite runs, *then* there are no missing-key warnings for the supported locales.\n\nh3. Source\nBacklog #59; depends on CRAN-381.\n"
+ },
+ {
+  "key": "CRAN-371",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* user (and enterprise buyer),\n*I want* to sign in with my existing identity provider (Google, GitHub, Microsoft/Apple),\n*so that* onboarding is frictionless and enterprise customers can mandate federated identity.\n\nh3. Scope\nFederated sign-in / SSO. The Gmail/GitHub stub buttons were removed pre-launch (CRAN-367); this epic owes the real implementation. \"Must have moving forward\" per scratch.md.\n\nh3. Acceptance Criteria\n* *Given* a supported IdP, *when* a user authenticates, *then* a CRANIS2 session is established and the account is linked (no duplicate accounts on repeat login).\n* *Given* SSO, *when* used, *then* it interoperates with the existing org-setup / billing-gate flow.\n\nh3. Child Stories\n* CRAN-383 — Google Sign-In (OAuth + ID-token verification)\n* CRAN-384 — GitHub Sign-In (OAuth)\n* CRAN-385 — Microsoft / Apple SSO\n\n_This epic is forward work (To Do); story points + effort aggregate from its child stories._\n"
+ },
+ {
+  "key": "CRAN-383",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* new or returning user,\n*I want* to sign up and log in with my Google account,\n*so that* I can onboard in one click without creating another password.\n\nh3. Acceptance Criteria\n* *Given* the Google Sign-In button, *when* clicked, *then* OAuth completes and the Google ID token is verified server-side (issuer, audience, expiry).\n* *Given* a first-time Google login, *when* successful, *then* a verified user is created and routed to org setup; a returning user is linked to the existing account by email.\n* *Given* an existing password account with the same email, *when* signing in with Google, *then* the identities link rather than duplicating.\n\nh3. Source\nBacklog #61; replaces removed stub (CRAN-367).\n"
+ },
+ {
+  "key": "CRAN-384",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* developer user,\n*I want* to sign up and log in with my GitHub account,\n*so that* developers — the core audience — can authenticate with the identity they already use for their repos.\n\nh3. Acceptance Criteria\n* *Given* the GitHub Sign-In button, *when* clicked, *then* OAuth completes and the user is established/linked by verified email.\n* *Given* the existing GitHub repo-OAuth integration, *when* sign-in is added, *then* the two flows remain distinct (auth vs repo-connect scopes).\n\nh3. Source\nBacklog #61.\n"
+ },
+ {
+  "key": "CRAN-385",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* enterprise or privacy-conscious user,\n*I want* to sign in with Microsoft (enterprise) or Apple (privacy),\n*so that* enterprise buyers can mandate their IdP and privacy-conscious users can use Hide-My-Email.\n\nh3. Acceptance Criteria\n* *Given* Microsoft Entra ID, *when* a user authenticates, *then* a session is established and tenant/issuer is validated.\n* *Given* Sign in with Apple, *when* used, *then* the relay email is handled and the account links correctly on repeat login.\n\nh3. Source\nBacklog #61.\n"
+ },
+ {
+  "key": "CRAN-372",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* user learning the platform,\n*I want* every help-guide page completed to the v2.0 standard,\n*so that* I can self-serve answers for any feature instead of hitting placeholder stubs.\n\nh3. Scope\n15 of 48 help-guide files remain as stubs after the EPIC-33 priority pass.\n\nh3. Acceptance Criteria\n* *Given* the 48 help files, *when* this epic closes, *then* none remain a stub and all 15 meet the v2.0 standard (Beck-map routes, stations, screenshots).\n\nh3. Child Stories\n* CRAN-386 — Audit + prioritise the 15 stub files\n* CRAN-387 — Rewrite remaining 15 to v2.0 standard\n\n_This epic is forward work (To Do); story points + effort aggregate from its child stories._\n"
+ },
+ {
+  "key": "CRAN-386",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* documentation author,\n*I want* to audit and prioritise the 15 remaining stub help files,\n*so that* the rewrite effort targets the highest-traffic / highest-confusion pages first.\n\nh3. Acceptance Criteria\n* *Given* the 48 help files, *when* audited, *then* the 15 stubs are listed with a priority order and a rough size each.\n\nh3. Source\nBacklog; docs/scratch.md (parked).\n"
+ },
+ {
+  "key": "CRAN-387",
+  "points": 8,
+  "effort": "5d",
+  "description": "h3. User Story\n*As a* user learning the platform,\n*I want* the 15 stub help files rewritten to the v2.0 standard,\n*so that* every feature has complete, navigable in-app guidance.\n\nh3. Acceptance Criteria\n* *Given* each of the 15 stubs, *when* rewritten, *then* it has the full Beck-map route, stations, and screenshots matching the v2.0 pages.\n* *Given* the help panel, *when* a rewritten page opens, *then* navigation guidance (YOU ARE HERE) renders correctly.\n\nh3. Source\nBacklog; depends on CRAN-386.\n"
+ },
+ {
+  "key": "CRAN-373",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* engineer maintaining the platform,\n*I want* service-level unit tests across all 71 services (currently 7),\n*so that* logic errors are isolated and caught fast, independently of the route/integration suites.\n\nh3. Scope\nRoute tests cover happy/break paths but service-level unit tests would localise failures faster. Target: 7/71 → 100% with a CI gate.\n\nh3. Acceptance Criteria\n* *Given* the 71 services, *when* this epic closes, *then* each has unit tests and a CI coverage gate prevents regressions.\n\nh3. Child Stories\n* CRAN-388 — Enumerate services + branch-coverage audit\n* CRAN-389 — Batch 1: top 15 by complexity\n* CRAN-390 — Batch 2: middle 25\n* CRAN-391 — Batch 3: remaining + CI gate\n\n_This epic is forward work (To Do); story points + effort aggregate from its child stories._\n"
+ },
+ {
+  "key": "CRAN-388",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* to enumerate all services and audit current branch coverage,\n*so that* the test-writing batches are ordered by risk and the baseline is measured.\n\nh3. Acceptance Criteria\n* *Given* the 71 services, *when* audited, *then* each is listed with current coverage and a complexity/risk score, producing the batch ordering.\n\nh3. Source\nBacklog; docs/scratch.md (parked).\n"
+ },
+ {
+  "key": "CRAN-389",
+  "points": 8,
+  "effort": "5d",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* unit tests for the top 15 services by complexity,\n*so that* the riskiest logic is covered first.\n\nh3. Acceptance Criteria\n* *Given* the top-15 list, *when* complete, *then* each service has unit tests exercising its branches and they pass in the suite.\n\nh3. Source\nBacklog; depends on CRAN-388.\n"
+ },
+ {
+  "key": "CRAN-390",
+  "points": 8,
+  "effort": "5d",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* unit tests for the middle 25 services,\n*so that* the bulk of remaining service logic is covered.\n\nh3. Acceptance Criteria\n* *Given* the middle-25 list, *when* complete, *then* each has passing unit tests.\n\nh3. Source\nBacklog; depends on CRAN-389.\n"
+ },
+ {
+  "key": "CRAN-391",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* unit tests for the remaining services plus a CI coverage gate,\n*so that* coverage reaches 100% of services and never regresses.\n\nh3. Acceptance Criteria\n* *Given* the remaining services, *when* tested, *then* all 71 have unit tests.\n* *Given* CI, *when* coverage drops below the threshold, *then* the build fails.\n\nh3. Source\nBacklog; depends on CRAN-390.\n"
+ },
+ {
+  "key": "CRAN-374",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* team using Slack,\n*I want* CRANIS2 to push notifications into Slack and accept slash-command queries,\n*so that* the team sees compliance events and can act on them without leaving their chat tool.\n\nh3. Scope\nTwo explicitly-parked P4 items (#24 / #25).\n\nh3. Acceptance Criteria\n* *Given* a configured Slack workspace, *when* a notable event fires, *then* a message is posted to the chosen channel.\n* *Given* a slash command, *when* invoked, *then* CRANIS2 responds with the requested data or triggers the action.\n\nh3. Child Stories\n* CRAN-392 — #24 Slack notifications (incoming webhooks)\n* CRAN-393 — #25 ChatOps slash commands\n\n_This epic is forward work (To Do); story points + effort aggregate from its child stories._\n"
+ },
+ {
+  "key": "CRAN-392",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* team member,\n*I want* compliance events delivered to a Slack channel,\n*so that* I'm alerted to findings, incidents and deadlines where I already work.\n\nh3. Acceptance Criteria\n* *Given* a configured Slack incoming webhook, *when* a notification-worthy event fires (critical finding, Art. 14 deadline, etc.), *then* a formatted message posts to the channel.\n* *Given* notification severity, *when* mapped, *then* the Slack formatting reflects it.\n\nh3. Source\nBacklog P4 #24; mirrors existing Resend notification paths.\n"
+ },
+ {
+  "key": "CRAN-393",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* team member,\n*I want* Slack slash commands to query status and trigger actions,\n*so that* I can ask CRANIS2 questions and kick off scans/reports without opening the web app.\n\nh3. Acceptance Criteria\n* *Given* a registered slash command, *when* invoked with a product, *then* CRANIS2 returns its compliance status / open findings.\n* *Given* an action command, *when* authorised, *then* it triggers the corresponding operation (e.g. rescan) and confirms.\n* *Given* request signing, *when* a command arrives, *then* the Slack signature is verified.\n\nh3. Source\nBacklog P4 #25; depends on CRAN-392.\n"
+ },
+ {
+  "key": "CRAN-375",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* supplier / upstream component author,\n*I want* a supplier-side Trust Centre to publish and manage my own compliance posture,\n*so that* downstream manufacturers can consume my attestations the way customers consume theirs.\n\nh3. Scope\nP5 supplier-side workflow capabilities (7 features, #28–#34). Sister epic to the customer-facing Trust Centre (CRAN-48). Currently placeholders — to be fleshed out once P5 is unparked.\n\nh3. Acceptance Criteria\n* *Given* P5 is unparked, *when* each feature is scoped, *then* its placeholder story is replaced with a full user story + AC before build.\n\nh3. Child Stories\n* CRAN-394…CRAN-400 — P5 #28 → #34 (scope TBD)\n\n_This epic is forward work (To Do); story points + effort aggregate from its child stories._\n"
+ },
+ {
+  "key": "CRAN-394",
+  "points": null,
+  "effort": null,
+  "description": "h3. User Story\n*As a* supplier,\n*I want* the P5 #28 Supplier Trust Centre capability (scope to be defined),\n*so that* the supplier-side trust workflow is complete once P5 is unparked.\n\nh3. Acceptance Criteria\n* *Given* P5 prioritisation, *when* this item is picked up, *then* a discovery pass defines the concrete capability, replacing this placeholder with a full user story and acceptance criteria (definition-of-ready).\n\nh3. Notes\nPlaceholder — not yet scoped; intentionally left without estimates until refined.\n\nh3. Source\nBacklog P5 #28; sister to CRAN-48.\n"
+ },
+ {
+  "key": "CRAN-395",
+  "points": null,
+  "effort": null,
+  "description": "h3. User Story\n*As a* supplier,\n*I want* the P5 #29 Supplier Trust Centre capability (scope to be defined),\n*so that* the supplier-side trust workflow is complete once P5 is unparked.\n\nh3. Acceptance Criteria\n* *Given* P5 prioritisation, *when* this item is picked up, *then* a discovery pass defines the concrete capability, replacing this placeholder with a full user story and acceptance criteria (definition-of-ready).\n\nh3. Notes\nPlaceholder — not yet scoped; intentionally left without estimates until refined.\n\nh3. Source\nBacklog P5 #29; sister to CRAN-48.\n"
+ },
+ {
+  "key": "CRAN-396",
+  "points": null,
+  "effort": null,
+  "description": "h3. User Story\n*As a* supplier,\n*I want* the P5 #30 Supplier Trust Centre capability (scope to be defined),\n*so that* the supplier-side trust workflow is complete once P5 is unparked.\n\nh3. Acceptance Criteria\n* *Given* P5 prioritisation, *when* this item is picked up, *then* a discovery pass defines the concrete capability, replacing this placeholder with a full user story and acceptance criteria (definition-of-ready).\n\nh3. Notes\nPlaceholder — not yet scoped; intentionally left without estimates until refined.\n\nh3. Source\nBacklog P5 #30; sister to CRAN-48.\n"
+ },
+ {
+  "key": "CRAN-397",
+  "points": null,
+  "effort": null,
+  "description": "h3. User Story\n*As a* supplier,\n*I want* the P5 #31 Supplier Trust Centre capability (scope to be defined),\n*so that* the supplier-side trust workflow is complete once P5 is unparked.\n\nh3. Acceptance Criteria\n* *Given* P5 prioritisation, *when* this item is picked up, *then* a discovery pass defines the concrete capability, replacing this placeholder with a full user story and acceptance criteria (definition-of-ready).\n\nh3. Notes\nPlaceholder — not yet scoped; intentionally left without estimates until refined.\n\nh3. Source\nBacklog P5 #31; sister to CRAN-48.\n"
+ },
+ {
+  "key": "CRAN-398",
+  "points": null,
+  "effort": null,
+  "description": "h3. User Story\n*As a* supplier,\n*I want* the P5 #32 Supplier Trust Centre capability (scope to be defined),\n*so that* the supplier-side trust workflow is complete once P5 is unparked.\n\nh3. Acceptance Criteria\n* *Given* P5 prioritisation, *when* this item is picked up, *then* a discovery pass defines the concrete capability, replacing this placeholder with a full user story and acceptance criteria (definition-of-ready).\n\nh3. Notes\nPlaceholder — not yet scoped; intentionally left without estimates until refined.\n\nh3. Source\nBacklog P5 #32; sister to CRAN-48.\n"
+ },
+ {
+  "key": "CRAN-399",
+  "points": null,
+  "effort": null,
+  "description": "h3. User Story\n*As a* supplier,\n*I want* the P5 #33 Supplier Trust Centre capability (scope to be defined),\n*so that* the supplier-side trust workflow is complete once P5 is unparked.\n\nh3. Acceptance Criteria\n* *Given* P5 prioritisation, *when* this item is picked up, *then* a discovery pass defines the concrete capability, replacing this placeholder with a full user story and acceptance criteria (definition-of-ready).\n\nh3. Notes\nPlaceholder — not yet scoped; intentionally left without estimates until refined.\n\nh3. Source\nBacklog P5 #33; sister to CRAN-48.\n"
+ },
+ {
+  "key": "CRAN-400",
+  "points": null,
+  "effort": null,
+  "description": "h3. User Story\n*As a* supplier,\n*I want* the P5 #34 Supplier Trust Centre capability (scope to be defined),\n*so that* the supplier-side trust workflow is complete once P5 is unparked.\n\nh3. Acceptance Criteria\n* *Given* P5 prioritisation, *when* this item is picked up, *then* a discovery pass defines the concrete capability, replacing this placeholder with a full user story and acceptance criteria (definition-of-ready).\n\nh3. Notes\nPlaceholder — not yet scoped; intentionally left without estimates until refined.\n\nh3. Source\nBacklog P5 #34; sister to CRAN-48.\n"
+ },
+ {
+  "key": "CRAN-376",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* platform operator,\n*I want* the post-launch operational backlog (#100–#106) delivered,\n*so that* dev and prod stay aligned, upgrades are safe and repeatable, and the production system is proven secure.\n\nh3. Scope\nActive-backlog operational items from scratch.md's Jobs To Do. Not parked — queued for execution.\n\nh3. Acceptance Criteria\n* *Given* each child story, *when* delivered, *then* its acceptance criteria are met and verified against the live environment where applicable.\n\nh3. Child Stories\n* CRAN-401 #100 Dev↔Prod alignment\n* CRAN-402 #101 Promotion-process implementation\n* CRAN-403 #102 Maintain Claude operating instructions\n* CRAN-404 #103 Production resilience + security test\n* CRAN-405 #105 Bitbucket OAuth registration\n* CRAN-406 #106 PAT guidance modal\n\n_This epic is forward work (To Do); story points + effort aggregate from its child stories._\n"
+ },
+ {
+  "key": "CRAN-401",
+  "points": 5,
+  "effort": "2d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* the dev environment to faithfully mirror production,\n*so that* future prod updates and fixes are validated against an accurate dev replica with no surprises.\n\nh3. Acceptance Criteria\n* *Given* schema/config drift between dev and prod, *when* reconciled, *then* the affiliate schema and /welcome→/getting-started rename are back-ported into pool.ts initDb().\n* *Given* a fresh dev init, *when* run, *then* it produces a structure equivalent to prod.\n\nh3. Source\nBacklog #100; docs/scratch.md Jobs To Do.\n"
+ },
+ {
+  "key": "CRAN-402",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a documented, backup-first dev→prod promotion process with working machinery,\n*so that* every release follows a repeatable path that can never destroy customer data.\n\nh3. Acceptance Criteria\n* *Given* a promotion, *when* started, *then* it begins with a full backup that is restorable.\n* *Given* the process doc (docs/promotion-process.md), *when* implemented, *then* the migration-assessment gate and rollback steps are scripted and tested.\n* *Given* any step, *when* it fails, *then* customer data is never deleted and the prior state is recoverable.\n\nh3. Source\nBacklog #101; SPIKE-03 / docs/promotion-process.md.\n"
+ },
+ {
+  "key": "CRAN-403",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* AI-assisted maintainer,\n*I want* the Claude operating instructions kept current with lessons learned,\n*so that* future sessions avoid repeating mistakes made during development and deployment.\n\nh3. Acceptance Criteria\n* *Given* RESTART.md / CLAUDE.md / memory, *when* reviewed, *then* the operating instructions reflect the current dev+prod reality and known gotchas.\n\nh3. Source\nBacklog #102.\n"
+ },
+ {
+  "key": "CRAN-404",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a full resilience and security test of the production server,\n*so that* I have evidence the live system withstands failure and attack before scaling customer load.\n\nh3. Acceptance Criteria\n* *Given* production, *when* tested, *then* a documented pen-test + resilience assessment covers auth, org-isolation, rate limits, backup/restore, and failover.\n* *Given* findings, *when* raised, *then* each has a severity and remediation owner.\n\nh3. Source\nBacklog #103.\n"
+ },
+ {
+  "key": "CRAN-405",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* customer using Bitbucket,\n*I want* the Bitbucket OAuth consumer registered and wired so I can actually connect,\n*so that* Bitbucket-hosted repos can be connected (the code path exists but env credentials are unset).\n\nh3. Acceptance Criteria\n* *Given* a registered Bitbucket OAuth consumer, *when* BITBUCKET_CLIENT_ID/SECRET are set, *then* Connect Bitbucket completes the consent flow and stores an org-level connection.\n* *Given* a connected repo, *when* synced, *then* SBOM extraction runs.\n\nh3. Notes\nCode path implemented; user-side prerequisite is registering the consumer. Cloud only (not Server/DC).\n\nh3. Source\nBacklog #105.\n"
+ },
+ {
+  "key": "CRAN-406",
+  "points": 3,
+  "effort": "2d",
+  "description": "h3. User Story\n*As a* customer on a self-hosted provider,\n*I want* a PAT-guidance modal in front of the self-hosted connect form,\n*so that* I know exactly which read-only scopes to grant and what CRANIS2 will/won't do with my token.\n\nh3. Acceptance Criteria\n* *Given* the Connect-PAT button, *when* clicked, *then* a modal explains per-provider read-only scopes (Forgejo/Gitea, GitLab), repo-scoping advice, what CRANIS2 does/doesn't do, and where to revoke.\n* *Given* the existing OAuth reassurance modal, *when* compared, *then* the PAT modal matches its visual style and admin-only gating.\n\nh3. Source\nBacklog #106; mirrors ConnectProviderModal.\n"
+ },
+ {
+  "key": "CRAN-377",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* platform owner,\n*I want* the remaining user-side launch-configuration items completed,\n*so that* production is fully provisioned (email, payments, secrets, legal) with no code dependency.\n\nh3. Scope\nFive user-side configuration items from the launch checklist. None require code.\n\nh3. Acceptance Criteria\n* *Given* each item, *when* completed, *then* the corresponding production capability is live and verified.\n\nh3. Child Stories\n* CRAN-407 DKIM verification\n* CRAN-408 Stripe live keys\n* CRAN-409 Pre-launch secret rotation\n* CRAN-410 ICO registration\n* CRAN-411 Legal review\n\n_This epic is forward work (To Do); story points + effort aggregate from its child stories._\n"
+ },
+ {
+  "key": "CRAN-407",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* DKIM verified for poste.cranis2.com in Resend,\n*so that* outbound production email authenticates and avoids spam folders.\n\nh3. Acceptance Criteria\n* *Given* the Resend DNS records, *when* published, *then* DKIM/SPF verify green and a test send passes authentication.\n\nh3. Source\nLaunch checklist (user-side).\n"
+ },
+ {
+  "key": "CRAN-408",
+  "points": 2,
+  "effort": "3h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* Stripe live keys and the live webhook configured,\n*so that* real payments and subscription lifecycle events work in production.\n\nh3. Acceptance Criteria\n* *Given* sk_live_* keys, *when* set, *then* checkout + billing operate live.\n* *Given* the live webhook secret, *when* configured, *then* webhook events verify and process.\n\nh3. Source\nLaunch checklist (user-side).\n"
+ },
+ {
+  "key": "CRAN-409",
+  "points": 3,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* all production secrets rotated before launch,\n*so that* no development-era secret remains valid in production.\n\nh3. Acceptance Criteria\n* *Given* Anthropic / Codeberg / signing / DB / Forgejo secrets, *when* rotated, *then* old values are dead and services run on the new ones.\n\nh3. Source\nLaunch checklist (user-side); see rotate-* scripts.\n"
+ },
+ {
+  "key": "CRAN-410",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* ICO registration completed and the Privacy Policy placeholder updated,\n*so that* the data-controller registration is lawful and the policy cites the real registration.\n\nh3. Acceptance Criteria\n* *Given* ICO registration (£40/yr), *when* done, *then* the registration number replaces the Privacy Policy placeholder.\n\nh3. Source\nLaunch checklist (user-side).\n"
+ },
+ {
+  "key": "CRAN-411",
+  "points": 3,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* a legal review of the Privacy Policy and Terms of Service,\n*so that* the public legal documents are sound before taking real customers.\n\nh3. Acceptance Criteria\n* *Given* the Beta Privacy Policy + ToS, *when* reviewed by counsel, *then* issues are recorded and resolved.\n\nh3. Source\nLaunch checklist (user-side).\n"
+ },
+ {
+  "key": "CRAN-378",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* engineer,\n*I want* the five deferred major-version dependency upgrades applied,\n*so that* the stack stays current and supported, reducing security and maintenance debt.\n\nh3. Scope\nFive major-version bumps deferred from sessions 60/63.\n\nh3. Acceptance Criteria\n* *Given* each upgrade, *when* applied, *then* the full test suite passes and no runtime regressions ship.\n\nh3. Child Stories\n* CRAN-412 TypeScript 6\n* CRAN-413 Vite 8\n* CRAN-414 Resend SDK 6\n* CRAN-415 ESLint 10\n* CRAN-416 lucide-react 1.x\n\n_This epic is forward work (To Do); story points + effort aggregate from its child stories._\n"
+ },
+ {
+  "key": "CRAN-412",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* the TypeScript 6 major-version upgrade applied,\n*so that* the dependency is current and the build stays green.\n\nh3. Acceptance Criteria\n* *Given* the TypeScript 6 upgrade, *when* applied, *then* the build compiles, the full test suite passes, and any breaking-change migrations are handled.\n\nh3. Source\nBacklog #378; deferred from sessions 60/63.\n"
+ },
+ {
+  "key": "CRAN-413",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* the Vite 8 major-version upgrade applied,\n*so that* the dependency is current and the build stays green.\n\nh3. Acceptance Criteria\n* *Given* the Vite 8 upgrade, *when* applied, *then* the build compiles, the full test suite passes, and any breaking-change migrations are handled.\n\nh3. Source\nBacklog #378; deferred from sessions 60/63.\n"
+ },
+ {
+  "key": "CRAN-414",
+  "points": 2,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* the Resend SDK 6 major-version upgrade applied,\n*so that* the dependency is current and the build stays green.\n\nh3. Acceptance Criteria\n* *Given* the Resend SDK 6 upgrade, *when* applied, *then* the build compiles, the full test suite passes, and any breaking-change migrations are handled.\n\nh3. Source\nBacklog #378; deferred from sessions 60/63.\n"
+ },
+ {
+  "key": "CRAN-415",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* the ESLint 10 major-version upgrade applied,\n*so that* the dependency is current and the build stays green.\n\nh3. Acceptance Criteria\n* *Given* the ESLint 10 upgrade, *when* applied, *then* the build compiles, the full test suite passes, and any breaking-change migrations are handled.\n\nh3. Source\nBacklog #378; deferred from sessions 60/63.\n"
+ },
+ {
+  "key": "CRAN-416",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* the lucide-react 1.x major-version upgrade applied,\n*so that* the dependency is current and the build stays green.\n\nh3. Acceptance Criteria\n* *Given* the lucide-react 1.x upgrade, *when* applied, *then* the build compiles, the full test suite passes, and any breaking-change migrations are handled.\n\nh3. Source\nBacklog #378; deferred from sessions 60/63.\n"
+ },
+ {
+  "key": "CRAN-379",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* platform owner,\n*I want* the two post-launch commercial models scoped via discovery,\n*so that* I can decide whether and how to offer Enterprise Licensing and Managed Hosting.\n\nh3. Scope\nTwo commercial models flagged for post-launch exploration. Discovery items — require scoping before becoming engineering work.\n\nh3. Acceptance Criteria\n* *Given* each model, *when* discovery completes, *then* a doc defines scope, pricing model, infra/operational burden, and the minimum-viable offering.\n\nh3. Child Stories\n* CRAN-417 Enterprise Licensing — discovery + scoping\n* CRAN-418 Managed Service Hosting — discovery + scoping\n\n_This epic is forward work (To Do); story points + effort aggregate from its child stories._\n"
+ },
+ {
+  "key": "CRAN-417",
+  "points": 3,
+  "effort": "2d",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* a discovery + scoping pass on an Enterprise Licensing offering,\n*so that* I understand the deployment, SLA, pricing and isolation requirements before committing.\n\nh3. Acceptance Criteria\n* *Given* the discovery, *when* complete, *then* a doc covers on-prem/private-cloud packaging, SLAs, tailored obligation sets, update delivery, data-isolation guarantees, and a candidate pricing model.\n\nh3. Source\nBacklog; docs/scratch.md Future section.\n"
+ },
+ {
+  "key": "CRAN-418",
+  "points": 3,
+  "effort": "2d",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* a discovery + scoping pass on a Managed Service Hosting offering,\n*so that* I understand the per-customer dedicated-instance model and operational burden before committing.\n\nh3. Acceptance Criteria\n* *Given* the discovery, *when* complete, *then* a doc covers dedicated-instance hosting, region choice / data sovereignty, backup/patching/monitoring/24x7, and a candidate pricing model.\n\nh3. Source\nBacklog; docs/scratch.md Future section.\n"
+ },
+ {
+  "key": "CRAN-123",
+  "points": 5,
+  "effort": "2d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* SBOM resync to prune orphaned dependency edges in Neo4j,\n*so that* stale DEPENDS_ON edges don't block automatic resolution of fixed findings.\n\nh3. Acceptance Criteria\n* *Given* a product whose SBOM is resynced, *when* a dependency is removed upstream, *then* its DEPENDS_ON edge is pruned from Neo4j.\n* *Given* pruning, *when* it runs, *then* findings tied only to removed dependencies auto-resolve.\n\nh3. Notes\nKnown open product bug from docs/scratch.md.\n\nh3. Source\ndocs/scratch.md Open Product Bugs.\n"
+ },
+ {
+  "key": "CRAN-124",
+  "points": 3,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* runProductScan() to call reconcileFindings() like the platform scan does,\n*so that* per-product scans auto-resolve stale findings instead of leaving them open.\n\nh3. Acceptance Criteria\n* *Given* a per-product scan, *when* it completes, *then* reconcileFindings() runs and findings no longer present are resolved.\n* *Given* a regression test, *when* added, *then* it asserts reconciliation occurs on per-product scans.\n\nh3. Notes\nKnown open product bug from docs/scratch.md.\n\nh3. Source\ndocs/scratch.md Open Product Bugs.\n"
+ },
+ {
+  "key": "CRAN-352",
+  "points": 2,
+  "effort": "0.5d",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* a single tracking story for the outstanding user-side launch tasks,\n*so that* the user-side launch items have one rollup reference alongside the detailed EPIC OUT-08 stories.\n\nh3. Acceptance Criteria\n* *Given* the user-side launch items (DKIM, Stripe live, secret rotation, ICO, legal review), *when* all complete, *then* this tracking story closes.\n\nh3. Notes\nDetailed breakdown lives under CRAN-377 (CRAN-407…411).\n\nh3. Source\nLaunch checklist (user-side).\n"
+ }
+]

@@ -1,0 +1,116 @@
+[
+ {
+  "key": "CRAN-64",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* user learning the platform,\n*I want* an in-app help-guide system with consistent 'Beck map' route diagrams,\n*so that* I can discover features by visual route rather than linear next-button reading, with a documented standard behind every guide.\n\nh3. Scope\nHelp-Guide Standard + review audit + Beck-map design spec; standard applied to 30 real-content files; trial-claim corrections; Prev/Next removed; iframe cache-busting; emoji-escape fixes; equidistant 26px geometry; hover-grow accessibility; alternating labels; the becksmap CLI generator; YOU-ARE-HERE navigation guidance; 5 priority rewrites; SVG fixes; Trust Centre rename; audit-log guide; non-compliance guide.\n\nh3. Acceptance Criteria\n* *Given* the Standard + review, *when* applied, *then* the 30 real-content files match it and the becksmap CLI regenerates maps cleanly.\n* *Given* any guide, *when* loaded, *then* it shows a Beck-map route with YOU-ARE-HERE guidance and no Prev/Next nav.\n\nh3. Child Stories\n* CRAN-275…CRAN-292\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-275",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* documentation author,\n*I want* a written Help-Guide Standard,\n*so that* every guide follows one grammar for structure, route/station, voice and media.\n\nh3. Acceptance Criteria\n* *Given* repo root, *then* {{docs/HELP-GUIDE-STANDARD.md}} exists.\n\nh3. Implementation Notes\nFile structure, station/route grammar, voice, length, media rules.\n\nh3. Sources\nSession 51 standard commit.\n"
+ },
+ {
+  "key": "CRAN-276",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* documentation author,\n*I want* an audit of all 48 guides against the Standard,\n*so that* I know which guides are compliant, which need fixing and which are stubs.\n\nh3. Acceptance Criteria\n* *Given* {{docs/HELP-GUIDE-REVIEW.md}}, *then* it covers all 48 files.\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 51 review commit.\n"
+ },
+ {
+  "key": "CRAN-277",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* documentation author,\n*I want* a Beck-map design specification,\n*so that* the 'tube map' route pattern is specified before guides adopt it.\n\nh3. Acceptance Criteria\n* *Given* {{docs/BECK-MAP-DESIGN-SPEC.md}}, *then* it exists.\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 51 design-spec commit.\n"
+ },
+ {
+  "key": "CRAN-278",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* user,\n*I want* the Standard applied to all 30 real-content guides,\n*so that* the substantive guides are consistent and route-navigable.\n\nh3. Acceptance Criteria\n* *Given* an audit, *then* 30 files match the Standard at HEAD.\n\nh3. Implementation Notes\nRemaining 18 are stubs (later work / CRAN-372).\n\nh3. Sources\nSession 51 application commits.\n"
+ },
+ {
+  "key": "CRAN-279",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* user,\n*I want* over-claimed trial-feature statements corrected,\n*so that* the guides describe only what actually shipped.\n\nh3. Acceptance Criteria\n* *Given* {{grep -r \"trial-period feature\" frontend/public/help}}, *then* only expected matches remain.\n\nh3. Implementation Notes\n4 files + SEO meta-config.\n\nh3. Sources\nSession 51 trial-claims fix commits.\n"
+ },
+ {
+  "key": "CRAN-280",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* user,\n*I want* Previous/Next navigation removed from all guides,\n*so that* I discover content via the Beck map rather than next-button reading.\n\nh3. Acceptance Criteria\n* *Given* {{grep -r \"Previous\" frontend/public/help}}, *then* no navigation usages remain.\n\nh3. Implementation Notes\nNavigation lives in the Beck map.\n\nh3. Sources\nSession 51 nav-removal commits.\n"
+ },
+ {
+  "key": "CRAN-281",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* user,\n*I want* help-panel iframe cache-busting,\n*so that* guide updates appear immediately without clearing my browser cache.\n\nh3. Acceptance Criteria\n* *Given* {{HelpPanel.tsx}}, *then* it appends {{?v=<ts>}} to the iframe src.\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 51 cache-busting commits.\n"
+ },
+ {
+  "key": "CRAN-282",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* user,\n*I want* broken emoji entity escapes fixed,\n*so that* guides render emojis, not raw entity codes.\n\nh3. Acceptance Criteria\n* *Given* any guide, *then* no raw HTML entity codes are visible.\n\nh3. Implementation Notes\n20 files fixed mechanically.\n\nh3. Sources\nSession 51 emoji-fix commits.\n"
+ },
+ {
+  "key": "CRAN-283",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* user,\n*I want* equidistant Beck-map geometry across all guides,\n*so that* route diagrams are visually coherent guide-to-guide.\n\nh3. Acceptance Criteria\n* *Given* every Beck-map SVG, *then* it honours the 26-px row grid (becksmap regen check).\n\nh3. Implementation Notes\nPredictable interchange spacing.\n\nh3. Sources\nSession 51 geometry commits.\n"
+ },
+ {
+  "key": "CRAN-284",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* low-vision / keyboard user,\n*I want* a hover-grow effect on stations,\n*so that* stations are more discoverable and keyboard focus has a clear visual handle.\n\nh3. Acceptance Criteria\n* *Given* a guide's CSS, *then* the hover-grow rule applies to station elements.\n\nh3. Implementation Notes\nAccessibility improvement.\n\nh3. Sources\nSession 51 accessibility commits.\n"
+ },
+ {
+  "key": "CRAN-285",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* user,\n*I want* alternating, collision-free station labels,\n*so that* labels never overlap, including at interchanges and feeders.\n\nh3. Acceptance Criteria\n* *Given* any guide, *then* labels don't collide (visual + becksmap regen check).\n\nh3. Implementation Notes\nAbove/below alternation; fixed-side interchange rule; edge-aware feeders.\n\nh3. Sources\nSession 51 label-position commits.\n"
+ },
+ {
+  "key": "CRAN-286",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* documentation author,\n*I want* a becksmap CLI that generates maps from JSON,\n*so that* I can author/regenerate Beck maps deterministically from a definition.\n\nh3. Acceptance Criteria\n* *Given* {{node tools/becksmap/index.js examples/ch4_05.json}}, *then* it regenerates the ch4_05 SVG cleanly.\n\nh3. Implementation Notes\nCLI at {{tools/becksmap/}} with examples.\n\nh3. Sources\nSession 51 becksmap-CLI commits.\n"
+ },
+ {
+  "key": "CRAN-287",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* user deep-linked into a guide,\n*I want* a YOU-ARE-HERE arrow and a dismissible hint banner,\n*so that* I instantly see where I am on the route and how to read the map.\n\nh3. Acceptance Criteria\n* *Given* a guide loaded at a deep-linked station, *then* the YOU-ARE-HERE arrow renders (opposite the label).\n* *Given* the hint banner, *then* it is dismissible with localStorage state.\n\nh3. Implementation Notes\nVia {{panel-overrides.css}} + {{HelpPanel.tsx}} injection — works on all 48 files without regeneration; {{paint-order: stroke}} label backgrounds.\n\nh3. Sources\nSession 59 navigation-guidance commits.\n"
+ },
+ {
+  "key": "CRAN-288",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* user,\n*I want* the five highest-priority stub guides fully rewritten,\n*so that* the most important features have complete, route-based guidance.\n\nh3. Acceptance Criteria\n* *Given* the 5 guides, *then* each renders with its full Beck-map route.\n\nh3. Implementation Notes\nch4_05 Batch Fill / ch4_06 Copilot / ch4_07 Risk Assessment / ch6_05 Incident Lifecycle / ch5_06 Compliance Vault; JSON defs added to becksmap examples.\n\nh3. Sources\nSession 54 + 58 rewrites.\n"
+ },
+ {
+  "key": "CRAN-289",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* user,\n*I want* SVG fixes on two guides,\n*so that* ch4_02 and ch1_03 render without label collisions or disconnected lines.\n\nh3. Acceptance Criteria\n* *Given* both guides, *then* no label collisions / disconnected polylines.\n\nh3. Implementation Notes\nch4_02 terminus label moved; ch1_03 OAuth+PAT polylines extended to 'Connected'.\n\nh3. Sources\nSession 54 SVG-fix commits.\n"
+ },
+ {
+  "key": "CRAN-290",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* user,\n*I want* the marketplace help guide renamed to trust_centre,\n*so that* the help guide matches the Trust Centre rebrand.\n\nh3. Acceptance Criteria\n* *Given* {{frontend/public/help/}}, *then* {{ch7_09_trust_centre.html}} exists.\n* *Given* {{HelpPanelContext}}, *then* it maps the Trust Centre route to the new file.\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 60 Trust Centre rename commits.\n"
+ },
+ {
+  "key": "CRAN-291",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* user,\n*I want* an audit-log help guide with a corrected route mapping,\n*so that* the audit-log page has proper in-app guidance.\n\nh3. Acceptance Criteria\n* *Given* {{ch7_11_audit_log.html}}, *then* it exists with 6 stations.\n* *Given* {{HelpPanelContext}}, *then* it maps the audit-log route to ch7_11 (was incorrectly ch5_05).\n\nh3. Implementation Notes\n\n\nh3. Sources\nSession 57 audit-log help-guide commit.\n"
+ },
+ {
+  "key": "CRAN-292",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* user,\n*I want* a guide on reporting non-compliance under CRA,\n*so that* I understand how to report non-compliance.\n\nh3. Acceptance Criteria\n* *Given* the help-guide route, *then* the non-compliance reporting guide renders in-app.\n\nh3. Implementation Notes\nOriginally standalone feature #56; now a help-guide entry.\n\nh3. Sources\n#56 commits.\n"
+ }
+]

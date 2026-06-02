@@ -1,0 +1,194 @@
+[
+ {
+  "key": "CRAN-50",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* platform owner/administrator,\n*I want* a full platform-admin area to run the whole service across every organisation,\n*so that* I can manage orgs, users, billing, health, audit, vuln-DB, analytics, prompts and affiliates from one protected surface.\n\nh3. Scope\n{{requirePlatformAdmin}}-gated admin layout: dashboard, orgs, users + invite, system health, cross-org audit, vuln-DB sync, retention ledger, analytics, copilot-prompt management, affiliates ledger, hardened delete UI, startup invariant + {{/api/health}}, welcome-leads.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin*.test.ts}}, *when* run, *then* they pass; {{security/admin-route-protection.test.ts}} rejects non-admins.\n* *Given* {{users.is_platform_admin}}, *when* false, *then* the entire {{/admin}} namespace is denied.\n* *Given* a destructive delete, *when* attempted, *then* it requires typed confirmation and cascades safely.\n\nh3. Child Stories\n* CRAN-184…CRAN-196 (dashboard → invite → orgs → health → audit → vuln-db → ledger → analytics → prompts → affiliates → delete UI → invariant → leads)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-184",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* a platform-admin role and dashboard with a separate admin area,\n*so that* I have a protected control surface with live cross-org stats.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin.test.ts}} + {{admin-dashboard.test.ts}}, *then* they pass.\n* *Given* {{security/admin-route-protection.test.ts}}, *then* non-admins are rejected.\n* *Given* {{users}}, *then* {{is_platform_admin}} exists.\n\nh3. Implementation Notes\n{{requirePlatformAdmin}} middleware; separate layout + routing; real-time stats, org drill-down, user toggle, cross-org audit, health.\n\nh3. Sources\nCommit {{add070c}} (2026-02-22 11:13).\n"
+ },
+ {
+  "key": "CRAN-185",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* to invite users with optional org pre-assignment,\n*so that* I can onboard users centrally, with the credential set by the invitee.\n\nh3. Acceptance Criteria\n* *Given* the invite endpoint, *when* called, *then* it is {{requirePlatformAdmin}}-protected.\n* *Given* an invite, *when* accepted, *then* {{users.invited_by}} is populated.\n\nh3. Implementation Notes\nResend set-password email; re-invite for unaccepted; /accept-invite → auto-verify → Neo4j org link. (User-side flow is CRAN-89.)\n\nh3. Sources\nCommit {{be2ae95}}.\n"
+ },
+ {
+  "key": "CRAN-186",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* a cross-org admin page with full org detail and lifecycle actions,\n*so that* I can inspect and manage any organisation's members, billing, tech file and scans.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-orgs.test.ts}}, *then* it passes.\n* *Given* an org delete, *when* run, *then* it cascades 13 Postgres tables + Neo4j {{DETACH DELETE}} (commit {{9581d00}}).\n\nh3. Implementation Notes\nOrg detail + members + billing + tech-file + vuln summary; suspend/delete + per-org audit.\n\nh3. Sources\nCommit {{add070c}} + session 60 affiliate-row update.\n"
+ },
+ {
+  "key": "CRAN-187",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* a system-health page with live resource and scan metrics,\n*so that* I can see the platform's health at a glance.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-system.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\nCPU temp, memory, scan performance, DB connection health, scheduler last-run timestamps.\n\nh3. Sources\nCommits {{ab7ec03}} + {{add070c}}.\n"
+ },
+ {
+  "key": "CRAN-188",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* a cross-org audit log with filters and pagination,\n*so that* I can investigate activity across all organisations, including system events.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-audit-log.test.ts}}, *then* it passes.\n* *Given* system events, *when* listed, *then* they show user='system'.\n\nh3. Implementation Notes\nFilters: org / event-type / user / date range.\n\nh3. Sources\nCommit {{add070c}}.\n"
+ },
+ {
+  "key": "CRAN-189",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* a vuln-DB sync UI with ecosystem stats,\n*so that* I can see and trigger advisory-DB syncs and confirm freshness per source.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-vuln-scan.test.ts}}, *then* the admin trigger is covered.\n* *Given* {{vuln_db_sync_status}}, *then* it is populated.\n\nh3. Implementation Notes\n{{/admin/vuln-db}}: last sync per source (GHSA/NVD), advisory count per ecosystem.\n\nh3. Sources\nCommit {{4494ffb}}.\n"
+ },
+ {
+  "key": "CRAN-190",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* a retention-ledger view across all orgs,\n*so that* I can spot orphan rows and hash-chain integrity issues.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-retention-ledger.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\nSurfaces orphan rows + hash-chain warnings.\n\nh3. Sources\nP8 admin commits.\n"
+ },
+ {
+  "key": "CRAN-191",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* a platform-wide analytics dashboard,\n*so that* I can track growth, conversion, plan mix, copilot usage and scan latency.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-analytics.test.ts}}, *then* it passes.\n\nh3. Implementation Notes\nSignups, conversions, plan distribution, copilot usage per org, scan latency p50/p95/p99.\n\nh3. Sources\n#57 Platform Analytics commits.\n"
+ },
+ {
+  "key": "CRAN-192",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* an admin page to edit all Copilot prompts,\n*so that* I can tune prompts/model/limits without a redeploy.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-copilot.test.ts}}, *then* it passes.\n* *Given* {{copilot_prompts}}, *then* 32 rows are seeded.\n* *Given* the page, *then* save + revert per prompt work.\n\nh3. Implementation Notes\n{{/admin/copilot}}: editable textareas + model + max_tokens + temperature + enabled + version; 5-min cache, falls back to constants.\n\nh3. Sources\nP7 prompt-management commits.\n"
+ },
+ {
+  "key": "CRAN-193",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* an affiliates page with bonus codes, ledger and statements,\n*so that* I can manage the affiliate programme end to end.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-affiliates.test.ts}}, *then* it passes.\n* *Given* the schema, *then* {{affiliates}}, {{affiliate_ledger}}, {{bonus_codes}} exist.\n\nh3. Implementation Notes\n389-line router; per-affiliate detail; add credit/debit/payout; on-demand monthly statement.\n\nh3. Sources\nSession 60 affiliate phase-2 commits.\n"
+ },
+ {
+  "key": "CRAN-194",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* a hardened, always-visible delete affordance with typed confirmation,\n*so that* destructive deletes are deliberate and never hidden in a kebab menu.\n\nh3. Acceptance Criteria\n* *Given* AdminUsersPage/AdminOrgsPage rows, *then* a red-bordered Delete button is visible (hidden for self + platform-admin rows).\n* *Given* the modal, *then* Delete is disabled until typed input matches (email case-insensitive / org exact).\n* *Given* a delete, *then* it cascades 13 tables + Neo4j {{DETACH DELETE}}.\n\nh3. Implementation Notes\nRed 'Permanent deletion' banner + cascade summary; inline 3s success banner (no toast system).\n\nh3. Sources\nCommit {{9581d00}} (2026-05-18 16:29).\n"
+ },
+ {
+  "key": "CRAN-195",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* a startup invariant ensuring the platform-admin exists, exposed via /api/health,\n*so that* a missing platform admin is caught at deploy time, not in production.\n\nh3. Acceptance Criteria\n* *Given* {{curl .../api/health}}, *then* it returns 200 with {{platform_admin: ok}}.\n* *Given* startup, *then* logs include the invariant result.\n\nh3. Implementation Notes\nDeployment-health gate.\n\nh3. Sources\nCommit {{2a6017f}} (2026-05-07 01:30).\n"
+ },
+ {
+  "key": "CRAN-196",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* an admin view of welcome-site leads,\n*so that* I can follow up on assessment/launch-list leads before launch.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin/welcome-leads.ts}}, *then* it exists and the page renders the list.\n\nh3. Implementation Notes\nEmail, source funnel, verified state, assessment result.\n\nh3. Sources\nSession 60+ welcome-leads commits.\n"
+ },
+ {
+  "key": "CRAN-51",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* compliance officer / manufacturer,\n*I want* an AI Copilot suite that drafts, triages and assesses compliance work from my real product data,\n*so that* I get a fast first draft for every laborious compliance task, with cost controls and admin-tunable prompts.\n\nh3. Scope\nEight capabilities (suggest, auto-triage, risk assessment, incident drafter, category recommender, supplier DD, gap narrator) + Copilot dashboard; three-layer prompts-as-data (32 prompts) with admin management; token-budget + rate-limit + cache cost protection. Pro-gated.\n\nh3. Acceptance Criteria\n* *Given* {{routes/copilot.test.ts}}, *when* run, *then* all 8 capabilities are gated by {{requireAuth → requirePlan('pro') → attachOrgId → requireTokenBudget → requireCopilotRateLimit}}.\n* *Given* a budget overrun, *then* 429 + Retry-After; *given* a cache hit, *then* no LLM call.\n* *Given* {{copilot_prompts}}, *then* 32 rows seeded.\n\nh3. Child Stories\n* CRAN-197…CRAN-206 (suggest → triage → risk → incident → category → supplier DD → gap narrator → dashboard → prompt mgmt → cost protection)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-197",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* compliance author,\n*I want* AI-suggested content for any tech-file section,\n*so that* I get a first draft to accept/edit/reject instead of a blank page.\n\nh3. Acceptance Criteria\n* *Given* {{routes/copilot.test.ts}}, *when* run, *then* suggest happy-path + auth + plan-gating are covered.\n* *Given* the capability, *then* a 20/product/hr rate limit is enforced.\n\nh3. Implementation Notes\nFoundation {{quality_standard}} + per-section {{section:*}} prompt layer.\n\nh3. Sources\nP3 #13 commits.\n"
+ },
+ {
+  "key": "CRAN-198",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* AI auto-triage of a vulnerability finding,\n*so that* I get a proposed severity, mitigation path and owner for each finding.\n\nh3. Acceptance Criteria\n* *Given* {{routes/batch-triage.test.ts}}, *then* it passes.\n* *Given* the capability, *then* a 5/product/hr rate limit applies.\n\nh3. Implementation Notes\nCapability prompt {{vulnerability_triage}}.\n\nh3. Sources\nP3 #15 commits.\n"
+ },
+ {
+  "key": "CRAN-199",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* an AI-drafted risk assessment against CRA Annex I,\n*so that* I get a structured starting point for the essential-requirements risk assessment.\n\nh3. Acceptance Criteria\n* *Given* the Risk tab, *when* invoked, *then* the capability runs.\n* *Given* the capability, *then* a 3/product/day rate limit applies.\n\nh3. Implementation Notes\nCapability prompt {{risk_assessment}}.\n\nh3. Sources\nP3 #16 commits.\n"
+ },
+ {
+  "key": "CRAN-200",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* an AI-drafted Art. 14 incident report,\n*so that* I can produce a notification draft quickly for review under deadline pressure.\n\nh3. Acceptance Criteria\n* *Given* the CRA Reports flow, *when* invoked, *then* the drafter runs.\n* *Given* the capability, *then* a 5/report/day rate limit applies.\n\nh3. Implementation Notes\nCapability prompt {{incident_report_draft}}.\n\nh3. Sources\nP3 #17 commits.\n"
+ },
+ {
+  "key": "CRAN-201",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer unsure of CRA category,\n*I want* an AI CRA-category recommendation from product context,\n*so that* I get a suggested category (default/important_i/important_ii/critical) to confirm.\n\nh3. Acceptance Criteria\n* *Given* {{routes/category-recommendation.test.ts}}, *then* auth/validation/gating pass (no live API call).\n* *Given* E2E {{category-recommendation.spec.ts}}, *then* it passes (the one infra-dependent nightly).\n* *Given* the capability, *then* 5/product/day.\n\nh3. Implementation Notes\nCapability prompt {{category_recommendation}}.\n\nh3. Sources\nP3 #18 commits.\n"
+ },
+ {
+  "key": "CRAN-202",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* an AI-drafted supplier due-diligence assessment,\n*so that* I get a first-pass DD on an upstream supplier from public information.\n\nh3. Acceptance Criteria\n* *Given* {{routes/supplier-due-diligence.test.ts}} + E2E {{supplier-due-diligence.spec.ts}}, *then* they pass.\n\nh3. Implementation Notes\nUses CVE history, support cadence, OSS-licence profile.\n\nh3. Sources\nP3 #19 commits.\n"
+ },
+ {
+  "key": "CRAN-203",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* plain-English narration of my compliance-gap breakdown,\n*so that* a technical gap list becomes a sentence I can act on.\n\nh3. Acceptance Criteria\n* *Given* the gap-detection info panel, *when* invoked, *then* the narrator runs.\n\nh3. Implementation Notes\nNarrates the categorised gap breakdown.\n\nh3. Sources\nP3 #20 commits.\n"
+ },
+ {
+  "key": "CRAN-204",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* Pro-plan org admin,\n*I want* a Copilot usage dashboard,\n*so that* I can see token budget vs consumed, per-capability counts and cache hit rate.\n\nh3. Acceptance Criteria\n* *Given* a Pro-plan org, *when* opened, *then* the dashboard renders.\n* *Given* usage, *then* {{copilot_usage}} is populated.\n\nh3. Implementation Notes\nMonthly budget vs consumed, per-capability counts, cache hit rate, top recipients.\n\nh3. Sources\nP3 #27 commits.\n"
+ },
+ {
+  "key": "CRAN-205",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* Copilot prompts stored as data across a three-layer architecture,\n*so that* I can manage 32 prompts centrally rather than hard-coding them.\n\nh3. Acceptance Criteria\n* *Given* {{copilot_prompts}}, *then* 32 rows are seeded.\n* *Given* the docs, *then* {{copilot-quality-standard.md}} (Q1-Q7) + {{prompts.md}} exist.\n\nh3. Implementation Notes\nLayers: Quality Standard preamble → regulatory context → capability prompt; foundation/capability/section(8)/obligation(19); 5-min cache, constant fallback; {{getGuidanceText()}}.\n\nh3. Sources\nP7 #38 prompt-management commits.\n"
+ },
+ {
+  "key": "CRAN-206",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* token-budget, rate-limit and cache cost protection on the Copilot,\n*so that* Copilot spend is bounded and repeated questions don't re-bill an LLM call.\n\nh3. Acceptance Criteria\n* *Given* a budget overrun, *when* hit, *then* 429 + {{Retry-After}}.\n* *Given* a cache hit, *when* served, *then* no LLM call (verified by usage + cache-hit counts).\n* *Given* all 8 capabilities, *then* the middleware chain gates them ({{routes/copilot.test.ts}}).\n\nh3. Implementation Notes\n{{copilot.monthly_token_limit}} (500K default) + per-org override; per-capability limits; SHA-256 context-hash cache (24h TTL, {{copilot_cache}}).\n\nh3. Sources\nP7 #38 + P3 cost-protection commits.\n"
+ },
+ {
+  "key": "CRAN-52",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* developer / integrator,\n*I want* to integrate CRANIS2 with my own tooling — API, CI/CD, IDE, GRC and project tools,\n*so that* CRANIS2 data and gates fit into my existing workflow rather than being a walled garden.\n\nh3. Scope\nVersioned public API v1 (API-key auth, Pro-gated); CI/CD compliance-gate webhook; Trello nightly test-result notifications; MCP server; IDE assistant + GRC/OSCAL bridge. (Slack/ChatOps parked.)\n\nh3. Acceptance Criteria\n* *Given* {{routes/public-api-v1.test.ts}} + {{api-keys.test.ts}}, *then* they pass.\n* *Given* the CI gate, *when* called, *then* it returns pass/fail with un-met obligations.\n* *Given* {{routes/oscal.test.ts}} + {{grc-bridge.test.ts}}, *then* they pass.\n\nh3. Child Stories\n* CRAN-207 Public API v1\n* CRAN-208 CI/CD gate webhook\n* CRAN-209 Trello integration\n* CRAN-210 MCP server\n* CRAN-211 IDE assistant + GRC/OSCAL\n* CRAN-212 Slack/ChatOps (parked)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-207",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* integrator,\n*I want* a versioned, key-authenticated public API,\n*so that* I can read CRANIS2 data programmatically with a securely-stored API key.\n\nh3. Acceptance Criteria\n* *Given* {{routes/public-api-v1.test.ts}}, *then* happy paths + auth pass.\n* *Given* {{routes/api-keys.test.ts}}, *then* issuance/revocation pass.\n* *Given* the tests, *then* the org upgrades to Pro in beforeAll, restores in afterAll.\n\nh3. Implementation Notes\n{{/api/public/v1/*}}; {{api_keys}} HMAC fingerprint (never plaintext); Pro-gated.\n\nh3. Sources\nP4 #28 commits.\n"
+ },
+ {
+  "key": "CRAN-208",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* developer with a CI pipeline,\n*I want* a CI/CD gate webhook that checks CRA obligations before release,\n*so that* my pipeline can block a release that doesn't meet compliance.\n\nh3. Acceptance Criteria\n* *Given* {{/api/public/v1/ci-gate}} (or equiv), *when* called, *then* it returns pass/fail with the un-met obligation list.\n\nh3. Implementation Notes\nRelease gate.\n\nh3. Sources\nP4 #22 commits.\n"
+ },
+ {
+  "key": "CRAN-209",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* nightly test results posted to Trello,\n*so that* I can see pass/fail at a glance on a board.\n\nh3. Acceptance Criteria\n* *Given* {{routes/trello.test.ts}}, *then* it passes.\n* *Given* a nightly run, *then* a card appears on the board (operational check).\n\nh3. Implementation Notes\nBoard {{69b076fb70d3d0cf561032b7}}; Passed/Failed lists.\n\nh3. Sources\nP4 #26 commits.\n"
+ },
+ {
+  "key": "CRAN-210",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* developer using an LLM IDE assistant,\n*I want* an MCP server exposing CRANIS2 data to LLM tools,\n*so that* Claude Code / IDE assistants can read my product state + compliance status.\n\nh3. Acceptance Criteria\n* *Given* the {{mcp/}} workspace, *when* run, *then* the MCP server is runnable.\n\nh3. Implementation Notes\nModel Context Protocol server.\n\nh3. Sources\nP4 #14 commits.\n"
+ },
+ {
+  "key": "CRAN-211",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* developer / GRC team,\n*I want* an IDE assistant and a GRC/OSCAL export bridge,\n*so that* compliance context reaches my editor and CRANIS2 data feeds downstream GRC tooling.\n\nh3. Acceptance Criteria\n* *Given* {{routes/oscal.test.ts}} + {{routes/grc-bridge.test.ts}}, *then* they pass.\n\nh3. Implementation Notes\nIDE-side assistant (#21); OSCAL component-definitions + control mappings (#23).\n\nh3. Sources\nP4 #21, #23 commits.\n"
+ },
+ {
+  "key": "CRAN-212",
+  "points": null,
+  "effort": null,
+  "description": "h3. User Story\n*As a* platform owner (audit trail),\n*I want* to record that Slack/ChatOps integration was parked post-launch,\n*so that* the deferral decision is captured; the live forward epic is CRAN-374.\n\nh3. Acceptance Criteria\n* *Given* this story, *then* it is recorded as parked, superseded by CRAN-374 (Slack + ChatOps).\n\nh3. Implementation Notes\nParked post-launch (no Won't Do status exists in the project workflow yet); no work delivered, so no estimates.\n\nh3. Sources\nP4 #24/#25 — parked. See CRAN-374.\n"
+ }
+]

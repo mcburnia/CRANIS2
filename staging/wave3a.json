@@ -1,0 +1,140 @@
+[
+ {
+  "key": "CRAN-32",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* engineer building CRANIS2,\n*I want* a runtime, build and deployment stack the whole product sits on,\n*so that* every later feature has a stable foundation: Vite/React frontend, Express/Node backend, Postgres + Neo4j, NGINX, Docker Compose, and a session-continuity protocol.\n\nh3. Scope\nThe base stack: Vite/React/TypeScript frontend, Express+Node backend, dual-database persistence (Postgres relational + Neo4j graph), NGINX reverse proxy, containerised Docker Compose, Cloudflare Tunnel for public access, and the {{RESTART.md}} session-continuity protocol.\n\nh3. Acceptance Criteria\n* *Given* {{docker compose up -d}}, *when* run, *then* frontend (3002), backend (3001), Postgres (5433), Neo4j (7475/7688) and Forgejo (3003) come up.\n* *Given* NGINX, *when* serving, *then* it serves the React build with SPA fallback and proxies {{/api/}} to the backend.\n* *Given* a new session, *when* opened, *then* {{RESTART.md}} is the first read.\n\nh3. Child Stories\n* CRAN-79 Static HTML prototype\n* CRAN-80 Vite + React + Docker scaffold\n* CRAN-81 RESTART.md continuity protocol\n* CRAN-82 NGINX dollar-var escaping rule\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-79",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* designer/engineer,\n*I want* a hand-built static HTML prototype committed before any framework code,\n*so that* the design system and page layouts are a visible, agreed contract the React migration is held to.\n\nh3. Acceptance Criteria\n* *Given* the prototype tree, *when* committed, *then* static HTML pages exist (commit {{fc72fd4}}).\n* *Given* the React scaffold, *when* built, *then* the prototype's colour tokens, sidebar layout and chrome carried forward.\n\nh3. Implementation Notes\nStatic HTML prototype as the visual contract for the Vite/React migration.\n\nh3. Sources\nCommit {{fc72fd4}} (2026-02-20 06:14).\n"
+ },
+ {
+  "key": "CRAN-80",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* a Vite + React + TypeScript app scaffolded with a Docker Compose stack,\n*so that* the product has a running, routed, containerised foundation with all pages stubbed.\n\nh3. Acceptance Criteria\n* *Given* {{docker compose up -d}}, *when* run, *then* frontend (3002) / Postgres (5433) / Neo4j (7475) start from {{docker-compose.yml}}.\n* *Given* React Router v6, *when* loaded, *then* public + AuthenticatedLayout routes resolve and all 15 pages are stubbed.\n* *Given* NGINX {{default.conf}}, *when* a SPA route is hit, *then* it falls back to {{index.html}}.\n\nh3. Implementation Notes\nMobile-first responsive React app, lucide-react sidebar, CSS custom-property theme tokens ported from the HTML prototype.\n\nh3. Sources\nCommit {{ab2fe28}} (2026-02-20 07:39).\n"
+ },
+ {
+  "key": "CRAN-81",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* AI-assisted maintainer,\n*I want* a single-document session-continuity protocol (RESTART.md),\n*so that* project state is restored at the start of every session without re-deriving it.\n\nh3. Acceptance Criteria\n* *Given* {{RESTART.md}} at repo root, *when* a session opens, *then* it is the first read referenced by {{CLAUDE.md}}.\n* *Given* a session close, *when* it ends, *then* the file is updated and survives.\n\nh3. Implementation Notes\nCovers server access, Docker setup, tech stack, structure, routes, design system, workflow rules, current status.\n\nh3. Sources\nCommit {{37ee0bf}} (2026-02-20 07:46).\n"
+ },
+ {
+  "key": "CRAN-82",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* the NGINX config to use unescaped dollar-variables, with the rule documented,\n*so that* the internal-redirect-loop 500 from escaped {{\\$uri}}/{{\\$host}} cannot recur.\n\nh3. Acceptance Criteria\n* *Given* {{nginx/default.conf}}, *when* inspected, *then* it uses unescaped {{$uri}}, {{$host}}, etc.\n* *Given* {{CLAUDE.md}} NGINX Notes, *when* read, *then* it explicitly forbids the escape pattern.\n\nh3. Implementation Notes\nFirst live post-scaffold bug; lesson captured to prevent recurrence.\n\nh3. Sources\nCommit {{e6d851a}} (2026-02-20 13:29).\n"
+ },
+ {
+  "key": "CRAN-33",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* user,\n*I want* a full self-service identity stack — signup, verification, login, recovery, profile,\n*so that* I can manage my own account securely from first signup through password/email changes, with every auth event audited.\n\nh3. Scope\nEmail+password signup with strength validation, Resend email verification, JWT sessions, Express+React AuthContext, passive auth telemetry (Postgres + Neo4j), admin invitations, self-service password recovery (CRAN-29), account profile + email/password change (CRAN-30), a session-invalidation watermark, locale tolerance, OAuth-callback compatibility, pre-OAuth reassurance, and signup notifications.\n\nh3. Acceptance Criteria\n* *Given* the auth suites, *when* run, *then* {{auth.test.ts}} + {{account-settings.test.ts}} + {{password-reset.test.ts}} pass.\n* *Given* a credential change, *when* it succeeds, *then* the {{sessions_invalidated_before}} watermark rejects pre-change tokens.\n* *Given* any auth event, *when* it occurs, *then* {{auth_security_events}} records it.\n\nh3. Child Stories\n* CRAN-83…CRAN-98 (signup → OAuth fixes) + CRAN-367 (SSO stub cleanup)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-83",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* new user,\n*I want* to sign up with email + password behind a live strength meter,\n*so that* I create a secure account and get immediate feedback that my password is strong enough.\n\nh3. Acceptance Criteria\n* *Given* {{SignupPage}}, *when* typing a password, *then* a 5-check strength meter (length/upper/lower/number/special) updates live.\n* *Given* a weak or mismatched password, *when* present, *then* submit stays disabled.\n* *Given* {{routes/auth.test.ts}}, *then* register-happy / weak / mismatch are covered.\n\nh3. Implementation Notes\nEmail+password primary; colour-graded strength bar; confirm-match feedback.\n\nh3. Sources\nCommit {{eb0385f}} (2026-02-20 08:03).\n"
+ },
+ {
+  "key": "CRAN-84",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* new user,\n*I want* my email verified via a Resend link before my account is active,\n*so that* only verified owners of an address can use the platform.\n\nh3. Acceptance Criteria\n* *Given* {{POST /api/auth/register}}, *when* called, *then* a user is inserted and a Resend verification email is sent.\n* *Given* {{GET /api/auth/verify-email}} with a valid token, *when* hit, *then* a JWT is issued and the user is redirected to welcome.\n* *Given* {{routes/auth.test.ts}}, *then* register→token→verify→JWT is covered.\n\nh3. Implementation Notes\nStood up the Express backend (3001); bcrypt hashing; Resend from {{info@cranis2.com}} ({{EMAIL_FROM}}); NGINX proxies {{/api/}}.\n\nh3. Sources\nCommit {{40f4427}} (2026-02-20 08:26).\n"
+ },
+ {
+  "key": "CRAN-85",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* returning user,\n*I want* to log in and have my session validated across the app,\n*so that* I stay authenticated and protected routes recognise me.\n\nh3. Acceptance Criteria\n* *Given* {{POST /api/auth/login}}, *when* credentials verify, *then* a JWT is issued.\n* *Given* {{GET /api/auth/me}}, *when* called, *then* the session is validated.\n* *Given* an unauthenticated user, *when* hitting a protected route, *then* {{AuthenticatedLayout}} redirects to {{/login}} (E2E verified).\n\nh3. Implementation Notes\nReact {{AuthContext}} (login/logout/checkSession); {{DEV_SKIP_EMAIL}} auto-verify path for dev (verified false in prod).\n\nh3. Sources\nCommit {{2d61fb5}} (2026-02-20 13:21).\n"
+ },
+ {
+  "key": "CRAN-86",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* passive telemetry captured on every auth event into Postgres + Neo4j,\n*so that* I have a structured audit trail and a graph of user/device/location relationships without adding user friction.\n\nh3. Acceptance Criteria\n* *Given* register/login/failure/verify/org-creation, *when* they occur, *then* {{user_events}} is populated.\n* *Given* a sample user, *when* queried in Neo4j, *then* User/Event/EmailDomain/IPAddress/Device/Language nodes + edges exist.\n* *Given* {{routes/audit-log.test.ts}}, *then* cross-event listing is covered.\n\nh3. Implementation Notes\nCaptures IP/UA/accept-language/timezone/referrer; derives {{users.preferred_language}} for future i18n.\n\nh3. Sources\nCommit {{d17de3f}} (2026-02-20 14:46).\n"
+ },
+ {
+  "key": "CRAN-87",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* user logging in,\n*I want* login to await session resolution before navigating,\n*so that* I'm not wrongly bounced to org-setup because navigation raced ahead of {{/api/auth/me}}.\n\nh3. Acceptance Criteria\n* *Given* {{LoginPage}}, *when* logging in, *then* it awaits {{login()}} before {{navigate()}}.\n* *Given* {{OrgSetupPage}}, *when* an org is created, *then* it calls {{refreshUser()}} before navigating.\n\nh3. Implementation Notes\nMade {{login()}} async and awaited {{checkSession()}}; fixed the fire-and-forget race.\n\nh3. Sources\nCommit {{ffa0ec1}} (2026-02-20 14:50).\n"
+ },
+ {
+  "key": "CRAN-88",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* user,\n*I want* a logout control and my real organisation name in the sidebar,\n*so that* I can sign out cleanly and the sidebar reflects my actual org, not a placeholder.\n\nh3. Acceptance Criteria\n* *Given* the sidebar, *when* rendered, *then* it shows the live org name from {{/api/org}}.\n* *Given* logout, *when* clicked, *then* the session JWT clears and I return to the landing page.\n\nh3. Implementation Notes\nSign-Out at sidebar foot with email display; flex-column so footer sticks to bottom; replaced hardcoded 'Acme Software Ltd'.\n\nh3. Sources\nCommit {{02f097a}} (2026-02-20 14:56).\n"
+ },
+ {
+  "key": "CRAN-89",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* to invite new users by email and have them set their own password,\n*so that* I can onboard teammates without handling their credentials.\n\nh3. Acceptance Criteria\n* *Given* an admin invite, *when* sent, *then* a user record is created and a set-password email goes out via Resend (org optionally pre-assigned).\n* *Given* {{/accept-invite}}, *when* the token is used, *then* the user sets a password, is auto-verified and linked to their org, landing on {{/getting-started}}.\n* *Given* an unaccepted invite, *when* re-invited, *then* it resends.\n\nh3. Implementation Notes\n{{users.invited_by}} populated; covered by invite-create/resend/accept tests.\n\nh3. Sources\nCommit {{be2ae95}} (2026-02-22 13:26).\n"
+ },
+ {
+  "key": "CRAN-90",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* user who forgot their password,\n*I want* a secure self-service password-recovery flow,\n*so that* I can regain access without contacting support, and a reset invalidates any stolen sessions.\n\nh3. Acceptance Criteria\n* *Given* {{/forgot-password}}, *when* submitted, *then* a 60-min one-time hash-stored token is emailed (enumeration-defensive response).\n* *Given* a valid reset, *when* completed, *then* all existing sessions are invalidated via the {{sessions_invalidated_before}} watermark.\n* *Given* {{routes/password-reset.test.ts}}, *then* 12 tests pass (issuance + confirm + replay/expiry/forged/weak/watermark).\n\nh3. Implementation Notes\nSHA-256 token hash; 3/hr/IP issuance + 10/hr/IP confirm rate-limits; {{getTokenIssuedAt()}} watermark helper. (Closed Jira CRAN-29.)\n\nh3. Sources\nCommit {{f8c4ee3}} (2026-05-07 02:36).\n"
+ },
+ {
+  "key": "CRAN-91",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* user,\n*I want* an account page to change my profile, password and email,\n*so that* I can maintain my own account details securely, with risky changes invalidating other sessions.\n\nh3. Acceptance Criteria\n* *Given* {{/account}}, *when* opened, *then* Profile (display name + preferred language, 9 EU langs) and Security tabs render.\n* *Given* a password change, *when* it succeeds, *then* all other sessions are invalidated.\n* *Given* an email change, *when* requested, *then* a 24h verification token goes to the new address and the account stays on the current email until confirmation.\n* *Given* {{routes/account-settings.test.ts}}, *then* 16 tests pass.\n\nh3. Implementation Notes\n5 endpoints on {{routes/account.ts}}; rate-limits profile 20/hr, password 5/hr, email 3/hr; reuses the CRAN-29 watermark. (Closed Jira CRAN-30.)\n\nh3. Sources\nCommit {{ca4bbdf}} (2026-05-07 02:44).\n"
+ },
+ {
+  "key": "CRAN-92",
+  "points": 2,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* user,\n*I want* locale-style codes accepted and a password reset to auto-verify my email,\n*so that* I'm not rejected for sending {{en-GB}} and I'm not locked out if I reset before ever verifying.\n\nh3. Acceptance Criteria\n* *Given* {{PUT /api/account/profile}} with {{en-GB}}, *when* saved, *then* the base ({{en}}) is validated and persisted; unsupported bases are rejected.\n* *Given* an unverified user, *when* they reset their password, *then* {{email_verified}} is set TRUE in the same transaction and they can log in immediately.\n* *Given* the reset request, *then* enumeration defence is preserved.\n\nh3. Implementation Notes\nTwo post-deploy fixes; +2 account-settings tests, +1 password-reset test.\n\nh3. Sources\nCommit {{8910d22}} (2026-05-07 06:51).\n"
+ },
+ {
+  "key": "CRAN-93",
+  "points": 2,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* an email to info@cranis2.com on every new signup,\n*so that* I'm notified of growth without it being able to break the signup path.\n\nh3. Acceptance Criteria\n* *Given* a new signup, *when* it completes, *then* a Resend email to {{info@cranis2.com}} ({{ADMIN_NOTIFY_EMAIL}}) shows email + UTC timestamp + language + referrer + bonus code.\n* *Given* a Resend outage, *when* it occurs, *then* signup still succeeds (fire-and-forget, {{.catch()}}-wrapped).\n* *Given* {{DEV_SKIP_EMAIL}}, *then* it is skipped in the test stack.\n\nh3. Implementation Notes\n{{services/email.ts}} {{sendNewSignupNotification()}}; affiliate display_name/contact_email resolved.\n\nh3. Sources\nCommit {{a9746b3}} (2026-05-07 07:16).\n"
+ },
+ {
+  "key": "CRAN-94",
+  "points": 2,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* affiliate,\n*I want* to be notified when my bonus code drives a signup, without learning who signed up,\n*so that* I get conversion feedback while the new user's privacy is preserved.\n\nh3. Acceptance Criteria\n* *Given* a signup via a bonus code, *when* it completes, *then* the affiliate gets an email naming the code but never the submitter/referrer/language.\n* *Given* the email body, *when* audited, *then* it contains no new-user PII.\n* *Given* conversions, *then* they are tracked via {{users.canonicalBonusCode}}.\n\nh3. Implementation Notes\n{{sendAffiliateSignupNotification()}}; privacy boundary: that + which code only.\n\nh3. Sources\nCommit {{478253c}} (2026-05-07 08:02).\n"
+ },
+ {
+  "key": "CRAN-95",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* user connecting a repo provider,\n*I want* a reassurance modal before any OAuth redirect,\n*so that* I understand exactly what I'm consenting to and that CRANIS2's access is read-only.\n\nh3. Acceptance Criteria\n* *Given* a connect click, *when* made, *then* {{ConnectProviderModal}} explains the upcoming consent screen, lists each scope with plain-English rationale, states the read-only intent, and shows where to revoke.\n* *Given* the modal, *when* confirmed, *then* the redirect to the provider proceeds.\n\nh3. Implementation Notes\nProvider-specific copy for github/codeberg/bitbucket.\n\nh3. Sources\nCommit {{ec8e004}} (2026-05-18 09:52).\n"
+ },
+ {
+  "key": "CRAN-96",
+  "points": 2,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* user returning from GitHub OAuth,\n*I want* the bare /callback route to match the same handler under Express 5,\n*so that* the legacy GitHub redirect URI no longer 404s.\n\nh3. Acceptance Criteria\n* *Given* {{/callback}}, {{/callback/}} and {{/callback/<provider>}}, *when* hit, *then* all match the same handler (non-404).\n* *Given* {{routes/repo-connections.test.ts}}, *then* 4 new 'oauth callback route shape' tests pass (total 46).\n\nh3. Implementation Notes\nFix: move the slash inside the optional group → {{/callback{/:provider}}} (path-to-regexp v8 trap).\n\nh3. Sources\nCommit {{75a957b}} (2026-05-18 11:33).\n"
+ },
+ {
+  "key": "CRAN-97",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* user completing OAuth in a popup,\n*I want* the OAuth popup to auto-close on success,\n*so that* I'm not left staring at a 'Connected' popup that won't close.\n\nh3. Acceptance Criteria\n* *Given* a successful handshake, *when* it completes, *then* the popup auto-closes in the common case.\n* *Given* a browser that blocks auto-close, *when* it happens, *then* a 'Close now' button is shown.\n\nh3. Implementation Notes\nRoot cause: COOP severed {{window.opener}} across the cross-origin hop; fix is unconditional {{window.close()}} + manual escape + try/catch.\n\nh3. Sources\nCommit {{2033636}} (2026-05-18 11:40).\n"
+ },
+ {
+  "key": "CRAN-98",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* developer (dev environment only),\n*I want* a dev-only account-nuke utility (later removed before production),\n*so that* test accounts could be wiped during development; the route was removed pre-launch as a hard requirement.\n\nh3. Acceptance Criteria\n* *Given* HEAD, *when* {{grep -r \"/api/dev\" backend/src}} runs, *then* there are no matches.\n* *Given* launch blocker #2 (remove {{/api/dev/*}}), *then* it is marked DONE.\n\nh3. Implementation Notes\nDeleted user+events+org from Postgres+Neo4j; commit warned it MUST be removed before prod, and it was.\n\nh3. Sources\nAdd {{19480f1}} (2026-02-20); removed in pre-launch tidy.\n"
+ },
+ {
+  "key": "CRAN-367",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* visitor on the login/signup page,\n*I want* the non-functional GitHub SSO stub buttons removed,\n*so that* I'm not shown buttons that do nothing; SSO is honestly deferred to post-launch.\n\nh3. Acceptance Criteria\n* *Given* the Login and Signup pages, *when* viewed, *then* no GitHub-SSO buttons are present.\n\nh3. Implementation Notes\nVisible-but-non-functional buttons are an antipattern; real SSO is CRAN-371 (#61).\n\nh3. Sources\nSession 59 #62 commits.\n"
+ }
+]

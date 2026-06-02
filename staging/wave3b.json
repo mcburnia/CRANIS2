@@ -1,0 +1,146 @@
+[
+ {
+  "key": "CRAN-35",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer,\n*I want* to create, view, edit and delete the products I need to make CRA-compliant,\n*so that* every product is a first-class entity carrying its compliance state, repo link and full data-exit path.\n\nh3. Scope\nProducts API (Neo4j) with telemetry; ProductsPage card grid + add/delete; ProductDetailPage with two-tier tabs, CRA classification, compliance progress; first-class repoUrl; deletion with full ZIP data exit + escrow + FK-safe cascade.\n\nh3. Acceptance Criteria\n* *Given* the products API, *when* exercised, *then* all 5 CRUD verbs are covered by {{routes/products.test.ts}}.\n* *Given* a product, *when* deleted, *then* a ZIP export + final escrow deposit + FK-safe cascade run (Forgejo archive preserved).\n* *Given* the detail page, *when* loaded, *then* the two-tier tab groups render and {{?tab=}} deep-links work.\n\nh3. Child Stories\n* CRAN-102 Products CRUD + detail\n* CRAN-103 Repository URL field\n* CRAN-104 Deletion with full data exit\n* CRAN-105 Two-tier tab navigation\n* CRAN-106 Repo URL scheme normalisation\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-102",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* full CRUD over my products with a rich detail page,\n*so that* I can manage each product and see its compliance picture in one place.\n\nh3. Acceptance Criteria\n* *Given* the Products API (Neo4j), *when* exercised, *then* list/create/read/update/delete all work with telemetry events ({{routes/products.test.ts}} covers all 5).\n* *Given* {{ProductsPage}}, *when* loaded, *then* a card grid + add modal + delete render.\n* *Given* {{ProductDetailPage}}, *when* opened, *then* edit-in-place, tabs, CRA classification, compliance progress and next-steps show (E2E {{product-crud}} + {{create-product-flow}} pass).\n\nh3. Implementation Notes\nTabbed layout: Overview / Obligations / Technical File / Risk Findings / Dependencies.\n\nh3. Sources\nCommit {{ac719b4}} (2026-02-20 16:22).\n"
+ },
+ {
+  "key": "CRAN-103",
+  "points": 2,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a first-class repository URL on each product,\n*so that* a product is linked to its source repo for SBOM and contributor capture.\n\nh3. Acceptance Criteria\n* *Given* a product, *when* read via {{GET /api/products/:id}}, *then* {{Product.repoUrl}} is returned.\n* *Given* the product card list, *when* rendered, *then* a green repo badge is visible.\n\nh3. Implementation Notes\n{{repoUrl}} on Product nodes in all CRUD endpoints; add-modal field, clickable header/detail link, editable inline.\n\nh3. Sources\nCommit {{50bd2cf}} (2026-02-20 16:47).\n"
+ },
+ {
+  "key": "CRAN-104",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* to delete a product with a full data-exit export and clean cascade,\n*so that* I can leave the platform with all my data and no orphaned records, while the escrow archive is preserved.\n\nh3. Acceptance Criteria\n* *Given* {{integration/product-lifecycle.test.ts}}, *when* run, *then* create → delete + ZIP + escrow + cascade is covered.\n* *Given* a deletion, *when* confirmed, *then* 15 Postgres tables clean in FK-safe order and a final {{product_deleted}} escrow deposit is made.\n* *Given* the Forgejo repo, *when* the product is deleted, *then* it remains as a permanent archive.\n\nh3. Implementation Notes\nDeletion modal offers a ZIP of SBOM/vulns/licences/IP-proof/CRA docs. Products can exist without a repo; escrow gated with a friendly message.\n\nh3. Sources\nCommit {{27152d4}} (2026-02-26 14:28).\n"
+ },
+ {
+  "key": "CRAN-105",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* the product detail page organised into two-tier tab groups with deep links,\n*so that* I can navigate a product's many facets cleanly and link straight to a section.\n\nh3. Acceptance Criteria\n* *Given* {{ProductDetailPage}}, *when* loaded, *then* five groups render: Overview / Supply Chain / Compliance / Security / Evidence.\n* *Given* {{/products/<id>?tab=compliance}}, *when* opened, *then* it lands on the Compliance group.\n* *Given* a tab change, *when* it occurs, *then* {{cranis2:tab-change}} fires and the help panel re-routes.\n\nh3. Implementation Notes\n{{?tab=}} deep-linking from overview pages; custom event after {{replaceState}}.\n\nh3. Sources\nSession 52 two-tier refactor commits.\n"
+ },
+ {
+  "key": "CRAN-106",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* user clicking a product's repo link,\n*I want* schemeless repo URLs to render with an https:// prefix,\n*so that* a repo link without a scheme still navigates correctly.\n\nh3. Acceptance Criteria\n* *Given* {{ensureHttpScheme()}}, *when* exported from {{product-detail/shared.ts}}, *then* it prefixes {{https://}} when no scheme is present.\n* *Given* a schemeless {{product.repoUrl}}, *when* rendered as an href, *then* it is {{https://}}-prefixed (display string unchanged).\n\nh3. Implementation Notes\nApplied at the two href render sites (header badge + OverviewTab row).\n\nh3. Sources\nCommit {{f37b00b}} (2026-05-18 12:09).\n"
+ },
+ {
+  "key": "CRAN-36",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer,\n*I want* to connect my repository across any major provider and capture a complete, custody-free SBOM,\n*so that* my software bill of materials is generated deterministically and enriched, regardless of where my code lives.\n\nh3. Scope\nSix providers (GitHub, Codeberg, Gitea, Forgejo, GitLab, Bitbucket) via OAuth or PAT; read-only access with encrypted tokens; three-tier SBOM fallback (provider API → 28 lockfile parsers → 26-language import scan); CycloneDX 1.6 + SPDX 2.3 with hash enrichment; org-scoped connections with admin gating.\n\nh3. Acceptance Criteria\n* *Given* a connected repo, *when* synced, *then* an SBOM is produced and stored (read-only access; tokens encrypted).\n* *Given* the three-tier fallback, *when* no provider SBOM API exists, *then* lockfile parsing then import scanning produce a valid SPDX.\n* *Given* connections, *when* managed, *then* they are org-scoped and gated by {{requireOrgAdmin}}.\n\nh3. Child Stories\n* CRAN-107…CRAN-115 (GitHub OAuth → modular SBOM → PAT → Bitbucket → org-scoping)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-107",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* org admin,\n*I want* to connect GitHub read-only with the access token stored encrypted,\n*so that* CRANIS2 can read my repo metadata without ever being able to modify my code, and my token is never stored in clear.\n\nh3. Acceptance Criteria\n* *Given* {{routes/repo-connections.test.ts}}, *when* run, *then* connect + status + disconnect are covered.\n* *Given* {{repo_connections.access_token}}, *when* inspected, *then* it is ciphertext (AES-256).\n* *Given* a connection, *when* established, *then* repo metadata + contributors + languages sync via GET-only GitHub API.\n\nh3. Implementation Notes\n{{GitHubRepo}} + {{Contributor}} Neo4j nodes; repo stats card, contributor grid, language bar chart; auto-sync after connect.\n\nh3. Sources\nCommit {{532ed27}} (2026-02-20 17:17).\n"
+ },
+ {
+  "key": "CRAN-108",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* org admin,\n*I want* the GitHub connect flow to use a popup and single-use connection tokens,\n*so that* connecting is reliable and JWTs are never passed as URL params.\n\nh3. Acceptance Criteria\n* *Given* {{POST /api/github/connect-init}}, *when* called, *then* it returns a one-time connection token.\n* *Given* a successful popup handshake, *when* done, *then* it posts {{cranis2:repo-connected}} to the opener and auto-closes.\n\nh3. Implementation Notes\nReplaced the broken same-window redirect.\n\nh3. Sources\nCommit {{80fb0ce}} (2026-02-21 06:09).\n"
+ },
+ {
+  "key": "CRAN-109",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* an initial SBOM captured from GitHub's Dependency Graph and kept fresh,\n*so that* my dependencies are inventoried automatically and re-synced when stale.\n\nh3. Acceptance Criteria\n* *Given* {{routes/sbom-export.test.ts}}, *when* run, *then* a known SBOM fixture is exercised.\n* *Given* a connected product, *when* synced, *then* {{product_sboms.spdx_json}} is populated and Dependency nodes appear in Neo4j.\n* *Given* the scheduler, *when* inspected, *then* a daily 2 AM stale-SBOM auto-sync job exists.\n\nh3. Implementation Notes\nEcosystem badges on the dependency tree; sync-button pulse when an update is available.\n\nh3. Sources\nCommit {{ceddd7c}} (2026-02-21 10:46, SBOM concern only).\n"
+ },
+ {
+  "key": "CRAN-110",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* CycloneDX 1.6 and SPDX 2.3 exports enriched with manufacturer metadata and component hashes,\n*so that* I can hand customers and regulators a standards-valid, verifiable SBOM.\n\nh3. Acceptance Criteria\n* *Given* the CycloneDX 1.6 export, *when* validated, *then* it passes the official schema ({{routes/sbom-export.test.ts}}).\n* *Given* the SPDX 2.3 export, *when* generated, *then* it includes {{algorithm: SHA512}} for npm and {{SHA256}} for PyPI.\n* *Given* the org profile, *when* set, *then* manufacturer website/email/phone/address appear in the export.\n\nh3. Implementation Notes\nHash-enrichment service (SHA-512 npm, SHA-256 PyPI) wired into sync + scheduler; export dropdown + hash-warning badge.\n\nh3. Sources\nCommit {{1cf07d9}} (2026-02-24 05:30).\n"
+ },
+ {
+  "key": "CRAN-111",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* hash-enrichment gaps categorised and lockfile-resolved before they're reported,\n*so that* I understand why any component lacks a hash and most gaps are closed automatically.\n\nh3. Acceptance Criteria\n* *Given* {{routes/compliance-gaps.test.ts}}, *when* run, *then* categorisation is covered.\n* *Given* an un-resolvable dependency, *when* enriched, *then* {{Dependency.hashGapReason}} is populated (no_version / unsupported_ecosystem / not_found / fetch_error / pending).\n* *Given* the frontend info panel, *when* rendered, *then* the categorised breakdown shows.\n\nh3. Implementation Notes\nNew {{lockfile-resolver}} fetches {{package-lock.json}} to resolve version gaps; debounced compliance-gap notification.\n\nh3. Sources\nCommits {{f11bc40}} + {{0302d55}} (2026-02-24).\n"
+ },
+ {
+  "key": "CRAN-112",
+  "points": 21,
+  "effort": "15d",
+  "description": "h3. User Story\n*As a* manufacturer on any stack,\n*I want* modular, universal SBOM generation across providers, ecosystems and languages,\n*so that* I get a complete SBOM even with no provider SBOM API, across 28 lockfile formats and 26 languages.\n\nh3. Acceptance Criteria\n* *Given* the test suite, *when* run, *then* 713 unit tests pass (236 lockfile + 416 language + 61 SBOM mock).\n* *Given* {{services/lockfile-parsers.test.ts}}, *then* all 28 parsers are covered.\n* *Given* {{integration/tier3-import-scanning.test.ts}}, *then* 24 E2E tests pass against 4 Forgejo repos.\n* *Given* each provider in {{PROVIDER_REGISTRY}}, *then* it exposes the 16 standard dispatcher functions.\n\nh3. Implementation Notes\n5-provider registry; 28 lockfile parsers (incl. Conan/vcpkg/Nix/Dockerfile); 26 language plugins; import scanner with memory guards (500 files/1MB/50MB/120s) → SPDX 2.3; three-tier fallback wired into sync + scheduler.\n\nh3. Sources\nCommit {{7d4a2dd}} (2026-02-27 07:27).\n"
+ },
+ {
+  "key": "CRAN-113",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* customer on a self-hosted Git instance,\n*I want* to connect Gitea/Forgejo/GitLab via a personal access token,\n*so that* I can capture SBOMs from self-hosted instances that have no OAuth app.\n\nh3. Acceptance Criteria\n* *Given* {{routes/repo-connections.test.ts}}, *when* run, *then* 25 PAT-auth tests pass (validation + Forgejo integration + provider acceptance + upsert + legacy back-compat).\n* *Given* a self-hosted connection, *when* synced, *then* {{instanceUrl}} is threaded through all sync ops.\n* *Given* 24 Tier-3 import-scanning E2E tests, *then* they pass.\n\nh3. Implementation Notes\n{{POST /api/repo/connect-pat}}; {{ProviderConnections}} panel with inline PAT form.\n\nh3. Sources\nCommits {{8974cbe}} + {{0eb49cd}} + {{09d16d3}} (2026-02-28).\n"
+ },
+ {
+  "key": "CRAN-114",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* customer using Bitbucket Cloud,\n*I want* Bitbucket Cloud as a 6th supported provider,\n*so that* Bitbucket-hosted repos get the same connect/sync/SBOM treatment as the others.\n\nh3. Acceptance Criteria\n* *Given* {{PROVIDER_REGISTRY}}, *when* inspected, *then* 6 providers are present.\n* *Given* E2E {{repo-connection.spec.ts}}, *when* run, *then* it asserts '6 supported providers'.\n* *Given* a Bitbucket push webhook ({{X-Event-Key: repo:push}}), *when* received, *then* it is verified by checking the repo is tracked in Neo4j.\n\nh3. Implementation Notes\nNew {{services/bitbucket.ts}} (OAuth 2.0, metadata, contributors-from-commits, languages, tags, raw files, webhooks, file tree); no SBOM API → lockfile/import fallback.\n\nh3. Sources\nSession 59 Bitbucket commits.\n"
+ },
+ {
+  "key": "CRAN-115",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* org admin,\n*I want* repo connections scoped to the organisation with admin-only management,\n*so that* connections belong to the org (not one user) and only admins can connect/disconnect.\n\nh3. Acceptance Criteria\n* *Given* {{routes/repo-connections.test.ts}}, *when* run, *then* 4 org-scope (Forgejo PAT) + 3 Bitbucket admin-gating tests pass.\n* *Given* {{connect-init}}/{{connect-pat}}/{{disconnect}}, *when* called, *then* {{requireOrgAdmin}} enforces {{org_role='admin'}}; members keep read-only + sync.\n* *Given* full regression after, *then* 2338 pass / 13 skipped / 0 fail.\n\nh3. Implementation Notes\n{{user_id}}→{{connected_by_user_id}} (audit-only); {{org_id}} backfilled; partial unique indexes split by {{instance_url}} nullability; helpers renamed {{getUserRepoToken}}→{{getOrgRepoToken}}.\n\nh3. Sources\nCommit {{ec8e004}} (2026-05-18 09:52, org-scope concern).\n"
+ },
+ {
+  "key": "CRAN-37",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* compliance officer,\n*I want* fast, accurate vulnerability scanning of my products from a local advisory database,\n*so that* I see real, deduplicated, severity-normalised findings across all products in sub-second time, with stakeholders notified.\n\nh3. Scope\nMulti-source scanning (OSV + GHSA + NVD) replaced by a local Postgres advisory DB (263K GHSA + 182K NVD) for ~6min→~0.25s scans; cross-product overview pages; platform-wide deduplicated scan with stakeholder notifications; risk-findings UI with concurrency guard.\n\nh3. Acceptance Criteria\n* *Given* the local DB, *when* a scan runs, *then* it completes in ~0.25s with CPE-index matching (no keyword false positives).\n* *Given* a platform scan, *when* run, *then* findings attribute to all affected products and notify stakeholders + admins.\n* *Given* a per-product scan already running, *when* another is triggered, *then* it returns 409.\n\nh3. Child Stories\n* CRAN-116…CRAN-122 (overviews → platform scan → local DB → UI → fixes)\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-116",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* cross-product overview pages and multi-source vulnerability scanning,\n*so that* I can see repos, contributors, dependencies and risk findings across every product, scanned against multiple sources.\n\nh3. Acceptance Criteria\n* *Given* the overview pages, *when* loaded, *then* Repos/Contributors/Dependencies/Risk-Findings render (covered by their {{*-overview.test.ts}} suites).\n* *Given* a scan, *when* run, *then* it hits OSV + GHSA + NVD.\n\nh3. Implementation Notes\nInitial vuln-scanning capability; mitigation guidance; scan-performance tracking; dashboard risk card.\n\nh3. Sources\nCommit {{fadff46}} (2026-02-22 10:33).\n"
+ },
+ {
+  "key": "CRAN-117",
+  "points": 5,
+  "effort": "3d",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* platform-wide deduplicated scanning with targeted stakeholder notifications,\n*so that* every product is scanned in one pass and the right people are alerted to findings.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-vuln-scan.test.ts}}, *when* run, *then* the admin trigger + history endpoints are covered.\n* *Given* {{routes/notifications.test.ts}}, *when* run, *then* stakeholder routing is covered.\n* *Given* the scheduler, *when* inspected, *then* a daily 3 AM scan runs after the 2 AM SBOM sync.\n\nh3. Implementation Notes\n{{runPlatformScan()}} attributes findings to all affected products; {{platform_scan_runs}} per-source timing; admin vuln-scan page.\n\nh3. Sources\nCommit {{e553f1e}} (2026-02-22 15:42).\n"
+ },
+ {
+  "key": "CRAN-118",
+  "points": 13,
+  "effort": "7d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* scanning against a local advisory database instead of external APIs,\n*so that* scans are sub-second and accurate, with no rate limits and no keyword false positives.\n\nh3. Acceptance Criteria\n* *Given* {{routes/vulnerability-scan.test.ts}}, *when* run, *then* the local-DB path is exercised.\n* *Given* {{pool.ts initDb()}}, *when* inspected, *then* {{vuln_db_advisories}}, {{vuln_db_nvd}}, {{vuln_db_nvd_cpe_index}}, {{vuln_db_sync_status}} exist.\n* *Given* {{/admin/vuln-db}}, *when* opened, *then* ecosystem stats + sync controls are live.\n\nh3. Implementation Notes\n263K GHSA + 182K NVD; ~6min→~0.25s; flattened CPE B-tree index; severity normalisation (moderate↔medium); {{GENERIC_CPE_NAMES}} blocklist; {{vuln-db-sync.ts}} rebuilds the CPE index.\n\nh3. Sources\nCommits {{4494ffb}} + {{ba591b1}} (2026-02-23).\n"
+ },
+ {
+  "key": "CRAN-119",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* a risk-findings UI with view/close/mitigate and a concurrency-guarded scan,\n*so that* I can triage findings and never collide two scans on the same product.\n\nh3. Acceptance Criteria\n* *Given* {{routes/risk-findings.test.ts}}, *when* run, *then* list / close / mark-mitigated are covered.\n* *Given* a per-product scan already running, *when* another is triggered, *then* {{runProductScan()}} returns 409.\n\nh3. Implementation Notes\nPer-product scan trigger moved off the user-facing page in favour of the admin-triggered platform scan.\n\nh3. Sources\nCommit {{ab7ec03}} (2026-02-23 15:48, vuln-scan concern).\n"
+ },
+ {
+  "key": "CRAN-120",
+  "points": 2,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* auto-resolved findings to surface with an explicit resolved status,\n*so that* I can see that a dependency upgrade cleared a vulnerability rather than the finding silently vanishing.\n\nh3. Acceptance Criteria\n* *Given* {{routes/risk-findings.test.ts}}, *when* run, *then* the {{auto_resolved}} response shape is covered.\n* *Given* {{routes/risk-findings-regression.test.ts}}, *when* run, *then* the reconcile path is covered.\n\nh3. Implementation Notes\n{{auto_resolved}} findings (vulnerable version removed by upgrade) were not appearing as resolved; now surfaced explicitly.\n\nh3. Sources\nSession 60 bug-fix commits.\n"
+ },
+ {
+  "key": "CRAN-121",
+  "points": 2,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* user viewing the dashboard,\n*I want* CRA-readiness capped at 100% and a live actionable-findings count on the timeline,\n*so that* the dashboard shows believable, current numbers.\n\nh3. Acceptance Criteria\n* *Given* {{routes/dashboard.test.ts}}, *when* run, *then* the 100% cap is covered.\n* *Given* {{routes/compliance-timeline.test.ts}}, *when* run, *then* the live actionable count is covered.\n\nh3. Implementation Notes\nReadiness % capped at 100 (was exceeding via an obligations edge case); timeline card uses the live count (was stale).\n\nh3. Sources\nSession 60 bug-fix commits.\n"
+ },
+ {
+  "key": "CRAN-122",
+  "points": 1,
+  "effort": "2h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* the vulnerability_scans table reconciled with the code's expected columns,\n*so that* scan writes don't fail on missing columns.\n\nh3. Acceptance Criteria\n* *Given* {{vulnerability_scans}} at HEAD, *when* inspected, *then* it has {{local_db_duration_ms}} + {{local_db_findings}}.\n* *Given* {{pool.ts initDb()}}, *when* run, *then* idempotent {{ADD COLUMN IF NOT EXISTS}} guards carry them.\n\nh3. Implementation Notes\nIdempotent ALTER to fix schema drift.\n\nh3. Sources\nSession 60 schema-drift commit.\n"
+ }
+]

@@ -1,0 +1,164 @@
+[
+ {
+  "key": "CRAN-2",
+  "points": 13,
+  "effort": "8d",
+  "description": "h2. Epic Goal\n*As a* CRA manufacturer,\n*I want* a hosted Coordinated Vulnerability Disclosure intake channel per product,\n*so that* security researchers can report vulnerabilities through a managed channel with a tracked disclosure clock, instead of an unmonitored shared inbox.\n\nh3. Regulatory Basis\nCRA Art. 13(6). Tier 1 (Group B — supplier-internal). CRANIS2 generates the CVD *policy* today but does not run the *channel*.\n\nh3. What CRANIS2 Should Add\nHosted intake form per product (e.g. {{cranis2.com/cvd/<org>/<product>}}) → optional PGP encryption → auto triage ticket into the same {{vulnerability_findings}} table → 90-day disclosure timer with bell + email escalation → consent-gated public-acknowledgements page → auto-feed into the Art. 14 trigger when validation confirms active exploitation.\n\nh3. Acceptance Criteria\n* *Given* a researcher submits via the product CVD form, *when* received, *then* a finding is created and the 90-day disclosure clock starts with escalations.\n* *Given* researcher consent, *when* a report is resolved, *then* it appears on the public acknowledgements page.\n* *Given* a confirmed actively-exploited report, *when* validated, *then* it feeds the Art. 14 trigger engine.\n\nh3. Source\nGap analysis Tier 1 #1 (CRA Art. 13(6)).\n"
+ },
+ {
+  "key": "CRAN-3",
+  "points": 8,
+  "effort": "5d",
+  "description": "h2. Epic Goal\n*As a* CRA manufacturer,\n*I want* a customer-facing, tokenised, signed SBOM publication endpoint per product version,\n*so that* I can hand a customer one durable URL instead of emailing CycloneDX files on every request.\n\nh3. Regulatory Basis\nCRA Art. 13(11). Tier 1 (Group A — closes the operator loop).\n\nh3. What CRANIS2 Should Add\nPer-product, per-version tokenised SBOM URL ({{cranis2.com/sbom/<token>}}) with revocable, audit-logged access; the customer always receives the latest signed, verifiable SBOM for the version they run.\n\nh3. Acceptance Criteria\n* *Given* a published product version, *when* a token URL is issued, *then* it serves the current signed SBOM and every fetch is audit-logged.\n* *Given* a revoked token, *when* accessed, *then* it returns denied.\n* *Given* a new SBOM build, *when* generated, *then* the same URL serves the updated document.\n\nh3. Source\nGap analysis Tier 1 #2 (CRA Art. 13(11)). Group A.\n"
+ },
+ {
+  "key": "CRAN-4",
+  "points": 13,
+  "effort": "8d",
+  "description": "h2. Epic Goal\n*As a* CRA manufacturer responding to a regulated buyer,\n*I want* to auto-answer regulatory supplier-assessment questionnaires from my CRANIS2 evidence base,\n*so that* I can return NIS2/GDPR/DORA/CRA due-diligence questionnaires in minutes instead of spending a half-day per questionnaire.\n\nh3. Regulatory Basis\nCross-regulation. Tier 1 (Group A). Rescoped 2026-05-13: SIG Lite / CAIQ (ISO/SOC opt-in) dropped; surviving scope is statutory — NIS2 Art. 21(2)(d), GDPR Art. 28, DORA Art. 28, CRA Art. 13(3).\n\nh3. What CRANIS2 Should Add\nImport statutory supplier-DD questionnaires → AI-fill from the CRANIS2 evidence base (tech file + obligations + scan results + Trust Centre) → human review/edit → export in the requester's required format. Reuses the P3 #20 compliance-gap-narrator infrastructure.\n\nh3. Acceptance Criteria\n* *Given* a supported statutory questionnaire, *when* imported, *then* CRANIS2 pre-fills answers from existing evidence with source citations.\n* *Given* the draft, *when* a human approves, *then* it exports in the requested format (PDF / Excel / JSON).\n* *Given* an out-of-scope opt-in framework (SIG/CAIQ/ISO/SOC), *when* imported, *then* it is explicitly not supported.\n\nh3. Source\nGap analysis Tier 1 #3, rescoped 2026-05-13. Group A.\n"
+ },
+ {
+  "key": "CRAN-5",
+  "points": 21,
+  "effort": "12d",
+  "description": "h2. Epic Goal\n*As a* compliance officer handling a serious incident,\n*I want* to intake an incident once and have CRANIS2 produce parallel, deadline-tracked reports for every regulatory track it triggers,\n*so that* a single bad day becomes one workflow instead of 3–5 independent panic-driven processes.\n\nh3. Regulatory Basis\nCRA Art. 14 + NIS2 + GDPR (+ sectoral). Tier 1 (Group A). The most regulatorily-distinctive feature in the gap list.\n\nh3. What CRANIS2 Should Add\nIntake an incident once; auto-detect which tracks it triggers (personal data? NIS2-regulated customer? sectoral?) and produce tailored parallel reports — ENISA/CSIRT (CRA), national CSIRT (NIS2), supervisory authority (GDPR 72h), etc. — each with its own deadline track and submission attestation.\n\nh3. Acceptance Criteria\n* *Given* a single incident intake, *when* assessed, *then* CRANIS2 proposes the regulatory tracks triggered, with auto-detection from product attributes.\n* *Given* multiple tracks, *when* confirmed, *then* each gets a tailored report with its own deadline clock and RFC 3161 submission attestation.\n* *Given* the existing Art. 14 engine, *when* extended, *then* CRA reporting remains intact.\n\nh3. Source\nGap analysis Tier 1 #4 (CRA Art. 14 + NIS2 + GDPR). Group A.\n"
+ },
+ {
+  "key": "CRAN-6",
+  "points": 13,
+  "effort": "7d",
+  "description": "h2. Epic Goal\n*As a* CRA manufacturer preparing a release,\n*I want* an automated substantial-modification detector that flags releases likely to re-trigger conformity assessment,\n*so that* I turn a high-stakes legal judgement into a checkable signal instead of either re-CA'ing every release or risking a missed re-CA.\n\nh3. Regulatory Basis\nCRA Art. 32 + Annex VII. Tier 1 (Group B). CRANIS2 already tracks SBOM diffs, version history and tech-file changes.\n\nh3. What CRANIS2 Should Add\nA deterministic + AI detector flagging releases with any of: major-version bump, new high-CVSS dependency, new external network surface, new data class processed, removal of a security control. Output: \"this release likely needs re-CA — confirm or override\" with an audit trail.\n\nh3. Acceptance Criteria\n* *Given* a new release, *when* analysed, *then* the detector emits a re-CA recommendation with the specific triggering signals.\n* *Given* a recommendation, *when* the user confirms or overrides, *then* the decision is recorded with an audit trail.\n\nh3. Source\nGap analysis Tier 1 #5 (CRA Art. 32 + Annex VII). Group B.\n"
+ },
+ {
+  "key": "CRAN-7",
+  "points": 8,
+  "effort": "5d",
+  "description": "h2. Epic Goal\n*As a* GDPR controller,\n*I want* a Records of Processing Activities (RoPA) document generated from data CRANIS2 already holds,\n*so that* I can maintain my Art. 30 RoPA automatically instead of by hand in a spreadsheet.\n\nh3. Regulatory Basis\nGDPR Art. 30. Tier 1 (Group B). CRANIS2 already holds ~60% of the inputs (sub-processors, purposes, data categories).\n\nh3. What CRANIS2 Should Add\nA new tech-file-style \"Data Processing Activities\" section → AI-fill from existing data → export as the standard CNIL/ICO RoPA template; updates whenever sub-processors or purposes change.\n\nh3. Acceptance Criteria\n* *Given* the existing supplier/product/obligation data, *when* a RoPA is generated, *then* it populates the standard template and is editable.\n* *Given* a sub-processor or purpose change, *when* it occurs, *then* the RoPA reflects it on regeneration.\n\nh3. Source\nGap analysis Tier 1 #6 (GDPR Art. 30). Group B.\n"
+ },
+ {
+  "key": "CRAN-8",
+  "points": 8,
+  "effort": "4d",
+  "description": "h2. Epic Goal\n*As a* GDPR controller,\n*I want* a public sub-processor list with change auto-publication and customer notification,\n*so that* I meet the Art. 28(2) advance-notification duty without maintaining a static page that goes stale.\n\nh3. Regulatory Basis\nGDPR Art. 28(2). Tier 1 (Group A). CRANIS2 already knows the SBOM, supplier-DD and category of each dependency.\n\nh3. What CRANIS2 Should Add\nFlag each supplier as data-processor-or-not → auto-publish {{cranis2.com/subprocessors/<org>/<product>}} → diff-detection on changes triggers customer-notification email via the existing alert infrastructure.\n\nh3. Acceptance Criteria\n* *Given* suppliers flagged as processors, *when* published, *then* the public sub-processor page renders the current list.\n* *Given* a change to the list, *when* detected, *then* subscribed customers are notified in advance.\n\nh3. Source\nGap analysis Tier 1 #7 (GDPR Art. 28(2)). Group A.\n"
+ },
+ {
+  "key": "CRAN-9",
+  "points": 13,
+  "effort": "7d",
+  "description": "h2. Epic Goal\n*As a* CRA market-surveillance authority (or GDPR/NIS2 regulator),\n*I want* a regulator evidence portal that produces a verifiable bundle of all relevant artefacts on request,\n*so that* I can satisfy a regulator's evidence request in one action instead of manually exporting tech file + DoC + SBOM + vuln + incident logs.\n\nh3. Regulatory Basis\nCRA Art. 52 (+ GDPR / NIS2 Art. 23). Tier 2. Rescoped 2026-05-13: audience is a *regulator*, NOT an opt-in ISO/SOC auditor.\n\nh3. What CRANIS2 Should Add\n\"Generate Regulator Bundle\" → ZIP of relevant artefacts + their TSA tokens + a verification README → optionally a time-limited, audit-logged read-only regulator portal URL.\n\nh3. Acceptance Criteria\n* *Given* a regulator request, *when* a bundle is generated, *then* it contains the tech file, DoC, SBOM, vuln history and incident log with TSA tokens and a verification README.\n* *Given* the optional portal URL, *when* issued, *then* access is time-limited and audit-logged.\n* *Given* the audience, *when* described, *then* AC names the regulator explicitly (not an opt-in auditor).\n\nh3. Source\nGap analysis Tier 2 #8, rescoped 2026-05-13 (regulators only).\n"
+ },
+ {
+  "key": "CRAN-10",
+  "points": 13,
+  "effort": "8d",
+  "description": "h2. Epic Goal\n*As a* CRA manufacturer choosing a conformity route,\n*I want* a curated harmonised-standards catalogue that recommends applicable standards and maps their clauses to my tech-file evidence,\n*so that* I can claim the Art. 32 presumption of conformity deliberately instead of filling in standards_applied from memory.\n\nh3. Regulatory Basis\nCRA Art. 32. Tier 2. Rescoped 2026-05-13: presumption-of-conformity route only — includes EN 18031, ETSI EN 303 645, IEC 62443, forthcoming EN-CRA standards; EXCLUDES ISO/IEC 27001, 42001, SOC 2, NIST CSF, EUCC.\n\nh3. What CRANIS2 Should Add\nA catalogue of EU harmonised standards by product category → recommends applicable standards from CRA category + product type → generates a compliance matrix mapping each standard's clauses to tech-file evidence.\n\nh3. Acceptance Criteria\n* *Given* a product's CRA category and type, *when* assessed, *then* CRANIS2 recommends the applicable harmonised standards from the OJEU-listed set.\n* *Given* a chosen standard, *when* mapped, *then* a clause-to-evidence matrix is produced.\n* *Given* an opt-in framework (ISO/SOC/NIST/EUCC), *when* searched, *then* it is excluded by design.\n\nh3. Source\nGap analysis Tier 2 #9, rescoped 2026-05-13 (CRA presumption only).\n"
+ },
+ {
+  "key": "CRAN-11",
+  "points": 13,
+  "effort": "8d",
+  "description": "h2. Epic Goal\n*As a* manufacturer of an Important Class II / Critical product,\n*I want* an end-to-end Notified Body engagement workflow,\n*so that* I can manage NB selection, submission, review tracking and certificate storage in one place instead of ad-hoc email and folders.\n\nh3. Regulatory Basis\nCRA Art. 32(3). Tier 2 (few products are Critical, but high-stakes for those that are).\n\nh3. What CRANIS2 Should Add\nNB selection → tech-file submission to NB → review-state tracking → certificate storage → re-trigger on substantial modification. Builds on the existing NB catalogue.\n\nh3. Acceptance Criteria\n* *Given* a Critical/Important-II product, *when* an NB engagement starts, *then* its state is tracked through submission → review → certificate.\n* *Given* a stored certificate, *when* a substantial modification is flagged, *then* re-engagement is re-triggered.\n\nh3. Source\nGap analysis Tier 2 #10 (CRA Art. 32(3)).\n"
+ },
+ {
+  "key": "CRAN-12",
+  "points": 8,
+  "effort": "4d",
+  "description": "h2. Epic Goal\n*As a* GDPR controller,\n*I want* a DPIA generator that mirrors the existing CRA risk-assessment Copilot,\n*so that* I can produce a Data Protection Impact Assessment from the same product context instead of starting from a blank template.\n\nh3. Regulatory Basis\nGDPR Art. 35. Tier 2. Reuses P3 #16 product-context gathering.\n\nh3. What CRANIS2 Should Add\nA parallel {{generate-dpia}} Copilot capability tailored to Art. 35's required content: purpose, necessity/proportionality, risks to data-subject rights, mitigations.\n\nh3. Acceptance Criteria\n* *Given* a product processing personal data, *when* a DPIA is generated, *then* it covers Art. 35's required content and is editable.\n* *Given* the CRA risk-assessment context, *when* reused, *then* the DPIA does not re-ask for data already held.\n\nh3. Source\nGap analysis Tier 2 #11 (GDPR Art. 35).\n"
+ },
+ {
+  "key": "CRAN-13",
+  "points": 8,
+  "effort": "5d",
+  "description": "h2. Epic Goal\n*As a* compliance officer,\n*I want* regulatory policy attestation tracking — publish, sign, version, re-attest,\n*so that* I have evidence that staff were trained on each statutory policy, instead of PDF emails and spreadsheets.\n\nh3. Regulatory Basis\nCRA Annex I Part II + Art. 13(5), NIS2 Art. 21(2)(g), GDPR Art. 32. Tier 2. Rescoped 2026-05-13: ISO/SOC framing dropped; statutory policies only.\n\nh3. What CRANIS2 Should Add\nPublish-to-employees workflow → each employee e-signs (timestamp + IP) → per-version attestation log → automatic re-attestation on policy update. Each policy is tagged with the statutory obligation it discharges.\n\nh3. Acceptance Criteria\n* *Given* a published statutory policy, *when* an employee signs, *then* the attestation records identity, timestamp and IP against the policy version.\n* *Given* a policy update, *when* published, *then* re-attestation is requested automatically.\n* *Given* a policy, *when* created, *then* it must be tagged with the obligation it discharges; untagged attestations are out of scope.\n\nh3. Source\nGap analysis Tier 2 #12, rescoped 2026-05-13 (statutory only).\n"
+ },
+ {
+  "key": "CRAN-14",
+  "points": 8,
+  "effort": "5d",
+  "description": "h2. Epic Goal\n*As a* compliance officer,\n*I want* an evidence dropbox that ingests unstructured PDFs and attaches them to the right obligation,\n*so that* pen-test reports, audit reports and supplier certs become structured tech-file/vault evidence instead of lost email attachments.\n\nh3. Regulatory Basis\nCross-regulation. Tier 2.\n\nh3. What CRANIS2 Should Add\nDrag-and-drop PDF → AI-extract metadata (issued by, dates, scope) → suggest which obligation(s) it evidences → attach to tech file or vault with an attestation chain.\n\nh3. Acceptance Criteria\n* *Given* an uploaded PDF, *when* processed, *then* metadata is extracted and obligation(s) are suggested.\n* *Given* a confirmed attachment, *when* stored, *then* it joins the tech file/vault with an attestation chain.\n\nh3. Source\nGap analysis Tier 2 #13.\n"
+ },
+ {
+  "key": "CRAN-15",
+  "points": 8,
+  "effort": "4d",
+  "description": "h2. Epic Goal\n*As a* sales/legal user closing a deal,\n*I want* a DPA / SCC generator that assembles a Data Processing Agreement from CRANIS2 data,\n*so that* I can return a signed DPA with EU Standard Contractual Clauses in one click instead of legal pulling a template each time.\n\nh3. Regulatory Basis\nGDPR Art. 28. Tier 2.\n\nh3. What CRANIS2 Should Add\nA customisable DPA generator pulling org details + sub-processor list + TOMs → exports a signed PDF.\n\nh3. Acceptance Criteria\n* *Given* an org with a sub-processor list and TOMs, *when* a DPA is generated, *then* it assembles the agreement with SCCs and exports as PDF.\n* *Given* customisable clauses, *when* edited, *then* the export reflects them.\n\nh3. Source\nGap analysis Tier 2 #14 (GDPR Art. 28).\n"
+ },
+ {
+  "key": "CRAN-16",
+  "points": 5,
+  "effort": "3d",
+  "description": "h2. Epic Goal\n*As a* open-source steward,\n*I want* a simplified workflow that shows only steward-relevant obligations,\n*so that* I am not shown irrelevant manufacturer-only obligations and the steward-specific content is emphasised.\n\nh3. Regulatory Basis\nCRA Art. 24. Tier 2. {{CraRole}} already supports {{open_source_steward}} but obligations are currently pruned from the manufacturer set.\n\nh3. What CRANIS2 Should Add\nA tailored steward workflow that hides manufacturer-only obligations and surfaces the deliberately-lighter steward regime.\n\nh3. Acceptance Criteria\n* *Given* an org with the steward role, *when* viewing obligations, *then* only steward-relevant ones are shown.\n* *Given* the steward regime, *when* presented, *then* its specific guidance is emphasised.\n\nh3. Source\nGap analysis Tier 2 #15 (CRA Art. 24).\n"
+ },
+ {
+  "key": "CRAN-17",
+  "points": 13,
+  "effort": "8d",
+  "description": "h2. Epic Goal\n*As a* manufacturer whose product uses AI,\n*I want* AI Act overlap modelling stacked on CRA,\n*so that* I can see the AI Act obligations (risk class, transparency, data governance) that apply on top of CRA for AI-bearing products.\n\nh3. Regulatory Basis\nEU AI Act (overlaps CRA). Tier 3 — strategic/forward-looking. Not yet modelled.\n\nh3. What CRANIS2 Should Add\nModel AI Act risk classification, transparency and data-governance obligations for products that use AI, layered onto the existing CRA obligation engine.\n\nh3. Acceptance Criteria\n* *Given* a product flagged as using AI, *when* assessed, *then* applicable AI Act obligations are derived and shown alongside CRA.\n* *Given* a risk class, *when* determined, *then* the transparency/data-governance duties for that class are surfaced.\n\nh3. Source\nGap analysis Tier 3 #16 (EU AI Act).\n"
+ },
+ {
+  "key": "CRAN-18",
+  "points": 13,
+  "effort": "7d",
+  "description": "h2. Epic Goal\n*As a* NIS2 essential/important entity (or a supplier serving one),\n*I want* a structured NIS2 Art. 21(2) 10-point risk-management measures matrix,\n*so that* NIS2 obligations are tracked as a first-class structured view rather than implied through supplier-DD and escrow.\n\nh3. Regulatory Basis\nNIS2 Art. 21 (10 measure categories). Tier 3.\n\nh3. What CRANIS2 Should Add\nA structured 10-point NIS2 risk-management matrix mapping each measure category to existing CRANIS2 evidence and flagging gaps.\n\nh3. Acceptance Criteria\n* *Given* a NIS2-relevant org, *when* the matrix is viewed, *then* all 10 Art. 21(2) categories are shown with status mapped from existing evidence.\n* *Given* a gap, *when* present, *then* it is flagged with the missing evidence.\n\nh3. Source\nGap analysis Tier 3 #17 (NIS2 Art. 21).\n"
+ },
+ {
+  "key": "CRAN-19",
+  "points": 8,
+  "effort": "5d",
+  "description": "h2. Epic Goal\n*As a* compliance officer across multiple regulations,\n*I want* a unified compliance calendar of all regulatory due-dates,\n*so that* I see CRA, NIS2, GDPR and AI Act deadlines in one place rather than scattered across smart alerts and memory.\n\nh3. Regulatory Basis\nCross-regulation. Tier 3. Some coverage exists via smart deadline alerts; most does not.\n\nh3. What CRANIS2 Should Add\nA unified calendar surfacing statutory due-dates: CRA Sep 2026 / Dec 2027, NIS2 transposition, GDPR DSR-response windows, AI Act phase-ins, plus per-product/per-obligation deadlines.\n\nh3. Acceptance Criteria\n* *Given* an org's products and obligations, *when* the calendar renders, *then* it shows all upcoming statutory deadlines with sources.\n* *Given* a deadline, *when* it nears, *then* it integrates with the existing alert system.\n\nh3. Source\nGap analysis Tier 3 #18.\n"
+ },
+ {
+  "key": "CRAN-20",
+  "points": 8,
+  "effort": "5d",
+  "description": "h2. Epic Goal\n*As a* small company with multiple products,\n*I want* master regulatory policies with per-product overrides,\n*so that* I write one CVD/vuln-handling/incident policy and override per product, instead of maintaining N separate copies.\n\nh3. Regulatory Basis\nCRA (Art. 13(5)/(6)/(8)/(15), Annex I), GDPR, NIS2. Tier 3. Rescoped 2026-05-13: regulatory policies only — not ISO/SOC framework policies.\n\nh3. What CRANIS2 Should Add\nMaster-policy templating with per-product overrides for the statutory policy set; opt-in framework policies are excluded.\n\nh3. Acceptance Criteria\n* *Given* a master regulatory policy, *when* applied to products, *then* each inherits it with optional per-product overrides.\n* *Given* a master update, *when* saved, *then* non-overridden products inherit the change.\n* *Given* an opt-in framework policy, *when* attempted, *then* it is out of scope.\n\nh3. Source\nGap analysis Tier 3 #19, rescoped 2026-05-13 (regulatory only).\n"
+ },
+ {
+  "key": "CRAN-21",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* platform owner (audit trail),\n*I want* to record that the cyber-insurance evidence-export epic was withdrawn,\n*so that* the decision and its rationale are preserved even though the work will not be done.\n\nh3. Regulatory Basis\nWITHDRAWN 2026-05-13. Cyber insurance is voluntary commercial procurement, not statutory regulation, and fails the rule-of-law filter.\n\nh3. What CRANIS2 Should Add\nNo work to be done. This epic should be transitioned to *Won't Do* in Jira, linked to the 2026-05-13 gap-analysis revision.\n\nh3. Acceptance Criteria\n* *Given* this epic, *then* it is closed as Won't Do with a link to the withdrawal rationale.\n\nh3. Source\nGap analysis #20 — withdrawn 2026-05-13. ACTION: transition to Won't Do.\n"
+ },
+ {
+  "key": "CRAN-22",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* platform owner (audit trail),\n*I want* to record that the standalone strategic-10x meta-epic was superseded,\n*so that* the original thesis is preserved while the sharper two-sided-market frame governs going forward.\n\nh3. Regulatory Basis\nSUPERSEDED 2026-05-13 by the Revised strategic frame (two-sided market). The \"single source of truth → many dialects\" thesis survives in sharpened form across the Group A epics.\n\nh3. What CRANIS2 Should Add\nNo discrete work. This epic should be closed as superseded; its intent now lives across CRAN-3/4/5/8 and the new candidate epics (Operator Supplier Dashboard, PLD recast, DORA Art. 28).\n\nh3. Acceptance Criteria\n* *Given* this epic, *then* it is closed/superseded with a link to the Revised strategic frame.\n\nh3. Source\nGap analysis #22 — superseded 2026-05-13. ACTION: close as superseded.\n"
+ },
+ {
+  "key": "CRAN-23",
+  "points": 8,
+  "effort": "5d",
+  "description": "h2. Epic Goal\n*As a* CRA manufacturer,\n*I want* an Annex II user-information & instructions pack generator,\n*so that* end users get the required user-facing security pack, not just the regulator-facing technical file.\n\nh3. Regulatory Basis\nCRA Art. 13(12) + Annex II. CRA-completeness backlog.\n\nh3. What CRANIS2 Should Add\nGenerate the user-facing Annex II pack: cybersecurity properties, type/period of support, secure install/config/use/maintenance instructions, effects of modifications, where to find the DoC, single point of contact for vulns — from existing source material.\n\nh3. Acceptance Criteria\n* *Given* a product, *when* the pack is generated, *then* it contains every Annex II element and is exportable.\n* *Given* updated support/contact data, *when* changed, *then* the pack reflects it on regeneration.\n\nh3. Source\nGap analysis CRA-A (CRA Art. 13(12) + Annex II).\n"
+ },
+ {
+  "key": "CRAN-24",
+  "points": 8,
+  "effort": "5d",
+  "description": "h2. Epic Goal\n*As a* CRA manufacturer,\n*I want* a machine-readable CSAF v2.0 security-advisory feed per product,\n*so that* users (and their tooling) are informed of security updates in a clear, automatable way at a well-known URL.\n\nh3. Regulatory Basis\nCRA Art. 13(8). CRA-completeness backlog. CRANIS2 holds the vuln + fix data but emits no CSAF.\n\nh3. What CRANIS2 Should Add\nEmit a CSAF v2.0 advisory feed per product at a well-known URL, generated from existing vulnerability + fix data.\n\nh3. Acceptance Criteria\n* *Given* a product with resolved vulnerabilities, *when* the feed is published, *then* it serves valid CSAF v2.0 documents at a well-known URL.\n* *Given* a new advisory, *when* issued, *then* the feed updates.\n\nh3. Source\nGap analysis CRA-B (CRA Art. 13(8)).\n"
+ },
+ {
+  "key": "CRAN-25",
+  "points": 8,
+  "effort": "4d",
+  "description": "h2. Epic Goal\n*As a* CRA manufacturer integrating third-party components,\n*I want* a first-class per-component due-diligence record,\n*so that* component due diligence is an auditable artefact, not merely inferred from an SBOM scan.\n\nh3. Regulatory Basis\nCRA Art. 13(3). CRA-completeness backlog.\n\nh3. What CRANIS2 Should Add\nA structured per-component DD record: integrity check, vulnerability check at integration time, and a signed attestation that due diligence was performed — promoted from inferred-via-SBOM to first-class.\n\nh3. Acceptance Criteria\n* *Given* a component integrated into a product, *when* DD is recorded, *then* integrity + vuln checks + a signed attestation are stored against it.\n* *Given* an auditor, *when* reviewing, *then* the per-component DD record is retrievable.\n\nh3. Source\nGap analysis CRA-C (CRA Art. 13(3)).\n"
+ },
+ {
+  "key": "CRAN-26",
+  "points": 8,
+  "effort": "4d",
+  "description": "h2. Epic Goal\n*As a* CRA manufacturer,\n*I want* an automated Art. 14(1)(b) severe-incident trigger to match the existing 14(1)(a) path,\n*so that* severe incidents impacting product security (not tied to a specific vuln) get the same automated 24h/72h/1m handling as actively-exploited vulnerabilities.\n\nh3. Regulatory Basis\nCRA Art. 14(1)(b). CRA-completeness backlog. Infrastructure is shared with the P10 14(1)(a) engine.\n\nh3. What CRANIS2 Should Add\nAdd the trigger criteria + report-content variant for Art. 14(1)(b) severe incidents, reusing the P10 detection → attestation → deadline → submission machinery.\n\nh3. Acceptance Criteria\n* *Given* a qualifying severe incident, *when* detected, *then* an Art. 14(1)(b) report is auto-created with its own deadline track.\n* *Given* the shared engine, *when* extended, *then* the existing 14(1)(a) path is unaffected.\n\nh3. Source\nGap analysis CRA-D (CRA Art. 14(1)(b)).\n"
+ },
+ {
+  "key": "CRAN-27",
+  "points": 5,
+  "effort": "3d",
+  "description": "h2. Epic Goal\n*As a* non-EU manufacturer serving the EU market,\n*I want* an authorised-representative role with its own obligations,\n*so that* the structural CRA requirement for an EU authorised representative is modelled, not missing.\n\nh3. Regulatory Basis\nCRA Art. 12. CRA-completeness backlog. {{CraRole}} currently lacks {{authorised_representative}}.\n\nh3. What CRANIS2 Should Add\nAdd {{authorised_representative}} to the role enum and model its Art. 12 obligations and relationship to the non-EU manufacturer.\n\nh3. Acceptance Criteria\n* *Given* a non-EU manufacturer, *when* an authorised representative is assigned, *then* the role exists and its obligations are derived.\n* *Given* the obligation engine, *when* extended, *then* existing roles are unaffected.\n\nh3. Source\nGap analysis CRA-E (CRA Art. 12).\n"
+ },
+ {
+  "key": "CRAN-28",
+  "points": 5,
+  "effort": "3d",
+  "description": "h2. Epic Goal\n*As a* manufacturer of an Important Class I product,\n*I want* a structured Module A self-assessment record output,\n*so that* the internal-production-control route produces a single reviewable artefact for an auditor or market-surveillance authority.\n\nh3. Regulatory Basis\nCRA Art. 32(2)(a). CRA-completeness backlog. CRANIS2 captures the inputs but emits no Module A record.\n\nh3. What CRANIS2 Should Add\nEmit a structured \"Module A self-assessment record\" consolidating the internal-production-control evidence into one reviewable artefact.\n\nh3. Acceptance Criteria\n* *Given* an Important Class I product using Module A, *when* the record is generated, *then* it consolidates the self-assessment evidence into one document.\n* *Given* a market-surveillance request, *when* made, *then* the record is exportable as a single artefact.\n\nh3. Source\nGap analysis CRA-F (CRA Art. 32(2)(a)).\n"
+ }
+]

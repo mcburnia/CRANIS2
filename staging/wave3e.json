@@ -1,0 +1,182 @@
+[
+ {
+  "key": "CRAN-45",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer,\n*I want* push webhooks across every supported provider plus Stripe, so my data stays fresh automatically,\n*so that* an upstream push marks my SBOM stale and a payment event updates billing without me lifting a finger.\n\nh3. Scope\nGitHub HMAC-SHA256, Codeberg/Forgejo/Gitea, Bitbucket (no HMAC), and Stripe signature-verified webhooks; registration + health endpoints; E2E coverage.\n\nh3. Acceptance Criteria\n* *Given* a verified push webhook, *when* received, *then* the SBOM is marked stale and a {{webhook_sbom_stale}} audit entry is written.\n* *Given* a bad signature, *when* received, *then* it returns 401.\n* *Given* the webhook E2E/registration/health suites, *then* they pass.\n\nh3. Child Stories\n* CRAN-159 GitHub HMAC\n* CRAN-160 Codeberg/Forgejo/Gitea\n* CRAN-161 Bitbucket (no HMAC)\n* CRAN-162 Stripe signature verification\n* CRAN-163 E2E + registration + health\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-159",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* GitHub push events to mark my SBOM stale, verified by HMAC,\n*so that* my dependency inventory refreshes automatically and only genuine GitHub pushes are trusted.\n\nh3. Acceptance Criteria\n* *Given* {{webhooks/github-webhook.test.ts}}, *when* run, *then* it passes.\n* *Given* an HMAC mismatch, *when* received, *then* it returns 401.\n\nh3. Implementation Notes\nHMAC-SHA256 against {{GITHUB_WEBHOOK_SECRET}}; marks SBOM stale; daily 2 AM auto-sync.\n\nh3. Sources\nCommit {{ceddd7c}} (2026-02-21, webhook concern).\n"
+ },
+ {
+  "key": "CRAN-160",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* self-hosted-provider customer,\n*I want* Codeberg/Forgejo/Gitea push webhooks,\n*so that* self-hosted repos trigger the same stale-SBOM refresh as GitHub.\n\nh3. Acceptance Criteria\n* *Given* {{webhooks/codeberg-webhook.test.ts}}, *when* run against local Forgejo, *then* it passes.\n* *Given* {{routes/webhook-e2e.test.ts}} B5/B6, *then* they pass.\n\nh3. Implementation Notes\nReuses HMAC where supported, else the 'repo tracked in Neo4j' check.\n\nh3. Sources\nProvider-expansion commits.\n"
+ },
+ {
+  "key": "CRAN-161",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* Bitbucket customer,\n*I want* Bitbucket push webhooks (which carry no HMAC),\n*so that* Bitbucket pushes refresh my SBOM, verified by repo-tracking knowledge.\n\nh3. Acceptance Criteria\n* *Given* a Bitbucket {{X-Event-Key: repo:push}}, *when* received, *then* the 'tracked in Neo4j' verification runs and the stale flow fires.\n\nh3. Implementation Notes\nDefence by knowledge (no HMAC available).\n\nh3. Sources\nSession 59 Bitbucket commits.\n"
+ },
+ {
+  "key": "CRAN-162",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* Stripe webhooks verified against the signing secret,\n*so that* billing lifecycle events are processed only when genuinely from Stripe.\n\nh3. Acceptance Criteria\n* *Given* {{webhooks/stripe-webhook.test.ts}}, *when* run, *then* signature-pass + signature-fail are covered.\n\nh3. Implementation Notes\n{{stripe.webhooks.constructEvent}} against {{STRIPE_WEBHOOK_SECRET}}; handles subscription/invoice/customer events.\n\nh3. Sources\nStripe billing commits.\n"
+ },
+ {
+  "key": "CRAN-163",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* platform operator,\n*I want* webhook registration, an E2E flow and a health endpoint,\n*so that* I can subscribe/unsubscribe webhooks and see last-received-at per webhook.\n\nh3. Acceptance Criteria\n* *Given* {{routes/webhook-e2e.test.ts}}, {{webhook-registration.test.ts}}, {{webhook-health.test.ts}}, {{push-events.test.ts}}, *then* all pass.\n\nh3. Implementation Notes\nSubscribe/unsubscribe on the provider; health reports last-received-at.\n\nh3. Sources\nP2 #12 webhook E2E commits.\n"
+ },
+ {
+  "key": "CRAN-46",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* compliance officer / manufacturer,\n*I want* cross-product overviews of stakeholders, contributors, dependencies and repos,\n*so that* I can see and act on each dimension across my whole portfolio rather than product-by-product.\n\nh3. Scope\nStakeholders page (org + product CRA/NIS2 roles); contributors, dependencies and repos cross-product overviews.\n\nh3. Acceptance Criteria\n* *Given* each overview, *when* loaded, *then* its {{*-overview.test.ts}} suite passes.\n* *Given* the repos overview, *when* rendered, *then* 6 provider tabs show with badge counts.\n\nh3. Child Stories\n* CRAN-164 Stakeholders\n* CRAN-165 Contributors\n* CRAN-166 Dependencies\n* CRAN-167 Repos\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-164",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* a stakeholders page for org- and product-level CRA/NIS2 roles,\n*so that* the right contacts are recorded for each compliance responsibility, editable in place.\n\nh3. Acceptance Criteria\n* *Given* {{routes/stakeholders.test.ts}}, *when* run, *then* list + inline update are covered.\n* *Given* the {{stakeholders}} table, *when* first accessed, *then* org + product rows auto-create.\n\nh3. Implementation Notes\nOrg: manufacturer/auth-rep/compliance officer. Product: security contact/tech-file owner/IR lead.\n\nh3. Sources\nCommit {{a4f8a45}} (2026-02-22, stakeholders concern).\n"
+ },
+ {
+  "key": "CRAN-165",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a cross-product contributor overview,\n*so that* I can see who contributes across all my connected repos.\n\nh3. Acceptance Criteria\n* *Given* {{routes/contributors-overview.test.ts}}, *when* run, *then* it passes.\n\nh3. Implementation Notes\nPer-contributor product count, last commit, languages.\n\nh3. Sources\nCommit {{fadff46}} (2026-02-22).\n"
+ },
+ {
+  "key": "CRAN-166",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* compliance officer,\n*I want* a cross-product dependency overview,\n*so that* I can see aggregate dependency counts, ecosystems and the most vulnerable packages.\n\nh3. Acceptance Criteria\n* *Given* {{routes/dependencies-overview.test.ts}}, *when* run, *then* it passes.\n\nh3. Implementation Notes\nDirect + transitive counts, ecosystems, top vulnerable packages.\n\nh3. Sources\nCommit {{fadff46}}.\n"
+ },
+ {
+  "key": "CRAN-167",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a cross-product repos overview with provider tabs,\n*so that* I can see and sync every connected repo from one page.\n\nh3. Acceptance Criteria\n* *Given* {{routes/repos-overview.test.ts}}, *when* run, *then* it passes.\n* *Given* the page, *when* rendered, *then* 6 provider tabs show (GH/Codeberg/Gitea/Forgejo/GitLab/Bitbucket).\n\nh3. Implementation Notes\nProvider filter tabs with badge counts, last-sync state, sync-now action.\n\nh3. Sources\nCommit {{fadff46}}.\n"
+ },
+ {
+  "key": "CRAN-47",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* platform owner / customer,\n*I want* Stripe-backed subscriptions with contributor/product pricing, tiers, trials and a billing gate,\n*so that* the platform monetises fairly, restricts non-paying writes without locking people out, and pricing is configurable without redeploy.\n\nh3. Scope\nContributor-based Standard tier + 90-day trial + Stripe portal; global billing-gate middleware; Pro tier (€9/product + €6/contributor) with {{requirePlan}}; admin-configurable pricing in {{platform_settings}}; admin trial/exemption/pause; billing-tier docs.\n\nh3. Acceptance Criteria\n* *Given* {{routes/billing.test.ts}} + {{webhooks/stripe-webhook.test.ts}}, *then* they pass; E2E {{billing-and-subscription.spec.ts}} passes.\n* *Given* a restricted org, *when* it writes, *then* the gate blocks it while reads continue.\n* *Given* {{requirePlan('pro')}}, *when* a standard org hits a Pro route, *then* it returns 402.\n\nh3. Child Stories\n* CRAN-168 Standard tier baseline\n* CRAN-169 Billing-gate middleware\n* CRAN-170 Pro tier\n* CRAN-171 Configurable pricing\n* CRAN-172 Billing-tier docs\n* CRAN-173 Admin trial/exemption/pause\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-168",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* customer,\n*I want* a contributor-based Standard subscription with a 90-day trial,\n*so that* I can pay fairly per active contributor and try the platform free first.\n\nh3. Acceptance Criteria\n* *Given* {{routes/billing.test.ts}} + {{webhooks/stripe-webhook.test.ts}}, *then* they pass.\n* *Given* {{org_billing}}, *when* inspected, *then* trial fields exist.\n* *Given* E2E {{billing-and-subscription.spec.ts}}, *then* it passes.\n\nh3. Implementation Notes\n€6/contributor/month; Stripe customer portal; trial lifecycle + grace + Resend notices; 4 AM scheduler checks.\n\nh3. Sources\nCommit {{8987f8a}} (2026-02-25 10:15).\n"
+ },
+ {
+  "key": "CRAN-169",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* a global billing gate that blocks writes for restricted orgs,\n*so that* non-paying orgs can't mutate data but can still log in to fix their billing.\n\nh3. Acceptance Criteria\n* *Given* {{security/billing-gate.test.ts}}, *when* run, *then* blocked-write + allowed-read are covered.\n* *Given* {{integration/billing-gate-enforcement.test.ts}}, *then* it passes end-to-end.\n\nh3. Implementation Notes\nExpress middleware on write routes; {{status='restricted'}} blocks writes, reads continue.\n\nh3. Sources\nCommit {{8987f8a}} (billing-gate concern).\n"
+ },
+ {
+  "key": "CRAN-170",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* product-heavy customer,\n*I want* a Pro tier priced per product + contributor,\n*so that* orgs with many products get a fair tier that unlocks premium capabilities.\n\nh3. Acceptance Criteria\n* *Given* {{requirePlan('pro')}}, *when* exported, *then* it enforces standard<pro<enterprise.\n* *Given* a Pro route, *when* hit by a standard org, *then* it returns 402.\n\nh3. Implementation Notes\n€9/product + €6/contributor; gates Trust Centre publish, public API v1, AI Copilot.\n\nh3. Sources\nPro-tier introduction commit.\n"
+ },
+ {
+  "key": "CRAN-171",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* pricing values editable without a redeploy,\n*so that* I can change pricing from the admin panel.\n\nh3. Acceptance Criteria\n* *Given* {{platform_settings}}, *when* inspected, *then* it is {{key text pk, value jsonb, updated_at}}.\n* *Given* {{/admin/system}}, *when* opened, *then* pricing controls are exposed.\n\nh3. Implementation Notes\nKey-value pricing store.\n\nh3. Sources\nPro-tier + admin commits.\n"
+ },
+ {
+  "key": "CRAN-172",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* platform owner,\n*I want* the tier model and pricing rationale documented before Stripe go-live,\n*so that* the billing design is captured for due diligence.\n\nh3. Acceptance Criteria\n* *Given* {{docs/billing-tier.md}}, *when* checked, *then* it exists at HEAD.\n\nh3. Implementation Notes\nPre-Stripe documentation.\n\nh3. Sources\nCommit {{4dd6841}} (2026-02-25, billing-tier doc concern).\n"
+ },
+ {
+  "key": "CRAN-173",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* platform admin,\n*I want* controls to extend trials, exempt, or pause billing for an org,\n*so that* I can manage edge-case billing situations without code changes.\n\nh3. Acceptance Criteria\n* *Given* {{routes/admin-orgs.test.ts}}, *when* run, *then* the three actions are covered.\n* *Given* any action, *when* taken, *then* an audit-log entry is written.\n\nh3. Implementation Notes\nExtend trial / exempt / pause set {{trial_ends_at}} / {{status}}; respected by the gate.\n\nh3. Sources\nStripe + admin-orgs commits.\n"
+ },
+ {
+  "key": "CRAN-48",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer (and prospective buyer of their software),\n*I want* a public Trust Centre where I publish live, data-derived compliance badges and can be contacted,\n*so that* buyers can discover and trust my compliance posture, derived from real evidence rather than self-attestation.\n\nh3. Scope\nPublic compliance directory (profiles + contact log + rate limiting); landing/UI polish; codebase-wide Marketplace→Trust Centre rename (table name retained); live badge derivation; Pro-gating on publish.\n\nh3. Acceptance Criteria\n* *Given* {{routes/trust-centre.test.ts}}, *when* run, *then* list/detail/contact are covered.\n* *Given* underlying data changes, *when* badges recompute, *then* they update within seconds.\n* *Given* the publish endpoint, *when* a standard org hits it, *then* {{requirePlan('pro')}} returns 402.\n\nh3. Child Stories\n* CRAN-174 Marketplace baseline\n* CRAN-175 Landing + UI polish\n* CRAN-176 Trust Centre rename\n* CRAN-177 Badge derivation\n* CRAN-178 Pro-gating\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-174",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a public compliance directory with searchable profiles and gated contact,\n*so that* buyers can find my product and contact me, while I control my listing.\n\nh3. Acceptance Criteria\n* *Given* {{routes/trust-centre.test.ts}} (renamed from {{marketplace.test.ts}}), *when* run, *then* list/detail/contact are covered.\n* *Given* the categories, *when* listed, *then* 10 are present (IoT, Industrial, Automotive, Healthcare, FinTech, Enterprise, Open Source, SaaS, Cybersecurity, Other).\n\nh3. Implementation Notes\n{{marketplace_profiles}} + {{marketplace_contact_log}}; {{computeComplianceBadges()}}; public list/detail + auth-gated contact (3/day, 1/org/7d, self-contact blocked); settings page to toggle/edit.\n\nh3. Sources\nCommit {{d235d5c}} (2026-02-25 10:53).\n"
+ },
+ {
+  "key": "CRAN-175",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* visitor,\n*I want* a polished landing page and full-width directory layout,\n*so that* the public face of the product reads cleanly and professionally.\n\nh3. Acceptance Criteria\n* *Given* {{/}} and {{/marketplace}}, *when* viewed, *then* the hero ('Compliance without the chaos'), alignment and full-width card list match the intended design.\n\nh3. Implementation Notes\nCard layout switched tiled→full-width; accent-blue logo '2' outside admin.\n\nh3. Sources\nCommit {{62fec94}} (2026-02-25 13:29).\n"
+ },
+ {
+  "key": "CRAN-176",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* engineer,\n*I want* every code-level 'Marketplace' reference renamed to 'Trust Centre',\n*so that* the product's naming is consistent without ever renaming a customer-data table.\n\nh3. Acceptance Criteria\n* *Given* a repo grep for 'marketplace' (excluding scratch/evidence/backups), *when* run, *then* only the {{marketplace_profiles}} table name + acceptable docs remain.\n* *Given* the 90+ renamed tests, *then* they pass.\n\nh3. Implementation Notes\nRoutes/services/pages/tests/e2e/docs/help renamed; table name retained per CLAUDE.md rule 14 (no renaming customer-data tables).\n\nh3. Sources\nSession 60 rename commits.\n"
+ },
+ {
+  "key": "CRAN-177",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* buyer evaluating a supplier,\n*I want* compliance badges derived from live data, not self-attestation,\n*so that* the badges I see reflect the supplier's actual current evidence.\n\nh3. Acceptance Criteria\n* *Given* {{routes/trust-classification.test.ts}}, *when* run, *then* it passes.\n* *Given* underlying data changes, *when* recomputed, *then* the badge updates within seconds.\n\nh3. Implementation Notes\nCRA-ready / NIS2-ready / IP-attested / SBOM-published from obligations + tech-file + scan freshness + IP-proof existence.\n\nh3. Sources\nCommit {{d235d5c}} + session-60 refresh.\n"
+ },
+ {
+  "key": "CRAN-178",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* Pro-plan manufacturer,\n*I want* Trust Centre publishing gated to the Pro plan,\n*so that* publishing is a Pro capability, consistently gated like the other premium suites.\n\nh3. Acceptance Criteria\n* *Given* E2E {{trust-centre.spec.ts}}, *when* run on a fresh stack, *then* it passes (org upgraded to Pro in beforeAll, restored in afterAll).\n* *Given* the publish endpoint, *when* a standard org hits it, *then* {{requirePlan('pro')}} returns 402.\n\nh3. Implementation Notes\nMirrors the public-api-v1 E2E pattern.\n\nh3. Sources\nSession 63 E2E fix {{c2e1318}}.\n"
+ },
+ {
+  "key": "CRAN-49",
+  "points": null,
+  "effort": null,
+  "description": "h2. Epic Goal\n*As a* manufacturer (and their customers),\n*I want* an EU-sovereign software-escrow orchestrator that deposits compliance artefacts to a self-hosted Forgejo,\n*so that* my customers have assured access to my source + evidence under escrow, with daily deposits and EU data residency.\n\nh3. Scope\nSelf-hosted Forgejo v10 (escrow.cranis2.dev) with 7 artefact types, per-product toggles and daily 5 AM deposits; escrow-agent collaborator access; final deposit on product deletion; repo-URL gating; accordion sidebar.\n\nh3. Acceptance Criteria\n* *Given* {{routes/escrow.test.ts}}, *when* run, *then* config/setup/deposit/deposits/status (6 endpoints) are covered.\n* *Given* an escrow agent, *when* invited, *then* a Forgejo collaborator is created (re-invite does not reset the password).\n* *Given* product deletion, *when* it runs, *then* a final {{product_deleted}} deposit is made and the repo is preserved.\n\nh3. Child Stories\n* CRAN-179 Orchestrator baseline\n* CRAN-180 Agent access\n* CRAN-181 Final deposit on delete\n* CRAN-182 Repo-URL gating\n* CRAN-183 Accordion sidebar\n\n_As-built (Done). Story points + effort aggregate from child stories._\n"
+ },
+ {
+  "key": "CRAN-179",
+  "points": 8,
+  "effort": "4d",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* a Forgejo-backed escrow orchestrator with daily artefact deposits,\n*so that* my compliance artefacts are escrowed automatically in an EU-sovereign store.\n\nh3. Acceptance Criteria\n* *Given* {{routes/escrow.test.ts}}, *when* run, *then* config/setup/deposit/deposits/status are covered.\n* *Given* the Tunnel, *when* checked, *then* Forgejo is reachable at {{escrow.cranis2.dev}}.\n\nh3. Implementation Notes\nForgejo v10 in Docker + Cloudflare Tunnel; 7 artefact types; per-product toggles; daily 5 AM deposits with date/hour gating; {{escrow_configs}} + {{escrow_deposits}}.\n\nh3. Sources\nCommit {{f3835b2}} (2026-02-26 10:21).\n"
+ },
+ {
+  "key": "CRAN-180",
+  "points": 5,
+  "effort": "2d 4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* to grant an escrow agent collaborator access to my Forgejo repo,\n*so that* a nominated escrow agent can access the escrowed material, tracked per engagement.\n\nh3. Acceptance Criteria\n* *Given* {{routes/escrow.test.ts}}, *when* run, *then* agent invite/re-invite/multi-product are covered.\n* *Given* a first invite, *when* sent, *then* a Forgejo collaborator is created; *given* a re-invite, *then* the password is not reset.\n\nh3. Implementation Notes\nOne-time credentials banner (new) / access notice (existing); agent reference codes; Resend emails; multi-product agent support.\n\nh3. Sources\nCommit {{27152d4}} (2026-02-26, escrow-agent concern).\n"
+ },
+ {
+  "key": "CRAN-181",
+  "points": 2,
+  "effort": "1d",
+  "description": "h3. User Story\n*As a* manufacturer leaving the platform,\n*I want* a final escrow deposit fired on product deletion,\n*so that* the escrow holds a complete final snapshot and the repo survives as a permanent archive.\n\nh3. Acceptance Criteria\n* *Given* the delete flow, *when* run, *then* a final {{product_deleted}} deposit precedes cascade-delete (covered by escrow/integration test).\n* *Given* the cascade, *when* complete, *then* the Forgejo repo remains.\n\nh3. Implementation Notes\nCustomer can always return to the archive.\n\nh3. Sources\nCommit {{27152d4}} (product-deletion concern).\n"
+ },
+ {
+  "key": "CRAN-182",
+  "points": 1,
+  "effort": "4h",
+  "description": "h3. User Story\n*As a* manufacturer,\n*I want* escrow setup gated on a repo URL existing,\n*so that* I'm clearly told escrow needs a repo, and products without one still delete/export fine.\n\nh3. Acceptance Criteria\n* *Given* a product without {{repoUrl}}, *when* opening escrow setup, *then* a friendly gating message shows.\n\nh3. Implementation Notes\nDelete/export handles repo-less products.\n\nh3. Sources\nCommit {{27152d4}} (gating concern).\n"
+ },
+ {
+  "key": "CRAN-183",
+  "points": 3,
+  "effort": "1d 4h",
+  "description": "h3. User Story\n*As a* user navigating the app,\n*I want* an accordion sidebar that keeps navigation tidy,\n*so that* only the relevant menu section is open and I can see where I am.\n\nh3. Acceptance Criteria\n* *Given* the sidebar, *when* used, *then* it collapses cleanly and auto-expands the section matching the current route (verified on hard refresh).\n\nh3. Implementation Notes\nChevron indicators; one section open at a time; active dot when a collapsed section holds the current page.\n\nh3. Sources\nCommit {{27152d4}} (accordion-sidebar concern).\n"
+ }
+]
