@@ -39,6 +39,7 @@ import { extractPackageInfo } from './repo-helpers.js';
 import { checkTrialExpiry, checkPaymentGrace } from './billing.js';
 import { ensureWebhook } from './webhook.js';
 import { runAllEscrowDeposits } from './escrow-service.js';
+import { rebuildRoadmaps } from './roadmap-rebuild.js';
 import { logger } from '../utils/logger.js';
 import { evaluateOrganisation, applyClassification } from './trust-classification.js';
 import { DEADLINES } from '../routes/compliance-checklist.js';
@@ -91,6 +92,9 @@ const RESERVE_SUFFICIENCY_HOUR = 10;
 const TRUST_EVAL_DAY = 1;
 const TRUST_EVAL_HOUR = 6;
 
+// Hour of the day to rebuild the Jira-driven roadmap pages (0-23, default: 6 AM)
+const ROADMAP_REBUILD_HOUR = 6;
+
 let lastSyncDate = '';
 let lastVulnScanDate = '';
 let lastVulnDbSyncDate = '';
@@ -104,6 +108,7 @@ let lastSnapshotScheduleDate = '';
 let lastRetentionExpiryDate = '';
 let lastReserveSufficiencyMonth = '';
 let lastTrustEvalWeek = '';
+let lastRoadmapRebuildDate = '';
 
 async function getProductRepoToken(productId: string, forProvider?: RepoProvider): Promise<{ token: string; orgId: string; provider: RepoProvider; instanceUrl: string | null } | null> {
   // Find the product's owning organisation and look up its org-level repo connection.
@@ -1519,8 +1524,32 @@ async function runWeeklyTrustEvaluation() {
   }
 }
 
+async function runDailyRoadmapRebuild(): Promise<void> {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (lastRoadmapRebuildDate === todayStr) return; // Already ran today
+
+  const now = new Date();
+  if (now.getHours() < ROADMAP_REBUILD_HOUR) return; // Not yet time
+
+  // No Jira token (e.g. dev/test without credentials) — skip quietly for the day.
+  if (!process.env.JIRA_API_TOKEN) {
+    lastRoadmapRebuildDate = todayStr;
+    return;
+  }
+
+  lastRoadmapRebuildDate = todayStr;
+  logger.info('[ROADMAP-SCHEDULER] Rebuilding roadmap pages from live Jira...');
+
+  try {
+    const result = await rebuildRoadmaps();
+    logger.info('[ROADMAP-SCHEDULER] Roadmap rebuild complete — ' + result.counts);
+  } catch (err: any) {
+    console.error('[ROADMAP-SCHEDULER] Roadmap rebuild failed:', err.message);
+  }
+}
+
 export function startScheduler(): void {
-  logger.info('[SCHEDULER] Started – checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, threat-intel refresh at ' + THREAT_INTEL_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00, scheduled snapshots at ' + SNAPSHOT_SCHEDULE_HOUR + ':00, retention expiry at ' + RETENTION_EXPIRY_HOUR + ':00, reserve sufficiency on 1st at ' + RESERVE_SUFFICIENCY_HOUR + ':00');
+  logger.info('[SCHEDULER] Started – checking every ' + (CHECK_INTERVAL_MS / 60000) + ' minutes, vuln DB sync at ' + VULN_DB_SYNC_HOUR + ':00, threat-intel refresh at ' + THREAT_INTEL_HOUR + ':00, SBOM sync at ' + AUTO_SYNC_HOUR + ':00, vuln scan at ' + VULN_SCAN_HOUR + ':00, billing checks at ' + BILLING_CHECK_HOUR + ':00, CRA deadline checks every hour, escrow deposits at ' + ESCROW_DEPOSIT_HOUR + ':00, webhook health at ' + WEBHOOK_HEALTH_HOUR + ':00, support period checks at ' + SUPPORT_CHECK_HOUR + ':00, smart deadline alerts at ' + SMART_DEADLINE_HOUR + ':00, scheduled snapshots at ' + SNAPSHOT_SCHEDULE_HOUR + ':00, retention expiry at ' + RETENTION_EXPIRY_HOUR + ':00, reserve sufficiency on 1st at ' + RESERVE_SUFFICIENCY_HOUR + ':00, roadmap rebuild at ' + ROADMAP_REBUILD_HOUR + ':00');
 
   // Run check periodically – all three have hour-gating and date-tracking
   setInterval(() => {
@@ -1540,5 +1569,6 @@ export function startScheduler(): void {
     checkReserveSufficiency().catch(err => console.error('[SCHEDULER] Uncaught error in reserve sufficiency check:', err));
     runWeeklyTrustEvaluation().catch(err => console.error('[SCHEDULER] Uncaught error in trust evaluation:', err));
     runMonthlyAffiliateStatements().catch(err => console.error('[SCHEDULER] Uncaught error in affiliate statements:', err));
+    runDailyRoadmapRebuild().catch(err => console.error('[SCHEDULER] Uncaught error in roadmap rebuild:', err));
   }, CHECK_INTERVAL_MS);
 }

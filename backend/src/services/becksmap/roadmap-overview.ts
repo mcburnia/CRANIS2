@@ -1,3 +1,7 @@
+// Hand-authored overview source — the Beck-map definition for /roadmap.
+// Edit this object directly. The __SHIPPED_COUNTS__ token is replaced at build
+// time with live Jira Done-counts by roadmap-rebuild.ts.
+export const ROADMAP_OVERVIEW =
 {
   "title": "CRANIS2 — Product & Programme Roadmap",
   "subtitle": "What we've shipped and what's left — from a launched platform to full Cyber Resilience Act (CRA) readiness",
@@ -119,3 +123,4 @@
     }
   }
 }
+;

@@ -66,9 +66,16 @@ services:
       SCW_REGION: ${SCW_REGION}
       SCW_BUCKET_NAME: ${SCW_BUCKET_NAME}
       CRANIS2_SIGNING_KEY: ${CRANIS2_SIGNING_KEY}
+      # Jira CRAN — used by the scheduler's daily roadmap rebuild
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN}
+      JIRA_EMAIL: ${JIRA_EMAIL:-andi.mcburnie@gmail.com}
     volumes:
       - ./docs:/app/docs:ro
       - ./data/snapshots:/app/data/snapshots
+      # Roadmap pages are regenerated in-container by the scheduler; they must
+      # land where nginx serves them (dist) and survive a frontend rebuild (public).
+      - ./frontend/dist:/app/webroot/dist
+      - ./frontend/public:/app/webroot/public
     deploy:
       resources:
         limits:
