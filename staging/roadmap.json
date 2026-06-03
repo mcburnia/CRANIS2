@@ -1,0 +1,121 @@
+{
+  "title": "CRANIS2 — Product & Programme Roadmap",
+  "subtitle": "What we've shipped and what's left — from a launched platform to full Cyber Resilience Act (CRA) readiness",
+  "chapter": "Roadmap · June 2026",
+  "audienceTags": ["Founder", "Team"],
+  "youAreHere": "now",
+  "labelGap": 9,
+  "links": [{ "label": "What's left — by timeline →", "href": "/by-period" }, { "label": "What's left — by discipline →", "href": "/left-to-do" }],
+  "preselectFirst": true,
+
+  "mainLine": [
+    { "id": "shipped", "label": "Shipped", "sub": "Built & Live Beta", "type": "terminus", "colour": "green", "labelPos": "above" },
+    { "id": "now", "label": "Now", "sub": "June 2026", "labelPos": "below" },
+    { "id": "cra26", "label": "Sep 2026", "sub": "CRA deadline", "type": "interchange", "colour": "error", "labelColour": "#D85A30", "labelPos": "above", "labelSize": "18" },
+    { "id": "q4", "label": "Q4 2026", "sub": "Growth engine + product liability", "labelPos": "below" },
+    { "id": "q1", "label": "Q1 2027", "sub": "Tier-1 + single sign-on", "labelPos": "above" },
+    { "id": "q2", "label": "Q2 2027", "sub": "Tier-2 + multi-language", "labelPos": "below" },
+    { "id": "q3_27", "label": "Q3 2027", "sub": "Tier-3 + CRA-complete", "labelPos": "above" },
+    { "id": "q4_27", "label": "Q4 2027", "sub": "Full CRA readiness", "type": "endpoint", "endColour": "green", "labelPos": "below" }
+  ],
+
+  "feeders": [
+    { "id": "pld26", "target": "q4", "label": "Product Liability", "sub": "Dec 2026" },
+    { "id": "cra27", "target": "q4_27", "label": "CRA full", "sub": "Dec 2027" }
+  ],
+
+  "branches": { "above": [], "below": [] },
+
+  "stations": {
+    "shipped": {
+      "icon": "🚀",
+      "iconBg": "#EAF3DE",
+      "badge": "Shipped",
+      "badgeClass": "badge-green",
+      "title": "Platform built and launched (Beta)",
+      "sub": "Live in production at cranis2.com since 30 April 2026",
+      "body": "<p>CRANIS2 launched to production at <strong>cranis2.com</strong> on 30 April 2026 (Beta). Shipped across these areas:</p><ul class=\"detail-list\"><li>Platform · authentication · multi-tenant organisations</li><li>Products · repositories · SBOM · vulnerability scanning</li><li>Technical File · obligations engine · Article 14 reporting · 10-year evidence Vault</li><li>AI Copilot suite · public API · external integrations</li><li>Trust Centre · software escrow · billing · affiliate programme</li><li>Security &amp; PQC · GDPR — hybrid signing, hardening, data-subject rights</li></ul><ul class=\"acro-list\"><li>SBOM — software bill of materials</li><li>Article 14 — the CRA's incident-reporting duty</li><li>PQC — post-quantum cryptography</li><li>GDPR — General Data Protection Regulation</li></ul><div class=\"tip\"><strong>__SHIPPED_COUNTS__</strong> Everything to the right of this station is still ahead of us.</div>"
+    },
+    "now": {
+      "icon": "📍",
+      "iconBg": "#FAEEDA",
+      "badge": "We are here",
+      "badgeClass": "badge-amber",
+      "title": "Where we are — June 2026",
+      "sub": "Finishing launch, laying foundations, starting go-to-market",
+      "body": "<p><strong>This is our current position.</strong> Between now and the September CRA deadline (the next station), the focus is:</p><ul class=\"detail-list\"><li>Finish launch — DKIM, live Stripe keys, secret rotation, ICO registration</li><li>Corporate &amp; legal foundation — UK NewCo, SEIS, IP assignment, trademark</li><li>Finance &amp; tax — EU VAT via the One-Stop-Shop (OSS)</li><li>Beta programme + customer-journey UAT</li><li>Brand foundation · social campaign · CRA-deadline content</li><li>Sales plan</li></ul><ul class=\"acro-list\"><li>DKIM — email-authentication standard (keeps mail out of spam)</li><li>ICO — Information Commissioner's Office, the UK data-protection regulator</li><li>SEIS — Seed Enterprise Investment Scheme (UK early-investor tax relief)</li><li>IP — intellectual property</li><li>OSS — VAT One-Stop-Shop (a single EU VAT return)</li><li>UAT — user-acceptance testing</li></ul>"
+    },
+    "cra26": {
+      "icon": "🚩",
+      "iconBg": "#FAECE7",
+      "badge": "Imminent deadline",
+      "badgeClass": "badge-coral",
+      "title": "CRA main obligations apply — September 2026",
+      "sub": "The immediate horizon — the next milestone after today",
+      "body": "<p><strong>This is the deadline on the immediate horizon.</strong> In <strong>September 2026</strong> the Cyber Resilience Act's main manufacturer obligations begin to apply.</p><p>The core capabilities — Technical File, vulnerability handling, SBOM and Article 14 incident reporting — are already shipped, so the remaining push is launch close-out, the legal/finance foundation, and the go-to-market motion that uses this deadline as its hook.</p><ul class=\"acro-list\"><li>SBOM — software bill of materials</li><li>Article 14 — the CRA's incident-reporting duty</li></ul><div class=\"warn\">This is the single most time-critical milestone on the roadmap, and it is only months away.</div>"
+    },
+    "q4": {
+      "icon": "📈",
+      "iconBg": "#EEEDFE",
+      "badge": "Q4 2026",
+      "badgeClass": "badge-purple",
+      "title": "Turn on the growth engine; meet the product-liability deadline",
+      "sub": "October – December 2026",
+      "body": "<p><strong>Where the two-sided market and the new statutory obligations come together.</strong></p><ul class=\"detail-list\"><li>Operator Supplier Dashboard + demand-side outreach — the procurement-leverage flywheel</li><li>Product-liability (PLD) evidence pack + DORA pack</li><li>CVD intake + customer-facing SBOM publication</li><li>Affiliate activation + accessibility to WCAG</li></ul><ul class=\"acro-list\"><li>PLD — Product Liability Directive (EU); classifies software as a product</li><li>DORA — Digital Operational Resilience Act (EU financial sector)</li><li>CVD — Coordinated Vulnerability Disclosure</li><li>SBOM — software bill of materials</li><li>WCAG — Web Content Accessibility Guidelines</li></ul>"
+    },
+    "q1": {
+      "icon": "🔁",
+      "iconBg": "#E6F1FB",
+      "badge": "Q1 2027",
+      "badgeClass": "badge-blue",
+      "title": "Complete the highest-priority CRA features and add single sign-on",
+      "sub": "January – March 2027",
+      "body": "<p><strong>Finish the highest-leverage CRA coverage and add federated sign-in.</strong></p><ul class=\"detail-list\"><li>Regulatory supplier-assessment auto-answer · single-incident multi-track notification · sub-processor list · substantial-modification detection · GDPR Article 30 RoPA generator</li><li>Single sign-on — log in with Google / GitHub / Microsoft / Apple</li></ul><ul class=\"acro-list\"><li>RoPA — Records of Processing Activities (required by GDPR Article 30)</li></ul>"
+    },
+    "q2": {
+      "icon": "🌍",
+      "iconBg": "#E6F1FB",
+      "badge": "Q2 2027",
+      "badgeClass": "badge-blue",
+      "title": "Second-tier coverage and international reach",
+      "sub": "April – June 2027",
+      "body": "<ul class=\"detail-list\"><li>Regulator evidence portal · harmonised-standards catalogue · Notified Body workflow · DPIA generator · regulatory policy attestation</li><li>Multi-language support (internationalisation)</li><li>Service unit-test coverage to 100%</li></ul><ul class=\"acro-list\"><li>DPIA — Data Protection Impact Assessment</li></ul>"
+    },
+    "q3_27": {
+      "icon": "🧩",
+      "iconBg": "#EAF3DE",
+      "badge": "Q3 2027",
+      "badgeClass": "badge-green",
+      "title": "CRA-completeness — first wave",
+      "sub": "July – September 2027",
+      "body": "<p>The first wave of CRA-completeness items and tidy-up.</p><ul class=\"detail-list\"><li>Annex II user pack · CSAF advisory feed · DPA generator · Open-Source-Steward workflow</li><li>Evidence dropbox · help-guide stub completion · major dependency upgrades</li><li>Commercial-offering discovery (Enterprise / Managed hosting)</li></ul><ul class=\"acro-list\"><li>Annex II — the CRA's user-facing information requirements</li><li>CSAF — Common Security Advisory Framework (machine-readable advisories)</li><li>DPA — Data Processing Agreement</li></ul>"
+    },
+    "q4_27": {
+      "icon": "🏁",
+      "iconBg": "#EAF3DE",
+      "badge": "Q4 2027",
+      "badgeClass": "badge-green",
+      "title": "Final coverage — full CRA applicability",
+      "sub": "October – December 2027",
+      "body": "<p><strong>The last wave — reaching full CRA readiness as the regulation becomes fully applicable in December 2027.</strong></p><ul class=\"detail-list\"><li>EU AI Act overlap · NIS2 risk matrix · compliance calendar · multi-product policy templating</li><li>Per-component due-diligence · Article 14(1)(b) trigger · authorised-representative role · Module A self-assessment record</li><li>Supplier Trust Centre · chat-ops (Slack)</li></ul><ul class=\"acro-list\"><li>NIS2 — the EU Network &amp; Information Security Directive (2nd edition)</li><li>Module A — the CRA's internal self-assessment conformity route</li></ul><div class=\"tip\">Reaching this endpoint means full CRA readiness across the product.</div>"
+    },
+    "pld26": {
+      "icon": "🚩",
+      "iconBg": "#FAEEDA",
+      "badge": "Deadline",
+      "badgeClass": "badge-amber",
+      "title": "Product Liability Directive (PLD) recast",
+      "sub": "December 2026",
+      "body": "<p>The <strong>Product Liability Directive recast (EU) 2024/2853</strong> must be transposed into national law by <strong>December 2026</strong>. It classifies software as a product for liability purposes — addressed by our product-liability evidence pack.</p>"
+    },
+    "cra27": {
+      "icon": "🚩",
+      "iconBg": "#FAEEDA",
+      "badge": "Deadline",
+      "badgeClass": "badge-amber",
+      "title": "CRA full applicability",
+      "sub": "December 2027",
+      "body": "<p>The Cyber Resilience Act reaches <strong>full applicability in December 2027</strong>. The second- and final-tier work through 2027 targets this milestone.</p>"
+    }
+  }
+}

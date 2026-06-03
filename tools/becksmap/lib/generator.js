@@ -30,8 +30,9 @@ export function generateSVG(def) {
   const feeders = def.feeders || [];
   const hasLowerBranch = (branches.below || []).length > 0;
 
-  const viewBoxHeight = hasLowerBranch ? GRID.viewBoxWithLower : GRID.viewBoxNoLower;
-  const legendY = hasLowerBranch ? GRID.legendWithLower : GRID.legendNoLower;
+  let viewBoxHeight = hasLowerBranch ? GRID.viewBoxWithLower : GRID.viewBoxNoLower;
+  let legendY = hasLowerBranch ? GRID.legendWithLower : GRID.legendNoLower;
+  if (!hasLowerBranch && def.youAreHere) { viewBoxHeight = 244; legendY = 230; }
 
   // Calculate X positions for main-line stations
   const xPositions = calculateStationXPositions(mainStations.length);
@@ -101,9 +102,10 @@ export function generateSVG(def) {
     const x = xPositions[i];
     const cy = GRID.mainY;
     const anchor = getTextAnchor(i, stn, mainStations, branchDepartIds, branchArriveIds);
-    const labelsAbove = labelPositions[i].above;
-    const titleY = labelsAbove ? GRID.rows.mainUpperText.title : GRID.rows.mainLowerText.title;
-    const subY = labelsAbove ? GRID.rows.mainUpperText.sub : GRID.rows.mainLowerText.sub;
+    const labelsAbove = stn.labelPos ? (stn.labelPos === 'above') : labelPositions[i].above;
+    const _gap = def.labelGap || 0;
+    const titleY = labelsAbove ? GRID.rows.mainUpperText.title - _gap : GRID.rows.mainLowerText.title + _gap;
+    const subY = labelsAbove ? GRID.rows.mainUpperText.sub - _gap : GRID.rows.mainLowerText.sub + _gap;
     const colour = stn.colour ? (COLOURS[stn.colour] || stn.colour) : COLOURS.main;
     const endColour = stn.type === 'endpoint' ? (COLOURS[stn.endColour] || COLOURS.green) : null;
 
@@ -124,10 +126,20 @@ export function generateSVG(def) {
     }
 
     const labelColour = stn.labelColour || '#1A1A18';
-    parts.push(`<text x="${x}" y="${titleY}" text-anchor="${anchor}" class="lbl" font-weight="600" style="fill:${labelColour}">${escapeXml(stn.label)}</text>`);
+    parts.push(`<text x="${x}" y="${titleY}" text-anchor="${anchor}" class="lbl" font-weight="600" style="fill:${labelColour}${stn.labelSize ? ';font-size:' + stn.labelSize + 'px' : ''}">${escapeXml(stn.label)}</text>`);
     parts.push(`<text x="${x}" y="${subY}" text-anchor="${anchor}" class="lbl-sub">${escapeXml(stn.sub)}</text>`);
     parts.push(`</g>`);
   });
+
+  // Draw "WE ARE HERE" marker (opt-in via def.youAreHere)
+  if (def.youAreHere && stationXMap[def.youAreHere] != null) {
+    const hx = stationXMap[def.youAreHere];
+    const amber = COLOURS.feeder;
+    parts.push(`<circle cx="${hx}" cy="${GRID.mainY}" r="15" fill="none" stroke="${amber}" stroke-width="2.5"/>`);
+    const ty = GRID.rows.lowerBranchUpper.title + (def.labelGap || 0) + 6;
+    parts.push(`<polygon points="${hx-6},${ty} ${hx+6},${ty} ${hx},${ty-8}" fill="${amber}"/>`);
+    parts.push(`<text x="${hx}" y="${ty+13}" text-anchor="middle" class="lbl" font-weight="700" style="fill:${amber}">WE ARE HERE</text>`);
+  }
 
   // Draw feeder stations (above main line)
   for (const f of feeders) {

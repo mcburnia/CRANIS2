@@ -39,3 +39,14 @@ evidence/*.png
 evidence/*.jpg
 evidence/*.jpeg
 evidence/*.heic
+
+# Generated roadmap pages + Jira-derived definitions (rebuilt by staging/rebuild-roadmaps.sh)
+frontend/public/roadmap/
+frontend/public/by-period/
+frontend/public/left-to-do/
+staging/cranis2-roadmap.html
+staging/by-period.html
+staging/left-to-do.html
+staging/roadmap.generated.json
+staging/by-period.json
+staging/left-to-do.json

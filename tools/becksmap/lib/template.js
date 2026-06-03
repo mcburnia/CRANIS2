@@ -43,7 +43,7 @@ ${CSS}
   <div class="sep"></div>
   <div class="breadcrumb">
     <span>${escapeHtml(def.chapter || '')}</span>
-    <span>\\u203a</span>
+    <span>›</span>
     <strong>${escapeHtml(def.title)}</strong>
   </div>
   <div class="audience-tags">${(def.audienceTags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
@@ -60,7 +60,7 @@ ${CSS}
 </div>
 <div class="instructions-wrap">
   <div class="prompt-state" id="prompt">
-    <div class="prompt-icon">\\ud83d\\uddfa\\ufe0f</div>
+    <div class="prompt-icon">🗺️</div>
     <h2>Select a station to begin</h2>
     <p>Click any station on the map above to read the instructions for that step.</p>
   </div>
@@ -76,7 +76,7 @@ ${CSS}
   </div>
 </div>
 <footer>
-  <span>CRANIS2 User Guide</span>
+  <span>CRANIS2 User Guide</span>${(def.links || []).map(l => ` &nbsp;|&nbsp; <a href="${escapeHtml(l.href)}" style="color:#1D9E75;font-weight:600;text-decoration:none">${escapeHtml(l.label)}</a>`).join('')}
 </footer>
 <script>
 const stations = ${stationsJS};
@@ -107,6 +107,7 @@ function show(id) {
   void card.offsetWidth;
   card.classList.add('visible');
 }
+${def.preselectFirst ? 'if (allIds && allIds.length) { show(allIds[0]); }' : ''}
 </script>
 </body>
 </html>`;
@@ -225,7 +226,7 @@ const CSS = `  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   .audience-tags{margin-left:auto;display:flex;gap:6px}
   .tag{font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6)}
   .map-section{background:var(--surface);border-bottom:2px solid var(--border);padding:24px 24px 16px}
-  .map-header{display:flex;align-items:baseline;gap:12px;margin-bottom:18px}
+  .map-header{display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin-bottom:18px}
   .map-header h1{font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px}
   .map-header p{font-family:'Outfit',sans-serif;font-size:13px;color:var(--text-3)}
   .map-wrap{overflow-x:auto;padding-bottom:4px}
@@ -264,6 +265,9 @@ const CSS = `  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   .detail-list{list-style:none;display:flex;flex-direction:column;gap:7px;padding-left:2px}
   .detail-list li{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text-2);display:flex;align-items:flex-start;gap:10px;line-height:1.55}
   .detail-list li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--teal);margin-top:7px;flex-shrink:0}
+  .acro-list{list-style:none;padding-left:16px;margin-top:8px;display:flex;flex-direction:column;gap:3px}
+  .acro-list li{font-family:'Outfit',sans-serif;font-size:12px;color:var(--text-3);line-height:1.45}
+  .acro-list li::before{content:'- ';color:var(--text-3)}
   .tip{background:var(--teal-lt);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--teal-dk);line-height:1.55}
   .warn{background:var(--amber-lt);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#412402;line-height:1.55}
   .info{background:#E6F1FB;border-left:3px solid #185FA5;border-radius:0 8px 8px 0;padding:11px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#042C53;line-height:1.55}
