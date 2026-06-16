@@ -1,0 +1,69 @@
+# Copyright © 2023–2026 Andrew (Andi) MCBURNIE. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+#
+# CRANIS2 — Gated production promotion (Phase 2 of the promotion pipeline).
+#
+# MANUAL trigger only (workflow_dispatch) — never on push/merge. The job runs
+# in the `production` GitHub Environment, which is configured with a required
+# reviewer: the workflow PAUSES for a human approval click before any prod
+# action. That click is the enforced §6 sign-off (docs/promotion-process.md).
+#
+# All prod access is via the restricted forced-command key (secret
+# PROMOTE_SSH_KEY → scripts/prod-ops-dispatch.sh): the runner can only invoke
+# the whitelisted verbs, never a general production shell.
+
+name: Promote to production
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (prod-release-YYYY-MM-DD-slug)"
+        required: true
+      assessment_sha:
+        description: "sha256 of migrations/release-<slug>.md"
+        required: true
+      script_sha:
+        description: "sha256 of migrations/release-<slug>.sql"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: promote-production
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Promote ${{ github.event.inputs.tag }}
+    runs-on: ubuntu-latest
+    environment: production        # ← required-reviewer approval gate
+    steps:
+      - name: Checkout the exact release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
+          fetch-depth: 0
+
+      - name: Configure restricted prod-ops SSH channel
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.PROMOTE_SSH_KEY }}" > ~/.ssh/promote_key
+          chmod 600 ~/.ssh/promote_key
+          ssh-keyscan -H "${{ vars.PROD_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          cat >> ~/.ssh/config <<EOF
+          Host cranis2-prod-promote
+            HostName ${{ vars.PROD_HOST }}
+            User ${{ vars.PROD_USER }}
+            IdentityFile ~/.ssh/promote_key
+            IdentitiesOnly yes
+          EOF
+
+      - name: Promote to production
+        run: |
+          ./scripts/promote-to-prod.sh \
+            --tag "${{ github.event.inputs.tag }}" \
+            --assessment-sha "${{ github.event.inputs.assessment_sha }}" \
+            --script-sha "${{ github.event.inputs.script_sha }}" \
+            --no-dry-run --yes
