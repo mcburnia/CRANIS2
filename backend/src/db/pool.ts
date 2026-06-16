@@ -34,6 +34,16 @@ const pool = new pg.Pool({
 export async function initDb() {
   const client = await pool.connect();
   try {
+    // Schema migrations ledger — one row per promoted release migration
+    // (docs/promotion-process.md §6.3). Additive + idempotent.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        id VARCHAR(255) PRIMARY KEY,
+        applied_at TIMESTAMPTZ DEFAULT NOW(),
+        checksum VARCHAR(128)
+      );
+    `);
+
     // Users table
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
