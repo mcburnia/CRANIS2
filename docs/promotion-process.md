@@ -312,18 +312,21 @@ This is the shape every transformational release follows: an assessment document
 
 ## 10. Implementation status
 
-As of 2026-05-19, the following is **in place**:
+As of 2026-06-16, the following is **in place**:
 
 - `backend/src/db/pool.ts initDb()` as the single source of truth for schema (CLAUDE.md rule 13).
+- `schema_migrations` table in `initDb()` — ledger of applied release migrations (§6.3).
 - Pre-promotion backups via `scripts/backup-databases.sh --pre-upgrade` (CLAUDE.md rule 12, see `docs/backup-retention.md`).
 - Customer-data invariant codified (CLAUDE.md rule 14).
+- `scripts/promote-to-prod.sh` — the gated dev-side orchestrator (§7), with a `--check` mode that runs every pre-flight gate without touching prod.
+- `scripts/deploy-on-prod.sh` — the prod-side executor (clean-tree guard → checkout tag → rebuild → health → migration). Also the forced-command target for the Phase-2 restricted CI deploy key.
+- `scripts/generate-schema-diff.sh` — schema-diff helper for the assessment (§6.4).
+- `migrations/` directory with `README.md`, `_template.md`, `_template.sql`.
 
-The following is **planned but not yet built** — tracked under backlog items #100 and #101:
+The following is **planned but not yet built**:
 
-- `scripts/promote-to-prod.sh` (orchestration + gates).
-- `scripts/generate-schema-diff.sh` (auto-generated diff for the assessment).
-- `migrations/` directory with `TEMPLATE-assessment.md` and `TEMPLATE-migration.sql`.
-- `schema_migrations` table in `initDb()` to track applied scripts.
+- A restricted forced-command dev→prod (and CI→prod) key whose only command is `deploy-on-prod.sh`, so promotion needs no general prod shell (Phase 2).
+- GitHub Actions: automatic test/build on push/PR (CI), plus a manually-triggered, environment-approved promotion workflow (CD) that calls `promote-to-prod.sh` (Phase 1–2).
 - A quarterly rollback rehearsal in a scratch environment.
 
 This document describes the **target state**. Update it as the machinery is built so that the gap between the doc and reality is always visible.
