@@ -184,7 +184,8 @@ Production live at `https://cranis2.com`. Full procedure: `docs/deployment-plan.
 - [ ] DKIM verification for `poste.cranis2.com` at Resend dashboard + Infomaniak DNS
 - [ ] Stripe live keys (currently `sk_test_*`) — get `sk_live_*`, live webhook (`whsec_*`), live `price_*` ID
 - [ ] Secret rotation (Anthropic API key, Codeberg client secret, Codeberg webhook secret, signing key, Postgres password, Forgejo admin token) — see `feedback_compose_config_secrets.md`
-- [ ] ICO registration (£40/year), update Privacy Policy placeholder
+- [x] ICO registration (£40/year) — done 2026-06-16
+- [ ] Update Privacy Policy placeholder with ICO registration number
 - [ ] Legal review of Privacy Policy + Terms of Service
 
 ---
