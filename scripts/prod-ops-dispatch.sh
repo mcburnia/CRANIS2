@@ -69,7 +69,7 @@ case "$VERB" in
     [ "${#A[@]}" -eq 1 ] || deny "rowcounts takes no args"
     allow rowcounts
     docker exec cranis2_postgres psql -U "$PG_USER" -d "$PG_DB" -tAc \
-      "SELECT 'users='||count(*) FROM users UNION ALL SELECT 'products='||count(*) FROM products UNION ALL SELECT 'org_billing='||count(*) FROM org_billing;"
+      "SELECT 'users='||count(*) FROM users UNION ALL SELECT 'org_billing='||count(*) FROM org_billing UNION ALL SELECT 'product_sboms='||count(*) FROM product_sboms UNION ALL SELECT 'vulnerability_findings='||count(*) FROM vulnerability_findings;"
     ;;
   backup)
     [ "${#A[@]}" -eq 1 ] || deny "backup takes no args"
