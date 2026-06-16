@@ -1,0 +1,87 @@
+# Copyright © 2023–2026 Andrew (Andi) MCBURNIE. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-Cranis2-Proprietary
+#
+# CRANIS2 — Continuous Integration (Phase 1 of the promotion pipeline).
+#
+# Runs automatically on every push to main and every pull request. This is
+# the "continuous" half of the model in docs/promotion-process.md: validation
+# is automatic; PROMOTION to prod stays a deliberate, gated, signed-off event
+# (scripts/promote-to-prod.sh) and is NOT triggered from here.
+#
+# v1 scope: typecheck, build, and a high/critical security audit per project
+# (the audit gate would have caught the dependency advisories fixed on
+# 2026-06-16). The DB-backed Vitest + Playwright suites need a Postgres+Neo4j
+# service stack and will be added incrementally.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — typecheck & audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Typecheck (tsc --noEmit)
+        run: npx tsc --noEmit
+      - name: Security audit (fail on high/critical)
+        run: npm audit --audit-level=high
+
+  frontend:
+    name: Frontend — build & audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Lint (informational — known backlog, non-blocking)
+        run: npm run lint
+        continue-on-error: true
+      - name: Build (tsc -b && vite build)
+        run: npm run build
+      - name: Security audit (fail on high/critical)
+        run: npm audit --audit-level=high
+
+  welcome:
+    name: Welcome — audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: welcome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: welcome/package-lock.json
+      - run: npm ci
+      - name: Security audit (fail on high/critical)
+        run: npm audit --audit-level=high
