@@ -8,13 +8,15 @@
 # andi@mcburnie.com
 
 # ──────────────────────────────────────────────────────────────────────
-# CRANIS2 — Dev→Prod promotion orchestrator (promotion pipeline, Phase 0)
+# CRANIS2 — Dev→Prod promotion orchestrator (promotion pipeline)
 #
 # Implements the human-readable runbook in docs/promotion-process.md §7.
-# Runs on the DEV host (the source of truth: it has the git repo, Postgres
-# for the migration dry-run, and node). Prod-side steps are performed over
-# SSH via $PROD_SSH (default: cranis2-prod). In Phase 2 that channel becomes
-# a restricted forced-command CI key whose only command is deploy-on-prod.sh.
+# Runs on the DEV host (or a CI runner): it has the git repo, Postgres for
+# the migration dry-run, and node. Every prod-side action goes through the
+# restricted prod-ops dispatcher over SSH ($PROD_SSH, default
+# cranis2-prod-promote → forced command scripts/prod-ops-dispatch.sh), so no
+# general production shell is ever needed — only the whitelisted verbs
+# (health / disk / backup / deploy / rowcounts).
 #
 # Promotion is a DELIBERATE, GATED, EVIDENCED event — never an ad-hoc push
 # (docs/promotion-process.md §1). Every gate below can abort the release.
@@ -25,8 +27,7 @@
 #
 #   ./scripts/promote-to-prod.sh --tag <release-tag> --check
 #       Run every pre-flight gate, change nothing, print the file SHAs.
-#
-#   ...add --local-only to --check to skip the prod-side gates (dev testing).
+#       Add --local-only to skip the prod-side gates (dev testing).
 #
 # Release tag form:  prod-release-YYYY-MM-DD-<slug>
 # Migration files:   migrations/release-YYYY-MM-DD-<slug>.{md,sql}
@@ -41,11 +42,12 @@ cd "$PROJECT_ROOT"
 TAG=""
 ASSESS_SHA=""
 SCRIPT_SHA=""
-PROD_SSH="cranis2-prod"
+PROD_SSH="cranis2-prod-promote"   # restricted forced-command channel
 CHECK_ONLY=false
 LOCAL_ONLY=false
 ASSUME_YES=false
-MIN_PROD_FREE_KB=1048576   # require ≥1 GiB free on prod for the backup
+RUN_DRYRUN=true                   # dev-side scratch-DB dry-run (no DB in CI → --no-dry-run)
+MIN_PROD_FREE_KB=1048576          # require ≥1 GiB free on prod for the backup
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -55,6 +57,7 @@ while [ "$#" -gt 0 ]; do
     --prod-ssh)       PROD_SSH="${2:-}"; shift 2 ;;
     --check)          CHECK_ONLY=true; shift ;;
     --local-only)     LOCAL_ONLY=true; shift ;;
+    --no-dry-run)     RUN_DRYRUN=false; shift ;;
     --yes)            ASSUME_YES=true; shift ;;
     -h|--help)        sed -n '11,40p' "$0"; exit 0 ;;
     *) echo "promote: unknown argument: $1" >&2; exit 2 ;;
@@ -64,6 +67,7 @@ done
 log()  { echo "[$(date -u +%H:%M:%S)] promote: $*"; }
 ok()   { echo "  ✓ $*"; }
 die()  { echo "[$(date -u +%H:%M:%S)] promote: ABORT: $*" >&2; exit 1; }
+# All prod access is via the restricted dispatcher: prod <verb> [args].
 prod() { ssh -o ConnectTimeout=15 "$PROD_SSH" "$@"; }
 
 [ -n "$TAG" ] || die "--tag <release-tag> is required"
@@ -120,10 +124,10 @@ fi
 if [ "$LOCAL_ONLY" = true ]; then
   echo "  • skipping prod-side gates (--local-only)"
 else
-  HC="$(prod 'curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health' || true)"
+  HC="$(prod health || true)"
   [ "$HC" = "200" ] || die "prod /api/health did not return 200 (got: ${HC:-unreachable}). Refusing to promote onto an unhealthy host."
   ok "prod /api/health = 200"
-  FREE_KB="$(prod 'df -k --output=avail / | tail -1' | tr -d ' ' || true)"
+  FREE_KB="$(prod disk || true)"
   if [ -n "$FREE_KB" ] && [ "$FREE_KB" -lt "$MIN_PROD_FREE_KB" ]; then
     die "prod free disk on / is ${FREE_KB} KiB (< ${MIN_PROD_FREE_KB} KiB) — free space before promoting"
   fi
@@ -134,18 +138,22 @@ fi
 # Confirms the migration executes cleanly AND idempotently against the
 # current schema. The customer-data row-count evidence lives in the signed
 # assessment (the gate verifies that exists; it does not re-do the work).
-log "Step 3 — migration dry-run (dev scratch DB, idempotency check)"
-SCRATCH="cranis2_promotion_test"
-PG="docker exec -i cranis2_postgres psql -U cranis2"
-docker exec cranis2_postgres psql -U cranis2 -d postgres -v ON_ERROR_STOP=1 \
-  -c "DROP DATABASE IF EXISTS ${SCRATCH};" -c "CREATE DATABASE ${SCRATCH};" >/dev/null \
-  || die "could not create scratch DB ${SCRATCH} on dev"
-docker exec cranis2_postgres pg_dump -U cranis2 --schema-only cranis2 \
-  | $PG -d "$SCRATCH" -q >/dev/null 2>&1 || die "could not load dev schema into scratch DB"
-$PG -d "$SCRATCH" -v ON_ERROR_STOP=1 -q < "$SQL" || die "migration failed on first apply against scratch schema"
-$PG -d "$SCRATCH" -v ON_ERROR_STOP=1 -q < "$SQL" || die "migration is NOT idempotent — failed on second apply (§6.3 requires idempotent migrations)"
-docker exec cranis2_postgres psql -U cranis2 -d postgres -c "DROP DATABASE IF EXISTS ${SCRATCH};" >/dev/null 2>&1 || true
-ok "migration applies cleanly and idempotently"
+if [ "$RUN_DRYRUN" != true ]; then
+  log "Step 3 — migration dry-run SKIPPED (--no-dry-run; evidence is in the signed assessment §6.4)"
+else
+  log "Step 3 — migration dry-run (dev scratch DB, idempotency check)"
+  SCRATCH="cranis2_promotion_test"
+  PG="docker exec -i cranis2_postgres psql -U cranis2"
+  docker exec cranis2_postgres psql -U cranis2 -d postgres -v ON_ERROR_STOP=1 \
+    -c "DROP DATABASE IF EXISTS ${SCRATCH};" -c "CREATE DATABASE ${SCRATCH};" >/dev/null \
+    || die "could not create scratch DB ${SCRATCH} on dev"
+  docker exec cranis2_postgres pg_dump -U cranis2 --schema-only cranis2 \
+    | $PG -d "$SCRATCH" -q >/dev/null 2>&1 || die "could not load dev schema into scratch DB"
+  $PG -d "$SCRATCH" -v ON_ERROR_STOP=1 -q < "$SQL" || die "migration failed on first apply against scratch schema"
+  $PG -d "$SCRATCH" -v ON_ERROR_STOP=1 -q < "$SQL" || die "migration is NOT idempotent — failed on second apply (§6.3 requires idempotent migrations)"
+  docker exec cranis2_postgres psql -U cranis2 -d postgres -c "DROP DATABASE IF EXISTS ${SCRATCH};" >/dev/null 2>&1 || true
+  ok "migration applies cleanly and idempotently"
+fi
 
 # ── --check stops here ──
 if [ "$CHECK_ONLY" = true ]; then
@@ -163,23 +171,23 @@ fi
 
 # ══ STEP 2 — Pre-promotion backup (§7 Step 2, CLAUDE.md rule 12) ══════
 log "Step 2 — pre-promotion backup on prod"
-prod './scripts/backup-databases.sh --pre-upgrade' | tee /tmp/promote-backup.log
+prod backup | tee /tmp/promote-backup.log
 grep -q 'BACKUP COMPLETE' /tmp/promote-backup.log || die "prod backup did not report BACKUP COMPLETE — aborting before any deploy"
 ok "pre-promotion backup complete"
 
 # ══ STEP 4+5 — Deploy code + apply migration on prod (§7 Steps 4–5) ══
 log "Step 4/5 — deploy ${TAG} to prod"
-prod "./scripts/deploy-on-prod.sh --tag ${TAG} --migration ${SQL}" | tee /tmp/promote-deploy.log
+prod "deploy --tag ${TAG} --migration ${SQL}" | tee /tmp/promote-deploy.log
 grep -q "DEPLOY COMPLETE ${TAG}" /tmp/promote-deploy.log || die "deploy did not complete — see output above; roll back per §8 if prod is degraded"
 ok "code deployed and migration applied"
 
 # ══ STEP 6 — Post-promotion verification (§7 Step 6) ═════════════════
 log "Step 6 — post-promotion verification"
-HC="$(prod 'curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health' || true)"
+HC="$(prod health || true)"
 [ "$HC" = "200" ] || die "post-deploy /api/health is ${HC:-unreachable} — investigate / roll back (§8)"
 ok "prod /api/health = 200"
 echo "  critical-table row counts (prod):"
-prod "docker exec cranis2_postgres psql -U cranis2 -d cranis2 -tAc \"SELECT 'users='||count(*) FROM users UNION ALL SELECT 'products='||count(*) FROM products UNION ALL SELECT 'org_billing='||count(*) FROM org_billing;\"" 2>/dev/null | sed 's/^/    /' || true
+prod rowcounts 2>/dev/null | sed 's/^/    /' || true
 
 echo "──────────────────────────────────────────────────────────"
 log "✓ PROMOTION COMPLETE — ${TAG} is live on cranis2.com"
