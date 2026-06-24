@@ -26,6 +26,7 @@ import VerifyEmailPage from './pages/public/VerifyEmailPage';
 import AcceptInvitePage from './pages/public/AcceptInvitePage';
 import ForgotPasswordPage from './pages/public/ForgotPasswordPage';
 import ResetPasswordPage from './pages/public/ResetPasswordPage';
+import ForgetMePage from './pages/public/ForgetMePage';
 import TrustCentrePage from './pages/public/TrustCentrePage';
 import TrustCentreDetailPage from './pages/public/TrustCentreDetailPage';
 import DocsPage from './pages/public/DocsPage';
@@ -101,6 +102,7 @@ const router = createBrowserRouter([
           { path: '/accept-invite', element: <AcceptInvitePage /> },
           { path: '/forgot-password', element: <ForgotPasswordPage /> },
           { path: '/reset-password', element: <ResetPasswordPage /> },
+          { path: '/forget-me', element: <ForgetMePage /> },
           { path: '/trust-centre', element: <TrustCentrePage /> },
           { path: '/trust-centre/:orgId', element: <TrustCentreDetailPage /> },
           { path: '/marketplace', element: <Navigate to="/trust-centre" replace /> },

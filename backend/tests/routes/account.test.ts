@@ -232,15 +232,43 @@ describe('/api/account', () => {
       expect(res.body.error).toContain('Incorrect password');
     });
 
-    it('should reject deletion of sole org admin', async () => {
-      // emptyAdmin is the only admin in the empty org
-      const emptyAdminToken = await getTestToken(TEST_USERS.emptyAdmin);
+    it('should erase the whole organisation when the sole admin deletes', async () => {
+      // A sole admin deleting their account is closing the organisation: rather
+      // than blocking them (the old 409), we erase the org and anonymise the
+      // legally-retained records. Uses a DISPOSABLE org so it never destroys a
+      // shared persona. (See account-lifecycle.test.ts for the close path.)
+      const pool = getAppPool();
+      const soleOrg = '00000000-0000-0000-0000-0000000501ad';
+      const soleEmail = 'sole-admin-delete@account-delete.test';
+      await pool.query(
+        `INSERT INTO org_billing (org_id, status, plan, created_at, updated_at)
+         VALUES ($1, 'trial', 'standard', NOW(), NOW())
+         ON CONFLICT (org_id) DO NOTHING`,
+        [soleOrg]
+      );
+      await pool.query(
+        `INSERT INTO users (id, email, password_hash, email_verified, org_id, org_role, is_platform_admin, created_at, updated_at)
+         SELECT gen_random_uuid(), $1, password_hash, TRUE, $2::uuid, 'admin', FALSE, NOW(), NOW()
+         FROM users WHERE email = $3
+         ON CONFLICT (email) DO NOTHING`,
+        [soleEmail, soleOrg, TEST_USERS.mfgAdmin]
+      );
+
+      const token = await loginTestUser(soleEmail);
       const res = await api.delete('/api/account', {
-        auth: emptyAdminToken,
+        auth: token,
         body: { password: TEST_PASSWORD },
       });
-      expect(res.status).toBe(409);
-      expect(res.body.error).toContain('sole admin');
+      expect(res.status).toBe(200);
+      expect(res.body.scope).toBe('organisation');
+
+      // The user and org are gone; the anonymised billing record is retained.
+      const u = await pool.query('SELECT id FROM users WHERE email = $1', [soleEmail]);
+      expect(u.rows.length).toBe(0);
+      const b = await pool.query('SELECT billing_email FROM org_billing WHERE org_id = $1', [soleOrg]);
+      expect(b.rows[0]?.billing_email).toMatch(/^erased-/);
+
+      await pool.query('DELETE FROM org_billing WHERE org_id = $1', [soleOrg]);
     });
 
     it('should successfully delete a non-admin member account', async () => {
