@@ -13,8 +13,10 @@ import pool from '../db/pool.js';
 import { getDriver } from '../db/neo4j.js';
 import { createNotification } from './notifications.js';
 import {
-  sendTrialExpiryWarning, sendTrialExpired, sendTrialGraceEnded,
+  sendTrialExpiryWarning,
   sendPaymentFailed, sendAccessRestricted, sendSubscriptionCancelled,
+  sendTrialLastChance, sendSorryToSeeYouGo,
+  sendWinbackOneMonth, sendWinbackSixMonth,
 } from './billing-emails.js';
 
 // ── Stripe client (lazy init to avoid crash when key not set) ──
@@ -692,76 +694,159 @@ async function getOrgInfoForEmail(orgId: string) {
   return { orgId, orgName, billingEmail: billingEmail || undefined };
 }
 
+// ── Lifecycle email dedup ──────────────────────────────────────────────────
+//
+// Each lifecycle email must be sent exactly once per org. We claim the slot
+// atomically via INSERT … ON CONFLICT DO NOTHING; only the run that actually
+// inserts the row gets to send. This survives backend restarts and concurrent
+// scheduler ticks — the bug that caused the daily "trial ended" spam was that
+// the old code re-sent on every run with no such guard.
+
+export type LifecycleEmailType =
+  | 'trial_30d' | 'trial_7d' | 'trial_last_chance'
+  | 'sorry_to_see_you_go' | 'winback_1mo' | 'winback_6mo';
+
+/**
+ * Claim the (org, type) slot. Returns true exactly once — for the caller that
+ * won the insert. Returns false if the email was already sent (or claimed).
+ */
+async function claimLifecycleEmail(orgId: string, type: LifecycleEmailType): Promise<boolean> {
+  const res = await pool.query(
+    `INSERT INTO lifecycle_emails (org_id, email_type) VALUES ($1, $2)
+     ON CONFLICT (org_id, email_type) DO NOTHING`,
+    [orgId, type]
+  );
+  return (res.rowCount || 0) > 0;
+}
+
+/** Has this lifecycle email already been sent? When, if so. */
+async function lifecycleEmailSentAt(orgId: string, type: LifecycleEmailType): Promise<Date | null> {
+  const res = await pool.query(
+    `SELECT sent_at FROM lifecycle_emails WHERE org_id = $1 AND email_type = $2`,
+    [orgId, type]
+  );
+  return res.rows[0]?.sent_at ? new Date(res.rows[0].sent_at) : null;
+}
+
+/**
+ * Send a lifecycle email at most once. If the send throws we release the claim
+ * so a later run can retry, rather than silently dropping the email forever.
+ */
+async function sendLifecycleOnce(
+  orgId: string, type: LifecycleEmailType, send: () => Promise<void>
+): Promise<boolean> {
+  if (!(await claimLifecycleEmail(orgId, type))) return false;
+  try {
+    await send();
+    return true;
+  } catch (e: any) {
+    console.error(`[BILLING] Lifecycle email '${type}' failed for ${orgId}:`, e?.message);
+    await pool.query(
+      `DELETE FROM lifecycle_emails WHERE org_id = $1 AND email_type = $2`,
+      [orgId, type]
+    ).catch(() => {});
+    return false;
+  }
+}
+
+/** Lazily mint (and persist) the opaque forget-me token for an org. */
+async function getForgetToken(orgId: string): Promise<string> {
+  const existing = await pool.query(
+    `SELECT forget_token FROM org_billing WHERE org_id = $1`, [orgId]
+  );
+  if (existing.rows[0]?.forget_token) return existing.rows[0].forget_token;
+  const minted = await pool.query(
+    `UPDATE org_billing SET forget_token = gen_random_uuid()
+     WHERE org_id = $1 AND forget_token IS NULL
+     RETURNING forget_token`,
+    [orgId]
+  );
+  if (minted.rows[0]?.forget_token) return minted.rows[0].forget_token;
+  // Lost the race — re-read.
+  const again = await pool.query(`SELECT forget_token FROM org_billing WHERE org_id = $1`, [orgId]);
+  return again.rows[0]?.forget_token;
+}
+
 // ── Trial & Grace Period Checks (called by scheduler) ──
 
 export async function checkTrialExpiry(): Promise<void> {
-  console.log('[BILLING] Checking trial expiry...');
+  console.log('[BILLING] Checking trial lifecycle...');
+  const counts = { d30: 0, d7: 0, lastChance: 0, sorry: 0, winback1: 0, winback6: 0, suspended: 0 };
 
-  // Find orgs approaching trial end (14 days warning)
-  const warning14d = await pool.query(
+  // ── Stage 1: 30-day reminder ───────────────────────────────────────────
+  const warning30d = await pool.query(
     `SELECT org_id FROM org_billing
      WHERE status = 'trial'
-       AND trial_ends_at BETWEEN NOW() + INTERVAL '13 days' AND NOW() + INTERVAL '14 days'`
+       AND trial_ends_at BETWEEN NOW() + INTERVAL '29 days' AND NOW() + INTERVAL '30 days'`
   );
-  for (const row of warning14d.rows) {
-    await createNotification({
-      orgId: row.org_id,
-      type: 'billing',
-      severity: 'medium',
-      title: 'Trial ending in 14 days',
-      body: 'Your free trial ends in 14 days. Upgrade to Standard to continue using CRANIS2.',
-      link: '/billing',
+  for (const row of warning30d.rows) {
+    const sent = await sendLifecycleOnce(row.org_id, 'trial_30d', async () => {
+      const org = await getOrgInfoForEmail(row.org_id);
+      await sendTrialExpiryWarning(org, 30);
     });
-    const org14d = await getOrgInfoForEmail(row.org_id);
-    await sendTrialExpiryWarning(org14d, 14).catch(e => console.error('[BILLING] Email error (14d):', e.message));
+    if (sent) {
+      counts.d30++;
+      await createNotification({
+        orgId: row.org_id, type: 'billing', severity: 'medium',
+        title: 'Trial ending in 30 days',
+        body: 'Your free trial ends in 30 days. Upgrade to Standard to continue using CRANIS2.',
+        link: '/billing',
+      });
+    }
   }
 
-  // 7 days warning
+  // ── Stage 2: 7-day reminder ────────────────────────────────────────────
   const warning7d = await pool.query(
     `SELECT org_id FROM org_billing
      WHERE status = 'trial'
        AND trial_ends_at BETWEEN NOW() + INTERVAL '6 days' AND NOW() + INTERVAL '7 days'`
   );
   for (const row of warning7d.rows) {
-    await createNotification({
-      orgId: row.org_id,
-      type: 'billing',
-      severity: 'medium',
-      title: 'Trial ending in 7 days',
-      body: 'Your free trial ends in 7 days. Upgrade now to avoid losing access.',
-      link: '/billing',
+    const sent = await sendLifecycleOnce(row.org_id, 'trial_7d', async () => {
+      const org = await getOrgInfoForEmail(row.org_id);
+      await sendTrialExpiryWarning(org, 7);
     });
-    const org7d = await getOrgInfoForEmail(row.org_id);
-    await sendTrialExpiryWarning(org7d, 7).catch(e => console.error('[BILLING] Email error (7d):', e.message));
+    if (sent) {
+      counts.d7++;
+      await createNotification({
+        orgId: row.org_id, type: 'billing', severity: 'medium',
+        title: 'Trial ending in 7 days',
+        body: 'Your free trial ends in 7 days. Upgrade now to avoid losing access.',
+        link: '/billing',
+      });
+    }
   }
 
-  // Trial just expired – start 7-day grace
+  // ── Stage 3: last chance — trial expired, open the 7-day grace ONCE ─────
+  // Only orgs that have NOT yet entered grace (grace_ends_at IS NULL) — so an
+  // org already mid-grace or grace-expired is never re-armed here. This, plus
+  // the trial_last_chance claim, is the fix for the self-re-arming grace that
+  // caused the daily spam.
   const justExpired = await pool.query(
     `SELECT org_id FROM org_billing
-     WHERE status = 'trial'
-       AND trial_ends_at < NOW()`
+     WHERE status = 'trial' AND trial_ends_at < NOW() AND grace_ends_at IS NULL`
   );
   for (const row of justExpired.rows) {
-    const graceEnd = new Date();
-    graceEnd.setDate(graceEnd.getDate() + 7);
-    await updateBillingStatus(row.org_id, {
-      status: 'trial',  // Keep as trial during grace
-      graceEndsAt: graceEnd.toISOString(),
+    const sent = await sendLifecycleOnce(row.org_id, 'trial_last_chance', async () => {
+      const org = await getOrgInfoForEmail(row.org_id);
+      await sendTrialLastChance(org);
     });
-    await createNotification({
-      orgId: row.org_id,
-      type: 'billing',
-      severity: 'critical',
-      title: 'Trial expired',
-      body: 'Your free trial has ended. Upgrade within 7 days to maintain full access.',
-      link: '/billing',
-    });
-    await logBillingEvent(row.org_id, 'trial_expired', { graceEndsAt: graceEnd.toISOString() });
-    const orgExpired = await getOrgInfoForEmail(row.org_id);
-    await sendTrialExpired(orgExpired).catch(e => console.error('[BILLING] Email error (expired):', e.message));
+    if (sent) {
+      counts.lastChance++;
+      const graceEnd = new Date();
+      graceEnd.setDate(graceEnd.getDate() + 7);
+      await updateBillingStatus(row.org_id, { status: 'trial', graceEndsAt: graceEnd.toISOString() });
+      await logBillingEvent(row.org_id, 'trial_expired', { graceEndsAt: graceEnd.toISOString() });
+      await createNotification({
+        orgId: row.org_id, type: 'billing', severity: 'critical',
+        title: 'Trial expired',
+        body: 'Your free trial has ended. Upgrade within 7 days to maintain full access.',
+        link: '/billing',
+      });
+    }
   }
 
-  // Grace period ended – move to read_only
+  // ── Stage 4: grace ended → read-only + "sorry to see you go" (anchor) ───
   const graceExpired = await pool.query(
     `SELECT org_id FROM org_billing
      WHERE status = 'trial'
@@ -770,20 +855,24 @@ export async function checkTrialExpiry(): Promise<void> {
   );
   for (const row of graceExpired.rows) {
     await updateBillingStatus(row.org_id, { status: 'read_only' });
+    await logBillingEvent(row.org_id, 'trial_grace_expired', {});
     await createNotification({
-      orgId: row.org_id,
-      type: 'billing',
-      severity: 'critical',
+      orgId: row.org_id, type: 'billing', severity: 'critical',
       title: 'Account restricted',
       body: 'Your account is now read-only. Upgrade to Standard to restore full access.',
       link: '/billing',
     });
-    await logBillingEvent(row.org_id, 'trial_grace_expired', {});
-    const orgGrace = await getOrgInfoForEmail(row.org_id);
-    await sendTrialGraceEnded(orgGrace).catch(e => console.error('[BILLING] Email error (grace):', e.message));
+    const sent = await sendLifecycleOnce(row.org_id, 'sorry_to_see_you_go', async () => {
+      const org = await getOrgInfoForEmail(row.org_id);
+      await sendSorryToSeeYouGo(org);
+    });
+    if (sent) counts.sorry++;
   }
 
-  // Read-only for 60+ days – suspend
+  // ── Stage 5 & 6: win-backs (run for any lapsed-or-closed org) ──────────
+  await checkWinbackEmails(counts);
+
+  // ── Housekeeping: read-only for 60+ days → suspend (no email) ──────────
   const readOnlyExpired = await pool.query(
     `SELECT org_id FROM org_billing
      WHERE status = 'read_only'
@@ -792,9 +881,63 @@ export async function checkTrialExpiry(): Promise<void> {
   for (const row of readOnlyExpired.rows) {
     await updateBillingStatus(row.org_id, { status: 'suspended' });
     await logBillingEvent(row.org_id, 'account_suspended', {});
+    counts.suspended++;
   }
 
-  console.log(`[BILLING] Trial check complete: ${warning14d.rows.length} warnings(14d), ${warning7d.rows.length} warnings(7d), ${justExpired.rows.length} expired, ${graceExpired.rows.length} grace ended`);
+  console.log(`[BILLING] Lifecycle complete: 30d=${counts.d30}, 7d=${counts.d7}, lastChance=${counts.lastChance}, sorry=${counts.sorry}, winback1mo=${counts.winback1}, winback6mo=${counts.winback6}, suspended=${counts.suspended}`);
+}
+
+/**
+ * Win-back schedule, anchored to the "sorry to see you go" send date:
+ *   • winback_1mo: 1 month after "sorry"
+ *   • winback_6mo: 6 months after winback_1mo (i.e. ~7 months after "sorry")
+ * Skips orgs that opted out (do_not_contact) or are exempt. Win-backs carry a
+ * one-click forget-me link, so they always send unless suppressed.
+ */
+async function checkWinbackEmails(counts: { winback1: number; winback6: number }): Promise<void> {
+  const frontendUrl = process.env.FRONTEND_URL || APP_BASE_URL;
+
+  // Win-back #1 — "sorry" sent ≥ 1 month ago, not yet won back, not opted out.
+  const dueWinback1 = await pool.query(
+    `SELECT le.org_id FROM lifecycle_emails le
+     JOIN org_billing b ON b.org_id = le.org_id
+     WHERE le.email_type = 'sorry_to_see_you_go'
+       AND le.sent_at < NOW() - INTERVAL '1 month'
+       AND b.do_not_contact = FALSE
+       AND b.exempt = FALSE
+       AND NOT EXISTS (
+         SELECT 1 FROM lifecycle_emails x
+         WHERE x.org_id = le.org_id AND x.email_type = 'winback_1mo')`
+  );
+  for (const row of dueWinback1.rows) {
+    const sent = await sendLifecycleOnce(row.org_id, 'winback_1mo', async () => {
+      const org = await getOrgInfoForEmail(row.org_id);
+      const token = await getForgetToken(row.org_id);
+      await sendWinbackOneMonth(org, `${frontendUrl}/forget-me?token=${token}`);
+    });
+    if (sent) counts.winback1++;
+  }
+
+  // Win-back #2 — win-back #1 sent ≥ 6 months ago, not yet sent, not opted out.
+  const dueWinback6 = await pool.query(
+    `SELECT le.org_id FROM lifecycle_emails le
+     JOIN org_billing b ON b.org_id = le.org_id
+     WHERE le.email_type = 'winback_1mo'
+       AND le.sent_at < NOW() - INTERVAL '6 months'
+       AND b.do_not_contact = FALSE
+       AND b.exempt = FALSE
+       AND NOT EXISTS (
+         SELECT 1 FROM lifecycle_emails x
+         WHERE x.org_id = le.org_id AND x.email_type = 'winback_6mo')`
+  );
+  for (const row of dueWinback6.rows) {
+    const sent = await sendLifecycleOnce(row.org_id, 'winback_6mo', async () => {
+      const org = await getOrgInfoForEmail(row.org_id);
+      const token = await getForgetToken(row.org_id);
+      await sendWinbackSixMonth(org, `${frontendUrl}/forget-me?token=${token}`);
+    });
+    if (sent) counts.winback6++;
+  }
 }
 
 export async function checkPaymentGrace(): Promise<void> {
@@ -837,6 +980,159 @@ export async function checkPaymentGrace(): Promise<void> {
   }
 
   console.log(`[BILLING] Payment grace check: ${pastDueExpired.rows.length} restricted, ${readOnlyLong.rows.length} suspended`);
+}
+
+// ── Account closure (soft) — cancel billing, retain data 12 months ──────────
+//
+// The self-service "Close account" path. Cancels any live Stripe subscription,
+// drops the org to read-only, stops all trial nagging, and fires the
+// "sorry to see you go" email (which anchors the win-back schedule). Data is
+// retained for 12 months so the customer can resubscribe and resume. This is
+// reversible — a subsequent checkout reactivates the org.
+export async function closeAccount(orgId: string): Promise<{ status: string; accessUntil: string | null }> {
+  const billing = await getOrgBillingStatus(orgId);
+
+  // Cancel any live Stripe subscription (best-effort — trials have none).
+  if (billing?.stripeSubscriptionId) {
+    try {
+      await getStripe().subscriptions.cancel(billing.stripeSubscriptionId);
+    } catch (e: any) {
+      console.error(`[BILLING] Stripe cancel failed for ${orgId}:`, e?.message);
+    }
+  }
+
+  await updateBillingStatus(orgId, {
+    status: 'read_only',
+    cancelledAt: new Date().toISOString(),
+    stripeSubscriptionId: null,
+  });
+  await logBillingEvent(orgId, 'account_closed', { self_service: true });
+  await createNotification({
+    orgId, type: 'billing', severity: 'high',
+    title: 'Account closed',
+    body: 'Your account is now read-only. Your data is retained for 12 months — resubscribe any time to restore full access.',
+    link: '/billing',
+  });
+
+  // Anchor the win-back schedule (idempotent — only the first close sends it).
+  await sendLifecycleOnce(orgId, 'sorry_to_see_you_go', async () => {
+    const org = await getOrgInfoForEmail(orgId);
+    await sendSorryToSeeYouGo(org);
+  });
+
+  const updated = await getOrgBillingStatus(orgId);
+  return { status: 'closed', accessUntil: updated?.currentPeriodEnd || null };
+}
+
+// ── "Forget me" — GDPR Art. 17 erasure driven by the win-back email link ────
+//
+// Resolves the opaque forget-me token to an org, then erases personal data and
+// ceases all contact. Records mandated by EU law are ANONYMISED and retained,
+// not deleted (Art. 17(3)(b)): CRA Art. 13(10) audit trail (10 yrs) and tax
+// records (7 yrs). After this the org can never re-enter the email funnel.
+export async function getOrgByForgetToken(token: string): Promise<{ orgId: string; orgName: string } | null> {
+  if (!token || !/^[0-9a-f-]{36}$/i.test(token)) return null;
+  const res = await pool.query(
+    `SELECT org_id FROM org_billing WHERE forget_token = $1`, [token]
+  );
+  if (res.rows.length === 0) return null;
+  const orgId = res.rows[0].org_id;
+  const info = await getOrgInfoForEmail(orgId);
+  return { orgId, orgName: info.orgName };
+}
+
+export async function forgetOrg(token: string): Promise<{ erased: boolean } | null> {
+  const found = await getOrgByForgetToken(token);
+  if (!found) return null;
+  const { orgId } = found;
+
+  // Suppress all future contact immediately (the legal core of "forget me").
+  await pool.query(
+    `UPDATE org_billing SET do_not_contact = TRUE, forgotten_at = NOW(), updated_at = NOW()
+     WHERE org_id = $1`,
+    [orgId]
+  );
+  await eraseOrgData(orgId);
+  await logBillingEvent(orgId, 'forget_me_erasure', { via: 'winback_link' });
+  return { erased: true };
+}
+
+/**
+ * Org-scoped erasure. Deletes personal & operational data for every user in
+ * the org and the org's Neo4j graph, while anonymising legally-retained
+ * records. Shared by the forget-me link and the permanent-delete UI action.
+ */
+export async function eraseOrgData(orgId: string): Promise<void> {
+  // Anonymise the CRA audit trail (10-year retention) — keep the record,
+  // strip the person from it.
+  await pool.query(
+    `UPDATE product_activity_log
+       SET user_id = NULL, user_email = 'erased-' || left(md5(org_id), 12)
+     WHERE org_id = $1`,
+    [orgId]
+  ).catch(e => console.error('[FORGET] audit anonymise:', e.message));
+
+  // Anonymise the billing/tax record (7-year retention) — keep the row.
+  await pool.query(
+    `UPDATE org_billing
+       SET billing_email = 'erased-' || left(md5(org_id), 12),
+           company_name = NULL, billing_address = NULL, vat_number = NULL,
+           stripe_customer_id = NULL, stripe_subscription_id = NULL,
+           updated_at = NOW()
+     WHERE org_id = $1`,
+    [orgId]
+  ).catch(e => console.error('[FORGET] billing anonymise:', e.message));
+
+  // Null FK references held by this org's users, then delete the PII rows.
+  const nullUserRefs = [
+    ['cra_reports', 'created_by'], ['cra_report_stages', 'submitted_by'],
+    ['ip_proof_snapshots', 'created_by'], ['license_findings', 'acknowledged_by'],
+    ['category_recommendations', 'user_id'], ['recommendation_access_log', 'user_id'],
+    ['supplier_questionnaires', 'created_by'], ['departed_contributors', 'marked_by'],
+    ['doc_pages', 'updated_by'], ['escrow_users', 'invited_by'],
+    ['repo_connections', 'connected_by_user_id'],
+  ];
+  for (const [table, col] of nullUserRefs) {
+    await pool.query(
+      `UPDATE ${table} SET ${col} = NULL
+       WHERE ${col} IN (SELECT id FROM users WHERE org_id = $1::uuid)`,
+      [orgId]
+    ).catch(e => console.error(`[FORGET] null ${table}.${col}:`, e.message));
+  }
+
+  // Delete org-scoped personal / operational data.
+  const orgDeletes = [
+    'DELETE FROM notifications WHERE org_id = $1',
+    'DELETE FROM copilot_cache WHERE org_id = $1',
+    'DELETE FROM feedback WHERE user_id IN (SELECT id FROM users WHERE org_id = $1::uuid)',
+    'DELETE FROM user_events WHERE user_id IN (SELECT id FROM users WHERE org_id = $1::uuid)',
+    'DELETE FROM copilot_usage WHERE user_id IN (SELECT id FROM users WHERE org_id = $1::uuid)',
+    'DELETE FROM api_keys WHERE org_id = $1',
+  ];
+  for (const sql of orgDeletes) {
+    await pool.query(sql, [orgId]).catch(e => console.error('[FORGET] delete:', e.message));
+  }
+
+  // Delete the user accounts themselves.
+  await pool.query('DELETE FROM users WHERE org_id = $1::uuid', [orgId])
+    .catch(e => console.error('[FORGET] delete users:', e.message));
+
+  // Detach-delete the org graph (Organisation, its Users, Products, SBOMs…).
+  const session = getDriver().session();
+  try {
+    await session.run(
+      `MATCH (o:Organisation {id: $orgId})
+       OPTIONAL MATCH (o)<-[:BELONGS_TO|ADMIN_OF]-(u:User)
+       OPTIONAL MATCH (o)-[*1..3]-(p:Product)
+       OPTIONAL MATCH (p)-[*1..2]-(child)
+       DETACH DELETE o, u, p, child`,
+      { orgId }
+    );
+  } catch (e: any) {
+    console.error('[FORGET] neo4j erase:', e?.message);
+  } finally {
+    await session.close();
+  }
 }
 
 // ── Verify Stripe Webhook Signature ──

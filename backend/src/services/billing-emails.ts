@@ -10,7 +10,21 @@
 
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// When RESEND_API_KEY is unset (tests, or an unconfigured environment) email
+// is disabled rather than throwing — so a lifecycle run never crashes on a
+// missing key. The send-site API (`resend.emails.send`) is preserved.
+const _resendClient = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const resend = {
+  emails: {
+    send: async (opts: any) => {
+      if (!_resendClient) {
+        console.log('[EMAIL] skipped (no RESEND_API_KEY):', opts?.subject);
+        return;
+      }
+      return _resendClient.emails.send(opts);
+    },
+  },
+};
 const from = process.env.EMAIL_FROM || 'info@cranis2.com';
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
 
@@ -229,5 +243,113 @@ export async function sendDataArchiveReady(org: OrgInfo, downloadUrl: string): P
       textParagraph('If you\'d like to keep your account active instead, you can resubscribe at any time.') +
       actionButton('Resubscribe', `${frontendUrl}/billing`, '#3b82f6')
     ),
+  });
+}
+
+// ── Lifecycle emails (CRAN: trial → lapse → win-back) ──
+
+// Footer with a one-click "forget me" link. Used on win-back emails so a
+// retained-but-lapsed contact always has a frictionless GDPR opt-out.
+function forgetMeFooter(forgetUrl: string): string {
+  return `
+    <hr style="border: none; border-top: 1px solid #2a2d3a; margin: 2rem 0;" />
+    <p style="color: #71717a; font-size: 0.72rem; line-height: 1.5;">
+      You're receiving this because you started a CRANIS2 trial. Don't want to hear from us again?
+      <a href="${forgetUrl}" style="color: #a855f7; text-decoration: underline;">Forget me &amp; erase my data</a>.
+      We'll permanently delete your personal data and stop all contact (a minimal anonymised
+      record is retained only where EU law requires it).
+    </p>
+  `;
+}
+
+/**
+ * "Last chance" — sent the day the trial expires, as the 7-day grace begins.
+ * Replaces the old repeating "trial has ended" email.
+ */
+export async function sendTrialLastChance(org: OrgInfo): Promise<void> {
+  const to = org.billingEmail;
+  if (!to) return;
+
+  await resend.emails.send({
+    from: `CRANIS2 <${from}>`,
+    to,
+    subject: 'Last chance — your CRANIS2 trial has ended',
+    html: wrapEmail(
+      'Last chance to keep your access',
+      textParagraph(`Hi ${org.orgName},`) +
+      textParagraph('Your free trial of CRANIS2 has ended. You have a <strong>7-day grace period</strong> before your account becomes read-only — after that you\'ll keep view-only access but won\'t be able to make changes.') +
+      textParagraph('Subscribe now to keep everything running without interruption. The Standard plan is just <strong>€6 per contributor per month</strong>.') +
+      actionButton('Subscribe Now', `${frontendUrl}/billing`, '#ef4444') +
+      textParagraph('Need more time or have questions? Just reply to this email — a real person reads them.')
+    ),
+  });
+}
+
+/**
+ * "Sorry to see you go" — sent once, when access actually ends (grace expired
+ * or the account was explicitly closed). Anchors the win-back schedule.
+ */
+export async function sendSorryToSeeYouGo(org: OrgInfo): Promise<void> {
+  const to = org.billingEmail;
+  if (!to) return;
+
+  await resend.emails.send({
+    from: `CRANIS2 <${from}>`,
+    to,
+    subject: 'Sorry to see you go',
+    html: wrapEmail(
+      'Sorry to see you go',
+      textParagraph(`Hi ${org.orgName},`) +
+      textParagraph('Your CRANIS2 account is now read-only. We\'re sorry to see you go — and grateful you gave us a try.') +
+      textParagraph('Your data is safe. We\'ll keep it for <strong>12 months</strong>, so if you change your mind you can pick up exactly where you left off. You can export it any time.') +
+      actionButton('Reactivate my account', `${frontendUrl}/billing`) +
+      textParagraph('If something didn\'t work for you, we\'d genuinely love to know — just reply to this email.')
+    ),
+  });
+}
+
+/**
+ * Win-back #1 — sent ~1 month after the account lapsed/closed.
+ * Carries the "forget me" opt-out link.
+ */
+export async function sendWinbackOneMonth(org: OrgInfo, forgetUrl: string): Promise<void> {
+  const to = org.billingEmail;
+  if (!to) return;
+
+  await resend.emails.send({
+    from: `CRANIS2 <${from}>`,
+    to,
+    subject: 'Fancy giving CRANIS2 another try?',
+    html: wrapEmail(
+      'Would you like to give CRANIS2 another try?',
+      textParagraph(`Hi ${org.orgName},`) +
+      textParagraph('It\'s been about a month. The EU Cyber Resilience Act deadlines haven\'t gone anywhere — and we\'ve been busy making CRANIS2 better at handling them for you.') +
+      textParagraph('Your data is still here, exactly as you left it. One click and you\'re back up and running.') +
+      actionButton('Reactivate my account', `${frontendUrl}/billing`, '#22c55e') +
+      textParagraph('No pressure — just an open door whenever the timing\'s right.')
+    ) + forgetMeFooter(forgetUrl),
+  });
+}
+
+/**
+ * Win-back #2 — sent ~6 months after win-back #1. Final outreach.
+ * Carries the "forget me" opt-out link.
+ */
+export async function sendWinbackSixMonth(org: OrgInfo, forgetUrl: string): Promise<void> {
+  const to = org.billingEmail;
+  if (!to) return;
+
+  await resend.emails.send({
+    from: `CRANIS2 <${from}>`,
+    to,
+    subject: 'Still here whenever you need CRA compliance sorted',
+    html: wrapEmail(
+      'Whenever you\'re ready, we\'re here',
+      textParagraph(`Hi ${org.orgName},`) +
+      textParagraph('It\'s been a while. This is the last time we\'ll reach out — we don\'t believe in nagging.') +
+      textParagraph('If CRA compliance is back on your plate, CRANIS2 can take the heavy lifting off it. Your data is still recoverable for a little longer.') +
+      actionButton('Pick up where I left off', `${frontendUrl}/billing`, '#22c55e') +
+      textParagraph('Either way, thank you for giving us a look. We wish you the best with it.')
+    ) + forgetMeFooter(forgetUrl),
   });
 }

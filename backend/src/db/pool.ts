@@ -959,6 +959,20 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
       );
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_billing_events_org ON billing_events(org_id)`);
+    // Lifecycle email tracking — one row per (org, stage) guarantees each
+    // lifecycle email is sent exactly once, surviving backend restarts.
+    // Stages: trial_30d, trial_7d, trial_last_chance, sorry_to_see_you_go,
+    //         winback_1mo, winback_6mo
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lifecycle_emails (
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        org_id      VARCHAR(255) NOT NULL,
+        email_type  VARCHAR(40) NOT NULL,
+        sent_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(org_id, email_type)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_lifecycle_emails_org ON lifecycle_emails(org_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_org_billing_status ON org_billing(status)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_org_billing_stripe ON org_billing(stripe_customer_id)`);
     await client.query(`
@@ -1412,6 +1426,13 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
     await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS classification_last_review TIMESTAMPTZ`);
     await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS classification_source VARCHAR(10) DEFAULT 'automatic'`);
     await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS provisional_expires_at TIMESTAMPTZ`);
+    // Lifecycle / GDPR: suppress all marketing & win-back email once the user
+    // opts out ("forget me" / unsubscribe). forget_token is the opaque key
+    // embedded in win-back email links for the public forget-me flow.
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS do_not_contact BOOLEAN NOT NULL DEFAULT FALSE`);
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS forget_token UUID`);
+    await client.query(`ALTER TABLE org_billing ADD COLUMN IF NOT EXISTS forgotten_at TIMESTAMPTZ`);
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_org_billing_forget_token ON org_billing(forget_token) WHERE forget_token IS NOT NULL`);
     await client.query(`
       CREATE TABLE IF NOT EXISTS copilot_cache (
         id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),

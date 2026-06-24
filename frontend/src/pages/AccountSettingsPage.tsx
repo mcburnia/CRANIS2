@@ -8,12 +8,12 @@
  * andi@mcburnie.com
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 
-type Tab = 'profile' | 'security';
+type Tab = 'profile' | 'security' | 'danger';
 
 const SUPPORTED_LANGUAGES: { code: string; label: string }[] = [
   { code: 'en', label: 'English' },
@@ -127,16 +127,36 @@ export default function AccountSettingsPage() {
         >
           Security
         </button>
+        <button
+          onClick={() => setTab('danger')}
+          className="btn"
+          style={{
+            borderRadius: 0,
+            background: 'transparent',
+            borderBottom: tab === 'danger' ? '2px solid var(--red)' : '2px solid transparent',
+            color: tab === 'danger' ? 'var(--red)' : 'var(--muted)',
+            padding: '0.5rem 1rem',
+          }}
+        >
+          Close account
+        </button>
       </div>
 
-      {tab === 'profile' ? (
-        <ProfileTab account={account} onUpdated={reload} />
-      ) : (
+      {tab === 'profile' && <ProfileTab account={account} onUpdated={reload} />}
+      {tab === 'security' && (
         <SecurityTab
           account={account}
           onUpdated={reload}
           onPasswordChanged={() => {
             // Watermark invalidates the current token. Sign out cleanly.
+            logout();
+            navigate('/login');
+          }}
+        />
+      )}
+      {tab === 'danger' && (
+        <DangerTab
+          onClosed={() => {
             logout();
             navigate('/login');
           }}
@@ -396,5 +416,193 @@ function ChangeEmailSection({ account, onUpdated }: { account: AccountInfo; onUp
         </button>
       </form>
     </section>
+  );
+}
+
+// ─── Danger zone (export / close / delete) ───────────────────────────────
+
+type DangerAction = 'close' | 'delete';
+
+function DangerTab({ onClosed }: { onClosed: () => void }) {
+  const [exporting, setExporting] = useState(false);
+  const [exportMsg, setExportMsg] = useState('');
+  const [action, setAction] = useState<DangerAction | null>(null);
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState('');
+
+  const exportData = async () => {
+    setExporting(true);
+    setExportMsg('');
+    try {
+      const res = await authedFetch('/api/account/data-export');
+      if (!res.ok) {
+        setExportMsg('Export failed. Please try again.');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'cranis2-account-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      setExportMsg('Your data export has downloaded.');
+    } catch {
+      setExportMsg('Export failed. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const confirm = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const res =
+        action === 'close'
+          ? await authedFetch('/api/account/close', { method: 'POST', body: JSON.stringify({ password }) })
+          : await authedFetch('/api/account', { method: 'DELETE', body: JSON.stringify({ password }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong.');
+        return;
+      }
+      setDone(data.message || 'Done.');
+      // Both flows end the session: close → read-only relogin; delete → erased.
+      setTimeout(onClosed, 2500);
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <section>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>All done</h2>
+        <p style={{ color: 'var(--muted)', fontSize: '0.95rem', lineHeight: 1.6 }}>{done}</p>
+        <p style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>Signing you out…</p>
+      </section>
+    );
+  }
+
+  const card: CSSProperties = {
+    border: '1px solid var(--border)',
+    borderRadius: 10,
+    padding: '1.25rem',
+    marginBottom: '1rem',
+    background: 'var(--surface)',
+  };
+
+  return (
+    <section>
+      {/* Export */}
+      <div style={card}>
+        <h3 style={{ fontSize: '1rem', marginBottom: '0.35rem' }}>Export your data</h3>
+        <p style={{ color: 'var(--muted)', fontSize: '0.9rem', lineHeight: 1.55, marginBottom: '0.75rem' }}>
+          Download a copy of your products, SBOMs, compliance documents and audit history (JSON). We recommend doing this before closing your account.
+        </p>
+        <button className="btn" onClick={exportData} disabled={exporting}>
+          {exporting ? 'Preparing…' : 'Download my data'}
+        </button>
+        {exportMsg && <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginTop: '0.5rem' }}>{exportMsg}</p>}
+      </div>
+
+      {/* Close (soft) */}
+      <div style={card}>
+        <h3 style={{ fontSize: '1rem', marginBottom: '0.35rem' }}>Close my account</h3>
+        <p style={{ color: 'var(--muted)', fontSize: '0.9rem', lineHeight: 1.55, marginBottom: '0.75rem' }}>
+          Cancels billing and stops all reminder emails. Your account becomes read-only and your data is{' '}
+          <strong>kept for 12 months</strong> — sign back in and resubscribe any time to pick up exactly where you left off.
+        </p>
+        {action !== 'close' ? (
+          <button className="btn" onClick={() => { setAction('close'); setError(''); setPassword(''); }}>
+            Close account
+          </button>
+        ) : (
+          <ConfirmBox
+            label="Confirm with your password to close the account"
+            cta="Close my account"
+            ctaColor="var(--amber)"
+            password={password}
+            setPassword={setPassword}
+            busy={busy}
+            error={error}
+            onConfirm={confirm}
+            onCancel={() => setAction(null)}
+          />
+        )}
+      </div>
+
+      {/* Delete (hard) */}
+      <div style={{ ...card, borderColor: 'var(--red)' }}>
+        <h3 style={{ fontSize: '1rem', marginBottom: '0.35rem', color: 'var(--red)' }}>Delete permanently</h3>
+        <p style={{ color: 'var(--muted)', fontSize: '0.9rem', lineHeight: 1.55, marginBottom: '0.75rem' }}>
+          Permanently erase your personal data and (if you are the organisation's only admin) the entire organisation. This{' '}
+          <strong>cannot be undone</strong>. Records required by EU law are anonymised and retained (CRA: 10 years; tax: 7 years) and can no longer identify you.
+        </p>
+        {action !== 'delete' ? (
+          <button
+            className="btn"
+            style={{ background: 'var(--red)', color: '#fff' }}
+            onClick={() => { setAction('delete'); setError(''); setPassword(''); }}
+          >
+            Delete my account permanently
+          </button>
+        ) : (
+          <ConfirmBox
+            label="Confirm with your password to permanently erase your data"
+            cta="Permanently delete"
+            ctaColor="var(--red)"
+            password={password}
+            setPassword={setPassword}
+            busy={busy}
+            error={error}
+            onConfirm={confirm}
+            onCancel={() => setAction(null)}
+          />
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ConfirmBox(props: {
+  label: string; cta: string; ctaColor: string;
+  password: string; setPassword: (v: string) => void;
+  busy: boolean; error: string;
+  onConfirm: () => void; onCancel: () => void;
+}) {
+  return (
+    <div style={{ marginTop: '0.5rem' }}>
+      <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '0.35rem' }}>
+        {props.label}
+      </label>
+      <input
+        type="password"
+        className="form-input"
+        autoComplete="current-password"
+        value={props.password}
+        onChange={(e) => props.setPassword(e.target.value)}
+        style={{ marginBottom: '0.75rem' }}
+      />
+      {props.error && <p style={{ color: 'var(--red)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>{props.error}</p>}
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button
+          className="btn"
+          style={{ background: props.ctaColor, color: '#fff' }}
+          disabled={props.busy || !props.password}
+          onClick={props.onConfirm}
+        >
+          {props.busy ? 'Working…' : props.cta}
+        </button>
+        <button className="btn" onClick={props.onCancel} disabled={props.busy}>
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }

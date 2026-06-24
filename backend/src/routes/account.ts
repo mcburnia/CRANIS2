@@ -29,6 +29,7 @@ import { authRateLimit } from '../middleware/authRateLimit.js';
 import { createHash, randomBytes } from 'crypto';
 import { isPasswordStrong, recordSecurityEvent } from '../services/password-reset.js';
 import { sendVerificationEmail } from '../services/email.js';
+import { closeAccount, forgetOrg, getOrgByForgetToken, eraseOrgData } from '../services/billing.js';
 
 const SUPPORTED_LANGUAGES = new Set(['en', 'fr', 'de', 'es', 'it', 'nl', 'pt', 'pl', 'sv']);
 const EMAIL_CHANGE_TTL_MS = 24 * 60 * 60_000; // 24h to verify a new email
@@ -622,7 +623,12 @@ router.delete('/', authRateLimit('account_delete'), requireAuth, async (req: Req
       return;
     }
 
-    // ── Check sole admin constraint ──────────────────────────────────────
+    // ── Sole-admin → erase the whole organisation ────────────────────────
+    // A sole admin deleting their account is closing the organisation. Rather
+    // than block them (the old behaviour — they could never leave), we erase
+    // the entire org: every member's personal data plus the org graph, with
+    // legally-retained records anonymised (CRA 10yr / tax 7yr). Password was
+    // already verified above.
     if (user.org_id && user.org_role === 'admin') {
       const adminCount = await pool.query(
         `SELECT COUNT(*)::int AS count FROM users
@@ -632,9 +638,16 @@ router.delete('/', authRateLimit('account_delete'), requireAuth, async (req: Req
       );
 
       if (adminCount.rows[0].count === 0) {
-        res.status(409).json({
-          error: 'You are the sole admin of your organisation. Transfer the admin role to another member before deleting your account.',
-        });
+        try {
+          await eraseOrgData(user.org_id);
+          res.json({
+            message: 'Your account and organisation have been permanently erased. Records required by EU law have been anonymised and retained (CRA: 10 years; tax: 7 years).',
+            scope: 'organisation',
+          });
+        } catch (err: any) {
+          console.error('[ACCOUNT] Org erasure failed:', err.message);
+          res.status(500).json({ error: 'Account deletion failed' });
+        }
         return;
       }
     }
@@ -839,6 +852,88 @@ router.delete('/', authRateLimit('account_delete'), requireAuth, async (req: Req
   } catch (err: any) {
     console.error('[ACCOUNT] Deletion failed:', err.message);
     res.status(500).json({ error: 'Account deletion failed' });
+  }
+});
+
+// ─── Close account (soft — cancel billing, retain data 12 months) ────────────
+//
+// POST /api/account/close
+// The non-destructive counterpart to DELETE. Cancels billing, drops the org to
+// read-only, stops the trial nag emails, and keeps the data recoverable for 12
+// months. Admin only — it affects the whole organisation. Password-confirmed.
+router.post('/close', authRateLimit('account_delete'), requireAuth, async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const password = req.body?.password;
+
+  if (!password) {
+    res.status(400).json({ error: 'Password confirmation is required to close your account' });
+    return;
+  }
+
+  try {
+    const userResult = await pool.query(
+      'SELECT id, password_hash, org_id, org_role FROM users WHERE id = $1',
+      [userId]
+    );
+    if (userResult.rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    const user = userResult.rows[0];
+
+    if (!(await verifyPassword(password, user.password_hash))) {
+      res.status(401).json({ error: 'Incorrect password' });
+      return;
+    }
+    if (user.org_role !== 'admin') {
+      res.status(403).json({ error: 'Only an organisation admin can close the account.' });
+      return;
+    }
+    if (!user.org_id) {
+      res.status(400).json({ error: 'No organisation is associated with this account.' });
+      return;
+    }
+
+    const result = await closeAccount(user.org_id);
+    res.json({
+      message: 'Your account has been closed and billing cancelled. Your data is retained for 12 months — sign in and resubscribe any time to restore full access.',
+      ...result,
+    });
+  } catch (err: any) {
+    console.error('[ACCOUNT] Close failed:', err.message);
+    res.status(500).json({ error: 'Could not close account' });
+  }
+});
+
+// ─── "Forget me" (public — driven by the win-back email link) ────────────────
+//
+// GET  /api/account/forget-me?token=…  → preview (org name) for the confirm page
+// POST /api/account/forget-me { token } → execute GDPR erasure + cease contact
+// Unauthenticated by design: the recipient of a win-back email is not logged in.
+router.get('/forget-me', authRateLimit('account_delete'), async (req: Request, res: Response) => {
+  const token = String(req.query.token || '');
+  const found = await getOrgByForgetToken(token);
+  if (!found) {
+    res.status(404).json({ error: 'This link is invalid or has already been used.' });
+    return;
+  }
+  res.json({ orgName: found.orgName });
+});
+
+router.post('/forget-me', authRateLimit('account_delete'), async (req: Request, res: Response) => {
+  const token = String(req.body?.token || '');
+  try {
+    const result = await forgetOrg(token);
+    if (!result) {
+      res.status(404).json({ error: 'This link is invalid or has already been used.' });
+      return;
+    }
+    res.json({
+      message: 'Done. Your personal data has been erased and we will not contact you again. A minimal anonymised record is retained only where EU law requires it (CRA: 10 years; tax: 7 years) and cannot be used to identify or contact you.',
+    });
+  } catch (err: any) {
+    console.error('[ACCOUNT] Forget-me failed:', err.message);
+    res.status(500).json({ error: 'Could not complete the request. Please email info@cranis2.com.' });
   }
 });
 
