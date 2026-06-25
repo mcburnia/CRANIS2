@@ -11,7 +11,7 @@
 # Terms of Service
 
 **Effective date:** 1 April 2026
-**Last updated:** 2 May 2026
+**Last updated:** 25 June 2026
 **Status:** Beta
 
 These terms govern your use of CRANIS2, a software compliance management platform operated by **Andrew (Andi) MCBURNIE**, a private individual.
@@ -67,6 +67,10 @@ Each user account belongs to one organisation. Organisation administrators can i
 
 You must be at least 18 years old to use CRANIS2.
 
+### 2.4 Closing your account
+
+You can close or delete your account yourself at any time from **Account settings → Close account**. "Close account" cancels billing and retains your data for 12 months so you can return; "Delete permanently" erases your personal data immediately. If you are the sole administrator of your organisation, deleting your account also closes the organisation. The handling of your data in each case is described in section 5 and in the Privacy Policy.
+
 ---
 
 ## 3. Acceptable use
@@ -98,7 +102,7 @@ Payments are processed by Stripe. By subscribing, you agree to Stripe's terms of
 
 ### 4.3 Cancellation
 
-You may cancel your subscription at any time through the platform. Cancellation takes effect at the end of the current billing period. You will retain access until that date.
+You may cancel your subscription at any time through the platform, from **Account settings → Close account**. Closing your account cancels billing immediately and stops all reminder emails. Your account moves to read-only mode and your data is retained for 12 months, during which you can export it or resubscribe to restore full access. If you instead want to erase your data straight away, you can choose "Delete permanently" from the same place (see section 5.3).
 
 ### 4.4 Refunds
 
@@ -124,7 +128,7 @@ By using the platform, you grant me a limited licence to process, store, and dis
 
 ### 5.3 Data portability
 
-You may export your data at any time through the platform's export features (SBOM exports, compliance reports, due-diligence packages). A full account data export is available from your Account page — select "Export My Data" to download a structured JSON file containing all your personal data. You may also request account deletion from the same page, which immediately removes personal data and anonymises billing and audit records for legal retention.
+You may export your data at any time through the platform's export features (SBOM exports, compliance reports, due-diligence packages). A full account data export is available from **Account settings → Close account** — select "Export My Data" to download a structured JSON file containing all your personal data. From the same place you can "Close account" (cancel billing, keep data recoverable for 12 months) or "Delete permanently" (immediately remove personal data and anonymise billing and audit records retained for legal obligations). The "forget me" link in any win-back email performs the same erasure and stops further contact.
 
 ### 5.4 Data processing
 
