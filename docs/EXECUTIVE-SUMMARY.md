@@ -187,7 +187,7 @@ CRANIS2 offers two plans, both with a 90-day free trial and no payment details r
 - **Standard (€6/contributor/month):** Core compliance — SBOM management, vulnerability monitoring, licence compliance, IP proof, technical file, EU Declaration of Conformity, ENISA reporting, obligations tracking, compliance checklist, post-market monitoring, cryptographic standards inventory, source code escrow, compliance evidence vault, document templates, conformity assessments, and supplier due diligence.
 - **Pro (€9/product/month + €6/contributor/month):** Everything in Standard, plus AI Copilot, Public API, CI/CD compliance gate, Trust Centre listing, MCP server for IDE integration, GRC/OSCAL bridge, and Software Evidence Engine with R&D tax credit support.
 
-Billing is managed through Stripe — CRANIS2 does not handle payment card data. No vendor lock-in: all compliance data is exportable in open formats (PDF, CycloneDX, SPDX, CSV, JSON) at any time.
+Billing is managed through Stripe — CRANIS2 does not handle payment card data. No vendor lock-in: all compliance data is exportable in open formats (PDF, CycloneDX, SPDX, CSV, JSON) at any time. Customers stay in full control of their account: self-service trial reminders, billing cancellation, one-click data export, and complete GDPR data deletion ("right to be forgotten") are built in — you can close or permanently delete your account directly from the platform, no support ticket required.
 
 An affiliate programme rewards partners for referring new customers, with self-service commission tracking and monthly statements.
 

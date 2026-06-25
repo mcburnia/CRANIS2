@@ -236,6 +236,28 @@ An **admin** has full control over the organisation, including managing members,
 
 See the User Guide, Section 20: Stakeholders.
 
+### Q: How do I cancel my subscription or close my account?
+
+Go to **Account settings → Close account**. Choosing "Close account" cancels your billing immediately, stops all reminder emails, and puts your account into read-only mode. Your data is kept for 12 months so you can resubscribe and pick up exactly where you left off. You will be asked to confirm with your password.
+
+### Q: What happens to my data when I close my account?
+
+Closing your account keeps your data in read-only form for **12 months**. During that window you can export it at any time, or resubscribe to restore full access. If you do nothing, the data is then archived for download and finally deleted. A small set of records that the law requires us to keep (billing records for tax, and the compliance audit trail under CRA Article 13(10)) are retained in anonymised form.
+
+### Q: How do I permanently delete my account (right to be forgotten)?
+
+From **Account settings → Close account**, choose "Delete permanently". This erases your personal data straight away rather than waiting out the 12-month window. If you are the only administrator of your organisation, this also deletes the organisation and its data. Records the law requires us to keep are anonymised so they can no longer identify you. The "forget me" link in any win-back email does the same thing.
+
+### Q: How do I export my data?
+
+From **Account settings → Close account**, select "Export My Data" to download a structured JSON file containing your account details, organisation membership, products, findings, and usage history. Security-sensitive data such as password hashes and OAuth tokens is excluded. (Product-level exports — SBOMs, compliance reports, due-diligence packages — are available from the relevant product pages.)
+
+### Q: What emails will I receive about my trial, and will they spam me?
+
+No. You receive a small, fixed set of reminders: at **30 days** and **7 days** before your trial ends, a **final notice** when it expires, and a **"sorry to see you go"** message if it lapses. If you don't return, you may get up to two gentle **win-back** emails (about one month and seven months later), each with a one-click "forget me" link that erases your data and stops all contact. Each message is sent once — you will not receive repeat or daily emails.
+
+See the User Guide, Section 18: Billing.
+
 ---
 
 ## Products

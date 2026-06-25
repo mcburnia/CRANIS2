@@ -1022,6 +1022,21 @@ The trial follows a defined progression:
 | **Suspended** | 60 days after entering read-only | Account is suspended with limited access |
 | **Cancelled** | After suspension period | Account is cancelled |
 
+### Trial and Lifecycle Emails
+
+CRANIS2 sends a small, fixed set of lifecycle emails to your billing or admin address. Each email is sent **exactly once** — you will never receive repeat or daily reminders for the same stage.
+
+| Email | When it is sent |
+|-------|-----------------|
+| **30-day reminder** | 30 days before your trial ends |
+| **7-day reminder** | 7 days before your trial ends |
+| **Last chance** | The day your trial expires (start of the 7-day grace period) |
+| **Sorry to see you go** | When access ends (grace period elapses, or you close your account) |
+| **Win-back #1** | About one month after your account lapses or is closed |
+| **Win-back #2** | About six months after win-back #1 (final outreach) |
+
+The two win-back emails carry a one-click **"forget me"** link that erases your personal data and stops all further contact. You can opt out at any time.
+
 ### Payment Lifecycle
 
 For paying customers, the lifecycle in the event of a payment failure is:
@@ -1252,17 +1267,27 @@ CRA Article 10 requires manufacturers to maintain records of compliance activiti
 
 ## 23. Account and Data Rights
 
+All account-management actions live in one place: **Account settings → Close account**. From there you can export your data, close your account, or delete it permanently. Each destructive action asks you to confirm with your password.
+
 ### Data Export
 
-You can export all personal data held by CRANIS2 at any time. Navigate to your Account page and select **Export My Data**. The platform generates a structured JSON file containing your account details, organisation membership, billing records, repository connections (tokens excluded), products, stakeholders, feedback, API keys (secrets excluded), recent telemetry, Copilot usage, notifications, and SEE sessions.
+You can export all personal data held by CRANIS2 at any time. Open **Account settings → Close account** and select **Download my data** ("Export My Data"). The platform generates a structured JSON file containing your account details, organisation membership, billing records, repository connections (tokens excluded), products, stakeholders, feedback, API keys (secrets excluded), recent telemetry, Copilot usage, notifications, and SEE sessions.
 
 Categories excluded from export (with reasons) include password hashes, OAuth tokens, the immutable audit trail, and Stripe billing invoices (available directly from Stripe).
 
-### Account Deletion
+### Closing Your Account
 
-To delete your account, navigate to your Account page and select **Delete My Account**. You will be asked to confirm your password. If you are the sole administrator of an organisation, you must first transfer admin rights or delete the organisation.
+**Close account** is the non-destructive option. It cancels your billing immediately (stopping all charges and reminder emails), places your account in **read-only** mode, and **retains your data for 12 months**. During that window you can export your data or resubscribe to restore full access exactly as you left it. After 12 months the data is archived for download and then permanently deleted. Admin role required, since it affects the whole organisation.
 
-On confirmation, CRANIS2 immediately deletes your user record, events, repository connections, feedback, API keys, Copilot cache, notifications, and Neo4j user node. Billing records and audit trail entries are anonymised (not deleted) for legal retention obligations. Foreign key references across 11 tables are nullified.
+### Deleting Your Account
+
+**Delete permanently** erases your personal data straight away instead of waiting out the 12-month window. You will be asked to confirm your password. If you are the **sole administrator** of an organisation, deleting your account now erases the whole organisation and its data (there is no longer a requirement to transfer admin rights first).
+
+On confirmation, CRANIS2 immediately deletes your user record, events, repository connections, feedback, API keys, Copilot cache, notifications, and Neo4j user node. Billing records and the compliance audit trail are **anonymised, not deleted**, to meet legal retention obligations (tax: 7 years; CRA Article 13(10): 10 years) — once anonymised they can no longer identify you. Foreign-key references across related tables are nullified.
+
+### "Forget Me" (from win-back emails)
+
+If your trial lapses or you close your account, the win-back emails CRANIS2 sends include a one-click **"forget me"** link. It performs the same erasure as "Delete permanently" and additionally flags your organisation so it is never contacted again. The link opens a public confirmation page — you do not need to be logged in — which explains exactly what will be erased and what minimal anonymised records are retained by law.
 
 ### Data Retention
 

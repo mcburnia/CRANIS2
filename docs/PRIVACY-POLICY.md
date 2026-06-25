@@ -11,7 +11,7 @@
 # Privacy Policy
 
 **Effective date:** 1 April 2026
-**Last updated:** 2 May 2026
+**Last updated:** 25 June 2026
 **Status:** Beta
 
 CRANIS2 is operated by **Andrew (Andi) MCBURNIE**, a private individual. This policy explains what personal data is collected, why it is collected, how it is used, and what rights you have.
@@ -57,6 +57,10 @@ If your organisation subscribes to a paid plan, I collect a billing email addres
 I also maintain a record of active contributors linked to your repositories, including their provider usernames and contribution counts. This is used to calculate subscription charges.
 
 **Legal basis:** Contract. This data is necessary to process payments and manage your subscription.
+
+I send lifecycle emails to your billing or admin email address about the status of your trial and subscription: reminders before your trial ends (30 days and 7 days before), a final notice at expiry, a confirmation when an account is closed, and — if your trial lapses or you close your account — occasional win-back emails (approximately one month and seven months later). Each win-back email contains a one-click **"forget me"** link that permanently erases your personal data and stops all further contact. You can opt out of these emails at any time using that link or by contacting andi@mcburnie.com.
+
+**Legal basis:** Contract for transactional trial and subscription notices; legitimate interest for the later win-back emails, balanced by the one-click opt-out.
 
 ### 2.3 Repository connection data
 
@@ -150,7 +154,8 @@ Different categories of data are retained for different periods.
 
 | Data category | Retention period | Reason |
 |---|---|---|
-| Account data | Until you delete your account | Required to provide the service |
+| Account data (active) | Until you close or delete your account | Required to provide the service |
+| Account data (closed) | 12 months after closure, then archived for download and permanently deleted | Lets you resubscribe and resume; gives you time to export |
 | Billing data | 7 years after the end of the subscription | Tax and accounting obligations |
 | Usage telemetry | 90 days | Security monitoring and platform improvement |
 | Audit trail (compliance activity log) | 10 years | CRA Article 13(10) requires manufacturers to keep technical documentation for 10 years |
@@ -160,6 +165,14 @@ Different categories of data are retained for different periods.
 | Escrow records | Duration of escrow agreement plus 1 year | Contractual obligation |
 
 When a retention period expires, the relevant data is deleted or anonymised automatically. Automated retention enforcement runs on a scheduled basis, deleting expired telemetry events, feedback, verification tokens, and Copilot response cache. The platform operator can also trigger a manual retention cleanup at any time.
+
+**Closing or deleting your account.** You can manage the end of your relationship with CRANIS2 yourself, from **Account settings → Close account**:
+
+- **Close account** cancels billing immediately (stopping all charges and reminder emails) and places your account in read-only mode. Your data is retained for 12 months so you can resubscribe and pick up where you left off, and you can export it at any time during that window.
+- **Delete permanently** erases your personal data straight away. If you are the only administrator of your organisation, this also erases the organisation and its data.
+- **Forget me** (the link in win-back emails) does the same erasure and additionally records that you must not be contacted again.
+
+Where erasure is requested, personal data is deleted, but the small number of records the law requires us to keep are **anonymised and retained**, not kept in identifiable form — specifically the compliance audit trail (CRA Article 13(10), 10 years) and billing/tax records (7 years). Once anonymised, these records can no longer be used to identify or contact you. This is permitted under GDPR Article 17(3)(b).
 
 ---
 
@@ -188,13 +201,13 @@ Under GDPR, you have the following rights. You can exercise any of these by cont
 
 **Right to rectification.** You can update your email address and preferences through the platform settings. For other corrections, contact me.
 
-**Right to erasure.** You can request that I delete your account and associated personal data. Some data may be retained where there is a legal obligation to do so (billing records for tax purposes, audit trails for CRA compliance).
+**Right to erasure.** You can erase your account yourself, without contacting anyone, from **Account settings → Close account** — choose "Delete permanently" to erase your personal data immediately, or use the "forget me" link in any win-back email. (You can also still email me to request erasure.) Some data may be retained where there is a legal obligation to do so (billing records for tax purposes, audit trails for CRA compliance); where this applies, that data is anonymised so it can no longer identify you, as described in section 5.
 
 **Right to restrict processing.** You can request that I stop processing your data for specific purposes while a complaint or dispute is resolved.
 
 **Right to data portability.** You can request your personal data in a structured, machine-readable format. Navigate to your Account page and select "Export My Data" to download a JSON export of all your personal data, including account details, organisation membership, products, findings, and usage history. Security-sensitive data (password hashes, OAuth tokens) is excluded from the export.
 
-**Right to object.** You can object to processing based on legitimate interest. I will stop processing unless there are compelling legitimate grounds that override your interests.
+**Right to object.** You can object to processing based on legitimate interest. I will stop processing unless there are compelling legitimate grounds that override your interests. To stop win-back and re-engagement emails specifically, use the one-click **"forget me"** link in any such email, which both ceases all contact and erases your personal data.
 
 **Right to withdraw consent.** Where processing is based on consent (welcome site contact data), you can withdraw at any time. Withdrawal does not affect the lawfulness of processing carried out before withdrawal.
 

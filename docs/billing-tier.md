@@ -258,9 +258,11 @@ All tiers (except Enterprise, which is contract-based) must adhere to:
 
 ## Data Retention & Cancellation Lifecycle
 
+Customers can self-serve from **Account settings → Close account**: **Close** (cancel billing, read-only, 12-month retention), **Delete permanently** (immediate erasure; erases the org if sole admin), or **Export my data**. The "forget me" link in win-back emails performs the same immediate erasure plus a do-not-contact flag.
+
 | Stage | Timeline | Action |
 |-------|----------|--------|
-| Cancellation | Day 0 | Access continues until end of paid period |
+| Cancellation / Close | Day 0 | Billing cancelled immediately; access continues read-only |
 | Paid period ends | Varies | Read-only mode begins |
 | Retention | 12 months | Data retained, account can be reactivated at any time |
 | Archive warning | 11 months | Email: "Your data will be archived in 30 days" |
@@ -331,10 +333,13 @@ All tiers (except Enterprise, which is contract-based) must adhere to:
 ## Email Notifications (via Resend)
 
 ### Trial lifecycle:
-- 14 days before trial expiry
-- 7 days before trial expiry
-- Trial expired
-- End of 7-day grace period (read-only begins)
+A single state-driven engine sends each stage **exactly once** (deduped per org+stage in the `lifecycle_emails` table, restart-safe). No repeats.
+- 30 days before trial expiry (reminder)
+- 7 days before trial expiry (reminder)
+- Trial expired — "last chance" (opens the 7-day grace once)
+- Access ends — "sorry to see you go" (grace elapsed, or account closed; anchors the win-back schedule)
+- Win-back #1 — ~1 month after lapse/closure (carries the "forget me" link)
+- Win-back #2 — ~6 months after win-back #1 (final outreach; carries the "forget me" link)
 
 ### Payment events:
 - First payment successful (welcome email)
@@ -347,8 +352,10 @@ All tiers (except Enterprise, which is contract-based) must adhere to:
 - 7 days before paid period ends post-cancellation
 
 ### Account lifecycle:
+- Account closed (self-service): confirmation + "sorry to see you go"
 - 11 months post-cancellation: data archive warning
 - 12 months post-cancellation: data archive download link
+- "Forget me" (link in win-back emails): erases personal data, sets `do_not_contact`, anonymises legally-retained records (CRA 10y / tax 7y), and ceases all further email
 
 ### NOT emailed (in-app only):
 - Recurring monthly payment successful (Stripe sends invoice receipt)
