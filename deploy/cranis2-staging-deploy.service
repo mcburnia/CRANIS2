@@ -1,0 +1,13 @@
+[Unit]
+Description=CRANIS2 staging auto-deploy (pull origin/main and rebuild app services)
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=mcburnia
+Environment=CRANIS2_DIR=/home/mcburnia/cranis2
+ExecStart=/home/mcburnia/cranis2/scripts/deploy-staging.sh
+# Don't hammer on transient failures; the timer will try again.
+TimeoutStartSec=900

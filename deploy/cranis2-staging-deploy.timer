@@ -1,0 +1,10 @@
+[Unit]
+Description=Run CRANIS2 staging auto-deploy every 2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+Unit=cranis2-staging-deploy.service
+
+[Install]
+WantedBy=timers.target
