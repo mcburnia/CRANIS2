@@ -1528,10 +1528,10 @@ await client.query(`ALTER TABLE license_findings ADD COLUMN IF NOT EXISTS compat
       await client.query(`
         INSERT INTO category_thresholds (category_key, category_name, min_score, max_score, reasoning, is_locked)
         VALUES 
-        ('default', 'Default Class (No CRA obligations)', 0.00, 0.25, 'Low-risk products with minimal security requirements'),
-        ('important_i', 'Important Class I', 0.25, 0.50, 'Moderate-risk products with enhanced security obligations'),
-        ('important_ii', 'Important Class II', 0.50, 0.75, 'High-risk products requiring conformity assessment'),
-        ('critical', 'Critical Class', 0.75, 1.01, 'Highest-risk products requiring notified body certification')
+        ('default', 'Default Class (No CRA obligations)', 0.00, 0.25, 'Low-risk products with minimal security requirements', true),
+        ('important_i', 'Important Class I', 0.25, 0.50, 'Moderate-risk products with enhanced security obligations', true),
+        ('important_ii', 'Important Class II', 0.50, 0.75, 'High-risk products requiring conformity assessment', true),
+        ('critical', 'Critical Class', 0.75, 1.01, 'Highest-risk products requiring notified body certification', true)
       `);
 
       console.log('[DB] Seeded default CRA category rules');
