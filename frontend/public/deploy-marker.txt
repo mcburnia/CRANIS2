@@ -1,0 +1,5 @@
+CRANIS2 staging auto-deploy — end-to-end proof
+This file was merged to main on the laptop (remote network) and is served by
+dev.cranis2.dev only if the box pulled + rebuilt itself with no inbound access.
+marker: STAGING-PROOF-001
+created-utc: 2026-06-26T15:56:48Z
