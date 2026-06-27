@@ -157,7 +157,7 @@ export default function TrustCentrePage() {
       <section className="tc-hero">
         <h1 className="tc-hero-title">Trust Centre</h1>
         <p className="tc-hero-subtitle">
-          Find EU-compliant software suppliers. Browse organisations with verified CRA and NIS2
+          Find EU-compliant software suppliers. Browse organisations with verified CRA
           compliance postures, vulnerability scanning, and licence transparency.
         </p>
       </section>

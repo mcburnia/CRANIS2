@@ -58,7 +58,7 @@
 
 ### What Is CRANIS2?
 
-CRANIS2 is a compliance platform that helps software companies meet the requirements of two major pieces of EU legislation: the **Cyber Resilience Act (CRA)** and the **NIS2 Directive**.
+CRANIS2 is a compliance platform that manages and automates the bureaucracy and evidence-gathering of **Cyber Resilience Act (CRA)** compliance for software products placed on the EU market. It also helps you assess your **NIS2 Directive** readiness, produces supporting-evidence reports for adjacent regimes, and exports CRA evidence into GRC platforms via OSCAL.
 
 It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see. CRANIS2 reads dependency metadata from your repositories but never stores, analyses or modifies your source code. The platform automates seven compliance functions: SBOM management, vulnerability monitoring, license compliance, intellectual property proof, CRA technical documentation, ENISA reporting, and source code escrow.
 
@@ -468,7 +468,7 @@ When you delete a product from CRANIS2, the Forgejo escrow repository is **not**
 
 ### Cross-Product Overview
 
-The Obligations page (`/obligations`) provides a cross-product view of all CRA and NIS2 obligations across your organisation. This is the place to get a portfolio-level understanding of where you stand.
+The Obligations page (`/obligations`) provides a cross-product view of all CRA obligations across your organisation. This is the place to get a portfolio-level understanding of where you stand.
 
 ### What Are CRA Obligations?
 

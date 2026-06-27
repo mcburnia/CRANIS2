@@ -112,7 +112,7 @@ export default function ObligationsPage() {
   if (loading) {
     return (
       <>
-        <PageHeader title="Obligations" timestamp="CRA & NIS2" />
+        <PageHeader title="Obligations" timestamp="CRA" />
         <p className="ob-empty">Loading obligations...</p>
       </>
     );
@@ -121,7 +121,7 @@ export default function ObligationsPage() {
   if (!data) {
     return (
       <>
-        <PageHeader title="Obligations" timestamp="CRA & NIS2" />
+        <PageHeader title="Obligations" timestamp="CRA" />
         <p className="ob-empty">Unable to load obligations. Please try refreshing.</p>
       </>
     );
@@ -141,7 +141,7 @@ export default function ObligationsPage() {
 
   return (
     <>
-      <PageHeader title="Obligations" timestamp="CRA & NIS2" />
+      <PageHeader title="Obligations" timestamp="CRA" />
 
       {guidance && (
         <div className="ob-role-guidance">

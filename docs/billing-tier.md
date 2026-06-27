@@ -154,7 +154,7 @@
 
 ## Security Roster (Compliance Feature)
 
-Separate from billing, a security-focused view of all contributors for CRA/NIS2 compliance:
+Separate from billing, a security-focused view of all contributors for CRA compliance:
 
 | Category | Icon | Description |
 |----------|------|-------------|
@@ -162,7 +162,7 @@ Separate from billing, a security-focused view of all contributors for CRA/NIS2 
 | **Inactive** | ⚠️ | Human, no commits in 90+ days, still has repo access. Flag for access review |
 | **Departed** | ❌ | Human, marked as departed by org admin, access should be revoked |
 | **Bot (monitored)** | 🤖 | Automated account, tracked but not billed |
-| **Shared/Generic (compliance risk)** | 🔴 | Suspected shared account, CRA/NIS2 requires individual attribution |
+| **Shared/Generic (compliance risk)** | 🔴 | Suspected shared account, CRA requires individual attribution |
 
 **Shared account detection (v1):**
 - Generic naming heuristics (admin, developer, deploy, team, shared, etc.)
@@ -170,7 +170,7 @@ Separate from billing, a security-focused view of all contributors for CRA/NIS2 
 - Flag on security roster with compliance warning notification
 
 **Compliance notifications:**
-- "Shared account detected: CRA/NIS2 requires individual attribution of code changes"
+- "Shared account detected: CRA requires individual attribution of code changes"
 - "3 contributors inactive 90+ days but still have repo access. Review recommended"
 
 ---

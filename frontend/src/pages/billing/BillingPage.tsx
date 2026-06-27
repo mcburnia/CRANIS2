@@ -527,7 +527,7 @@ export default function BillingPage() {
                   </p>
                   <ul className="bill-plan-features">
                     <li>Unlimited products &amp; repositories</li>
-                    <li>Full CRA/NIS2 compliance tooling</li>
+                    <li>Full CRA compliance tooling, plus NIS2 readiness &amp; evidence</li>
                     <li>Automatic vulnerability scanning</li>
                     <li>IP proof timestamping</li>
                     <li>Due diligence report exports</li>

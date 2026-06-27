@@ -19,7 +19,7 @@ import { usePageMeta } from '../../hooks/usePageMeta';
 const highlights = [
   { icon: Package, label: 'Automated SBOMs', desc: '28 lockfile formats, 26 languages' },
   { icon: Shield, label: 'CRA Technical File', desc: 'Auto-populated Annex VII documentation' },
-  { icon: BarChart3, label: 'Obligation Tracking', desc: '19 CRA & NIS2 requirements mapped' },
+  { icon: BarChart3, label: 'Obligation Tracking', desc: '19 CRA obligations mapped' },
   { icon: Lock, label: 'Evidence Vault', desc: 'RFC 3161 timestamps, 10-year retention' },
   { icon: Bell, label: 'ENISA Reporting', desc: '24h / 72h / 14-day deadline alerts' },
   { icon: Users, label: 'AI Copilot', desc: 'Suggestions, triage, risk assessments' },
@@ -56,7 +56,7 @@ export default function WelcomePage() {
 
           <p style={{ color: 'var(--muted)', fontSize: '0.95rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>
             Your email has been verified and your account is ready.
-            Set up your organisation to start building CRA and NIS2
+            Set up your organisation to start building CRA
             compliance evidence across your software products.
           </p>
 

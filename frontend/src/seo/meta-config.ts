@@ -27,7 +27,7 @@ export interface PageMeta {
 export const SITE_NAME = 'CRANIS2';
 export const SITE_URL = 'https://cranis2.com';
 export const DEFAULT_DESCRIPTION =
-  'CRANIS2 is an EU compliance platform for the Cyber Resilience Act (CRA) and NIS2 Directive. Automated SBOMs, vulnerability monitoring, licence compliance, technical documentation, ENISA reporting, software evidence engine for R&D tax credits, and session capture with competence profiling. Source code is never stored. Repositories are never written to.';
+  'CRANIS2 is an EU Cyber Resilience Act (CRA) compliance platform for software products: it manages and automates the bureaucracy and evidence-gathering of CRA conformity — automated SBOMs, vulnerability monitoring, licence compliance, technical documentation, ENISA reporting — and exports that evidence as OSCAL 1.1.2 into GRC platforms. It also provides NIS2 readiness assessment and supporting-evidence reports. Source code is never stored. Repositories are never written to.';
 export const DEFAULT_OG_IMAGE = '/branding/cranis2-logo-wide.png';
 
 /* ── JSON-LD schemas ── */
@@ -38,7 +38,7 @@ const ORG_JSON_LD: Record<string, unknown> = {
   name: 'CRANIS2',
   url: SITE_URL,
   logo: `${SITE_URL}/branding/cranis2-logo-wide.png`,
-  description: 'EU compliance platform for the Cyber Resilience Act and NIS2 Directive.',
+  description: 'EU Cyber Resilience Act (CRA) compliance platform for software products, with NIS2 readiness assessment and OSCAL evidence export to GRC platforms.',
   foundingDate: '2026',
   address: { '@type': 'PostalAddress', addressCountry: 'CH' },
 };
@@ -76,7 +76,7 @@ const SOFTWARE_JSON_LD: Record<string, unknown> = {
     'Post-market monitoring with field issue tracking',
     'Cryptographic standards inventory with PQC readiness',
     'AI Copilot for compliance documentation',
-    'Multi-regulation reports (CRA, NIS2, AI Act, DORA, ISO 27001)',
+    'Multi-regulation supporting-evidence reports (CRA, plus NIS2, AI Act, DORA, ISO 27001)',
     'Public API, CI/CD gate, MCP server for IDE integration',
     'Due diligence export (Markdown + SBOM + CSV)',
     'Post-quantum hybrid signing (Ed25519 + ML-DSA-65, NIST FIPS 204)',
@@ -93,7 +93,7 @@ const FAQ_JSON_LD: Record<string, unknown> = {
       name: 'What is CRANIS2?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'CRANIS2 is a compliance platform that helps software companies meet the requirements of the EU Cyber Resilience Act (CRA) and the NIS2 Directive. It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see.',
+        text: 'CRANIS2 is a compliance platform that helps software companies meet the requirements of the EU Cyber Resilience Act (CRA). It connects to your existing source code repositories and automatically builds the compliance evidence that regulators expect to see, and exports it as OSCAL into GRC platforms. It also provides NIS2 readiness assessment and supporting-evidence reports.',
       },
     },
     {
