@@ -12,7 +12,7 @@
 
 ## What Is CRANIS2?
 
-CRANIS2 is a compliance platform that helps software companies meet the requirements of two major pieces of EU legislation: the **Cyber Resilience Act (CRA)** and the **NIS2 Directive**.
+CRANIS2 is a compliance platform that manages and automates the bureaucracy and evidence-gathering of **Cyber Resilience Act (CRA)** compliance for software products placed on the EU market. It also helps organisations assess their **NIS2 Directive** readiness and produces supporting-evidence reports, and it exports CRA compliance evidence into GRC platforms via OSCAL — feeding the supply-chain assurance of the larger, often NIS2-regulated, organisations its customers sell into.
 
 It connects to your existing source code repositories (GitHub, Codeberg, Gitea, Forgejo, GitLab, and Bitbucket Cloud) and automatically builds the compliance evidence that regulators expect to see. No spreadsheets, no consultants, no guesswork.
 
@@ -58,7 +58,7 @@ CRANIS2 takes the dependency and component information present in your repositor
 
 - **Importer & Distributor Obligations.** Extends CRA compliance beyond manufacturers. Importers and distributors each have dedicated obligation sets (10 and 6 respectively) with role-specific derived statuses. A public importer obligations assessment (10 questions) helps supply chain partners evaluate their CRA readiness before engaging. Role-specific checklists provide actionable guidance tailored to each operator type.
 
-- **GRC/Audit Tool Bridge.** Exports compliance data in OSCAL 1.1.2 format for integration with governance, risk, and compliance (GRC) platforms. Four document types are supported: catalog (obligation definitions), profile (applicable obligations), assessment-results (compliance status with findings), and component-definition (product metadata with properties). Available on Pro plan.
+- **GRC/Audit Tool Bridge.** Exports CRA compliance data in OSCAL 1.1.2 (NIST standard) format, so OSCAL-compatible governance, risk, and compliance (GRC) platforms — such as ServiceNow, OneTrust or Vanta — can pull it directly. Four document types are supported: catalog (obligation definitions), profile (applicable obligations), assessment-results (compliance status with findings), and component-definition (product metadata with properties). Available on Pro plan.
 
 - **Conformity Assessments.** Self-assessment tools for CRA, NIS2, importer obligations, and post-quantum cryptography readiness. Four public assessments are available: CRA conformity (12 questions), NIS2 readiness (25 questions), importer obligations (10 questions), and PQC readiness (18 questions). Each walks through the regulatory requirements with guidance text, evidence linking, and progress tracking. A public assessment landing page allows prospective customers to understand your compliance posture before engaging.
 
@@ -206,4 +206,4 @@ An affiliate programme rewards partners for referring new customers, with self-s
 
 ---
 
-*CRANIS2 – Cyber Resilience Act & NIS2 compliance, automated.*
+*CRANIS2 – Cyber Resilience Act compliance, automated. NIS2 readiness and OSCAL evidence export, built in.*

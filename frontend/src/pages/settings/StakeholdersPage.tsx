@@ -21,7 +21,7 @@ const ROLE_HELP: Record<string, string> = {
   compliance_officer: 'The internal person responsible for overseeing CRA compliance across your organisation. Not a specific CRA requirement but essential for governance and audit readiness.',
   security_contact: 'The person responsible for receiving and triaging vulnerability reports for this product. Required under CRA Article 11 and your coordinated vulnerability disclosure policy.',
   technical_file_owner: 'The person responsible for compiling and maintaining the technical documentation file for this product. The file must be kept up to date per CRA Article 31.',
-  incident_response_lead: 'The person who coordinates response to cybersecurity incidents for this product, including mandatory ENISA reporting within 24 hours under NIS2 and CRA Article 14.',
+  incident_response_lead: 'The person who coordinates response to cybersecurity incidents for this product, including mandatory ENISA early-warning reporting within 24 hours under CRA Article 14.',
 };
 
 interface Stakeholder {

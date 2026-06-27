@@ -75,13 +75,17 @@ const regulations = [
       'Management accountability for cybersecurity measures',
     ],
     howSupports: [
-      'Dependency-level risk visibility across your entire software supply chain',
-      'Supplier due diligence questionnaires with automatic registry enrichment',
-      'AI-powered risk assessments with Annex I mappings, exportable as Markdown',
-      'Licence compliance scanning with copyleft detection and compatibility analysis',
+      'Dependency-level supply-chain risk visibility, with automated SBOMs and continuous vulnerability monitoring',
+      'Supplier due-diligence questionnaires with automatic registry enrichment',
+      'A NIS2 readiness assessment to scope your entity classification and obligations',
+      'OSCAL 1.1.2 evidence export, so this software-supply-chain evidence flows into GRC platforms such as ServiceNow, OneTrust or Vanta',
       'Audit trail of every compliance action with timestamps and user attribution',
     ],
-    related: ['Supply-chain risk management', 'Incident response', 'Conformity assessments'],
+    related: ['Supply-chain risk management', 'OSCAL / GRC export', 'Conformity assessments'],
+    callout: {
+      type: 'note' as const,
+      text: "CRANIS2 doesn't run your full NIS2 programme. It helps you scope your obligations and produces the software-supply-chain evidence that programme needs — exportable via OSCAL into the GRC tools larger, NIS2-regulated organisations already use.",
+    },
   },
   {
     id: 'gdpr',
